@@ -141,10 +141,10 @@ void WebserverClient::Incoming::Process(char * Buffer, int Size)
                 if(Next)
                     *(Next ++) = 0;
 
-                char * NameDecoded = (char *) malloc(strlen(Name) + 12);
-                char * ValueDecoded = (char *) malloc(strlen(Value) + 12);
+                char * NameDecoded = (char *) malloc(strlen(Name) + 1);
+                char * ValueDecoded = (char *) malloc(strlen(Value) + 1);
 
-                if(!URLDecode(Name, NameDecoded, strlen(Name) + 8) || !URLDecode(Value, ValueDecoded, strlen(Value) + 8))
+                if(!URLDecode(Name, NameDecoded, strlen(Name) + 1) || !URLDecode(Value, ValueDecoded, strlen(Value) + 1))
                 {
                     free(NameDecoded);
                     free(ValueDecoded);
@@ -200,7 +200,7 @@ void WebserverClient::Incoming::ProcessLine(char * Line)
             /* Blank line marks end of headers */
 
             if(!strcmp(Method, "GET") || !strcmp(Method, "HEAD") ||
-                    (BodyRemaining = _atoi64(Client.Request.Header("Content-Length"))) == 0)
+                    (BodyRemaining = _atoi64(Client.Request.Header("Content-Length"))) <= 0)
             {
                 /* No body - this is a complete request done */
             
@@ -312,10 +312,10 @@ void WebserverClient::Incoming::ProcessFirstLine(char * Line)
                 if(Next)
                     *(Next ++) = 0;
 
-                char * NameDecoded = (char *) malloc(strlen(Name) + 12);
-                char * ValueDecoded = (char *) malloc(strlen(Value) + 12);
+                char * NameDecoded = (char *) malloc(strlen(Name) + 1);
+                char * ValueDecoded = (char *) malloc(strlen(Value) + 1);
 
-                if(!URLDecode(Name, NameDecoded, strlen(Name) + 8) || !URLDecode(Value, ValueDecoded, strlen(Value) + 8))
+                if(!URLDecode(Name, NameDecoded, strlen(Name) + 1) || !URLDecode(Value, ValueDecoded, strlen(Value) + 1))
                 {
                     free(NameDecoded);
                     free(ValueDecoded);

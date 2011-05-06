@@ -467,31 +467,29 @@ inline void Uppercase(char * s)
 
 inline bool URLDecode(char * URL, char * New, unsigned int OutLength)
 {
-    size_t Length = strlen(URL);
-    
-    if((Length + 8) > OutLength)
-        return false;
-
     char * out = New;
+    char * out_end = New + OutLength;
     char * in = (char *) URL;
+    char * in_end = in + strlen(in);
 
-    while(*in)
+    while(in < in_end)
     {
-        if((*in) == '%')
+        if(*in == '%')
         {
-            char last = in[3];
-            in[3] = 0;
+            ++ in;
 
-            sscanf(++ in, "%X", (unsigned int *) out);
-            *((++ in) + 1) = last;
+            char n[3] = { in[0], in[1], 0 };
+            *out = (char) strtol(n, 0, 16);
+
+            ++ in;
         }
         else
             *out = *in == '+' ? ' ' : *in;
 
-        ++ out;
+        if(out ++ >= out_end)
+            return false;
 
-        if(!*(in ++))
-            break;
+        ++ in;
     }
 
     *out = 0;
