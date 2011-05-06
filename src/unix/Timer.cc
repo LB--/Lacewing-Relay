@@ -22,7 +22,7 @@
 #include "../Common.h"
 
 struct TimerInternal;
-void TimerCompletion(TimerInternal &Internal);
+void TimerTick(TimerInternal &Internal);
 
 struct TimerInternal
 {
@@ -48,7 +48,7 @@ struct TimerInternal
         
         #ifdef LacewingUseTimerFD
             FD = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
-            EventPump.AddRead(FD, this, (void *) TimerCompletion);
+            EventPump.AddRead(FD, this, (void *) TimerTick);
         #endif
     }
 
@@ -60,14 +60,14 @@ struct TimerInternal
     }
 };
 
+void TimerTick(TimerInternal &Internal)
+{
+    if(Internal.HandlerTick)
+        Internal.HandlerTick(Internal.Timer);
+}
+
 #ifndef LacewingUseKQueue
 #ifndef LacewingUseTimerFD
-
-    void TimerTick(TimerInternal &Internal)
-    {
-        if(Internal.HandlerTick)
-            Internal.HandlerTick(Internal.Timer);
-    }
 
     LacewingThread(LegacyTimer, TimerInternal, Internal)
     {
