@@ -343,7 +343,7 @@ void WebserverClient::Incoming::ProcessFirstLine(char * Line)
 
         for(char * i = this->URL; *i; ++ i)
         {
-            if(i[0] == '.' && i[1] == '.' && (i[2] == '/' || i[2] == '\\'))
+            if(i[0] == '.' && i[1] == '.')
             {
                 State = -1;
                 return;
