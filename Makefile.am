@@ -30,7 +30,8 @@ liblacewing_la_SOURCES = \
     src/c/global_flat.cc \
     src/c/server_flat.cc \
     src/c/timer_flat.cc \
-    src/c/webserver_flat.cc
+    src/c/webserver_flat.cc \
+    src/c/filter_flat.cc
     
 library_includedir = $(includedir)
 library_include_HEADERS = ./include/Lacewing.h
