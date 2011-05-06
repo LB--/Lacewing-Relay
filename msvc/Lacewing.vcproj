@@ -451,6 +451,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\c\udp_flat.cc"
+					>
+				</File>
+				<File
 					RelativePath="..\src\c\webserver_flat.cc"
 					>
 				</File>
