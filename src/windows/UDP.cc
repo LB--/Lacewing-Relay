@@ -240,6 +240,11 @@ void Lacewing::UDP::Unhost()
     Internal.Socket = SOCKET_ERROR;
 }
 
+int Lacewing::UDP::Port()
+{
+    return ((UDPInternal *) InternalTag)->Port;
+}
+
 Lacewing::UDP::UDP(Lacewing::EventPump &EventPump)
 {
     LacewingInitialise();  

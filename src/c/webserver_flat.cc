@@ -33,10 +33,10 @@ void lw_ws_host (lw_ws * webserver, long port)
 void lw_ws_host_secure (lw_ws * webserver, long port)
     { ((Lacewing::Webserver *) webserver)->HostSecure(port);
     }
-void lw_ws_host_filter (lw_ws * webserver, long port, lw_filter * filter)
+void lw_ws_host_filter (lw_ws * webserver, lw_filter * filter)
     { ((Lacewing::Webserver *) webserver)->Host(*(Lacewing::Filter *) filter);
     }
-void lw_ws_host_secure_filter (lw_ws * webserver, long port, lw_filter * filter)
+void lw_ws_host_secure_filter (lw_ws * webserver, lw_filter * filter)
     { ((Lacewing::Webserver *) webserver)->HostSecure(*(Lacewing::Filter *) filter);
     }
 void lw_ws_unhost (lw_ws * webserver)

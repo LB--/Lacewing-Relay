@@ -142,6 +142,11 @@ void Lacewing::UDP::Host(Lacewing::Filter &Filter)
     Internal.Port = ntohs(SocketAddress.sin_port);
 }
 
+int Lacewing::UDP::Port()
+{
+    return ((UDPInternal *) InternalTag)->Port;
+}
+
 void Lacewing::UDP::Unhost()
 {
     UDPInternal &Internal = *((UDPInternal *) InternalTag);

@@ -270,13 +270,13 @@ LacewingFunction    const char* lw_guess_mime_type          (const char * filena
   LacewingFunction         lw_udp* lw_udp_new                   (lw_eventpump *);
   LacewingFunction           void  lw_udp_delete                (lw_udp *);
   LacewingFunction           void  lw_udp_host                  (lw_udp *, long port);
-  LacewingFunction           void  lw_udp_host_filter           (lw_udp *, long port, lw_filter *);
+  LacewingFunction           void  lw_udp_host_filter           (lw_udp *, lw_filter *);
   LacewingFunction           void  lw_udp_host_addr             (lw_udp *, lw_addr *);
   LacewingFunction           void  lw_udp_unhost                (lw_udp *);
   LacewingFunction           long  lw_udp_port                  (lw_udp *);
   LacewingFunction         lw_i64  lw_udp_bytes_sent            (lw_udp *);
   LacewingFunction         lw_i64  lw_udp_bytes_received        (lw_udp *);
-  LacewingFunction         lw_i64  lw_udp_send                  (lw_addr *, const char * data, long size);
+  LacewingFunction           void  lw_udp_send                  (lw_udp *, lw_addr *, const char * data, long size);
 
   typedef void (LacewingHandler * lw_udp_handler_receive) (lw_udp *, char * data, long size);
   LacewingFunction void lw_udp_onreceive (lw_udp *, lw_udp_handler_receive);
@@ -294,6 +294,8 @@ LacewingFunction    const char* lw_guess_mime_type          (const char * filena
   LacewingFunction           void  lw_ws_delete                 (lw_ws *);
   LacewingFunction           void  lw_ws_host                   (lw_ws *, long port);
   LacewingFunction           void  lw_ws_host_secure            (lw_ws *, long port);
+  LacewingFunction           void  lw_ws_host_filter            (lw_ws *, lw_filter *);
+  LacewingFunction           void  lw_ws_host_secure_filter     (lw_ws *, lw_filter *);
   LacewingFunction           void  lw_ws_unhost                 (lw_ws *);
   LacewingFunction           void  lw_ws_unhost_secure          (lw_ws *);
   LacewingFunction        lw_bool  lw_ws_hosting                (lw_ws *);
