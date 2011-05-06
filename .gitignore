@@ -1,0 +1,17 @@
+*.svn
+m4/*
+bin/*
+build/*
+configure
+Makefile
+Makefile.in
+p-*
+TODO
+install-sh
+ignores
+liblacewing.la
+config.h
+*.ncb
+*.user
+*.suo
+

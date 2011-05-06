@@ -1,0 +1,6 @@
+Lacewing is a cross platform networking library, designed around the idea that a high level of abstraction can both:
+
+- Make the library easy to use
+- Provide lots of room for platform specific optimisation
+
+Lacewing is still very much a work in progress.  More information and documentation soon :-)

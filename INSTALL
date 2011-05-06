@@ -1,0 +1,8 @@
+On Linux/BSD/OS X:
+
+    ./autogen.sh
+    ./configure
+    make
+    sudo make install
+    
+On Windows, use the MSVC project file in the 'msvc' directory to build a DLL/LIB.
