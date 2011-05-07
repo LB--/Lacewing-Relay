@@ -25,6 +25,7 @@ liblacewing_la_SOURCES = \
     src/unix/Server.cc \
     src/unix/Timer.cc \
     src/unix/UDP.cc \
+    src/unix/Client.cc \
     src/c/addr_flat.cc \
     src/c/eventpump_flat.cc \
     src/c/global_flat.cc \
@@ -32,7 +33,8 @@ liblacewing_la_SOURCES = \
     src/c/timer_flat.cc \
     src/c/webserver_flat.cc \
     src/c/filter_flat.cc \
-    src/c/udp_flat.cc
+    src/c/udp_flat.cc \
+    src/c/client_flat.cc
     
 library_includedir = $(includedir)
 library_include_HEADERS = ./include/Lacewing.h

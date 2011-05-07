@@ -23,23 +23,9 @@
 
 struct ClientInternal;
 
-struct ClientOverlapped
-{
-    /* Constructor required by Backlog */
-
-    ClientOverlapped (ClientInternal &)
-    {
-    }
-
-    OVERLAPPED Overlapped;
-    bool IsSend;
-};
-
 struct ClientInternal
 {
     EventPumpInternal  &EventPump;
-
-    ClientOverlapped Overlapped;
 
     Lacewing::Client::HandlerConnect     HandlerConnect;
     Lacewing::Client::HandlerDisconnect  HandlerDisconnect;
@@ -49,12 +35,12 @@ struct ClientInternal
     Lacewing::Client &Public;
 
     ClientInternal(Lacewing::Client &_Public, EventPumpInternal &_EventPump)
-            : Public(_Public), EventPump(_EventPump), Overlapped(*this)
+            : Public(_Public), EventPump(_EventPump)
     {
         Connected = Connecting = false;
 
-        Address = 0;
-        Socket  = SOCKET_ERROR;
+        Address =  0;
+        Socket  = -1;
 
         HandlerConnect     = 0;
         HandlerDisconnect  = 0;
@@ -62,31 +48,27 @@ struct ClientInternal
         HandlerError       = 0;
 
         Nagle = true;
-        BufferingOutput = false;
-
         Address = new Lacewing::Address();
+
+        QueuedOffset = 0;
     }
 
     Lacewing::Address * Address;
 
-    SOCKET Socket;
+    int Socket;
     bool Connected, Connecting;
 
     sockaddr_in HostStructure;
 
     ReceiveBuffer Buffer;
-    WSABUF WinsockBuffer;
 
-    void Completion  (ClientOverlapped &Overlapped, unsigned int BytesTransferred, int Error);
-    bool PostReceive ();
+    void ReadReady();
+    void WriteReady();
 
     bool Nagle;
-    
-    MessageBuilder OutputBuffer;
-    bool BufferingOutput;
 
-    Backlog <ClientInternal, ClientOverlapped>
-        OverlappedBacklog;
+    MessageBuilder Queued;
+    int QueuedOffset;
 };
 
 Lacewing::Client::Client(Lacewing::EventPump &EventPump)
@@ -108,22 +90,22 @@ void Lacewing::Client::Connect(const char * Host, int Port)
     Connect(Address);
 }
 
-void Completion(ClientInternal &Internal, ClientOverlapped &Overlapped, unsigned int BytesTransferred, int Error)
+void WriteReady(ClientInternal &Internal)
 {
-    Internal.Completion(Overlapped, BytesTransferred, Error);
+    Internal.WriteReady();
 }
 
-void ClientInternal::Completion(ClientOverlapped &Overlapped, unsigned int BytesTransferred, int Error)
+void ClientInternal::WriteReady()
 {
-    if(Overlapped.IsSend)
-    {
-        OverlappedBacklog.Return(Overlapped);
-        return;
-    }
-
     if(Connecting)
     {
-        if(!PostReceive())
+        int Error;
+        
+        {   socklen_t ErrorLength = sizeof(Error);
+            getsockopt(Socket, SOL_SOCKET, SO_ERROR, &Error, &ErrorLength);
+        }
+
+        if(Error != 0)
         {
             /* Failed to connect */
 
@@ -143,61 +125,73 @@ void ClientInternal::Completion(ClientOverlapped &Overlapped, unsigned int Bytes
 
         if(HandlerConnect)
             HandlerConnect(Public);
-
-        return;
     }
 
-    if(!BytesTransferred)
+    if(Queued.Size > 0)
     {
-        Socket = SOCKET_ERROR;
-        Connected = false;
-
-        if(HandlerDisconnect)
-            HandlerDisconnect(Public);
-
-        return;
-    }
-
-    Buffer.Received(BytesTransferred);
-
-    if(HandlerReceive)
-        HandlerReceive(Public, Buffer.Buffer, BytesTransferred);
-    
-    if(Socket == SOCKET_ERROR)
-    {
-        /* Disconnect called from within the receive handler */
-
-        Connected = false;
+        int Sent = send(Socket, Queued.Buffer + QueuedOffset, Queued.Size - QueuedOffset, 0);
         
-        if(HandlerDisconnect)
-            HandlerDisconnect(Public);
-
-        return;
+        if(Sent < (Queued.Size - QueuedOffset))
+            QueuedOffset += Sent;
+        else
+        {
+            Queued.Reset();
+            QueuedOffset = 0;
+        }
     }
-
-    PostReceive();
 }
 
-bool ClientInternal::PostReceive()
+void ReadReady(ClientInternal &Internal)
 {
-    memset(&Overlapped, 0, sizeof(ClientOverlapped));
-    Overlapped.IsSend = false;
+    Internal.ReadReady();
+}
 
-    Buffer.Prepare();
-
-    WinsockBuffer.len = Buffer.Size;
-    WinsockBuffer.buf = Buffer.Buffer;
-
-    DWORD Flags = 0;
-
-    if(WSARecv(Socket, &WinsockBuffer, 1, 0, &Flags, (OVERLAPPED *) &Overlapped, 0) == SOCKET_ERROR)
+void ClientInternal::ReadReady()
+{
+    for(;;)
     {
-        int Code = LacewingGetSocketError();
+        Buffer.Prepare();
+        int Bytes = recv(Socket, Buffer.Buffer, Buffer.Size, MSG_DONTWAIT);
 
-        return (Code == WSA_IO_PENDING);
+        if(Bytes == -1)
+        {
+            if(errno == EAGAIN)
+                break;
+
+            /* Assume some sort of disconnect */
+
+            close(Socket);
+            Bytes = 0;
+        }
+
+        if(Bytes == 0)
+        {
+            Socket = -1;
+            Connected = false;
+
+            if(HandlerDisconnect)
+                HandlerDisconnect(Public);
+
+            return;
+        }
+
+        Buffer.Received(Bytes);
+
+        if(HandlerReceive)
+            HandlerReceive(Public, Buffer.Buffer, Bytes);
+            
+        if(Socket == -1)
+        {
+            /* Disconnect called from within the receive handler */
+
+            Connected = false;
+            
+            if(HandlerDisconnect)
+                HandlerDisconnect(Public);
+
+            return;
+        }
     }
-
-    return true;
 }
 
 void Lacewing::Client::Connect(Lacewing::Address &Address)
@@ -225,7 +219,7 @@ void Lacewing::Client::Connect(Lacewing::Address &Address)
 
     GetSockaddr(*Internal.Address, Internal.HostStructure);
 
-    if((Internal.Socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED)) == SOCKET_ERROR)
+    if((Internal.Socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
     {
         Lacewing::Error Error;
        
@@ -241,37 +235,24 @@ void Lacewing::Client::Connect(Lacewing::Address &Address)
     if(!Internal.Nagle)
         ::DisableNagling(Internal.Socket);
 
-    Internal.EventPump.Add((HANDLE) Internal.Socket, (void *) &Internal, (void *) Completion);
+    fcntl(Internal.Socket, F_SETFL, fcntl(Internal.Socket, F_GETFL, 0) | O_NONBLOCK);
 
-    memset(&Internal.Overlapped, 0, sizeof(OVERLAPPED));
-    Internal.Overlapped.IsSend = false;
+    Internal.EventPump.AddReadWrite(Internal.Socket, (void *) &Internal, (void *) ReadReady, (void *) WriteReady);
 
-    LPFN_CONNECTEX ConnectEx;
-    
-    {   GUID  ID    = WSAID_CONNECTEX;
-        DWORD Bytes = 0;
-
-        WSAIoctl(Internal.Socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &ID, sizeof(ID), &ConnectEx, sizeof(LPFN_CONNECTEX), &Bytes, 0, 0);
-    }
-
-    sockaddr_in LocalAddress;
-    memset(&LocalAddress, 0, sizeof(sockaddr_in));
-
-    LocalAddress.sin_family = AF_INET;
-    LocalAddress.sin_addr.S_un.S_addr = INADDR_ANY;
-
-    if(bind(Internal.Socket, (sockaddr *) &LocalAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
+    if(connect(Internal.Socket, &Internal.HostStructure, sizeof(sockaddr_in)) == -1)
     {
-        int Code = LacewingGetSocketError();
+        if(errno == EINPROGRESS)
+            return;
 
-        LacewingAssert(false);
-    }
+        Internal.Connecting = false;
 
-    if(!ConnectEx(Internal.Socket, (sockaddr *) &Internal.HostStructure, sizeof(sockaddr_in), 0, 0, 0, (OVERLAPPED *) &Internal.Overlapped))
-    {
-        int Code = LacewingGetSocketError();
+        Lacewing::Error Error;
+       
+        Error.Add(errno);        
+        Error.Add("Error connecting");
 
-        LacewingAssert(Code == WSA_IO_PENDING);
+        if(Internal.HandlerError)
+            Internal.HandlerError(*this, Error);
     }
 }
 
@@ -290,35 +271,29 @@ void Lacewing::Client::Disconnect()
     ClientInternal &Internal = *((ClientInternal *) InternalTag);
 
     LacewingCloseSocket(Internal.Socket);
-    Internal.Socket = SOCKET_ERROR;
+    Internal.Socket = -1;
 }
 
 void Lacewing::Client::Send(const char * Data, int Size)
 {
-    ClientInternal &Internal = *(ClientInternal *) InternalTag;
-
-    if(!Internal.Connected)
+    if(!Connected())
         return;
 
     if(Size == -1)
         Size = strlen(Data);
 
-    WSABUF SendBuffer = { Size, (CHAR *) Data };
+    ClientInternal &Internal = *(ClientInternal *) InternalTag;
 
-    ClientOverlapped &Overlapped = Internal.OverlappedBacklog.Borrow(Internal);    
-
-    memset(&Overlapped, 0, sizeof(OVERLAPPED));
-    Overlapped.IsSend = true;
-
-    if(WSASend(Internal.Socket, &SendBuffer, 1, 0, 0, (OVERLAPPED *) &Overlapped, 0) != 0)
+    if(Internal.Queued.Size > 0)
     {
-        int Error = WSAGetLastError();
-
-        if(Error != WSA_IO_PENDING)
-        {
-            Internal.OverlappedBacklog.Return(Overlapped);
-        }
+        Internal.Queued.Add(Data, Size);
+        return;
     }
+
+    int Sent = send(Internal.Socket, Data, Size, 0);
+
+    if(Sent < Size)
+        Internal.Queued.Add(Data + Sent, Size - Sent);
 }
 
 Lacewing::Address &Lacewing::Client::ServerAddress()
@@ -332,32 +307,32 @@ void Lacewing::Client::DisableNagling()
 
     Internal.Nagle = false;
 
-    if(Internal.Socket != SOCKET_ERROR)
+    if(Internal.Socket != -1)
         ::DisableNagling(Internal.Socket);
 }
 
 void Lacewing::Client::StartBuffering()
 {
-    ClientInternal &Internal = *(ClientInternal *) InternalTag;
-
-    if(Internal.BufferingOutput)
+    if(!Connected())
         return;
 
-    Internal.BufferingOutput = true;
+    ClientInternal &Internal = *(ClientInternal *) InternalTag;
+
+    int Enabled = 1;
+    setsockopt(Internal.Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof(Enabled));
 }
 
 void Lacewing::Client::Flush()
 {
-    ClientInternal &Internal = *(ClientInternal *) InternalTag;
-
-    if(!Internal.BufferingOutput)
+    if(!Connected())
         return;
 
-    Internal.BufferingOutput = false;
-    Send(Internal.OutputBuffer.Buffer, Internal.OutputBuffer.Size);
+    ClientInternal &Internal = *(ClientInternal *) InternalTag;
 
-    Internal.OutputBuffer.Reset();
+    int Enabled = 0;
+    setsockopt(Internal.Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof(Enabled));
 }
+
 
 AutoHandlerFunctions(Lacewing::Client, ClientInternal, Connect)
 AutoHandlerFunctions(Lacewing::Client, ClientInternal, Disconnect)

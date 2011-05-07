@@ -317,6 +317,9 @@ void Lacewing::RelayClient::Connect(const char * Host, int Port)
 
 void Lacewing::RelayClient::Connect(Lacewing::Address &Address)
 {
+    if(!Address.Port())
+        Address.Port(6121);
+
     Socket.Connect(Address);
 }
 
