@@ -39,40 +39,66 @@ void WebserverClient::Incoming::Process(char * Buffer, int Size)
         return;
     }
 
-    /* States 0 and 1 read lines */
+    /* State 0 : Line content
+       State 1 : Got CR, need LF
+       State 2 : Message body */
 
     if(State < 2)
     {
-        for(int i = 0; i < Size; ++ i)
+        for(char * i = Buffer; *i; )
         {
-            if(*(short *) (Buffer + i) == *(const short *) "\r\n")
+            if(State == 0 && *i == '\r')
             {
-                Buffer[i ++] = 0;
-
+                State = 1;
+            }
+            else if(*i == '\n')
+            {
                 if(this->Buffer.Size)
                 {
-                    this->Buffer.Add(Buffer, i);
+                    this->Buffer.Add (Buffer, -1);
+                    this->Buffer.Add <char> (0);
+
                     ProcessLine(this->Buffer.Buffer);
 
                     this->Buffer.Reset();
                 }
                 else
+                {
+                    i [State == 1 ? -1 : 0] = 0;
                     ProcessLine(Buffer);
+                }
 
-                int SizeLeft = Size - i - 1;
+                Size -= (++ i) - Buffer;
+                Buffer = i;
 
-                if(SizeLeft > 0)
-                    Process(Buffer + (Size - SizeLeft), SizeLeft);
+                if(State == -1 || State >= 2)
+                    break;
 
-                return;
+                State = 0;
+                continue;
             }
+            else if(State == 1)
+            {
+                /* The only thing valid after \r is \n */
 
-            continue;
+                State = -1;
+                break;
+            }
+                
+            ++ i;
+        }
+            
+        if(State == -1)
+        {
+            Client.Socket.Disconnect();
+            return;
         }
 
-        this->Buffer.Add(Buffer, Size);
-
-        return;
+        if(State < 2)
+        {
+            this->Buffer.Add(Buffer, Size);
+            return;
+        }
     }
 
     /* State >= 2 is the request body */
@@ -176,77 +202,65 @@ void WebserverClient::Incoming::Process(char * Buffer, int Size)
 
 void WebserverClient::Incoming::ProcessLine(char * Line)
 {
-    switch(State)
-    {
-    case 0:
-
-        /* First line */
-
-        ProcessFirstLine(Line);
-        
-        State = 1;
-        break;
-
-    case 1:
-
-        /* Header */
+    do
+    {   if(!*Method)
+        {
+            ProcessFirstLine(Line);
+            break;
+        }
 
         if(*Line)
         {
             ProcessHeader(Line);
+            break;
         }
-        else
+
+        /* Blank line marks end of headers */
+
+        if(!strcmp(Method, "GET") || !strcmp(Method, "HEAD") ||
+                (BodyRemaining = _atoi64(Client.Request.Header("Content-Length"))) <= 0)
         {
-            /* Blank line marks end of headers */
+            /* No body - this is a complete request done */
+        
+            Client.RequestUnfinished = true;
+            Client.Output.RunHandler();
 
-            if(!strcmp(Method, "GET") || !strcmp(Method, "HEAD") ||
-                    (BodyRemaining = _atoi64(Client.Request.Header("Content-Length"))) <= 0)
-            {
-                /* No body - this is a complete request done */
-            
-                Client.RequestUnfinished = true;
-                Client.Output.RunHandler();
-
-                break;
-            }
-
-
-            /* The request has a body.  BodyRemaining has been set, and definitely isn't 0. */
-
-            const char * ContentType = Client.Request.Header("Content-Type");
-
-            if(BeginsWith(ContentType, "application/x-www-form-urlencoded"))
-            {
-                /* Support for standard form data (application/x-www-form-urlencoded) is tangled into the webserver code */
-
-                State = 2;
-                break;
-            }
-
-
-            /* Other types of body get handled by the body processors (currently only multipart) */
-
-            if(BeginsWith(ContentType, "multipart"))
-            {
-                BodyProcessor = new Multipart(Client, ContentType);
-                
-                State = 3;
-                break;
-            }
-
-
-            /* Unknown content type */
-
-            State = -1;
+            break;
         }
 
-        break;
-    };
+
+        /* The request has a body.  BodyRemaining has been set, and definitely isn't 0. */
+
+        const char * ContentType = Client.Request.Header("Content-Type");
+
+        if(BeginsWith(ContentType, "application/x-www-form-urlencoded"))
+        {
+            /* Support for standard form data (application/x-www-form-urlencoded) is tangled into the webserver code */
+
+            State = 2;
+            break;
+        }
+
+
+        /* Other types of body get handled by the body processors (currently only multipart) */
+
+        if(BeginsWith(ContentType, "multipart"))
+        {
+            BodyProcessor = new Multipart(Client, ContentType);
+            
+            State = 3;
+            break;
+        }
+
+        /* Unknown content type */
+
+        State = -1;
+    }
+    while(0);
 
     if(State == -1)
     {
         /* Parsing error */
-
         Client.Socket.Disconnect();
     }
 }
