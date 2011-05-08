@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>lacewing.protocol</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="lacewing-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://mp2.dk">Python Lacewing Library</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="lacewing-module.html">Package&nbsp;lacewing</a> ::
+        Module&nbsp;protocol
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="lacewing.protocol-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="lacewing.protocol-module.html">Module lacewing.protocol</a></h1>
+<pre class="py-src">
+<a name="L1"></a><tt class="py-lineno"> 1</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L2"></a><tt class="py-lineno"> 2</tt>  <tt class="py-line"><tt class="py-docstring">The base for server and client.</tt> </tt>
+<a name="L3"></a><tt class="py-lineno"> 3</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L4"></a><tt class="py-lineno"> 4</tt>  <tt class="py-line"> </tt>
+<a name="L5"></a><tt class="py-lineno"> 5</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt class="py-name">twisted</tt><tt class="py-op">.</tt><tt class="py-name">internet</tt> <tt class="py-keyword">import</tt> <tt id="link-0" class="py-name" targets="Module lacewing.moo.protocol=lacewing.moo.protocol-module.html,Module lacewing.protocol=lacewing.protocol-module.html"><a title="lacewing.moo.protocol
+lacewing.protocol" class="py-name" href="#" onclick="return doclink('link-0', 'protocol', 'link-0');">protocol</a></tt> </tt>
+<a name="L6"></a><tt class="py-lineno"> 6</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-1" class="py-name" targets="Package lacewing=lacewing-module.html"><a title="lacewing" class="py-name" href="#" onclick="return doclink('link-1', 'lacewing', 'link-1');">lacewing</a></tt><tt class="py-op">.</tt><tt id="link-2" class="py-name" targets="Module lacewing.multidict=lacewing.multidict-module.html"><a title="lacewing.multidict" class="py-name" href="#" onclick="return doclink('link-2', 'multidict', 'link-2');">multidict</a></tt> <tt class="py-keyword">import</tt> <tt id="link-3" class="py-name" targets="Class lacewing.multidict.MultikeyDict=lacewing.multidict.MultikeyDict-class.html"><a title="lacewing.multidict.MultikeyDict" class="py-name" href="#" onclick="return doclink('link-3', 'MultikeyDict', 'link-3');">MultikeyDict</a></tt> </tt>
+<a name="L7"></a><tt class="py-lineno"> 7</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-4" class="py-name"><a title="lacewing" class="py-name" href="#" onclick="return doclink('link-4', 'lacewing', 'link-1');">lacewing</a></tt><tt class="py-op">.</tt><tt id="link-5" class="py-name" targets="Module lacewing.exceptions=lacewing.exceptions-module.html"><a title="lacewing.exceptions" class="py-name" href="#" onclick="return doclink('link-5', 'exceptions', 'link-5');">exceptions</a></tt> <tt class="py-keyword">import</tt> <tt class="py-name">OutOfData</tt> </tt>
+<a name="L8"></a><tt class="py-lineno"> 8</tt>  <tt class="py-line"> </tt>
+<a name="BaseProtocol"></a><div id="BaseProtocol-def"><a name="L9"></a><tt class="py-lineno"> 9</tt> <a class="py-toggle" href="#" id="BaseProtocol-toggle" onclick="return toggle('BaseProtocol');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="lacewing.protocol.BaseProtocol-class.html">BaseProtocol</a><tt class="py-op">(</tt><tt class="py-base-class">protocol</tt><tt class="py-op">.</tt><tt class="py-base-class">Protocol</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="BaseProtocol-collapsed" style="display:none;" pad="++" indent="++++"></div><div id="BaseProtocol-expanded"><a name="L10"></a><tt class="py-lineno">10</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L11"></a><tt class="py-lineno">11</tt>  <tt class="py-line"><tt class="py-docstring">    Baseclass that contains properties and methods common to</tt> </tt>
+<a name="L12"></a><tt class="py-lineno">12</tt>  <tt class="py-line"><tt class="py-docstring">    both server and client protocols.</tt> </tt>
+<a name="L13"></a><tt class="py-lineno">13</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L14"></a><tt class="py-lineno">14</tt>  <tt class="py-line"><tt class="py-docstring">    @ivar name: The name of the client.</tt> </tt>
+<a name="L15"></a><tt class="py-lineno">15</tt>  <tt class="py-line"><tt class="py-docstring">    @ivar id: The ID of the client.</tt> </tt>
+<a name="L16"></a><tt class="py-lineno">16</tt>  <tt class="py-line"><tt class="py-docstring">    @ivar privateAllowed: False if the client has requested no</tt> </tt>
+<a name="L17"></a><tt class="py-lineno">17</tt>  <tt class="py-line"><tt class="py-docstring">    private messages must be sent to it.</tt> </tt>
+<a name="L18"></a><tt class="py-lineno">18</tt>  <tt class="py-line"><tt class="py-docstring">    @ivar isAccepted: True if the client connection has been</tt> </tt>
+<a name="L19"></a><tt class="py-lineno">19</tt>  <tt class="py-line"><tt class="py-docstring">    accepted.</tt> </tt>
+<a name="L20"></a><tt class="py-lineno">20</tt>  <tt class="py-line"><tt class="py-docstring">    @ivar loggedIn: True if the client is logged in with a name.</tt> </tt>
+<a name="L21"></a><tt class="py-lineno">21</tt>  <tt class="py-line"><tt class="py-docstring">    @ivar channels: Channels the client is signed on to</tt> </tt>
+<a name="L22"></a><tt class="py-lineno">22</tt>  <tt class="py-line"><tt class="py-docstring">    (has keys for both the ID and name).</tt> </tt>
+<a name="L23"></a><tt class="py-lineno">23</tt>  <tt class="py-line"><tt class="py-docstring">    @type channels: MultikeyDict</tt> </tt>
+<a name="L24"></a><tt class="py-lineno">24</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L25"></a><tt class="py-lineno">25</tt>  <tt class="py-line">    <tt id="link-6" class="py-name" targets="Variable lacewing.protocol.BaseProtocol.revision=lacewing.protocol.BaseProtocol-class.html#revision"><a title="lacewing.protocol.BaseProtocol.revision" class="py-name" href="#" onclick="return doclink('link-6', 'revision', 'link-6');">revision</a></tt> <tt class="py-op">=</tt> <tt class="py-string">'revision 2'</tt> </tt>
+<a name="L26"></a><tt class="py-lineno">26</tt>  <tt class="py-line"> </tt>
+<a name="L27"></a><tt class="py-lineno">27</tt>  <tt class="py-line">    <tt id="link-7" class="py-name" targets="Variable lacewing.client.ClientChannel.name=lacewing.client.ClientChannel-class.html#name,Variable lacewing.client.Peer.name=lacewing.client.Peer-class.html#name,Variable lacewing.moo.client.Channel.name=lacewing.moo.client.Channel-class.html#name,Variable lacewing.moo.client.Player.name=lacewing.moo.client.Player-class.html#name,Variable lacewing.moo.protocol.MooProtocol.name=lacewing.moo.protocol.MooProtocol-class.html#name,Variable lacewing.moo.server.Channel.name=lacewing.moo.server.Channel-class.html#name,Variable lacewing.packetloaders.client.Request.name=lacewing.packetloaders.client.Request-class.html#name,Variable lacewing.packetloaders.server.ChannelPeer.name=lacewing.packetloaders.server.ChannelPeer-class.html#name,Variable lacewing.packetloaders.server.Peer.name=lacewing.packetloaders.server.Peer-class.html#name,Variable lacewing.packetloaders.server.Response.name=lacewing.packetloaders.server.Response-class.html#name,Variable lacewing.protocol.BaseProtocol.name=lacewing.protocol.BaseProtocol-class.html#name,Variable lacewing.server.ServerChannel.name=lacewing.server.ServerChannel-class.html#name"><a title="lacewing.client.ClientChannel.name
+lacewing.client.Peer.name
+lacewing.moo.client.Channel.name
+lacewing.moo.client.Player.name
+lacewing.moo.protocol.MooProtocol.name
+lacewing.moo.server.Channel.name
+lacewing.packetloaders.client.Request.name
+lacewing.packetloaders.server.ChannelPeer.name
+lacewing.packetloaders.server.Peer.name
+lacewing.packetloaders.server.Response.name
+lacewing.protocol.BaseProtocol.name
+lacewing.server.ServerChannel.name" class="py-name" href="#" onclick="return doclink('link-7', 'name', 'link-7');">name</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L28"></a><tt class="py-lineno">28</tt>  <tt class="py-line">    <tt id="link-8" class="py-name" targets="Variable lacewing.client.ClientChannel.id=lacewing.client.ClientChannel-class.html#id,Variable lacewing.client.Peer.id=lacewing.client.Peer-class.html#id,Variable lacewing.moo.client.Channel.id=lacewing.moo.client.Channel-class.html#id,Variable lacewing.moo.client.Player.id=lacewing.moo.client.Player-class.html#id,Variable lacewing.moo.protocol.MooProtocol.id=lacewing.moo.protocol.MooProtocol-class.html#id,Variable lacewing.moo.server.Channel.id=lacewing.moo.server.Channel-class.html#id,Variable lacewing.packetloaders.client.BinaryChannelMessage.id=lacewing.packetloaders.client.BinaryChannelMessage-class.html#id,Variable lacewing.packetloaders.client.BinaryPeerMessage.id=lacewing.packetloaders.client.BinaryPeerMessage-class.html#id,Variable lacewing.packetloaders.client.BinaryServerMessage.id=lacewing.packetloaders.client.BinaryServerMessage-class.html#id,Variable lacewing.packetloaders.client.ChannelMaster.id=lacewing.packetloaders.client.ChannelMaster-class.html#id,Variable lacewing.packetloaders.client.ObjectChannelMessage.id=lacewing.packetloaders.client.ObjectChannelMessage-class.html#id,Variable lacewing.packetloaders.client.ObjectPeerMessage.id=lacewing.packetloaders.client.ObjectPeerMessage-class.html#id,Variable lacewing.packetloaders.client.ObjectServerMessage.id=lacewing.packetloaders.client.ObjectServerMessage-class.html#id,Variable lacewing.packetloaders.client.Pong.id=lacewing.packetloaders.client.Pong-class.html#id,Variable lacewing.packetloaders.client.Request.id=lacewing.packetloaders.client.Request-class.html#id,Variable lacewing.packetloaders.client.UDPHello.id=lacewing.packetloaders.client.UDPHello-class.html#id,Variable lacewing.packetloaders.server.BinaryChannelMessage.id=lacewing.packetloaders.server.BinaryChannelMessage-class.html#id,Variable lacewing.packetloaders.server.BinaryPeerMessage.id=lacewing.packetloaders.server.BinaryPeerMessage-class.html#id,Variable lacewing.packetloaders.server.BinaryServerMessage.id=lacewing.packetloaders.server.BinaryServerMessage-class.html#id,Variable lacewing.packetloaders.server.ChannelPeer.id=lacewing.packetloaders.server.ChannelPeer-class.html#id,Variable lacewing.packetloaders.server.ObjectChannelMessage.id=lacewing.packetloaders.server.ObjectChannelMessage-class.html#id,Variable lacewing.packetloaders.server.ObjectPeerMessage.id=lacewing.packetloaders.server.ObjectPeerMessage-class.html#id,Variable lacewing.packetloaders.server.ObjectServerMessage.id=lacewing.packetloaders.server.ObjectServerMessage-class.html#id,Variable lacewing.packetloaders.server.Peer.id=lacewing.packetloaders.server.Peer-class.html#id,Variable lacewing.packetloaders.server.Ping.id=lacewing.packetloaders.server.Ping-class.html#id,Variable lacewing.packetloaders.server.Response.id=lacewing.packetloaders.server.Response-class.html#id,Variable lacewing.packetloaders.server.UDPWelcome.id=lacewing.packetloaders.server.UDPWelcome-class.html#id,Variable lacewing.protocol.BaseProtocol.id=lacewing.protocol.BaseProtocol-class.html#id,Variable lacewing.server.ServerChannel.id=lacewing.server.ServerChannel-class.html#id"><a title="lacewing.client.ClientChannel.id
+lacewing.client.Peer.id
+lacewing.moo.client.Channel.id
+lacewing.moo.client.Player.id
+lacewing.moo.protocol.MooProtocol.id
+lacewing.moo.server.Channel.id
+lacewing.packetloaders.client.BinaryChannelMessage.id
+lacewing.packetloaders.client.BinaryPeerMessage.id
+lacewing.packetloaders.client.BinaryServerMessage.id
+lacewing.packetloaders.client.ChannelMaster.id
+lacewing.packetloaders.client.ObjectChannelMessage.id
+lacewing.packetloaders.client.ObjectPeerMessage.id
+lacewing.packetloaders.client.ObjectServerMessage.id
+lacewing.packetloaders.client.Pong.id
+lacewing.packetloaders.client.Request.id
+lacewing.packetloaders.client.UDPHello.id
+lacewing.packetloaders.server.BinaryChannelMessage.id
+lacewing.packetloaders.server.BinaryPeerMessage.id
+lacewing.packetloaders.server.BinaryServerMessage.id
+lacewing.packetloaders.server.ChannelPeer.id
+lacewing.packetloaders.server.ObjectChannelMessage.id
+lacewing.packetloaders.server.ObjectPeerMessage.id
+lacewing.packetloaders.server.ObjectServerMessage.id
+lacewing.packetloaders.server.Peer.id
+lacewing.packetloaders.server.Ping.id
+lacewing.packetloaders.server.Response.id
+lacewing.packetloaders.server.UDPWelcome.id
+lacewing.protocol.BaseProtocol.id
+lacewing.server.ServerChannel.id" class="py-name" href="#" onclick="return doclink('link-8', 'id', 'link-8');">id</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L29"></a><tt class="py-lineno">29</tt>  <tt class="py-line">    <tt id="link-9" class="py-name" targets="Variable lacewing.moo.protocol.MooProtocol.isAccepted=lacewing.moo.protocol.MooProtocol-class.html#isAccepted,Variable lacewing.protocol.BaseProtocol.isAccepted=lacewing.protocol.BaseProtocol-class.html#isAccepted"><a title="lacewing.moo.protocol.MooProtocol.isAccepted
+lacewing.protocol.BaseProtocol.isAccepted" class="py-name" href="#" onclick="return doclink('link-9', 'isAccepted', 'link-9');">isAccepted</a></tt> <tt class="py-op">=</tt> <tt class="py-name">False</tt> </tt>
+<a name="L30"></a><tt class="py-lineno">30</tt>  <tt class="py-line">    <tt id="link-10" class="py-name" targets="Variable lacewing.protocol.BaseProtocol.loggedIn=lacewing.protocol.BaseProtocol-class.html#loggedIn"><a title="lacewing.protocol.BaseProtocol.loggedIn" class="py-name" href="#" onclick="return doclink('link-10', 'loggedIn', 'link-10');">loggedIn</a></tt> <tt class="py-op">=</tt> <tt class="py-name">False</tt> </tt>
+<a name="L31"></a><tt class="py-lineno">31</tt>  <tt class="py-line">    <tt id="link-11" class="py-name" targets="Variable lacewing.protocol.BaseProtocol.udpEnabled=lacewing.protocol.BaseProtocol-class.html#udpEnabled"><a title="lacewing.protocol.BaseProtocol.udpEnabled" class="py-name" href="#" onclick="return doclink('link-11', 'udpEnabled', 'link-11');">udpEnabled</a></tt> <tt class="py-op">=</tt> <tt class="py-name">False</tt> </tt>
+<a name="L32"></a><tt class="py-lineno">32</tt>  <tt class="py-line">     </tt>
+<a name="L33"></a><tt class="py-lineno">33</tt>  <tt class="py-line">    <tt id="link-12" class="py-name" targets="Variable lacewing.moo.protocol.MooProtocol.channels=lacewing.moo.protocol.MooProtocol-class.html#channels,Variable lacewing.moo.server.MooServerFactory.channels=lacewing.moo.server.MooServerFactory-class.html#channels,Variable lacewing.packetloaders.server.Response.channels=lacewing.packetloaders.server.Response-class.html#channels,Variable lacewing.protocol.BaseProtocol.channels=lacewing.protocol.BaseProtocol-class.html#channels"><a title="lacewing.moo.protocol.MooProtocol.channels
+lacewing.moo.server.MooServerFactory.channels
+lacewing.packetloaders.server.Response.channels
+lacewing.protocol.BaseProtocol.channels" class="py-name" href="#" onclick="return doclink('link-12', 'channels', 'link-12');">channels</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L34"></a><tt class="py-lineno">34</tt>  <tt class="py-line">     </tt>
+<a name="L35"></a><tt class="py-lineno">35</tt>  <tt class="py-line">    <tt class="py-comment"># for packet parsing</tt> </tt>
+<a name="L36"></a><tt class="py-lineno">36</tt>  <tt class="py-line">     </tt>
+<a name="L37"></a><tt class="py-lineno">37</tt>  <tt class="py-line">    <tt id="link-13" class="py-name" targets="Variable lacewing.moo.protocol.MooProtocol._packetBuffer=lacewing.moo.protocol.MooProtocol-class.html#_packetBuffer,Variable lacewing.protocol.BaseProtocol._packetBuffer=lacewing.protocol.BaseProtocol-class.html#_packetBuffer"><a title="lacewing.moo.protocol.MooProtocol._packetBuffer
+lacewing.protocol.BaseProtocol._packetBuffer" class="py-name" href="#" onclick="return doclink('link-13', '_packetBuffer', 'link-13');">_packetBuffer</a></tt> <tt class="py-op">=</tt> <tt class="py-string">''</tt> </tt>
+<a name="L38"></a><tt class="py-lineno">38</tt>  <tt class="py-line">     </tt>
+<a name="BaseProtocol.connectionMade"></a><div id="BaseProtocol.connectionMade-def"><a name="L39"></a><tt class="py-lineno">39</tt> <a class="py-toggle" href="#" id="BaseProtocol.connectionMade-toggle" onclick="return toggle('BaseProtocol.connectionMade');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.protocol.BaseProtocol-class.html#connectionMade">connectionMade</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="BaseProtocol.connectionMade-collapsed" style="display:none;" pad="++" indent="++++++++"></div><div id="BaseProtocol.connectionMade-expanded"><a name="L40"></a><tt class="py-lineno">40</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-14" class="py-name"><a title="lacewing.moo.protocol.MooProtocol.channels
+lacewing.moo.server.MooServerFactory.channels
+lacewing.packetloaders.server.Response.channels
+lacewing.protocol.BaseProtocol.channels" class="py-name" href="#" onclick="return doclink('link-14', 'channels', 'link-12');">channels</a></tt> <tt class="py-op">=</tt> <tt id="link-15" class="py-name"><a title="lacewing.multidict.MultikeyDict" class="py-name" href="#" onclick="return doclink('link-15', 'MultikeyDict', 'link-3');">MultikeyDict</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L41"></a><tt class="py-lineno">41</tt>  <tt class="py-line"> </tt>
+<a name="BaseProtocol.dataReceived"></a><div id="BaseProtocol.dataReceived-def"><a name="L42"></a><tt class="py-lineno">42</tt> <a class="py-toggle" href="#" id="BaseProtocol.dataReceived-toggle" onclick="return toggle('BaseProtocol.dataReceived');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.protocol.BaseProtocol-class.html#dataReceived">dataReceived</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">data</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="BaseProtocol.dataReceived-collapsed" style="display:none;" pad="++" indent="++++++++"></div><div id="BaseProtocol.dataReceived-expanded"><a name="L43"></a><tt class="py-lineno">43</tt>  <tt class="py-line">        <tt class="py-name">packetBuffer</tt> <tt class="py-op">=</tt> <tt class="py-string">''</tt><tt class="py-op">.</tt><tt class="py-name">join</tt><tt class="py-op">(</tt><tt class="py-op">[</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-16" class="py-name"><a title="lacewing.moo.protocol.MooProtocol._packetBuffer
+lacewing.protocol.BaseProtocol._packetBuffer" class="py-name" href="#" onclick="return doclink('link-16', '_packetBuffer', 'link-13');">_packetBuffer</a></tt><tt class="py-op">,</tt> <tt id="link-17" class="py-name" targets="Method lacewing.bytereader.ByteReader.data()=lacewing.bytereader.ByteReader-class.html#data"><a title="lacewing.bytereader.ByteReader.data" class="py-name" href="#" onclick="return doclink('link-17', 'data', 'link-17');">data</a></tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L44"></a><tt class="py-lineno">44</tt>  <tt class="py-line">        <tt class="py-name">newPacket</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">_receivePacket</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L45"></a><tt class="py-lineno">45</tt>  <tt class="py-line">        <tt class="py-keyword">try</tt><tt class="py-op">:</tt> </tt>
+<a name="L46"></a><tt class="py-lineno">46</tt>  <tt class="py-line">            <tt class="py-keyword">while</tt> <tt class="py-number">1</tt><tt class="py-op">:</tt> </tt>
+<a name="L47"></a><tt class="py-lineno">47</tt>  <tt class="py-line">                <tt class="py-name">bytesRead</tt> <tt class="py-op">=</tt> <tt class="py-name">newPacket</tt><tt class="py-op">.</tt><tt id="link-18" class="py-name" targets="Method lacewing.bytereader.ByteReader.read()=lacewing.bytereader.ByteReader-class.html#read,Method lacewing.packetloaders.client.ChannelMaster.read()=lacewing.packetloaders.client.ChannelMaster-class.html#read,Method lacewing.packetloaders.client.Request.read()=lacewing.packetloaders.client.Request-class.html#read,Method lacewing.packetloaders.server.ChannelPeer.read()=lacewing.packetloaders.server.ChannelPeer-class.html#read,Method lacewing.packetloaders.server.Peer.read()=lacewing.packetloaders.server.Peer-class.html#read,Method lacewing.packetloaders.server.Response.read()=lacewing.packetloaders.server.Response-class.html#read"><a title="lacewing.bytereader.ByteReader.read
+lacewing.packetloaders.client.ChannelMaster.read
+lacewing.packetloaders.client.Request.read
+lacewing.packetloaders.server.ChannelPeer.read
+lacewing.packetloaders.server.Peer.read
+lacewing.packetloaders.server.Response.read" class="py-name" href="#" onclick="return doclink('link-18', 'read', 'link-18');">read</a></tt><tt class="py-op">(</tt><tt class="py-name">packetBuffer</tt><tt class="py-op">)</tt> </tt>
+<a name="L48"></a><tt class="py-lineno">48</tt>  <tt class="py-line">                <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-19" class="py-name" targets="Method lacewing.client.ClientProtocol.loaderReceived()=lacewing.client.ClientProtocol-class.html#loaderReceived,Method lacewing.moo.client.MooClientProtocol.loaderReceived()=lacewing.moo.client.MooClientProtocol-class.html#loaderReceived,Method lacewing.moo.protocol.MooProtocol.loaderReceived()=lacewing.moo.protocol.MooProtocol-class.html#loaderReceived,Method lacewing.moo.server.MooServerProtocol.loaderReceived()=lacewing.moo.server.MooServerProtocol-class.html#loaderReceived,Method lacewing.protocol.BaseProtocol.loaderReceived()=lacewing.protocol.BaseProtocol-class.html#loaderReceived,Method lacewing.server.ServerProtocol.loaderReceived()=lacewing.server.ServerProtocol-class.html#loaderReceived"><a title="lacewing.client.ClientProtocol.loaderReceived
+lacewing.moo.client.MooClientProtocol.loaderReceived
+lacewing.moo.protocol.MooProtocol.loaderReceived
+lacewing.moo.server.MooServerProtocol.loaderReceived
+lacewing.protocol.BaseProtocol.loaderReceived
+lacewing.server.ServerProtocol.loaderReceived" class="py-name" href="#" onclick="return doclink('link-19', 'loaderReceived', 'link-19');">loaderReceived</a></tt><tt class="py-op">(</tt><tt class="py-name">newPacket</tt><tt class="py-op">.</tt><tt class="py-name">loader</tt><tt class="py-op">)</tt> </tt>
+<a name="L49"></a><tt class="py-lineno">49</tt>  <tt class="py-line">                <tt class="py-name">packetBuffer</tt> <tt class="py-op">=</tt> <tt class="py-name">packetBuffer</tt><tt class="py-op">[</tt><tt class="py-name">bytesRead</tt><tt class="py-op">:</tt><tt class="py-op">]</tt> </tt>
+<a name="L50"></a><tt class="py-lineno">50</tt>  <tt class="py-line">                <tt class="py-keyword">if</tt> <tt class="py-name">len</tt><tt class="py-op">(</tt><tt class="py-name">packetBuffer</tt><tt class="py-op">)</tt> <tt class="py-op">==</tt> <tt class="py-number">0</tt><tt class="py-op">:</tt> </tt>
+<a name="L51"></a><tt class="py-lineno">51</tt>  <tt class="py-line">                    <tt class="py-keyword">break</tt> </tt>
+<a name="L52"></a><tt class="py-lineno">52</tt>  <tt class="py-line">        <tt class="py-keyword">except</tt> <tt class="py-name">OutOfData</tt><tt class="py-op">:</tt> </tt>
+<a name="L53"></a><tt class="py-lineno">53</tt>  <tt class="py-line">            <tt class="py-keyword">pass</tt> </tt>
+<a name="L54"></a><tt class="py-lineno">54</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-20" class="py-name"><a title="lacewing.moo.protocol.MooProtocol._packetBuffer
+lacewing.protocol.BaseProtocol._packetBuffer" class="py-name" href="#" onclick="return doclink('link-20', '_packetBuffer', 'link-13');">_packetBuffer</a></tt> <tt class="py-op">=</tt> <tt class="py-name">packetBuffer</tt> </tt>
+</div><a name="L55"></a><tt class="py-lineno">55</tt>  <tt class="py-line">     </tt>
+<a name="BaseProtocol.sendLoader"></a><div id="BaseProtocol.sendLoader-def"><a name="L56"></a><tt class="py-lineno">56</tt> <a class="py-toggle" href="#" id="BaseProtocol.sendLoader-toggle" onclick="return toggle('BaseProtocol.sendLoader');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.protocol.BaseProtocol-class.html#sendLoader">sendLoader</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">loader</tt><tt class="py-op">,</tt> <tt class="py-param">asDatagram</tt> <tt class="py-op">=</tt> <tt class="py-name">False</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-param">settings</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="BaseProtocol.sendLoader-collapsed" style="display:none;" pad="++" indent="++++++++"></div><div id="BaseProtocol.sendLoader-expanded"><a name="L57"></a><tt class="py-lineno">57</tt>  <tt class="py-line">        <tt class="py-keyword">raise</tt> <tt class="py-name">NotImplementedError</tt><tt class="py-op">(</tt><tt class="py-string">'sendLoader() not implemented'</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L58"></a><tt class="py-lineno">58</tt>  <tt class="py-line">     </tt>
+<a name="BaseProtocol.loaderReceived"></a><div id="BaseProtocol.loaderReceived-def"><a name="L59"></a><tt class="py-lineno">59</tt> <a class="py-toggle" href="#" id="BaseProtocol.loaderReceived-toggle" onclick="return toggle('BaseProtocol.loaderReceived');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.protocol.BaseProtocol-class.html#loaderReceived">loaderReceived</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">loader</tt><tt class="py-op">,</tt> <tt class="py-param">isDatagram</tt> <tt class="py-op">=</tt> <tt class="py-name">False</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="BaseProtocol.loaderReceived-collapsed" style="display:none;" pad="++" indent="++++++++"></div><div id="BaseProtocol.loaderReceived-expanded"><a name="L60"></a><tt class="py-lineno">60</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L61"></a><tt class="py-lineno">61</tt>  <tt class="py-line"><tt class="py-docstring">        Called when a packet is received.</tt> </tt>
+<a name="L62"></a><tt class="py-lineno">62</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L63"></a><tt class="py-lineno">63</tt>  <tt class="py-line"><tt class="py-docstring">        @param isDatagram: True if the message recieved was sent</tt> </tt>
+<a name="L64"></a><tt class="py-lineno">64</tt>  <tt class="py-line"><tt class="py-docstring">        using UDP.</tt> </tt>
+<a name="L65"></a><tt class="py-lineno">65</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L66"></a><tt class="py-lineno">66</tt>  <tt class="py-line">        <tt class="py-keyword">raise</tt> <tt class="py-name">NotImplementedError</tt><tt class="py-op">(</tt><tt class="py-string">'loaderReceived() method not implemented'</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L67"></a><tt class="py-lineno">67</tt>  <tt class="py-line"> </tt>
+<a name="BaseProtocol.validName"></a><div id="BaseProtocol.validName-def"><a name="L68"></a><tt class="py-lineno">68</tt> <a class="py-toggle" href="#" id="BaseProtocol.validName-toggle" onclick="return toggle('BaseProtocol.validName');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.protocol.BaseProtocol-class.html#validName">validName</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">name</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="BaseProtocol.validName-collapsed" style="display:none;" pad="++" indent="++++++++"></div><div id="BaseProtocol.validName-expanded"><a name="L69"></a><tt class="py-lineno">69</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L70"></a><tt class="py-lineno">70</tt>  <tt class="py-line"><tt class="py-docstring">        Returns True if name is a valid Lacewing</tt> </tt>
+<a name="L71"></a><tt class="py-lineno">71</tt>  <tt class="py-line"><tt class="py-docstring">        channel or client name.</tt> </tt>
+<a name="L72"></a><tt class="py-lineno">72</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L73"></a><tt class="py-lineno">73</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-keyword">not</tt> <tt id="link-21" class="py-name"><a title="lacewing.client.ClientChannel.name
+lacewing.client.Peer.name
+lacewing.moo.client.Channel.name
+lacewing.moo.client.Player.name
+lacewing.moo.protocol.MooProtocol.name
+lacewing.moo.server.Channel.name
+lacewing.packetloaders.client.Request.name
+lacewing.packetloaders.server.ChannelPeer.name
+lacewing.packetloaders.server.Peer.name
+lacewing.packetloaders.server.Response.name
+lacewing.protocol.BaseProtocol.name
+lacewing.server.ServerChannel.name" class="py-name" href="#" onclick="return doclink('link-21', 'name', 'link-7');">name</a></tt><tt class="py-op">.</tt><tt class="py-name">strip</tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">==</tt> <tt class="py-string">''</tt><tt class="py-op">:</tt> </tt>
+<a name="L74"></a><tt class="py-lineno">74</tt>  <tt class="py-line">            <tt class="py-keyword">return</tt> <tt class="py-name">True</tt> </tt>
+<a name="L75"></a><tt class="py-lineno">75</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">False</tt> </tt>
+</div></div><a name="L76"></a><tt class="py-lineno">76</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="lacewing-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://mp2.dk">Python Lacewing Library</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1 on Sun May 08 23:59:58 2011
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>

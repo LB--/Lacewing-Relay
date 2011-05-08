@@ -1,0 +1,1244 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>lacewing.moo.client</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="lacewing-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://mp2.dk">Python Lacewing Library</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="lacewing-module.html">Package&nbsp;lacewing</a> ::
+        <a href="lacewing.moo-module.html">Package&nbsp;moo</a> ::
+        Module&nbsp;client
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="lacewing.moo.client-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="lacewing.moo.client-module.html">Module lacewing.moo.client</a></h1>
+<pre class="py-src">
+<a name="L1"></a><tt class="py-lineno">  1</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt class="py-name">twisted</tt><tt class="py-op">.</tt><tt class="py-name">internet</tt><tt class="py-op">.</tt><tt id="link-0" class="py-name" targets="Module lacewing.moo.protocol=lacewing.moo.protocol-module.html,Module lacewing.protocol=lacewing.protocol-module.html"><a title="lacewing.moo.protocol
+lacewing.protocol" class="py-name" href="#" onclick="return doclink('link-0', 'protocol', 'link-0');">protocol</a></tt> <tt class="py-keyword">import</tt> <tt class="py-name">ClientFactory</tt> </tt>
+<a name="L2"></a><tt class="py-lineno">  2</tt>  <tt class="py-line"> </tt>
+<a name="L3"></a><tt class="py-lineno">  3</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-1" class="py-name" targets="Package lacewing=lacewing-module.html"><a title="lacewing" class="py-name" href="#" onclick="return doclink('link-1', 'lacewing', 'link-1');">lacewing</a></tt><tt class="py-op">.</tt><tt id="link-2" class="py-name" targets="Package lacewing.moo=lacewing.moo-module.html"><a title="lacewing.moo" class="py-name" href="#" onclick="return doclink('link-2', 'moo', 'link-2');">moo</a></tt><tt class="py-op">.</tt><tt id="link-3" class="py-name"><a title="lacewing.moo.protocol
+lacewing.protocol" class="py-name" href="#" onclick="return doclink('link-3', 'protocol', 'link-0');">protocol</a></tt> <tt class="py-keyword">import</tt> <tt id="link-4" class="py-name" targets="Class lacewing.moo.protocol.MooProtocol=lacewing.moo.protocol.MooProtocol-class.html"><a title="lacewing.moo.protocol.MooProtocol" class="py-name" href="#" onclick="return doclink('link-4', 'MooProtocol', 'link-4');">MooProtocol</a></tt> </tt>
+<a name="L4"></a><tt class="py-lineno">  4</tt>  <tt class="py-line"> </tt>
+<a name="L5"></a><tt class="py-lineno">  5</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-5" class="py-name"><a title="lacewing" class="py-name" href="#" onclick="return doclink('link-5', 'lacewing', 'link-1');">lacewing</a></tt><tt class="py-op">.</tt><tt id="link-6" class="py-name"><a title="lacewing.moo" class="py-name" href="#" onclick="return doclink('link-6', 'moo', 'link-2');">moo</a></tt><tt class="py-op">.</tt><tt id="link-7" class="py-name" targets="Module lacewing.moo.packet=lacewing.moo.packet-module.html,Module lacewing.packet=lacewing.packet-module.html"><a title="lacewing.moo.packet
+lacewing.packet" class="py-name" href="#" onclick="return doclink('link-7', 'packet', 'link-7');">packet</a></tt> <tt class="py-keyword">import</tt> <tt id="link-8" class="py-name" targets="Class lacewing.moo.packet.ServerPacket=lacewing.moo.packet.ServerPacket-class.html,Class lacewing.packet.ServerPacket=lacewing.packet.ServerPacket-class.html"><a title="lacewing.moo.packet.ServerPacket
+lacewing.packet.ServerPacket" class="py-name" href="#" onclick="return doclink('link-8', 'ServerPacket', 'link-8');">ServerPacket</a></tt><tt class="py-op">,</tt> <tt id="link-9" class="py-name" targets="Class lacewing.moo.packet.ClientPacket=lacewing.moo.packet.ClientPacket-class.html,Class lacewing.packet.ClientPacket=lacewing.packet.ClientPacket-class.html"><a title="lacewing.moo.packet.ClientPacket
+lacewing.packet.ClientPacket" class="py-name" href="#" onclick="return doclink('link-9', 'ClientPacket', 'link-9');">ClientPacket</a></tt> </tt>
+<a name="L6"></a><tt class="py-lineno">  6</tt>  <tt class="py-line"> </tt>
+<a name="L7"></a><tt class="py-lineno">  7</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-10" class="py-name"><a title="lacewing" class="py-name" href="#" onclick="return doclink('link-10', 'lacewing', 'link-1');">lacewing</a></tt><tt class="py-op">.</tt><tt id="link-11" class="py-name"><a title="lacewing.moo" class="py-name" href="#" onclick="return doclink('link-11', 'moo', 'link-2');">moo</a></tt><tt class="py-op">.</tt><tt id="link-12" class="py-name" targets="Package lacewing.moo.packetloaders=lacewing.moo.packetloaders-module.html,Package lacewing.packetloaders=lacewing.packetloaders-module.html"><a title="lacewing.moo.packetloaders
+lacewing.packetloaders" class="py-name" href="#" onclick="return doclink('link-12', 'packetloaders', 'link-12');">packetloaders</a></tt><tt class="py-op">.</tt><tt id="link-13" class="py-name" targets="Module lacewing.moo.packetloaders.server=lacewing.moo.packetloaders.server-module.html,Module lacewing.moo.server=lacewing.moo.server-module.html,Module lacewing.packetloaders.server=lacewing.packetloaders.server-module.html,Module lacewing.server=lacewing.server-module.html"><a title="lacewing.moo.packetloaders.server
+lacewing.moo.server
+lacewing.packetloaders.server
+lacewing.server" class="py-name" href="#" onclick="return doclink('link-13', 'server', 'link-13');">server</a></tt> <tt class="py-keyword">import</tt> <tt class="py-op">*</tt> </tt>
+<a name="L8"></a><tt class="py-lineno">  8</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-14" class="py-name"><a title="lacewing" class="py-name" href="#" onclick="return doclink('link-14', 'lacewing', 'link-1');">lacewing</a></tt><tt class="py-op">.</tt><tt id="link-15" class="py-name"><a title="lacewing.moo" class="py-name" href="#" onclick="return doclink('link-15', 'moo', 'link-2');">moo</a></tt><tt class="py-op">.</tt><tt id="link-16" class="py-name"><a title="lacewing.moo.packetloaders
+lacewing.packetloaders" class="py-name" href="#" onclick="return doclink('link-16', 'packetloaders', 'link-12');">packetloaders</a></tt><tt class="py-op">.</tt><tt id="link-17" class="py-name" targets="Module lacewing.client=lacewing.client-module.html,Module lacewing.moo.client=lacewing.moo.client-module.html,Module lacewing.moo.packetloaders.client=lacewing.moo.packetloaders.client-module.html,Module lacewing.packetloaders.client=lacewing.packetloaders.client-module.html"><a title="lacewing.client
+lacewing.moo.client
+lacewing.moo.packetloaders.client
+lacewing.packetloaders.client" class="py-name" href="#" onclick="return doclink('link-17', 'client', 'link-17');">client</a></tt> <tt class="py-keyword">import</tt> <tt class="py-op">*</tt> </tt>
+<a name="L9"></a><tt class="py-lineno">  9</tt>  <tt class="py-line"> </tt>
+<a name="L10"></a><tt class="py-lineno"> 10</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-18" class="py-name"><a title="lacewing" class="py-name" href="#" onclick="return doclink('link-18', 'lacewing', 'link-1');">lacewing</a></tt><tt class="py-op">.</tt><tt id="link-19" class="py-name" targets="Module lacewing.multidict=lacewing.multidict-module.html"><a title="lacewing.multidict" class="py-name" href="#" onclick="return doclink('link-19', 'multidict', 'link-19');">multidict</a></tt> <tt class="py-keyword">import</tt> <tt id="link-20" class="py-name" targets="Class lacewing.multidict.MultikeyDict=lacewing.multidict.MultikeyDict-class.html"><a title="lacewing.multidict.MultikeyDict" class="py-name" href="#" onclick="return doclink('link-20', 'MultikeyDict', 'link-20');">MultikeyDict</a></tt> </tt>
+<a name="L11"></a><tt class="py-lineno"> 11</tt>  <tt class="py-line"> </tt>
+<a name="L12"></a><tt class="py-lineno"> 12</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-21" class="py-name"><a title="lacewing" class="py-name" href="#" onclick="return doclink('link-21', 'lacewing', 'link-1');">lacewing</a></tt><tt class="py-op">.</tt><tt id="link-22" class="py-name"><a title="lacewing.moo" class="py-name" href="#" onclick="return doclink('link-22', 'moo', 'link-2');">moo</a></tt><tt class="py-op">.</tt><tt id="link-23" class="py-name"><a title="lacewing.moo.packetloaders
+lacewing.packetloaders" class="py-name" href="#" onclick="return doclink('link-23', 'packetloaders', 'link-12');">packetloaders</a></tt><tt class="py-op">.</tt><tt id="link-24" class="py-name" targets="Variable lacewing.moo.packetloaders.client.ClientMessage.message=lacewing.moo.packetloaders.client.ClientMessage-class.html#message,Variable lacewing.moo.packetloaders.client.PrivateMessage.message=lacewing.moo.packetloaders.client.PrivateMessage-class.html#message,Variable lacewing.moo.packetloaders.client.ToChannelMessage.message=lacewing.moo.packetloaders.client.ToChannelMessage-class.html#message,Module lacewing.moo.packetloaders.message=lacewing.moo.packetloaders.message-module.html,Variable lacewing.moo.packetloaders.server.FromChannelMessage.message=lacewing.moo.packetloaders.server.FromChannelMessage-class.html#message"><a title="lacewing.moo.packetloaders.client.ClientMessage.message
+lacewing.moo.packetloaders.client.PrivateMessage.message
+lacewing.moo.packetloaders.client.ToChannelMessage.message
+lacewing.moo.packetloaders.message
+lacewing.moo.packetloaders.server.FromChannelMessage.message" class="py-name" href="#" onclick="return doclink('link-24', 'message', 'link-24');">message</a></tt> <tt class="py-keyword">import</tt> <tt class="py-op">*</tt> </tt>
+<a name="L13"></a><tt class="py-lineno"> 13</tt>  <tt class="py-line"> </tt>
+<a name="Player"></a><div id="Player-def"><a name="L14"></a><tt class="py-lineno"> 14</tt> <a class="py-toggle" href="#" id="Player-toggle" onclick="return toggle('Player');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="lacewing.moo.client.Player-class.html">Player</a><tt class="py-op">(</tt><tt class="py-base-class">object</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Player-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="Player-expanded"><a name="L15"></a><tt class="py-lineno"> 15</tt>  <tt class="py-line">    <tt id="link-25" class="py-name" targets="Variable lacewing.client.ClientChannel.name=lacewing.client.ClientChannel-class.html#name,Variable lacewing.client.Peer.name=lacewing.client.Peer-class.html#name,Variable lacewing.moo.client.Channel.name=lacewing.moo.client.Channel-class.html#name,Variable lacewing.moo.client.Player.name=lacewing.moo.client.Player-class.html#name,Variable lacewing.moo.protocol.MooProtocol.name=lacewing.moo.protocol.MooProtocol-class.html#name,Variable lacewing.moo.server.Channel.name=lacewing.moo.server.Channel-class.html#name,Variable lacewing.packetloaders.client.Request.name=lacewing.packetloaders.client.Request-class.html#name,Variable lacewing.packetloaders.server.ChannelPeer.name=lacewing.packetloaders.server.ChannelPeer-class.html#name,Variable lacewing.packetloaders.server.Peer.name=lacewing.packetloaders.server.Peer-class.html#name,Variable lacewing.packetloaders.server.Response.name=lacewing.packetloaders.server.Response-class.html#name,Variable lacewing.protocol.BaseProtocol.name=lacewing.protocol.BaseProtocol-class.html#name,Variable lacewing.server.ServerChannel.name=lacewing.server.ServerChannel-class.html#name"><a title="lacewing.client.ClientChannel.name
+lacewing.client.Peer.name
+lacewing.moo.client.Channel.name
+lacewing.moo.client.Player.name
+lacewing.moo.protocol.MooProtocol.name
+lacewing.moo.server.Channel.name
+lacewing.packetloaders.client.Request.name
+lacewing.packetloaders.server.ChannelPeer.name
+lacewing.packetloaders.server.Peer.name
+lacewing.packetloaders.server.Response.name
+lacewing.protocol.BaseProtocol.name
+lacewing.server.ServerChannel.name" class="py-name" href="#" onclick="return doclink('link-25', 'name', 'link-25');">name</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L16"></a><tt class="py-lineno"> 16</tt>  <tt class="py-line">    <tt id="link-26" class="py-name" targets="Variable lacewing.client.ClientChannel.id=lacewing.client.ClientChannel-class.html#id,Variable lacewing.client.Peer.id=lacewing.client.Peer-class.html#id,Variable lacewing.moo.client.Channel.id=lacewing.moo.client.Channel-class.html#id,Variable lacewing.moo.client.Player.id=lacewing.moo.client.Player-class.html#id,Variable lacewing.moo.protocol.MooProtocol.id=lacewing.moo.protocol.MooProtocol-class.html#id,Variable lacewing.moo.server.Channel.id=lacewing.moo.server.Channel-class.html#id,Variable lacewing.packetloaders.client.BinaryChannelMessage.id=lacewing.packetloaders.client.BinaryChannelMessage-class.html#id,Variable lacewing.packetloaders.client.BinaryPeerMessage.id=lacewing.packetloaders.client.BinaryPeerMessage-class.html#id,Variable lacewing.packetloaders.client.BinaryServerMessage.id=lacewing.packetloaders.client.BinaryServerMessage-class.html#id,Variable lacewing.packetloaders.client.ChannelMaster.id=lacewing.packetloaders.client.ChannelMaster-class.html#id,Variable lacewing.packetloaders.client.ObjectChannelMessage.id=lacewing.packetloaders.client.ObjectChannelMessage-class.html#id,Variable lacewing.packetloaders.client.ObjectPeerMessage.id=lacewing.packetloaders.client.ObjectPeerMessage-class.html#id,Variable lacewing.packetloaders.client.ObjectServerMessage.id=lacewing.packetloaders.client.ObjectServerMessage-class.html#id,Variable lacewing.packetloaders.client.Pong.id=lacewing.packetloaders.client.Pong-class.html#id,Variable lacewing.packetloaders.client.Request.id=lacewing.packetloaders.client.Request-class.html#id,Variable lacewing.packetloaders.client.UDPHello.id=lacewing.packetloaders.client.UDPHello-class.html#id,Variable lacewing.packetloaders.server.BinaryChannelMessage.id=lacewing.packetloaders.server.BinaryChannelMessage-class.html#id,Variable lacewing.packetloaders.server.BinaryPeerMessage.id=lacewing.packetloaders.server.BinaryPeerMessage-class.html#id,Variable lacewing.packetloaders.server.BinaryServerMessage.id=lacewing.packetloaders.server.BinaryServerMessage-class.html#id,Variable lacewing.packetloaders.server.ChannelPeer.id=lacewing.packetloaders.server.ChannelPeer-class.html#id,Variable lacewing.packetloaders.server.ObjectChannelMessage.id=lacewing.packetloaders.server.ObjectChannelMessage-class.html#id,Variable lacewing.packetloaders.server.ObjectPeerMessage.id=lacewing.packetloaders.server.ObjectPeerMessage-class.html#id,Variable lacewing.packetloaders.server.ObjectServerMessage.id=lacewing.packetloaders.server.ObjectServerMessage-class.html#id,Variable lacewing.packetloaders.server.Peer.id=lacewing.packetloaders.server.Peer-class.html#id,Variable lacewing.packetloaders.server.Ping.id=lacewing.packetloaders.server.Ping-class.html#id,Variable lacewing.packetloaders.server.Response.id=lacewing.packetloaders.server.Response-class.html#id,Variable lacewing.packetloaders.server.UDPWelcome.id=lacewing.packetloaders.server.UDPWelcome-class.html#id,Variable lacewing.protocol.BaseProtocol.id=lacewing.protocol.BaseProtocol-class.html#id,Variable lacewing.server.ServerChannel.id=lacewing.server.ServerChannel-class.html#id"><a title="lacewing.client.ClientChannel.id
+lacewing.client.Peer.id
+lacewing.moo.client.Channel.id
+lacewing.moo.client.Player.id
+lacewing.moo.protocol.MooProtocol.id
+lacewing.moo.server.Channel.id
+lacewing.packetloaders.client.BinaryChannelMessage.id
+lacewing.packetloaders.client.BinaryPeerMessage.id
+lacewing.packetloaders.client.BinaryServerMessage.id
+lacewing.packetloaders.client.ChannelMaster.id
+lacewing.packetloaders.client.ObjectChannelMessage.id
+lacewing.packetloaders.client.ObjectPeerMessage.id
+lacewing.packetloaders.client.ObjectServerMessage.id
+lacewing.packetloaders.client.Pong.id
+lacewing.packetloaders.client.Request.id
+lacewing.packetloaders.client.UDPHello.id
+lacewing.packetloaders.server.BinaryChannelMessage.id
+lacewing.packetloaders.server.BinaryPeerMessage.id
+lacewing.packetloaders.server.BinaryServerMessage.id
+lacewing.packetloaders.server.ChannelPeer.id
+lacewing.packetloaders.server.ObjectChannelMessage.id
+lacewing.packetloaders.server.ObjectPeerMessage.id
+lacewing.packetloaders.server.ObjectServerMessage.id
+lacewing.packetloaders.server.Peer.id
+lacewing.packetloaders.server.Ping.id
+lacewing.packetloaders.server.Response.id
+lacewing.packetloaders.server.UDPWelcome.id
+lacewing.protocol.BaseProtocol.id
+lacewing.server.ServerChannel.id" class="py-name" href="#" onclick="return doclink('link-26', 'id', 'link-26');">id</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L17"></a><tt class="py-lineno"> 17</tt>  <tt class="py-line">    <tt id="link-27" class="py-name" targets="Variable lacewing.moo.client.Player.ip=lacewing.moo.client.Player-class.html#ip"><a title="lacewing.moo.client.Player.ip" class="py-name" href="#" onclick="return doclink('link-27', 'ip', 'link-27');">ip</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L18"></a><tt class="py-lineno"> 18</tt>  <tt class="py-line">    <tt id="link-28" class="py-name" targets="Variable lacewing.moo.client.Player.channel=lacewing.moo.client.Player-class.html#channel,Variable lacewing.packetloaders.client.ChannelMaster.channel=lacewing.packetloaders.client.ChannelMaster-class.html#channel,Variable lacewing.packetloaders.client.Request.channel=lacewing.packetloaders.client.Request-class.html#channel,Variable lacewing.packetloaders.server.Peer.channel=lacewing.packetloaders.server.Peer-class.html#channel,Variable lacewing.packetloaders.server.Response.channel=lacewing.packetloaders.server.Response-class.html#channel"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-28', 'channel', 'link-28');">channel</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt>  </tt>
+<a name="L19"></a><tt class="py-lineno"> 19</tt>  <tt class="py-line"> </tt>
+<a name="Player.__init__"></a><div id="Player.__init__-def"><a name="L20"></a><tt class="py-lineno"> 20</tt> <a class="py-toggle" href="#" id="Player.__init__-toggle" onclick="return toggle('Player.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.Player-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">name</tt><tt class="py-op">,</tt> <tt class="py-param">id</tt><tt class="py-op">,</tt> <tt class="py-param">ip</tt><tt class="py-op">,</tt> <tt class="py-param">channel</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Player.__init__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Player.__init__-expanded"><a name="L21"></a><tt class="py-lineno"> 21</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-29" class="py-name"><a title="lacewing.client.ClientChannel.name
+lacewing.client.Peer.name
+lacewing.moo.client.Channel.name
+lacewing.moo.client.Player.name
+lacewing.moo.protocol.MooProtocol.name
+lacewing.moo.server.Channel.name
+lacewing.packetloaders.client.Request.name
+lacewing.packetloaders.server.ChannelPeer.name
+lacewing.packetloaders.server.Peer.name
+lacewing.packetloaders.server.Response.name
+lacewing.protocol.BaseProtocol.name
+lacewing.server.ServerChannel.name" class="py-name" href="#" onclick="return doclink('link-29', 'name', 'link-25');">name</a></tt> <tt class="py-op">=</tt> <tt id="link-30" class="py-name"><a title="lacewing.client.ClientChannel.name
+lacewing.client.Peer.name
+lacewing.moo.client.Channel.name
+lacewing.moo.client.Player.name
+lacewing.moo.protocol.MooProtocol.name
+lacewing.moo.server.Channel.name
+lacewing.packetloaders.client.Request.name
+lacewing.packetloaders.server.ChannelPeer.name
+lacewing.packetloaders.server.Peer.name
+lacewing.packetloaders.server.Response.name
+lacewing.protocol.BaseProtocol.name
+lacewing.server.ServerChannel.name" class="py-name" href="#" onclick="return doclink('link-30', 'name', 'link-25');">name</a></tt> </tt>
+<a name="L22"></a><tt class="py-lineno"> 22</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-31" class="py-name"><a title="lacewing.client.ClientChannel.id
+lacewing.client.Peer.id
+lacewing.moo.client.Channel.id
+lacewing.moo.client.Player.id
+lacewing.moo.protocol.MooProtocol.id
+lacewing.moo.server.Channel.id
+lacewing.packetloaders.client.BinaryChannelMessage.id
+lacewing.packetloaders.client.BinaryPeerMessage.id
+lacewing.packetloaders.client.BinaryServerMessage.id
+lacewing.packetloaders.client.ChannelMaster.id
+lacewing.packetloaders.client.ObjectChannelMessage.id
+lacewing.packetloaders.client.ObjectPeerMessage.id
+lacewing.packetloaders.client.ObjectServerMessage.id
+lacewing.packetloaders.client.Pong.id
+lacewing.packetloaders.client.Request.id
+lacewing.packetloaders.client.UDPHello.id
+lacewing.packetloaders.server.BinaryChannelMessage.id
+lacewing.packetloaders.server.BinaryPeerMessage.id
+lacewing.packetloaders.server.BinaryServerMessage.id
+lacewing.packetloaders.server.ChannelPeer.id
+lacewing.packetloaders.server.ObjectChannelMessage.id
+lacewing.packetloaders.server.ObjectPeerMessage.id
+lacewing.packetloaders.server.ObjectServerMessage.id
+lacewing.packetloaders.server.Peer.id
+lacewing.packetloaders.server.Ping.id
+lacewing.packetloaders.server.Response.id
+lacewing.packetloaders.server.UDPWelcome.id
+lacewing.protocol.BaseProtocol.id
+lacewing.server.ServerChannel.id" class="py-name" href="#" onclick="return doclink('link-31', 'id', 'link-26');">id</a></tt> <tt class="py-op">=</tt> <tt id="link-32" class="py-name"><a title="lacewing.client.ClientChannel.id
+lacewing.client.Peer.id
+lacewing.moo.client.Channel.id
+lacewing.moo.client.Player.id
+lacewing.moo.protocol.MooProtocol.id
+lacewing.moo.server.Channel.id
+lacewing.packetloaders.client.BinaryChannelMessage.id
+lacewing.packetloaders.client.BinaryPeerMessage.id
+lacewing.packetloaders.client.BinaryServerMessage.id
+lacewing.packetloaders.client.ChannelMaster.id
+lacewing.packetloaders.client.ObjectChannelMessage.id
+lacewing.packetloaders.client.ObjectPeerMessage.id
+lacewing.packetloaders.client.ObjectServerMessage.id
+lacewing.packetloaders.client.Pong.id
+lacewing.packetloaders.client.Request.id
+lacewing.packetloaders.client.UDPHello.id
+lacewing.packetloaders.server.BinaryChannelMessage.id
+lacewing.packetloaders.server.BinaryPeerMessage.id
+lacewing.packetloaders.server.BinaryServerMessage.id
+lacewing.packetloaders.server.ChannelPeer.id
+lacewing.packetloaders.server.ObjectChannelMessage.id
+lacewing.packetloaders.server.ObjectPeerMessage.id
+lacewing.packetloaders.server.ObjectServerMessage.id
+lacewing.packetloaders.server.Peer.id
+lacewing.packetloaders.server.Ping.id
+lacewing.packetloaders.server.Response.id
+lacewing.packetloaders.server.UDPWelcome.id
+lacewing.protocol.BaseProtocol.id
+lacewing.server.ServerChannel.id" class="py-name" href="#" onclick="return doclink('link-32', 'id', 'link-26');">id</a></tt> </tt>
+<a name="L23"></a><tt class="py-lineno"> 23</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-33" class="py-name"><a title="lacewing.moo.client.Player.ip" class="py-name" href="#" onclick="return doclink('link-33', 'ip', 'link-27');">ip</a></tt> <tt class="py-op">=</tt> <tt id="link-34" class="py-name"><a title="lacewing.moo.client.Player.ip" class="py-name" href="#" onclick="return doclink('link-34', 'ip', 'link-27');">ip</a></tt> </tt>
+<a name="L24"></a><tt class="py-lineno"> 24</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-35" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-35', 'channel', 'link-28');">channel</a></tt> <tt class="py-op">=</tt> <tt id="link-36" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-36', 'channel', 'link-28');">channel</a></tt> </tt>
+</div><a name="L25"></a><tt class="py-lineno"> 25</tt>  <tt class="py-line">     </tt>
+<a name="Player.isPeer"></a><div id="Player.isPeer-def"><a name="L26"></a><tt class="py-lineno"> 26</tt> <a class="py-toggle" href="#" id="Player.isPeer-toggle" onclick="return toggle('Player.isPeer');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.Player-class.html#isPeer">isPeer</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Player.isPeer-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Player.isPeer-expanded"><a name="L27"></a><tt class="py-lineno"> 27</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-37" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-37', 'channel', 'link-28');">channel</a></tt><tt class="py-op">.</tt><tt id="link-38" class="py-name" targets="Variable lacewing.moo.client.Channel.player=lacewing.moo.client.Channel-class.html#player"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-38', 'player', 'link-38');">player</a></tt> <tt class="py-op">!=</tt> <tt class="py-name">self</tt> </tt>
+</div><a name="L28"></a><tt class="py-lineno"> 28</tt>  <tt class="py-line">     </tt>
+<a name="Player.isMaster"></a><div id="Player.isMaster-def"><a name="L29"></a><tt class="py-lineno"> 29</tt> <a class="py-toggle" href="#" id="Player.isMaster-toggle" onclick="return toggle('Player.isMaster');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.Player-class.html#isMaster">isMaster</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Player.isMaster-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Player.isMaster-expanded"><a name="L30"></a><tt class="py-lineno"> 30</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-39" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-39', 'channel', 'link-28');">channel</a></tt><tt class="py-op">.</tt><tt id="link-40" class="py-name" targets="Method lacewing.moo.client.Channel.getMaster()=lacewing.moo.client.Channel-class.html#getMaster,Method lacewing.moo.server.Channel.getMaster()=lacewing.moo.server.Channel-class.html#getMaster"><a title="lacewing.moo.client.Channel.getMaster
+lacewing.moo.server.Channel.getMaster" class="py-name" href="#" onclick="return doclink('link-40', 'getMaster', 'link-40');">getMaster</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> <tt class="py-op">==</tt> <tt class="py-name">self</tt> </tt>
+</div><a name="L31"></a><tt class="py-lineno"> 31</tt>  <tt class="py-line">     </tt>
+<a name="Player.sendMessage"></a><div id="Player.sendMessage-def"><a name="L32"></a><tt class="py-lineno"> 32</tt> <a class="py-toggle" href="#" id="Player.sendMessage-toggle" onclick="return toggle('Player.sendMessage');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.Player-class.html#sendMessage">sendMessage</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-op">*</tt><tt class="py-param">arg</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-param">kw</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Player.sendMessage-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Player.sendMessage-expanded"><a name="L33"></a><tt class="py-lineno"> 33</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-41" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-41', 'channel', 'link-28');">channel</a></tt><tt class="py-op">.</tt><tt id="link-42" class="py-name" targets="Method lacewing.client.ClientChannel.sendMessage()=lacewing.client.ClientChannel-class.html#sendMessage,Method lacewing.client.ClientProtocol.sendMessage()=lacewing.client.ClientProtocol-class.html#sendMessage,Method lacewing.client.Peer.sendMessage()=lacewing.client.Peer-class.html#sendMessage,Method lacewing.moo.client.Channel.sendMessage()=lacewing.moo.client.Channel-class.html#sendMessage,Method lacewing.moo.client.MooClientProtocol.sendMessage()=lacewing.moo.client.MooClientProtocol-class.html#sendMessage,Method lacewing.moo.client.Player.sendMessage()=lacewing.moo.client.Player-class.html#sendMessage,Method lacewing.moo.server.Channel.sendMessage()=lacewing.moo.server.Channel-class.html#sendMessage,Method lacewing.moo.server.MooServerProtocol.sendMessage()=lacewing.moo.server.MooServerProtocol-class.html#sendMessage,Method lacewing.server.ServerChannel.sendMessage()=lacewing.server.ServerChannel-class.html#sendMessage,Method lacewing.server.ServerProtocol.sendMessage()=lacewing.server.ServerProtocol-class.html#sendMessage"><a title="lacewing.client.ClientChannel.sendMessage
+lacewing.client.ClientProtocol.sendMessage
+lacewing.client.Peer.sendMessage
+lacewing.moo.client.Channel.sendMessage
+lacewing.moo.client.MooClientProtocol.sendMessage
+lacewing.moo.client.Player.sendMessage
+lacewing.moo.server.Channel.sendMessage
+lacewing.moo.server.MooServerProtocol.sendMessage
+lacewing.server.ServerChannel.sendMessage
+lacewing.server.ServerProtocol.sendMessage" class="py-name" href="#" onclick="return doclink('link-42', 'sendMessage', 'link-42');">sendMessage</a></tt><tt class="py-op">(</tt><tt class="py-name">toClient</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">,</tt> <tt class="py-op">*</tt><tt class="py-name">arg</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-name">kw</tt><tt class="py-op">)</tt> </tt>
+</div></div><a name="L34"></a><tt class="py-lineno"> 34</tt>  <tt class="py-line"> </tt>
+<a name="Channel"></a><div id="Channel-def"><a name="L35"></a><tt class="py-lineno"> 35</tt> <a class="py-toggle" href="#" id="Channel-toggle" onclick="return toggle('Channel');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="lacewing.moo.client.Channel-class.html">Channel</a><tt class="py-op">(</tt><tt class="py-base-class">object</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Channel-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="Channel-expanded"><a name="L36"></a><tt class="py-lineno"> 36</tt>  <tt class="py-line">    <tt id="link-43" class="py-name"><a title="lacewing.client.ClientChannel.name
+lacewing.client.Peer.name
+lacewing.moo.client.Channel.name
+lacewing.moo.client.Player.name
+lacewing.moo.protocol.MooProtocol.name
+lacewing.moo.server.Channel.name
+lacewing.packetloaders.client.Request.name
+lacewing.packetloaders.server.ChannelPeer.name
+lacewing.packetloaders.server.Peer.name
+lacewing.packetloaders.server.Response.name
+lacewing.protocol.BaseProtocol.name
+lacewing.server.ServerChannel.name" class="py-name" href="#" onclick="return doclink('link-43', 'name', 'link-25');">name</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L37"></a><tt class="py-lineno"> 37</tt>  <tt class="py-line">    <tt id="link-44" class="py-name"><a title="lacewing.client.ClientChannel.id
+lacewing.client.Peer.id
+lacewing.moo.client.Channel.id
+lacewing.moo.client.Player.id
+lacewing.moo.protocol.MooProtocol.id
+lacewing.moo.server.Channel.id
+lacewing.packetloaders.client.BinaryChannelMessage.id
+lacewing.packetloaders.client.BinaryPeerMessage.id
+lacewing.packetloaders.client.BinaryServerMessage.id
+lacewing.packetloaders.client.ChannelMaster.id
+lacewing.packetloaders.client.ObjectChannelMessage.id
+lacewing.packetloaders.client.ObjectPeerMessage.id
+lacewing.packetloaders.client.ObjectServerMessage.id
+lacewing.packetloaders.client.Pong.id
+lacewing.packetloaders.client.Request.id
+lacewing.packetloaders.client.UDPHello.id
+lacewing.packetloaders.server.BinaryChannelMessage.id
+lacewing.packetloaders.server.BinaryPeerMessage.id
+lacewing.packetloaders.server.BinaryServerMessage.id
+lacewing.packetloaders.server.ChannelPeer.id
+lacewing.packetloaders.server.ObjectChannelMessage.id
+lacewing.packetloaders.server.ObjectPeerMessage.id
+lacewing.packetloaders.server.ObjectServerMessage.id
+lacewing.packetloaders.server.Peer.id
+lacewing.packetloaders.server.Ping.id
+lacewing.packetloaders.server.Response.id
+lacewing.packetloaders.server.UDPWelcome.id
+lacewing.protocol.BaseProtocol.id
+lacewing.server.ServerChannel.id" class="py-name" href="#" onclick="return doclink('link-44', 'id', 'link-26');">id</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L38"></a><tt class="py-lineno"> 38</tt>  <tt class="py-line">    <tt id="link-45" class="py-name" targets="Variable lacewing.client.ClientDatagram.connection=lacewing.client.ClientDatagram-class.html#connection,Variable lacewing.moo.client.Channel.connection=lacewing.moo.client.Channel-class.html#connection"><a title="lacewing.client.ClientDatagram.connection
+lacewing.moo.client.Channel.connection" class="py-name" href="#" onclick="return doclink('link-45', 'connection', 'link-45');">connection</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L39"></a><tt class="py-lineno"> 39</tt>  <tt class="py-line">    <tt id="link-46" class="py-name"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-46', 'player', 'link-38');">player</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L40"></a><tt class="py-lineno"> 40</tt>  <tt class="py-line">    <tt id="link-47" class="py-name" targets="Variable lacewing.moo.client.Channel.connections=lacewing.moo.client.Channel-class.html#connections,Variable lacewing.moo.server.Channel.connections=lacewing.moo.server.Channel-class.html#connections,Variable lacewing.moo.server.MooServerFactory.connections=lacewing.moo.server.MooServerFactory-class.html#connections"><a title="lacewing.moo.client.Channel.connections
+lacewing.moo.server.Channel.connections
+lacewing.moo.server.MooServerFactory.connections" class="py-name" href="#" onclick="return doclink('link-47', 'connections', 'link-47');">connections</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L41"></a><tt class="py-lineno"> 41</tt>  <tt class="py-line">     </tt>
+<a name="L42"></a><tt class="py-lineno"> 42</tt>  <tt class="py-line">    <tt id="link-48" class="py-name" targets="Variable lacewing.moo.client.Channel.masterId=lacewing.moo.client.Channel-class.html#masterId,Variable lacewing.moo.packetloaders.server.ChannelJoined.masterId=lacewing.moo.packetloaders.server.ChannelJoined-class.html#masterId,Variable lacewing.moo.packetloaders.server.PlayerLeft.masterId=lacewing.moo.packetloaders.server.PlayerLeft-class.html#masterId"><a title="lacewing.moo.client.Channel.masterId
+lacewing.moo.packetloaders.server.ChannelJoined.masterId
+lacewing.moo.packetloaders.server.PlayerLeft.masterId" class="py-name" href="#" onclick="return doclink('link-48', 'masterId', 'link-48');">masterId</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L43"></a><tt class="py-lineno"> 43</tt>  <tt class="py-line">     </tt>
+<a name="Channel.__init__"></a><div id="Channel.__init__-def"><a name="L44"></a><tt class="py-lineno"> 44</tt> <a class="py-toggle" href="#" id="Channel.__init__-toggle" onclick="return toggle('Channel.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.Channel-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">name</tt><tt class="py-op">,</tt> <tt class="py-param">id</tt><tt class="py-op">,</tt> <tt class="py-param">connection</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Channel.__init__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Channel.__init__-expanded"><a name="L45"></a><tt class="py-lineno"> 45</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-49" class="py-name"><a title="lacewing.client.ClientChannel.name
+lacewing.client.Peer.name
+lacewing.moo.client.Channel.name
+lacewing.moo.client.Player.name
+lacewing.moo.protocol.MooProtocol.name
+lacewing.moo.server.Channel.name
+lacewing.packetloaders.client.Request.name
+lacewing.packetloaders.server.ChannelPeer.name
+lacewing.packetloaders.server.Peer.name
+lacewing.packetloaders.server.Response.name
+lacewing.protocol.BaseProtocol.name
+lacewing.server.ServerChannel.name" class="py-name" href="#" onclick="return doclink('link-49', 'name', 'link-25');">name</a></tt> <tt class="py-op">=</tt> <tt id="link-50" class="py-name"><a title="lacewing.client.ClientChannel.name
+lacewing.client.Peer.name
+lacewing.moo.client.Channel.name
+lacewing.moo.client.Player.name
+lacewing.moo.protocol.MooProtocol.name
+lacewing.moo.server.Channel.name
+lacewing.packetloaders.client.Request.name
+lacewing.packetloaders.server.ChannelPeer.name
+lacewing.packetloaders.server.Peer.name
+lacewing.packetloaders.server.Response.name
+lacewing.protocol.BaseProtocol.name
+lacewing.server.ServerChannel.name" class="py-name" href="#" onclick="return doclink('link-50', 'name', 'link-25');">name</a></tt> </tt>
+<a name="L46"></a><tt class="py-lineno"> 46</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-51" class="py-name"><a title="lacewing.client.ClientChannel.id
+lacewing.client.Peer.id
+lacewing.moo.client.Channel.id
+lacewing.moo.client.Player.id
+lacewing.moo.protocol.MooProtocol.id
+lacewing.moo.server.Channel.id
+lacewing.packetloaders.client.BinaryChannelMessage.id
+lacewing.packetloaders.client.BinaryPeerMessage.id
+lacewing.packetloaders.client.BinaryServerMessage.id
+lacewing.packetloaders.client.ChannelMaster.id
+lacewing.packetloaders.client.ObjectChannelMessage.id
+lacewing.packetloaders.client.ObjectPeerMessage.id
+lacewing.packetloaders.client.ObjectServerMessage.id
+lacewing.packetloaders.client.Pong.id
+lacewing.packetloaders.client.Request.id
+lacewing.packetloaders.client.UDPHello.id
+lacewing.packetloaders.server.BinaryChannelMessage.id
+lacewing.packetloaders.server.BinaryPeerMessage.id
+lacewing.packetloaders.server.BinaryServerMessage.id
+lacewing.packetloaders.server.ChannelPeer.id
+lacewing.packetloaders.server.ObjectChannelMessage.id
+lacewing.packetloaders.server.ObjectPeerMessage.id
+lacewing.packetloaders.server.ObjectServerMessage.id
+lacewing.packetloaders.server.Peer.id
+lacewing.packetloaders.server.Ping.id
+lacewing.packetloaders.server.Response.id
+lacewing.packetloaders.server.UDPWelcome.id
+lacewing.protocol.BaseProtocol.id
+lacewing.server.ServerChannel.id" class="py-name" href="#" onclick="return doclink('link-51', 'id', 'link-26');">id</a></tt> <tt class="py-op">=</tt> <tt id="link-52" class="py-name"><a title="lacewing.client.ClientChannel.id
+lacewing.client.Peer.id
+lacewing.moo.client.Channel.id
+lacewing.moo.client.Player.id
+lacewing.moo.protocol.MooProtocol.id
+lacewing.moo.server.Channel.id
+lacewing.packetloaders.client.BinaryChannelMessage.id
+lacewing.packetloaders.client.BinaryPeerMessage.id
+lacewing.packetloaders.client.BinaryServerMessage.id
+lacewing.packetloaders.client.ChannelMaster.id
+lacewing.packetloaders.client.ObjectChannelMessage.id
+lacewing.packetloaders.client.ObjectPeerMessage.id
+lacewing.packetloaders.client.ObjectServerMessage.id
+lacewing.packetloaders.client.Pong.id
+lacewing.packetloaders.client.Request.id
+lacewing.packetloaders.client.UDPHello.id
+lacewing.packetloaders.server.BinaryChannelMessage.id
+lacewing.packetloaders.server.BinaryPeerMessage.id
+lacewing.packetloaders.server.BinaryServerMessage.id
+lacewing.packetloaders.server.ChannelPeer.id
+lacewing.packetloaders.server.ObjectChannelMessage.id
+lacewing.packetloaders.server.ObjectPeerMessage.id
+lacewing.packetloaders.server.ObjectServerMessage.id
+lacewing.packetloaders.server.Peer.id
+lacewing.packetloaders.server.Ping.id
+lacewing.packetloaders.server.Response.id
+lacewing.packetloaders.server.UDPWelcome.id
+lacewing.protocol.BaseProtocol.id
+lacewing.server.ServerChannel.id" class="py-name" href="#" onclick="return doclink('link-52', 'id', 'link-26');">id</a></tt> </tt>
+<a name="L47"></a><tt class="py-lineno"> 47</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-53" class="py-name"><a title="lacewing.client.ClientDatagram.connection
+lacewing.moo.client.Channel.connection" class="py-name" href="#" onclick="return doclink('link-53', 'connection', 'link-45');">connection</a></tt> <tt class="py-op">=</tt> <tt id="link-54" class="py-name"><a title="lacewing.client.ClientDatagram.connection
+lacewing.moo.client.Channel.connection" class="py-name" href="#" onclick="return doclink('link-54', 'connection', 'link-45');">connection</a></tt> </tt>
+<a name="L48"></a><tt class="py-lineno"> 48</tt>  <tt class="py-line">         </tt>
+<a name="L49"></a><tt class="py-lineno"> 49</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-55" class="py-name"><a title="lacewing.moo.client.Channel.connections
+lacewing.moo.server.Channel.connections
+lacewing.moo.server.MooServerFactory.connections" class="py-name" href="#" onclick="return doclink('link-55', 'connections', 'link-47');">connections</a></tt> <tt class="py-op">=</tt> <tt id="link-56" class="py-name"><a title="lacewing.multidict.MultikeyDict" class="py-name" href="#" onclick="return doclink('link-56', 'MultikeyDict', 'link-20');">MultikeyDict</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L50"></a><tt class="py-lineno"> 50</tt>  <tt class="py-line">     </tt>
+<a name="Channel.addConnection"></a><div id="Channel.addConnection-def"><a name="L51"></a><tt class="py-lineno"> 51</tt> <a class="py-toggle" href="#" id="Channel.addConnection-toggle" onclick="return toggle('Channel.addConnection');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.Channel-class.html#addConnection">addConnection</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">connection</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Channel.addConnection-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Channel.addConnection-expanded"><a name="L52"></a><tt class="py-lineno"> 52</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-57" class="py-name"><a title="lacewing.moo.client.Channel.connections
+lacewing.moo.server.Channel.connections
+lacewing.moo.server.MooServerFactory.connections" class="py-name" href="#" onclick="return doclink('link-57', 'connections', 'link-47');">connections</a></tt><tt class="py-op">[</tt><tt id="link-58" class="py-name"><a title="lacewing.client.ClientDatagram.connection
+lacewing.moo.client.Channel.connection" class="py-name" href="#" onclick="return doclink('link-58', 'connection', 'link-45');">connection</a></tt><tt class="py-op">.</tt><tt id="link-59" class="py-name"><a title="lacewing.client.ClientChannel.name
+lacewing.client.Peer.name
+lacewing.moo.client.Channel.name
+lacewing.moo.client.Player.name
+lacewing.moo.protocol.MooProtocol.name
+lacewing.moo.server.Channel.name
+lacewing.packetloaders.client.Request.name
+lacewing.packetloaders.server.ChannelPeer.name
+lacewing.packetloaders.server.Peer.name
+lacewing.packetloaders.server.Response.name
+lacewing.protocol.BaseProtocol.name
+lacewing.server.ServerChannel.name" class="py-name" href="#" onclick="return doclink('link-59', 'name', 'link-25');">name</a></tt><tt class="py-op">,</tt> <tt id="link-60" class="py-name"><a title="lacewing.client.ClientDatagram.connection
+lacewing.moo.client.Channel.connection" class="py-name" href="#" onclick="return doclink('link-60', 'connection', 'link-45');">connection</a></tt><tt class="py-op">.</tt><tt id="link-61" class="py-name"><a title="lacewing.client.ClientChannel.id
+lacewing.client.Peer.id
+lacewing.moo.client.Channel.id
+lacewing.moo.client.Player.id
+lacewing.moo.protocol.MooProtocol.id
+lacewing.moo.server.Channel.id
+lacewing.packetloaders.client.BinaryChannelMessage.id
+lacewing.packetloaders.client.BinaryPeerMessage.id
+lacewing.packetloaders.client.BinaryServerMessage.id
+lacewing.packetloaders.client.ChannelMaster.id
+lacewing.packetloaders.client.ObjectChannelMessage.id
+lacewing.packetloaders.client.ObjectPeerMessage.id
+lacewing.packetloaders.client.ObjectServerMessage.id
+lacewing.packetloaders.client.Pong.id
+lacewing.packetloaders.client.Request.id
+lacewing.packetloaders.client.UDPHello.id
+lacewing.packetloaders.server.BinaryChannelMessage.id
+lacewing.packetloaders.server.BinaryPeerMessage.id
+lacewing.packetloaders.server.BinaryServerMessage.id
+lacewing.packetloaders.server.ChannelPeer.id
+lacewing.packetloaders.server.ObjectChannelMessage.id
+lacewing.packetloaders.server.ObjectPeerMessage.id
+lacewing.packetloaders.server.ObjectServerMessage.id
+lacewing.packetloaders.server.Peer.id
+lacewing.packetloaders.server.Ping.id
+lacewing.packetloaders.server.Response.id
+lacewing.packetloaders.server.UDPWelcome.id
+lacewing.protocol.BaseProtocol.id
+lacewing.server.ServerChannel.id" class="py-name" href="#" onclick="return doclink('link-61', 'id', 'link-26');">id</a></tt><tt class="py-op">]</tt> <tt class="py-op">=</tt> <tt id="link-62" class="py-name"><a title="lacewing.client.ClientDatagram.connection
+lacewing.moo.client.Channel.connection" class="py-name" href="#" onclick="return doclink('link-62', 'connection', 'link-45');">connection</a></tt> </tt>
+</div><a name="L53"></a><tt class="py-lineno"> 53</tt>  <tt class="py-line">         </tt>
+<a name="Channel.removeConnection"></a><div id="Channel.removeConnection-def"><a name="L54"></a><tt class="py-lineno"> 54</tt> <a class="py-toggle" href="#" id="Channel.removeConnection-toggle" onclick="return toggle('Channel.removeConnection');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.Channel-class.html#removeConnection">removeConnection</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">connection</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Channel.removeConnection-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Channel.removeConnection-expanded"><a name="L55"></a><tt class="py-lineno"> 55</tt>  <tt class="py-line">        <tt class="py-keyword">del</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-63" class="py-name"><a title="lacewing.moo.client.Channel.connections
+lacewing.moo.server.Channel.connections
+lacewing.moo.server.MooServerFactory.connections" class="py-name" href="#" onclick="return doclink('link-63', 'connections', 'link-47');">connections</a></tt><tt class="py-op">[</tt><tt id="link-64" class="py-name"><a title="lacewing.client.ClientDatagram.connection
+lacewing.moo.client.Channel.connection" class="py-name" href="#" onclick="return doclink('link-64', 'connection', 'link-45');">connection</a></tt><tt class="py-op">]</tt> </tt>
+</div><a name="L56"></a><tt class="py-lineno"> 56</tt>  <tt class="py-line">     </tt>
+<a name="Channel.sendMessage"></a><div id="Channel.sendMessage-def"><a name="L57"></a><tt class="py-lineno"> 57</tt> <a class="py-toggle" href="#" id="Channel.sendMessage-toggle" onclick="return toggle('Channel.sendMessage');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.Channel-class.html#sendMessage">sendMessage</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">value</tt><tt class="py-op">,</tt> <tt class="py-param">subchannel</tt><tt class="py-op">,</tt> <tt class="py-param">type</tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt><tt class="py-op">,</tt> <tt class="py-param">toClient</tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Channel.sendMessage-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Channel.sendMessage-expanded"><a name="L58"></a><tt class="py-lineno"> 58</tt>  <tt class="py-line">        <tt class="py-name">newValue</tt> <tt class="py-op">=</tt> <tt id="link-65" class="py-name" targets="Class lacewing.moo.packetloaders.message.Message=lacewing.moo.packetloaders.message.Message-class.html"><a title="lacewing.moo.packetloaders.message.Message" class="py-name" href="#" onclick="return doclink('link-65', 'Message', 'link-65');">Message</a></tt><tt class="py-op">(</tt><tt class="py-op">**</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-66" class="py-name"><a title="lacewing.client.ClientDatagram.connection
+lacewing.moo.client.Channel.connection" class="py-name" href="#" onclick="return doclink('link-66', 'connection', 'link-45');">connection</a></tt><tt class="py-op">.</tt><tt class="py-name">settings</tt><tt class="py-op">)</tt> </tt>
+<a name="L59"></a><tt class="py-lineno"> 59</tt>  <tt class="py-line">        <tt class="py-name">newValue</tt><tt class="py-op">.</tt><tt id="link-67" class="py-name" targets="Variable lacewing.moo.packetloaders.message.Message.type=lacewing.moo.packetloaders.message.Message-class.html#type"><a title="lacewing.moo.packetloaders.message.Message.type" class="py-name" href="#" onclick="return doclink('link-67', 'type', 'link-67');">type</a></tt> <tt class="py-op">=</tt> <tt id="link-68" class="py-name"><a title="lacewing.moo.packetloaders.message.Message.type" class="py-name" href="#" onclick="return doclink('link-68', 'type', 'link-67');">type</a></tt> <tt class="py-keyword">or</tt> <tt id="link-69" class="py-name" targets="Function lacewing.moo.packetloaders.message.detectType()=lacewing.moo.packetloaders.message-module.html#detectType,Function lacewing.packetloaders.common.detectType()=lacewing.packetloaders.common-module.html#detectType"><a title="lacewing.moo.packetloaders.message.detectType
+lacewing.packetloaders.common.detectType" class="py-name" href="#" onclick="return doclink('link-69', 'detectType', 'link-69');">detectType</a></tt><tt class="py-op">(</tt><tt id="link-70" class="py-name" targets="Variable lacewing.moo.packetloaders.message.Message.value=lacewing.moo.packetloaders.message.Message-class.html#value,Variable lacewing.multidict.DictItem.value=lacewing.multidict.DictItem-class.html#value,Variable lacewing.packetloaders.server.Response.value=lacewing.packetloaders.server.Response-class.html#value"><a title="lacewing.moo.packetloaders.message.Message.value
+lacewing.multidict.DictItem.value
+lacewing.packetloaders.server.Response.value" class="py-name" href="#" onclick="return doclink('link-70', 'value', 'link-70');">value</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L60"></a><tt class="py-lineno"> 60</tt>  <tt class="py-line">        <tt class="py-name">newValue</tt><tt class="py-op">.</tt><tt id="link-71" class="py-name"><a title="lacewing.moo.packetloaders.message.Message.value
+lacewing.multidict.DictItem.value
+lacewing.packetloaders.server.Response.value" class="py-name" href="#" onclick="return doclink('link-71', 'value', 'link-70');">value</a></tt> <tt class="py-op">=</tt> <tt id="link-72" class="py-name"><a title="lacewing.moo.packetloaders.message.Message.value
+lacewing.multidict.DictItem.value
+lacewing.packetloaders.server.Response.value" class="py-name" href="#" onclick="return doclink('link-72', 'value', 'link-70');">value</a></tt> </tt>
+<a name="L61"></a><tt class="py-lineno"> 61</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">toClient</tt><tt class="py-op">:</tt> </tt>
+<a name="L62"></a><tt class="py-lineno"> 62</tt>  <tt class="py-line">            <tt class="py-name">newMessage</tt> <tt class="py-op">=</tt> <tt id="link-73" class="py-name" targets="Class lacewing.moo.packetloaders.client.PrivateMessage=lacewing.moo.packetloaders.client.PrivateMessage-class.html"><a title="lacewing.moo.packetloaders.client.PrivateMessage" class="py-name" href="#" onclick="return doclink('link-73', 'PrivateMessage', 'link-73');">PrivateMessage</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L63"></a><tt class="py-lineno"> 63</tt>  <tt class="py-line">            <tt class="py-name">newMessage</tt><tt class="py-op">.</tt><tt class="py-name">setConnection</tt><tt class="py-op">(</tt><tt class="py-name">toClient</tt><tt class="py-op">)</tt> </tt>
+<a name="L64"></a><tt class="py-lineno"> 64</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L65"></a><tt class="py-lineno"> 65</tt>  <tt class="py-line">            <tt class="py-name">newMessage</tt> <tt class="py-op">=</tt> <tt id="link-74" class="py-name" targets="Class lacewing.moo.packetloaders.client.ToChannelMessage=lacewing.moo.packetloaders.client.ToChannelMessage-class.html"><a title="lacewing.moo.packetloaders.client.ToChannelMessage" class="py-name" href="#" onclick="return doclink('link-74', 'ToChannelMessage', 'link-74');">ToChannelMessage</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L66"></a><tt class="py-lineno"> 66</tt>  <tt class="py-line"> </tt>
+<a name="L67"></a><tt class="py-lineno"> 67</tt>  <tt class="py-line">        <tt class="py-name">newMessage</tt><tt class="py-op">.</tt><tt class="py-name">setChannel</tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">)</tt> </tt>
+<a name="L68"></a><tt class="py-lineno"> 68</tt>  <tt class="py-line">        <tt class="py-name">newMessage</tt><tt class="py-op">.</tt><tt id="link-75" class="py-name"><a title="lacewing.moo.packetloaders.client.ClientMessage.message
+lacewing.moo.packetloaders.client.PrivateMessage.message
+lacewing.moo.packetloaders.client.ToChannelMessage.message
+lacewing.moo.packetloaders.message
+lacewing.moo.packetloaders.server.FromChannelMessage.message" class="py-name" href="#" onclick="return doclink('link-75', 'message', 'link-24');">message</a></tt> <tt class="py-op">=</tt> <tt class="py-name">newValue</tt> </tt>
+<a name="L69"></a><tt class="py-lineno"> 69</tt>  <tt class="py-line">        <tt class="py-name">newMessage</tt><tt class="py-op">.</tt><tt id="link-76" class="py-name" targets="Variable lacewing.moo.packetloaders.client.ClientMessage.subchannel=lacewing.moo.packetloaders.client.ClientMessage-class.html#subchannel,Variable lacewing.moo.packetloaders.client.PrivateMessage.subchannel=lacewing.moo.packetloaders.client.PrivateMessage-class.html#subchannel,Variable lacewing.moo.packetloaders.client.ToChannelMessage.subchannel=lacewing.moo.packetloaders.client.ToChannelMessage-class.html#subchannel,Variable lacewing.moo.packetloaders.server.FromChannelMessage.subchannel=lacewing.moo.packetloaders.server.FromChannelMessage-class.html#subchannel"><a title="lacewing.moo.packetloaders.client.ClientMessage.subchannel
+lacewing.moo.packetloaders.client.PrivateMessage.subchannel
+lacewing.moo.packetloaders.client.ToChannelMessage.subchannel
+lacewing.moo.packetloaders.server.FromChannelMessage.subchannel" class="py-name" href="#" onclick="return doclink('link-76', 'subchannel', 'link-76');">subchannel</a></tt> <tt class="py-op">=</tt> <tt id="link-77" class="py-name"><a title="lacewing.moo.packetloaders.client.ClientMessage.subchannel
+lacewing.moo.packetloaders.client.PrivateMessage.subchannel
+lacewing.moo.packetloaders.client.ToChannelMessage.subchannel
+lacewing.moo.packetloaders.server.FromChannelMessage.subchannel" class="py-name" href="#" onclick="return doclink('link-77', 'subchannel', 'link-76');">subchannel</a></tt> </tt>
+<a name="L70"></a><tt class="py-lineno"> 70</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-78" class="py-name"><a title="lacewing.client.ClientDatagram.connection
+lacewing.moo.client.Channel.connection" class="py-name" href="#" onclick="return doclink('link-78', 'connection', 'link-45');">connection</a></tt><tt class="py-op">.</tt><tt id="link-79" class="py-name" targets="Method lacewing.client.ClientDatagram.sendLoader()=lacewing.client.ClientDatagram-class.html#sendLoader,Method lacewing.client.ClientProtocol.sendLoader()=lacewing.client.ClientProtocol-class.html#sendLoader,Method lacewing.moo.protocol.MooProtocol.sendLoader()=lacewing.moo.protocol.MooProtocol-class.html#sendLoader,Method lacewing.moo.server.Channel.sendLoader()=lacewing.moo.server.Channel-class.html#sendLoader,Method lacewing.protocol.BaseProtocol.sendLoader()=lacewing.protocol.BaseProtocol-class.html#sendLoader,Method lacewing.server.ServerChannel.sendLoader()=lacewing.server.ServerChannel-class.html#sendLoader,Method lacewing.server.ServerDatagram.sendLoader()=lacewing.server.ServerDatagram-class.html#sendLoader,Method lacewing.server.ServerProtocol.sendLoader()=lacewing.server.ServerProtocol-class.html#sendLoader"><a title="lacewing.client.ClientDatagram.sendLoader
+lacewing.client.ClientProtocol.sendLoader
+lacewing.moo.protocol.MooProtocol.sendLoader
+lacewing.moo.server.Channel.sendLoader
+lacewing.protocol.BaseProtocol.sendLoader
+lacewing.server.ServerChannel.sendLoader
+lacewing.server.ServerDatagram.sendLoader
+lacewing.server.ServerProtocol.sendLoader" class="py-name" href="#" onclick="return doclink('link-79', 'sendLoader', 'link-79');">sendLoader</a></tt><tt class="py-op">(</tt><tt class="py-name">newMessage</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L71"></a><tt class="py-lineno"> 71</tt>  <tt class="py-line">     </tt>
+<a name="Channel.setMaster"></a><div id="Channel.setMaster-def"><a name="L72"></a><tt class="py-lineno"> 72</tt> <a class="py-toggle" href="#" id="Channel.setMaster-toggle" onclick="return toggle('Channel.setMaster');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.Channel-class.html#setMaster">setMaster</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">id</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Channel.setMaster-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Channel.setMaster-expanded"><a name="L73"></a><tt class="py-lineno"> 73</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-80" class="py-name"><a title="lacewing.moo.client.Channel.masterId
+lacewing.moo.packetloaders.server.ChannelJoined.masterId
+lacewing.moo.packetloaders.server.PlayerLeft.masterId" class="py-name" href="#" onclick="return doclink('link-80', 'masterId', 'link-48');">masterId</a></tt> <tt class="py-op">=</tt> <tt id="link-81" class="py-name"><a title="lacewing.client.ClientChannel.id
+lacewing.client.Peer.id
+lacewing.moo.client.Channel.id
+lacewing.moo.client.Player.id
+lacewing.moo.protocol.MooProtocol.id
+lacewing.moo.server.Channel.id
+lacewing.packetloaders.client.BinaryChannelMessage.id
+lacewing.packetloaders.client.BinaryPeerMessage.id
+lacewing.packetloaders.client.BinaryServerMessage.id
+lacewing.packetloaders.client.ChannelMaster.id
+lacewing.packetloaders.client.ObjectChannelMessage.id
+lacewing.packetloaders.client.ObjectPeerMessage.id
+lacewing.packetloaders.client.ObjectServerMessage.id
+lacewing.packetloaders.client.Pong.id
+lacewing.packetloaders.client.Request.id
+lacewing.packetloaders.client.UDPHello.id
+lacewing.packetloaders.server.BinaryChannelMessage.id
+lacewing.packetloaders.server.BinaryPeerMessage.id
+lacewing.packetloaders.server.BinaryServerMessage.id
+lacewing.packetloaders.server.ChannelPeer.id
+lacewing.packetloaders.server.ObjectChannelMessage.id
+lacewing.packetloaders.server.ObjectPeerMessage.id
+lacewing.packetloaders.server.ObjectServerMessage.id
+lacewing.packetloaders.server.Peer.id
+lacewing.packetloaders.server.Ping.id
+lacewing.packetloaders.server.Response.id
+lacewing.packetloaders.server.UDPWelcome.id
+lacewing.protocol.BaseProtocol.id
+lacewing.server.ServerChannel.id" class="py-name" href="#" onclick="return doclink('link-81', 'id', 'link-26');">id</a></tt> </tt>
+</div><a name="L74"></a><tt class="py-lineno"> 74</tt>  <tt class="py-line"> </tt>
+<a name="Channel.getMaster"></a><div id="Channel.getMaster-def"><a name="L75"></a><tt class="py-lineno"> 75</tt> <a class="py-toggle" href="#" id="Channel.getMaster-toggle" onclick="return toggle('Channel.getMaster');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.Channel-class.html#getMaster">getMaster</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="Channel.getMaster-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="Channel.getMaster-expanded"><a name="L76"></a><tt class="py-lineno"> 76</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-keyword">not</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-82" class="py-name"><a title="lacewing.moo.client.Channel.masterId
+lacewing.moo.packetloaders.server.ChannelJoined.masterId
+lacewing.moo.packetloaders.server.PlayerLeft.masterId" class="py-name" href="#" onclick="return doclink('link-82', 'masterId', 'link-48');">masterId</a></tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-83" class="py-name"><a title="lacewing.moo.client.Channel.connections
+lacewing.moo.server.Channel.connections
+lacewing.moo.server.MooServerFactory.connections" class="py-name" href="#" onclick="return doclink('link-83', 'connections', 'link-47');">connections</a></tt><tt class="py-op">:</tt> </tt>
+<a name="L77"></a><tt class="py-lineno"> 77</tt>  <tt class="py-line">            <tt class="py-keyword">return</tt> <tt class="py-name">None</tt> </tt>
+<a name="L78"></a><tt class="py-lineno"> 78</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-84" class="py-name"><a title="lacewing.moo.client.Channel.connections
+lacewing.moo.server.Channel.connections
+lacewing.moo.server.MooServerFactory.connections" class="py-name" href="#" onclick="return doclink('link-84', 'connections', 'link-47');">connections</a></tt><tt class="py-op">[</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-85" class="py-name"><a title="lacewing.moo.client.Channel.masterId
+lacewing.moo.packetloaders.server.ChannelJoined.masterId
+lacewing.moo.packetloaders.server.PlayerLeft.masterId" class="py-name" href="#" onclick="return doclink('link-85', 'masterId', 'link-48');">masterId</a></tt><tt class="py-op">]</tt> </tt>
+</div></div><a name="L79"></a><tt class="py-lineno"> 79</tt>  <tt class="py-line"> </tt>
+<a name="MooClientProtocol"></a><div id="MooClientProtocol-def"><a name="L80"></a><tt class="py-lineno"> 80</tt> <a class="py-toggle" href="#" id="MooClientProtocol-toggle" onclick="return toggle('MooClientProtocol');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html">MooClientProtocol</a><tt class="py-op">(</tt><tt class="py-base-class">MooProtocol</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol-collapsed" style="display:none;" pad="+++" indent="++++"></div><div id="MooClientProtocol-expanded"><a name="L81"></a><tt class="py-lineno"> 81</tt>  <tt class="py-line">    <tt class="py-name">_sendPacket</tt> <tt class="py-op">=</tt> <tt id="link-86" class="py-name"><a title="lacewing.moo.packet.ClientPacket
+lacewing.packet.ClientPacket" class="py-name" href="#" onclick="return doclink('link-86', 'ClientPacket', 'link-9');">ClientPacket</a></tt> </tt>
+<a name="L82"></a><tt class="py-lineno"> 82</tt>  <tt class="py-line">    <tt class="py-name">_receivePacket</tt> <tt class="py-op">=</tt> <tt id="link-87" class="py-name"><a title="lacewing.moo.packet.ServerPacket
+lacewing.packet.ServerPacket" class="py-name" href="#" onclick="return doclink('link-87', 'ServerPacket', 'link-8');">ServerPacket</a></tt> </tt>
+<a name="L83"></a><tt class="py-lineno"> 83</tt>  <tt class="py-line">     </tt>
+<a name="L84"></a><tt class="py-lineno"> 84</tt>  <tt class="py-line">    <tt id="link-88" class="py-name" targets="Variable lacewing.moo.client.MooClientProtocol.motd=lacewing.moo.client.MooClientProtocol-class.html#motd,Variable lacewing.moo.packetloaders.server.MOTD.motd=lacewing.moo.packetloaders.server.MOTD-class.html#motd,Variable lacewing.moo.server.MooServerFactory.motd=lacewing.moo.server.MooServerFactory-class.html#motd"><a title="lacewing.moo.client.MooClientProtocol.motd
+lacewing.moo.packetloaders.server.MOTD.motd
+lacewing.moo.server.MooServerFactory.motd" class="py-name" href="#" onclick="return doclink('link-88', 'motd', 'link-88');">motd</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L85"></a><tt class="py-lineno"> 85</tt>  <tt class="py-line">     </tt>
+<a name="L86"></a><tt class="py-lineno"> 86</tt>  <tt class="py-line">    <tt class="py-name">playerClass</tt> <tt class="py-op">=</tt> <tt id="link-89" class="py-name" targets="Class lacewing.moo.client.Player=lacewing.moo.client.Player-class.html"><a title="lacewing.moo.client.Player" class="py-name" href="#" onclick="return doclink('link-89', 'Player', 'link-89');">Player</a></tt> </tt>
+<a name="L87"></a><tt class="py-lineno"> 87</tt>  <tt class="py-line">     </tt>
+<a name="MooClientProtocol.__init__"></a><div id="MooClientProtocol.__init__-def"><a name="L88"></a><tt class="py-lineno"> 88</tt> <a class="py-toggle" href="#" id="MooClientProtocol.__init__-toggle" onclick="return toggle('MooClientProtocol.__init__');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#__init__">__init__</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-param">settings</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.__init__-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.__init__-expanded"><a name="L89"></a><tt class="py-lineno"> 89</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">settings</tt> <tt class="py-op">=</tt> <tt class="py-name">settings</tt> </tt>
+<a name="L90"></a><tt class="py-lineno"> 90</tt>  <tt class="py-line">        <tt id="link-90" class="py-name"><a title="lacewing.moo.protocol.MooProtocol" class="py-name" href="#" onclick="return doclink('link-90', 'MooProtocol', 'link-4');">MooProtocol</a></tt><tt class="py-op">.</tt><tt id="link-91" class="py-name" targets="Method lacewing.bitdict.BitDict.__init__()=lacewing.bitdict.BitDict-class.html#__init__,Method lacewing.bytereader.ByteReader.__init__()=lacewing.bytereader.ByteReader-class.html#__init__,Method lacewing.client.ClientChannel.__init__()=lacewing.client.ClientChannel-class.html#__init__,Method lacewing.client.ClientDatagram.__init__()=lacewing.client.ClientDatagram-class.html#__init__,Method lacewing.client.Peer.__init__()=lacewing.client.Peer-class.html#__init__,Method lacewing.idpool.IDPool.__init__()=lacewing.idpool.IDPool-class.html#__init__,Method lacewing.moo.client.Channel.__init__()=lacewing.moo.client.Channel-class.html#__init__,Method lacewing.moo.client.MooClientProtocol.__init__()=lacewing.moo.client.MooClientProtocol-class.html#__init__,Method lacewing.moo.client.Player.__init__()=lacewing.moo.client.Player-class.html#__init__,Method lacewing.moo.protocol.MooProtocol.__init__()=lacewing.moo.protocol.MooProtocol-class.html#__init__,Method lacewing.moo.server.Channel.__init__()=lacewing.moo.server.Channel-class.html#__init__,Method lacewing.moo.server.MooServerFactory.__init__()=lacewing.moo.server.MooServerFactory-class.html#__init__,Method lacewing.multidict.DictItem.__init__()=lacewing.multidict.DictItem-class.html#__init__,Method lacewing.multidict.MultikeyDict.__init__()=lacewing.multidict.MultikeyDict-class.html#__init__,Method lacewing.server.ServerChannel.__init__()=lacewing.server.ServerChannel-class.html#__init__,Method lacewing.server.ServerDatagram.__init__()=lacewing.server.ServerDatagram-class.html#__init__"><a title="lacewing.bitdict.BitDict.__init__
+lacewing.bytereader.ByteReader.__init__
+lacewing.client.ClientChannel.__init__
+lacewing.client.ClientDatagram.__init__
+lacewing.client.Peer.__init__
+lacewing.idpool.IDPool.__init__
+lacewing.moo.client.Channel.__init__
+lacewing.moo.client.MooClientProtocol.__init__
+lacewing.moo.client.Player.__init__
+lacewing.moo.protocol.MooProtocol.__init__
+lacewing.moo.server.Channel.__init__
+lacewing.moo.server.MooServerFactory.__init__
+lacewing.multidict.DictItem.__init__
+lacewing.multidict.MultikeyDict.__init__
+lacewing.server.ServerChannel.__init__
+lacewing.server.ServerDatagram.__init__" class="py-name" href="#" onclick="return doclink('link-91', '__init__', 'link-91');">__init__</a></tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L91"></a><tt class="py-lineno"> 91</tt>  <tt class="py-line"> </tt>
+<a name="MooClientProtocol.loaderReceived"></a><div id="MooClientProtocol.loaderReceived-def"><a name="L92"></a><tt class="py-lineno"> 92</tt> <a class="py-toggle" href="#" id="MooClientProtocol.loaderReceived-toggle" onclick="return toggle('MooClientProtocol.loaderReceived');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#loaderReceived">loaderReceived</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">loader</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.loaderReceived-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.loaderReceived-expanded"><a name="L93"></a><tt class="py-lineno"> 93</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">isinstance</tt><tt class="py-op">(</tt><tt class="py-name">loader</tt><tt class="py-op">,</tt> <tt id="link-92" class="py-name" targets="Class lacewing.moo.packetloaders.server.MOTD=lacewing.moo.packetloaders.server.MOTD-class.html"><a title="lacewing.moo.packetloaders.server.MOTD" class="py-name" href="#" onclick="return doclink('link-92', 'MOTD', 'link-92');">MOTD</a></tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L94"></a><tt class="py-lineno"> 94</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-93" class="py-name"><a title="lacewing.moo.client.MooClientProtocol.motd
+lacewing.moo.packetloaders.server.MOTD.motd
+lacewing.moo.server.MooServerFactory.motd" class="py-name" href="#" onclick="return doclink('link-93', 'motd', 'link-88');">motd</a></tt> <tt class="py-op">=</tt> <tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-94" class="py-name"><a title="lacewing.moo.client.MooClientProtocol.motd
+lacewing.moo.packetloaders.server.MOTD.motd
+lacewing.moo.server.MooServerFactory.motd" class="py-name" href="#" onclick="return doclink('link-94', 'motd', 'link-88');">motd</a></tt> </tt>
+<a name="L95"></a><tt class="py-lineno"> 95</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-95" class="py-name" targets="Method lacewing.moo.client.MooClientProtocol.motdReceived()=lacewing.moo.client.MooClientProtocol-class.html#motdReceived"><a title="lacewing.moo.client.MooClientProtocol.motdReceived" class="py-name" href="#" onclick="return doclink('link-95', 'motdReceived', 'link-95');">motdReceived</a></tt><tt class="py-op">(</tt><tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-96" class="py-name"><a title="lacewing.moo.client.MooClientProtocol.motd
+lacewing.moo.packetloaders.server.MOTD.motd
+lacewing.moo.server.MooServerFactory.motd" class="py-name" href="#" onclick="return doclink('link-96', 'motd', 'link-88');">motd</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L96"></a><tt class="py-lineno"> 96</tt>  <tt class="py-line">         </tt>
+<a name="L97"></a><tt class="py-lineno"> 97</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">isinstance</tt><tt class="py-op">(</tt><tt class="py-name">loader</tt><tt class="py-op">,</tt> <tt id="link-97" class="py-name" targets="Class lacewing.moo.packetloaders.server.AssignedID=lacewing.moo.packetloaders.server.AssignedID-class.html"><a title="lacewing.moo.packetloaders.server.AssignedID" class="py-name" href="#" onclick="return doclink('link-97', 'AssignedID', 'link-97');">AssignedID</a></tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L98"></a><tt class="py-lineno"> 98</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-98" class="py-name"><a title="lacewing.client.ClientChannel.id
+lacewing.client.Peer.id
+lacewing.moo.client.Channel.id
+lacewing.moo.client.Player.id
+lacewing.moo.protocol.MooProtocol.id
+lacewing.moo.server.Channel.id
+lacewing.packetloaders.client.BinaryChannelMessage.id
+lacewing.packetloaders.client.BinaryPeerMessage.id
+lacewing.packetloaders.client.BinaryServerMessage.id
+lacewing.packetloaders.client.ChannelMaster.id
+lacewing.packetloaders.client.ObjectChannelMessage.id
+lacewing.packetloaders.client.ObjectPeerMessage.id
+lacewing.packetloaders.client.ObjectServerMessage.id
+lacewing.packetloaders.client.Pong.id
+lacewing.packetloaders.client.Request.id
+lacewing.packetloaders.client.UDPHello.id
+lacewing.packetloaders.server.BinaryChannelMessage.id
+lacewing.packetloaders.server.BinaryPeerMessage.id
+lacewing.packetloaders.server.BinaryServerMessage.id
+lacewing.packetloaders.server.ChannelPeer.id
+lacewing.packetloaders.server.ObjectChannelMessage.id
+lacewing.packetloaders.server.ObjectPeerMessage.id
+lacewing.packetloaders.server.ObjectServerMessage.id
+lacewing.packetloaders.server.Peer.id
+lacewing.packetloaders.server.Ping.id
+lacewing.packetloaders.server.Response.id
+lacewing.packetloaders.server.UDPWelcome.id
+lacewing.protocol.BaseProtocol.id
+lacewing.server.ServerChannel.id" class="py-name" href="#" onclick="return doclink('link-98', 'id', 'link-26');">id</a></tt> <tt class="py-op">=</tt> <tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-99" class="py-name" targets="Variable lacewing.moo.packetloaders.client.PrivateMessage.playerId=lacewing.moo.packetloaders.client.PrivateMessage-class.html#playerId,Variable lacewing.moo.packetloaders.server.AssignedID.playerId=lacewing.moo.packetloaders.server.AssignedID-class.html#playerId,Variable lacewing.moo.packetloaders.server.ChannelJoined.playerId=lacewing.moo.packetloaders.server.ChannelJoined-class.html#playerId,Variable lacewing.moo.packetloaders.server.FromChannelMessage.playerId=lacewing.moo.packetloaders.server.FromChannelMessage-class.html#playerId,Variable lacewing.moo.packetloaders.server.PlayerChanged.playerId=lacewing.moo.packetloaders.server.PlayerChanged-class.html#playerId,Variable lacewing.moo.packetloaders.server.PlayerLeft.playerId=lacewing.moo.packetloaders.server.PlayerLeft-class.html#playerId,Variable lacewing.packetloaders.server.Response.playerId=lacewing.packetloaders.server.Response-class.html#playerId"><a title="lacewing.moo.packetloaders.client.PrivateMessage.playerId
+lacewing.moo.packetloaders.server.AssignedID.playerId
+lacewing.moo.packetloaders.server.ChannelJoined.playerId
+lacewing.moo.packetloaders.server.FromChannelMessage.playerId
+lacewing.moo.packetloaders.server.PlayerChanged.playerId
+lacewing.moo.packetloaders.server.PlayerLeft.playerId
+lacewing.packetloaders.server.Response.playerId" class="py-name" href="#" onclick="return doclink('link-99', 'playerId', 'link-99');">playerId</a></tt> </tt>
+<a name="L99"></a><tt class="py-lineno"> 99</tt>  <tt class="py-line">             </tt>
+<a name="L100"></a><tt class="py-lineno">100</tt>  <tt class="py-line">            <tt id="link-100" class="py-name" targets="Variable lacewing.moo.packetloaders.client.ChangeName.newName=lacewing.moo.packetloaders.client.ChangeName-class.html#newName"><a title="lacewing.moo.packetloaders.client.ChangeName.newName" class="py-name" href="#" onclick="return doclink('link-100', 'newName', 'link-100');">newName</a></tt> <tt class="py-op">=</tt> <tt id="link-101" class="py-name" targets="Class lacewing.moo.packetloaders.client.SetName=lacewing.moo.packetloaders.client.SetName-class.html"><a title="lacewing.moo.packetloaders.client.SetName" class="py-name" href="#" onclick="return doclink('link-101', 'SetName', 'link-101');">SetName</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L101"></a><tt class="py-lineno">101</tt>  <tt class="py-line">            <tt id="link-102" class="py-name"><a title="lacewing.moo.packetloaders.client.ChangeName.newName" class="py-name" href="#" onclick="return doclink('link-102', 'newName', 'link-100');">newName</a></tt><tt class="py-op">.</tt><tt class="py-name">setConnection</tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">)</tt> </tt>
+<a name="L102"></a><tt class="py-lineno">102</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-103" class="py-name"><a title="lacewing.client.ClientDatagram.sendLoader
+lacewing.client.ClientProtocol.sendLoader
+lacewing.moo.protocol.MooProtocol.sendLoader
+lacewing.moo.server.Channel.sendLoader
+lacewing.protocol.BaseProtocol.sendLoader
+lacewing.server.ServerChannel.sendLoader
+lacewing.server.ServerDatagram.sendLoader
+lacewing.server.ServerProtocol.sendLoader" class="py-name" href="#" onclick="return doclink('link-103', 'sendLoader', 'link-79');">sendLoader</a></tt><tt class="py-op">(</tt><tt id="link-104" class="py-name"><a title="lacewing.moo.packetloaders.client.ChangeName.newName" class="py-name" href="#" onclick="return doclink('link-104', 'newName', 'link-100');">newName</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L103"></a><tt class="py-lineno">103</tt>  <tt class="py-line"> </tt>
+<a name="L104"></a><tt class="py-lineno">104</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-105" class="py-name" targets="Method lacewing.client.ClientProtocol.connectionAccepted()=lacewing.client.ClientProtocol-class.html#connectionAccepted,Method lacewing.moo.client.MooClientProtocol.connectionAccepted()=lacewing.moo.client.MooClientProtocol-class.html#connectionAccepted,Method lacewing.moo.server.MooServerProtocol.connectionAccepted()=lacewing.moo.server.MooServerProtocol-class.html#connectionAccepted,Method lacewing.server.ServerProtocol.connectionAccepted()=lacewing.server.ServerProtocol-class.html#connectionAccepted"><a title="lacewing.client.ClientProtocol.connectionAccepted
+lacewing.moo.client.MooClientProtocol.connectionAccepted
+lacewing.moo.server.MooServerProtocol.connectionAccepted
+lacewing.server.ServerProtocol.connectionAccepted" class="py-name" href="#" onclick="return doclink('link-105', 'connectionAccepted', 'link-105');">connectionAccepted</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L105"></a><tt class="py-lineno">105</tt>  <tt class="py-line">         </tt>
+<a name="L106"></a><tt class="py-lineno">106</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">isinstance</tt><tt class="py-op">(</tt><tt class="py-name">loader</tt><tt class="py-op">,</tt> <tt id="link-106" class="py-name" targets="Class lacewing.moo.packetloaders.server.ChannelJoined=lacewing.moo.packetloaders.server.ChannelJoined-class.html"><a title="lacewing.moo.packetloaders.server.ChannelJoined" class="py-name" href="#" onclick="return doclink('link-106', 'ChannelJoined', 'link-106');">ChannelJoined</a></tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L107"></a><tt class="py-lineno">107</tt>  <tt class="py-line">            <tt id="link-107" class="py-name" targets="Variable lacewing.moo.packetloaders.client.JoinChannel.channelName=lacewing.moo.packetloaders.client.JoinChannel-class.html#channelName,Variable lacewing.moo.packetloaders.server.ChannelJoined.channelName=lacewing.moo.packetloaders.server.ChannelJoined-class.html#channelName"><a title="lacewing.moo.packetloaders.client.JoinChannel.channelName
+lacewing.moo.packetloaders.server.ChannelJoined.channelName" class="py-name" href="#" onclick="return doclink('link-107', 'channelName', 'link-107');">channelName</a></tt> <tt class="py-op">=</tt> <tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-108" class="py-name"><a title="lacewing.moo.packetloaders.client.JoinChannel.channelName
+lacewing.moo.packetloaders.server.ChannelJoined.channelName" class="py-name" href="#" onclick="return doclink('link-108', 'channelName', 'link-107');">channelName</a></tt> </tt>
+<a name="L108"></a><tt class="py-lineno">108</tt>  <tt class="py-line">            <tt id="link-109" class="py-name" targets="Variable lacewing.moo.packetloaders.client.LeaveChannel.channelId=lacewing.moo.packetloaders.client.LeaveChannel-class.html#channelId,Variable lacewing.moo.packetloaders.client.PrivateMessage.channelId=lacewing.moo.packetloaders.client.PrivateMessage-class.html#channelId,Variable lacewing.moo.packetloaders.client.ToChannelMessage.channelId=lacewing.moo.packetloaders.client.ToChannelMessage-class.html#channelId,Variable lacewing.moo.packetloaders.server.ChannelJoined.channelId=lacewing.moo.packetloaders.server.ChannelJoined-class.html#channelId,Variable lacewing.moo.packetloaders.server.FromChannelMessage.channelId=lacewing.moo.packetloaders.server.FromChannelMessage-class.html#channelId,Variable lacewing.moo.packetloaders.server.PlayerLeft.channelId=lacewing.moo.packetloaders.server.PlayerLeft-class.html#channelId"><a title="lacewing.moo.packetloaders.client.LeaveChannel.channelId
+lacewing.moo.packetloaders.client.PrivateMessage.channelId
+lacewing.moo.packetloaders.client.ToChannelMessage.channelId
+lacewing.moo.packetloaders.server.ChannelJoined.channelId
+lacewing.moo.packetloaders.server.FromChannelMessage.channelId
+lacewing.moo.packetloaders.server.PlayerLeft.channelId" class="py-name" href="#" onclick="return doclink('link-109', 'channelId', 'link-109');">channelId</a></tt> <tt class="py-op">=</tt> <tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-110" class="py-name"><a title="lacewing.moo.packetloaders.client.LeaveChannel.channelId
+lacewing.moo.packetloaders.client.PrivateMessage.channelId
+lacewing.moo.packetloaders.client.ToChannelMessage.channelId
+lacewing.moo.packetloaders.server.ChannelJoined.channelId
+lacewing.moo.packetloaders.server.FromChannelMessage.channelId
+lacewing.moo.packetloaders.server.PlayerLeft.channelId" class="py-name" href="#" onclick="return doclink('link-110', 'channelId', 'link-109');">channelId</a></tt> </tt>
+<a name="L109"></a><tt class="py-lineno">109</tt>  <tt class="py-line">            <tt class="py-name">newChannel</tt> <tt class="py-op">=</tt> <tt id="link-111" class="py-name" targets="Class lacewing.moo.client.Channel=lacewing.moo.client.Channel-class.html,Class lacewing.moo.server.Channel=lacewing.moo.server.Channel-class.html"><a title="lacewing.moo.client.Channel
+lacewing.moo.server.Channel" class="py-name" href="#" onclick="return doclink('link-111', 'Channel', 'link-111');">Channel</a></tt><tt class="py-op">(</tt><tt id="link-112" class="py-name"><a title="lacewing.moo.packetloaders.client.JoinChannel.channelName
+lacewing.moo.packetloaders.server.ChannelJoined.channelName" class="py-name" href="#" onclick="return doclink('link-112', 'channelName', 'link-107');">channelName</a></tt><tt class="py-op">,</tt> <tt id="link-113" class="py-name"><a title="lacewing.moo.packetloaders.client.LeaveChannel.channelId
+lacewing.moo.packetloaders.client.PrivateMessage.channelId
+lacewing.moo.packetloaders.client.ToChannelMessage.channelId
+lacewing.moo.packetloaders.server.ChannelJoined.channelId
+lacewing.moo.packetloaders.server.FromChannelMessage.channelId
+lacewing.moo.packetloaders.server.PlayerLeft.channelId" class="py-name" href="#" onclick="return doclink('link-113', 'channelId', 'link-109');">channelId</a></tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">)</tt> </tt>
+<a name="L110"></a><tt class="py-lineno">110</tt>  <tt class="py-line">            <tt class="py-name">newPlayer</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">playerClass</tt><tt class="py-op">(</tt><tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-114" class="py-name" targets="Variable lacewing.moo.packetloaders.client.SetName.playerName=lacewing.moo.packetloaders.client.SetName-class.html#playerName,Variable lacewing.moo.packetloaders.server.ChannelJoined.playerName=lacewing.moo.packetloaders.server.ChannelJoined-class.html#playerName,Variable lacewing.moo.packetloaders.server.PlayerChanged.playerName=lacewing.moo.packetloaders.server.PlayerChanged-class.html#playerName"><a title="lacewing.moo.packetloaders.client.SetName.playerName
+lacewing.moo.packetloaders.server.ChannelJoined.playerName
+lacewing.moo.packetloaders.server.PlayerChanged.playerName" class="py-name" href="#" onclick="return doclink('link-114', 'playerName', 'link-114');">playerName</a></tt><tt class="py-op">,</tt> <tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-115" class="py-name"><a title="lacewing.moo.packetloaders.client.PrivateMessage.playerId
+lacewing.moo.packetloaders.server.AssignedID.playerId
+lacewing.moo.packetloaders.server.ChannelJoined.playerId
+lacewing.moo.packetloaders.server.FromChannelMessage.playerId
+lacewing.moo.packetloaders.server.PlayerChanged.playerId
+lacewing.moo.packetloaders.server.PlayerLeft.playerId
+lacewing.packetloaders.server.Response.playerId" class="py-name" href="#" onclick="return doclink('link-115', 'playerId', 'link-99');">playerId</a></tt><tt class="py-op">,</tt>  </tt>
+<a name="L111"></a><tt class="py-lineno">111</tt>  <tt class="py-line">                <tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-116" class="py-name" targets="Variable lacewing.moo.packetloaders.server.ChannelJoined.playerIp=lacewing.moo.packetloaders.server.ChannelJoined-class.html#playerIp"><a title="lacewing.moo.packetloaders.server.ChannelJoined.playerIp" class="py-name" href="#" onclick="return doclink('link-116', 'playerIp', 'link-116');">playerIp</a></tt><tt class="py-op">,</tt> <tt class="py-name">newChannel</tt><tt class="py-op">)</tt> </tt>
+<a name="L112"></a><tt class="py-lineno">112</tt>  <tt class="py-line">            <tt class="py-name">newChannel</tt><tt class="py-op">.</tt><tt id="link-117" class="py-name"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-117', 'player', 'link-38');">player</a></tt> <tt class="py-op">=</tt> <tt class="py-name">newPlayer</tt> </tt>
+<a name="L113"></a><tt class="py-lineno">113</tt>  <tt class="py-line">            <tt class="py-name">newChannel</tt><tt class="py-op">.</tt><tt id="link-118" class="py-name" targets="Method lacewing.moo.client.Channel.addConnection()=lacewing.moo.client.Channel-class.html#addConnection,Method lacewing.moo.server.Channel.addConnection()=lacewing.moo.server.Channel-class.html#addConnection,Method lacewing.server.ServerChannel.addConnection()=lacewing.server.ServerChannel-class.html#addConnection"><a title="lacewing.moo.client.Channel.addConnection
+lacewing.moo.server.Channel.addConnection
+lacewing.server.ServerChannel.addConnection" class="py-name" href="#" onclick="return doclink('link-118', 'addConnection', 'link-118');">addConnection</a></tt><tt class="py-op">(</tt><tt class="py-name">newPlayer</tt><tt class="py-op">)</tt> </tt>
+<a name="L114"></a><tt class="py-lineno">114</tt>  <tt class="py-line">            <tt class="py-name">newChannel</tt><tt class="py-op">.</tt><tt id="link-119" class="py-name" targets="Method lacewing.moo.client.Channel.setMaster()=lacewing.moo.client.Channel-class.html#setMaster"><a title="lacewing.moo.client.Channel.setMaster" class="py-name" href="#" onclick="return doclink('link-119', 'setMaster', 'link-119');">setMaster</a></tt><tt class="py-op">(</tt><tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-120" class="py-name"><a title="lacewing.moo.client.Channel.masterId
+lacewing.moo.packetloaders.server.ChannelJoined.masterId
+lacewing.moo.packetloaders.server.PlayerLeft.masterId" class="py-name" href="#" onclick="return doclink('link-120', 'masterId', 'link-48');">masterId</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L115"></a><tt class="py-lineno">115</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-121" class="py-name" targets="Variable lacewing.moo.protocol.MooProtocol.channels=lacewing.moo.protocol.MooProtocol-class.html#channels,Variable lacewing.moo.server.MooServerFactory.channels=lacewing.moo.server.MooServerFactory-class.html#channels,Variable lacewing.packetloaders.server.Response.channels=lacewing.packetloaders.server.Response-class.html#channels,Variable lacewing.protocol.BaseProtocol.channels=lacewing.protocol.BaseProtocol-class.html#channels"><a title="lacewing.moo.protocol.MooProtocol.channels
+lacewing.moo.server.MooServerFactory.channels
+lacewing.packetloaders.server.Response.channels
+lacewing.protocol.BaseProtocol.channels" class="py-name" href="#" onclick="return doclink('link-121', 'channels', 'link-121');">channels</a></tt><tt class="py-op">[</tt><tt id="link-122" class="py-name"><a title="lacewing.moo.packetloaders.client.JoinChannel.channelName
+lacewing.moo.packetloaders.server.ChannelJoined.channelName" class="py-name" href="#" onclick="return doclink('link-122', 'channelName', 'link-107');">channelName</a></tt><tt class="py-op">,</tt> <tt id="link-123" class="py-name"><a title="lacewing.moo.packetloaders.client.LeaveChannel.channelId
+lacewing.moo.packetloaders.client.PrivateMessage.channelId
+lacewing.moo.packetloaders.client.ToChannelMessage.channelId
+lacewing.moo.packetloaders.server.ChannelJoined.channelId
+lacewing.moo.packetloaders.server.FromChannelMessage.channelId
+lacewing.moo.packetloaders.server.PlayerLeft.channelId" class="py-name" href="#" onclick="return doclink('link-123', 'channelId', 'link-109');">channelId</a></tt><tt class="py-op">]</tt> <tt class="py-op">=</tt> <tt class="py-name">newChannel</tt> </tt>
+<a name="L116"></a><tt class="py-lineno">116</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-124" class="py-name" targets="Method lacewing.client.ClientProtocol.channelJoined()=lacewing.client.ClientProtocol-class.html#channelJoined,Method lacewing.moo.client.MooClientProtocol.channelJoined()=lacewing.moo.client.MooClientProtocol-class.html#channelJoined,Method lacewing.moo.server.MooServerProtocol.channelJoined()=lacewing.moo.server.MooServerProtocol-class.html#channelJoined,Method lacewing.server.ServerProtocol.channelJoined()=lacewing.server.ServerProtocol-class.html#channelJoined"><a title="lacewing.client.ClientProtocol.channelJoined
+lacewing.moo.client.MooClientProtocol.channelJoined
+lacewing.moo.server.MooServerProtocol.channelJoined
+lacewing.server.ServerProtocol.channelJoined" class="py-name" href="#" onclick="return doclink('link-124', 'channelJoined', 'link-124');">channelJoined</a></tt><tt class="py-op">(</tt><tt class="py-name">newChannel</tt><tt class="py-op">)</tt> </tt>
+<a name="L117"></a><tt class="py-lineno">117</tt>  <tt class="py-line">         </tt>
+<a name="L118"></a><tt class="py-lineno">118</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">isinstance</tt><tt class="py-op">(</tt><tt class="py-name">loader</tt><tt class="py-op">,</tt> <tt class="py-op">(</tt><tt id="link-125" class="py-name" targets="Class lacewing.moo.packetloaders.server.PlayerExists=lacewing.moo.packetloaders.server.PlayerExists-class.html"><a title="lacewing.moo.packetloaders.server.PlayerExists" class="py-name" href="#" onclick="return doclink('link-125', 'PlayerExists', 'link-125');">PlayerExists</a></tt><tt class="py-op">,</tt> <tt id="link-126" class="py-name" targets="Class lacewing.moo.packetloaders.server.PlayerJoined=lacewing.moo.packetloaders.server.PlayerJoined-class.html"><a title="lacewing.moo.packetloaders.server.PlayerJoined" class="py-name" href="#" onclick="return doclink('link-126', 'PlayerJoined', 'link-126');">PlayerJoined</a></tt><tt class="py-op">)</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L119"></a><tt class="py-lineno">119</tt>  <tt class="py-line">            <tt id="link-127" class="py-name"><a title="lacewing.moo.packetloaders.client.SetName.playerName
+lacewing.moo.packetloaders.server.ChannelJoined.playerName
+lacewing.moo.packetloaders.server.PlayerChanged.playerName" class="py-name" href="#" onclick="return doclink('link-127', 'playerName', 'link-114');">playerName</a></tt> <tt class="py-op">=</tt> <tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-128" class="py-name"><a title="lacewing.moo.packetloaders.client.SetName.playerName
+lacewing.moo.packetloaders.server.ChannelJoined.playerName
+lacewing.moo.packetloaders.server.PlayerChanged.playerName" class="py-name" href="#" onclick="return doclink('link-128', 'playerName', 'link-114');">playerName</a></tt> </tt>
+<a name="L120"></a><tt class="py-lineno">120</tt>  <tt class="py-line">            <tt id="link-129" class="py-name"><a title="lacewing.moo.packetloaders.client.PrivateMessage.playerId
+lacewing.moo.packetloaders.server.AssignedID.playerId
+lacewing.moo.packetloaders.server.ChannelJoined.playerId
+lacewing.moo.packetloaders.server.FromChannelMessage.playerId
+lacewing.moo.packetloaders.server.PlayerChanged.playerId
+lacewing.moo.packetloaders.server.PlayerLeft.playerId
+lacewing.packetloaders.server.Response.playerId" class="py-name" href="#" onclick="return doclink('link-129', 'playerId', 'link-99');">playerId</a></tt> <tt class="py-op">=</tt> <tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-130" class="py-name"><a title="lacewing.moo.packetloaders.client.PrivateMessage.playerId
+lacewing.moo.packetloaders.server.AssignedID.playerId
+lacewing.moo.packetloaders.server.ChannelJoined.playerId
+lacewing.moo.packetloaders.server.FromChannelMessage.playerId
+lacewing.moo.packetloaders.server.PlayerChanged.playerId
+lacewing.moo.packetloaders.server.PlayerLeft.playerId
+lacewing.packetloaders.server.Response.playerId" class="py-name" href="#" onclick="return doclink('link-130', 'playerId', 'link-99');">playerId</a></tt> </tt>
+<a name="L121"></a><tt class="py-lineno">121</tt>  <tt class="py-line">            <tt id="link-131" class="py-name"><a title="lacewing.moo.packetloaders.server.ChannelJoined.playerIp" class="py-name" href="#" onclick="return doclink('link-131', 'playerIp', 'link-116');">playerIp</a></tt> <tt class="py-op">=</tt> <tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-132" class="py-name"><a title="lacewing.moo.packetloaders.server.ChannelJoined.playerIp" class="py-name" href="#" onclick="return doclink('link-132', 'playerIp', 'link-116');">playerIp</a></tt> </tt>
+<a name="L122"></a><tt class="py-lineno">122</tt>  <tt class="py-line">            <tt id="link-133" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-133', 'channel', 'link-28');">channel</a></tt><tt class="py-op">,</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-134" class="py-name"><a title="lacewing.moo.protocol.MooProtocol.channels
+lacewing.moo.server.MooServerFactory.channels
+lacewing.packetloaders.server.Response.channels
+lacewing.protocol.BaseProtocol.channels" class="py-name" href="#" onclick="return doclink('link-134', 'channels', 'link-121');">channels</a></tt><tt class="py-op">[</tt><tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-135" class="py-name"><a title="lacewing.moo.packetloaders.client.LeaveChannel.channelId
+lacewing.moo.packetloaders.client.PrivateMessage.channelId
+lacewing.moo.packetloaders.client.ToChannelMessage.channelId
+lacewing.moo.packetloaders.server.ChannelJoined.channelId
+lacewing.moo.packetloaders.server.FromChannelMessage.channelId
+lacewing.moo.packetloaders.server.PlayerLeft.channelId" class="py-name" href="#" onclick="return doclink('link-135', 'channelId', 'link-109');">channelId</a></tt><tt class="py-op">]</tt> </tt>
+<a name="L123"></a><tt class="py-lineno">123</tt>  <tt class="py-line">            <tt class="py-name">newPlayer</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">playerClass</tt><tt class="py-op">(</tt><tt id="link-136" class="py-name"><a title="lacewing.moo.packetloaders.client.SetName.playerName
+lacewing.moo.packetloaders.server.ChannelJoined.playerName
+lacewing.moo.packetloaders.server.PlayerChanged.playerName" class="py-name" href="#" onclick="return doclink('link-136', 'playerName', 'link-114');">playerName</a></tt><tt class="py-op">,</tt> <tt id="link-137" class="py-name"><a title="lacewing.moo.packetloaders.client.PrivateMessage.playerId
+lacewing.moo.packetloaders.server.AssignedID.playerId
+lacewing.moo.packetloaders.server.ChannelJoined.playerId
+lacewing.moo.packetloaders.server.FromChannelMessage.playerId
+lacewing.moo.packetloaders.server.PlayerChanged.playerId
+lacewing.moo.packetloaders.server.PlayerLeft.playerId
+lacewing.packetloaders.server.Response.playerId" class="py-name" href="#" onclick="return doclink('link-137', 'playerId', 'link-99');">playerId</a></tt><tt class="py-op">,</tt> <tt id="link-138" class="py-name"><a title="lacewing.moo.packetloaders.server.ChannelJoined.playerIp" class="py-name" href="#" onclick="return doclink('link-138', 'playerIp', 'link-116');">playerIp</a></tt><tt class="py-op">,</tt> <tt id="link-139" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-139', 'channel', 'link-28');">channel</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L124"></a><tt class="py-lineno">124</tt>  <tt class="py-line">            <tt id="link-140" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-140', 'channel', 'link-28');">channel</a></tt><tt class="py-op">.</tt><tt id="link-141" class="py-name"><a title="lacewing.moo.client.Channel.addConnection
+lacewing.moo.server.Channel.addConnection
+lacewing.server.ServerChannel.addConnection" class="py-name" href="#" onclick="return doclink('link-141', 'addConnection', 'link-118');">addConnection</a></tt><tt class="py-op">(</tt><tt class="py-name">newPlayer</tt><tt class="py-op">)</tt> </tt>
+<a name="L125"></a><tt class="py-lineno">125</tt>  <tt class="py-line">            <tt id="link-142" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-142', 'channel', 'link-28');">channel</a></tt><tt class="py-op">.</tt><tt id="link-143" class="py-name"><a title="lacewing.moo.client.Channel.setMaster" class="py-name" href="#" onclick="return doclink('link-143', 'setMaster', 'link-119');">setMaster</a></tt><tt class="py-op">(</tt><tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-144" class="py-name"><a title="lacewing.moo.client.Channel.masterId
+lacewing.moo.packetloaders.server.ChannelJoined.masterId
+lacewing.moo.packetloaders.server.PlayerLeft.masterId" class="py-name" href="#" onclick="return doclink('link-144', 'masterId', 'link-48');">masterId</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L126"></a><tt class="py-lineno">126</tt>  <tt class="py-line">            <tt class="py-keyword">if</tt> <tt class="py-name">isinstance</tt><tt class="py-op">(</tt><tt class="py-name">loader</tt><tt class="py-op">,</tt> <tt id="link-145" class="py-name"><a title="lacewing.moo.packetloaders.server.PlayerExists" class="py-name" href="#" onclick="return doclink('link-145', 'PlayerExists', 'link-125');">PlayerExists</a></tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L127"></a><tt class="py-lineno">127</tt>  <tt class="py-line">                <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-146" class="py-name" targets="Method lacewing.client.ClientProtocol.channelUserExists()=lacewing.client.ClientProtocol-class.html#channelUserExists,Method lacewing.moo.client.MooClientProtocol.channelUserExists()=lacewing.moo.client.MooClientProtocol-class.html#channelUserExists"><a title="lacewing.client.ClientProtocol.channelUserExists
+lacewing.moo.client.MooClientProtocol.channelUserExists" class="py-name" href="#" onclick="return doclink('link-146', 'channelUserExists', 'link-146');">channelUserExists</a></tt><tt class="py-op">(</tt><tt id="link-147" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-147', 'channel', 'link-28');">channel</a></tt><tt class="py-op">,</tt> <tt class="py-name">newPlayer</tt><tt class="py-op">)</tt> </tt>
+<a name="L128"></a><tt class="py-lineno">128</tt>  <tt class="py-line">            <tt class="py-keyword">elif</tt> <tt class="py-name">isinstance</tt><tt class="py-op">(</tt><tt class="py-name">loader</tt><tt class="py-op">,</tt> <tt id="link-148" class="py-name"><a title="lacewing.moo.packetloaders.server.PlayerJoined" class="py-name" href="#" onclick="return doclink('link-148', 'PlayerJoined', 'link-126');">PlayerJoined</a></tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L129"></a><tt class="py-lineno">129</tt>  <tt class="py-line">                <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-149" class="py-name" targets="Method lacewing.client.ClientProtocol.channelUserJoined()=lacewing.client.ClientProtocol-class.html#channelUserJoined,Method lacewing.moo.client.MooClientProtocol.channelUserJoined()=lacewing.moo.client.MooClientProtocol-class.html#channelUserJoined"><a title="lacewing.client.ClientProtocol.channelUserJoined
+lacewing.moo.client.MooClientProtocol.channelUserJoined" class="py-name" href="#" onclick="return doclink('link-149', 'channelUserJoined', 'link-149');">channelUserJoined</a></tt><tt class="py-op">(</tt><tt id="link-150" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-150', 'channel', 'link-28');">channel</a></tt><tt class="py-op">,</tt> <tt class="py-name">newPlayer</tt><tt class="py-op">)</tt> </tt>
+<a name="L130"></a><tt class="py-lineno">130</tt>  <tt class="py-line">         </tt>
+<a name="L131"></a><tt class="py-lineno">131</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">isinstance</tt><tt class="py-op">(</tt><tt class="py-name">loader</tt><tt class="py-op">,</tt> <tt id="link-151" class="py-name" targets="Class lacewing.moo.packetloaders.server.FromChannelMessage=lacewing.moo.packetloaders.server.FromChannelMessage-class.html"><a title="lacewing.moo.packetloaders.server.FromChannelMessage" class="py-name" href="#" onclick="return doclink('link-151', 'FromChannelMessage', 'link-151');">FromChannelMessage</a></tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L132"></a><tt class="py-lineno">132</tt>  <tt class="py-line">            <tt class="py-keyword">if</tt> <tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-152" class="py-name" targets="Method lacewing.moo.packetloaders.server.FromChannelMessage.isServer()=lacewing.moo.packetloaders.server.FromChannelMessage-class.html#isServer"><a title="lacewing.moo.packetloaders.server.FromChannelMessage.isServer" class="py-name" href="#" onclick="return doclink('link-152', 'isServer', 'link-152');">isServer</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L133"></a><tt class="py-lineno">133</tt>  <tt class="py-line">                <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-153" class="py-name" targets="Method lacewing.client.ClientProtocol.messageReceived()=lacewing.client.ClientProtocol-class.html#messageReceived,Method lacewing.moo.client.MooClientProtocol.messageReceived()=lacewing.moo.client.MooClientProtocol-class.html#messageReceived,Method lacewing.moo.server.MooServerProtocol.messageReceived()=lacewing.moo.server.MooServerProtocol-class.html#messageReceived,Method lacewing.server.ServerProtocol.messageReceived()=lacewing.server.ServerProtocol-class.html#messageReceived"><a title="lacewing.client.ClientProtocol.messageReceived
+lacewing.moo.client.MooClientProtocol.messageReceived
+lacewing.moo.server.MooServerProtocol.messageReceived
+lacewing.server.ServerProtocol.messageReceived" class="py-name" href="#" onclick="return doclink('link-153', 'messageReceived', 'link-153');">messageReceived</a></tt><tt class="py-op">(</tt><tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-154" class="py-name"><a title="lacewing.moo.packetloaders.client.ClientMessage.message
+lacewing.moo.packetloaders.client.PrivateMessage.message
+lacewing.moo.packetloaders.client.ToChannelMessage.message
+lacewing.moo.packetloaders.message
+lacewing.moo.packetloaders.server.FromChannelMessage.message" class="py-name" href="#" onclick="return doclink('link-154', 'message', 'link-24');">message</a></tt><tt class="py-op">,</tt> <tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-155" class="py-name"><a title="lacewing.moo.packetloaders.client.ClientMessage.subchannel
+lacewing.moo.packetloaders.client.PrivateMessage.subchannel
+lacewing.moo.packetloaders.client.ToChannelMessage.subchannel
+lacewing.moo.packetloaders.server.FromChannelMessage.subchannel" class="py-name" href="#" onclick="return doclink('link-155', 'subchannel', 'link-76');">subchannel</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L134"></a><tt class="py-lineno">134</tt>  <tt class="py-line">            <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L135"></a><tt class="py-lineno">135</tt>  <tt class="py-line">                <tt id="link-156" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-156', 'channel', 'link-28');">channel</a></tt><tt class="py-op">,</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-157" class="py-name"><a title="lacewing.moo.protocol.MooProtocol.channels
+lacewing.moo.server.MooServerFactory.channels
+lacewing.packetloaders.server.Response.channels
+lacewing.protocol.BaseProtocol.channels" class="py-name" href="#" onclick="return doclink('link-157', 'channels', 'link-121');">channels</a></tt><tt class="py-op">[</tt><tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-158" class="py-name"><a title="lacewing.moo.packetloaders.client.LeaveChannel.channelId
+lacewing.moo.packetloaders.client.PrivateMessage.channelId
+lacewing.moo.packetloaders.client.ToChannelMessage.channelId
+lacewing.moo.packetloaders.server.ChannelJoined.channelId
+lacewing.moo.packetloaders.server.FromChannelMessage.channelId
+lacewing.moo.packetloaders.server.PlayerLeft.channelId" class="py-name" href="#" onclick="return doclink('link-158', 'channelId', 'link-109');">channelId</a></tt><tt class="py-op">]</tt> </tt>
+<a name="L136"></a><tt class="py-lineno">136</tt>  <tt class="py-line">                <tt id="link-159" class="py-name"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-159', 'player', 'link-38');">player</a></tt><tt class="py-op">,</tt> <tt class="py-op">=</tt> <tt id="link-160" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-160', 'channel', 'link-28');">channel</a></tt><tt class="py-op">.</tt><tt id="link-161" class="py-name"><a title="lacewing.moo.client.Channel.connections
+lacewing.moo.server.Channel.connections
+lacewing.moo.server.MooServerFactory.connections" class="py-name" href="#" onclick="return doclink('link-161', 'connections', 'link-47');">connections</a></tt><tt class="py-op">[</tt><tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-162" class="py-name"><a title="lacewing.moo.packetloaders.client.PrivateMessage.playerId
+lacewing.moo.packetloaders.server.AssignedID.playerId
+lacewing.moo.packetloaders.server.ChannelJoined.playerId
+lacewing.moo.packetloaders.server.FromChannelMessage.playerId
+lacewing.moo.packetloaders.server.PlayerChanged.playerId
+lacewing.moo.packetloaders.server.PlayerLeft.playerId
+lacewing.packetloaders.server.Response.playerId" class="py-name" href="#" onclick="return doclink('link-162', 'playerId', 'link-99');">playerId</a></tt><tt class="py-op">]</tt> </tt>
+<a name="L137"></a><tt class="py-lineno">137</tt>  <tt class="py-line">                <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-163" class="py-name" targets="Method lacewing.client.ClientProtocol.channelMessageReceived()=lacewing.client.ClientProtocol-class.html#channelMessageReceived,Method lacewing.moo.client.MooClientProtocol.channelMessageReceived()=lacewing.moo.client.MooClientProtocol-class.html#channelMessageReceived,Method lacewing.moo.server.MooServerProtocol.channelMessageReceived()=lacewing.moo.server.MooServerProtocol-class.html#channelMessageReceived,Method lacewing.server.ServerProtocol.channelMessageReceived()=lacewing.server.ServerProtocol-class.html#channelMessageReceived"><a title="lacewing.client.ClientProtocol.channelMessageReceived
+lacewing.moo.client.MooClientProtocol.channelMessageReceived
+lacewing.moo.server.MooServerProtocol.channelMessageReceived
+lacewing.server.ServerProtocol.channelMessageReceived" class="py-name" href="#" onclick="return doclink('link-163', 'channelMessageReceived', 'link-163');">channelMessageReceived</a></tt><tt class="py-op">(</tt><tt id="link-164" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-164', 'channel', 'link-28');">channel</a></tt><tt class="py-op">,</tt> <tt id="link-165" class="py-name"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-165', 'player', 'link-38');">player</a></tt><tt class="py-op">,</tt> <tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-166" class="py-name"><a title="lacewing.moo.packetloaders.client.ClientMessage.message
+lacewing.moo.packetloaders.client.PrivateMessage.message
+lacewing.moo.packetloaders.client.ToChannelMessage.message
+lacewing.moo.packetloaders.message
+lacewing.moo.packetloaders.server.FromChannelMessage.message" class="py-name" href="#" onclick="return doclink('link-166', 'message', 'link-24');">message</a></tt><tt class="py-op">,</tt>  </tt>
+<a name="L138"></a><tt class="py-lineno">138</tt>  <tt class="py-line">                    <tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-167" class="py-name"><a title="lacewing.moo.packetloaders.client.ClientMessage.subchannel
+lacewing.moo.packetloaders.client.PrivateMessage.subchannel
+lacewing.moo.packetloaders.client.ToChannelMessage.subchannel
+lacewing.moo.packetloaders.server.FromChannelMessage.subchannel" class="py-name" href="#" onclick="return doclink('link-167', 'subchannel', 'link-76');">subchannel</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L139"></a><tt class="py-lineno">139</tt>  <tt class="py-line">             </tt>
+<a name="L140"></a><tt class="py-lineno">140</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">isinstance</tt><tt class="py-op">(</tt><tt class="py-name">loader</tt><tt class="py-op">,</tt> <tt id="link-168" class="py-name" targets="Class lacewing.moo.packetloaders.server.PlayerChanged=lacewing.moo.packetloaders.server.PlayerChanged-class.html"><a title="lacewing.moo.packetloaders.server.PlayerChanged" class="py-name" href="#" onclick="return doclink('link-168', 'PlayerChanged', 'link-168');">PlayerChanged</a></tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L141"></a><tt class="py-lineno">141</tt>  <tt class="py-line">            <tt id="link-169" class="py-name"><a title="lacewing.moo.packetloaders.client.PrivateMessage.playerId
+lacewing.moo.packetloaders.server.AssignedID.playerId
+lacewing.moo.packetloaders.server.ChannelJoined.playerId
+lacewing.moo.packetloaders.server.FromChannelMessage.playerId
+lacewing.moo.packetloaders.server.PlayerChanged.playerId
+lacewing.moo.packetloaders.server.PlayerLeft.playerId
+lacewing.packetloaders.server.Response.playerId" class="py-name" href="#" onclick="return doclink('link-169', 'playerId', 'link-99');">playerId</a></tt> <tt class="py-op">=</tt> <tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-170" class="py-name"><a title="lacewing.moo.packetloaders.client.PrivateMessage.playerId
+lacewing.moo.packetloaders.server.AssignedID.playerId
+lacewing.moo.packetloaders.server.ChannelJoined.playerId
+lacewing.moo.packetloaders.server.FromChannelMessage.playerId
+lacewing.moo.packetloaders.server.PlayerChanged.playerId
+lacewing.moo.packetloaders.server.PlayerLeft.playerId
+lacewing.packetloaders.server.Response.playerId" class="py-name" href="#" onclick="return doclink('link-170', 'playerId', 'link-99');">playerId</a></tt> </tt>
+<a name="L142"></a><tt class="py-lineno">142</tt>  <tt class="py-line">            <tt id="link-171" class="py-name"><a title="lacewing.moo.packetloaders.client.SetName.playerName
+lacewing.moo.packetloaders.server.ChannelJoined.playerName
+lacewing.moo.packetloaders.server.PlayerChanged.playerName" class="py-name" href="#" onclick="return doclink('link-171', 'playerName', 'link-114');">playerName</a></tt> <tt class="py-op">=</tt> <tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-172" class="py-name"><a title="lacewing.moo.packetloaders.client.SetName.playerName
+lacewing.moo.packetloaders.server.ChannelJoined.playerName
+lacewing.moo.packetloaders.server.PlayerChanged.playerName" class="py-name" href="#" onclick="return doclink('link-172', 'playerName', 'link-114');">playerName</a></tt> </tt>
+<a name="L143"></a><tt class="py-lineno">143</tt>  <tt class="py-line">            <tt class="py-keyword">for</tt> <tt id="link-173" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-173', 'channel', 'link-28');">channel</a></tt> <tt class="py-keyword">in</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-174" class="py-name"><a title="lacewing.moo.protocol.MooProtocol.channels
+lacewing.moo.server.MooServerFactory.channels
+lacewing.packetloaders.server.Response.channels
+lacewing.protocol.BaseProtocol.channels" class="py-name" href="#" onclick="return doclink('link-174', 'channels', 'link-121');">channels</a></tt><tt class="py-op">.</tt><tt id="link-175" class="py-name" targets="Method lacewing.multidict.MultikeyDict.values()=lacewing.multidict.MultikeyDict-class.html#values"><a title="lacewing.multidict.MultikeyDict.values" class="py-name" href="#" onclick="return doclink('link-175', 'values', 'link-175');">values</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L144"></a><tt class="py-lineno">144</tt>  <tt class="py-line">                <tt class="py-keyword">if</tt> <tt id="link-176" class="py-name"><a title="lacewing.moo.packetloaders.client.PrivateMessage.playerId
+lacewing.moo.packetloaders.server.AssignedID.playerId
+lacewing.moo.packetloaders.server.ChannelJoined.playerId
+lacewing.moo.packetloaders.server.FromChannelMessage.playerId
+lacewing.moo.packetloaders.server.PlayerChanged.playerId
+lacewing.moo.packetloaders.server.PlayerLeft.playerId
+lacewing.packetloaders.server.Response.playerId" class="py-name" href="#" onclick="return doclink('link-176', 'playerId', 'link-99');">playerId</a></tt> <tt class="py-keyword">in</tt> <tt id="link-177" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-177', 'channel', 'link-28');">channel</a></tt><tt class="py-op">.</tt><tt id="link-178" class="py-name"><a title="lacewing.moo.client.Channel.connections
+lacewing.moo.server.Channel.connections
+lacewing.moo.server.MooServerFactory.connections" class="py-name" href="#" onclick="return doclink('link-178', 'connections', 'link-47');">connections</a></tt><tt class="py-op">:</tt> </tt>
+<a name="L145"></a><tt class="py-lineno">145</tt>  <tt class="py-line">                    <tt id="link-179" class="py-name"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-179', 'player', 'link-38');">player</a></tt><tt class="py-op">,</tt> <tt class="py-op">=</tt> <tt id="link-180" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-180', 'channel', 'link-28');">channel</a></tt><tt class="py-op">.</tt><tt id="link-181" class="py-name"><a title="lacewing.moo.client.Channel.connections
+lacewing.moo.server.Channel.connections
+lacewing.moo.server.MooServerFactory.connections" class="py-name" href="#" onclick="return doclink('link-181', 'connections', 'link-47');">connections</a></tt><tt class="py-op">[</tt><tt id="link-182" class="py-name"><a title="lacewing.moo.packetloaders.client.PrivateMessage.playerId
+lacewing.moo.packetloaders.server.AssignedID.playerId
+lacewing.moo.packetloaders.server.ChannelJoined.playerId
+lacewing.moo.packetloaders.server.FromChannelMessage.playerId
+lacewing.moo.packetloaders.server.PlayerChanged.playerId
+lacewing.moo.packetloaders.server.PlayerLeft.playerId
+lacewing.packetloaders.server.Response.playerId" class="py-name" href="#" onclick="return doclink('link-182', 'playerId', 'link-99');">playerId</a></tt><tt class="py-op">]</tt> </tt>
+<a name="L146"></a><tt class="py-lineno">146</tt>  <tt class="py-line">                    <tt class="py-name">oldName</tt> <tt class="py-op">=</tt> <tt id="link-183" class="py-name"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-183', 'player', 'link-38');">player</a></tt><tt class="py-op">.</tt><tt id="link-184" class="py-name"><a title="lacewing.client.ClientChannel.name
+lacewing.client.Peer.name
+lacewing.moo.client.Channel.name
+lacewing.moo.client.Player.name
+lacewing.moo.protocol.MooProtocol.name
+lacewing.moo.server.Channel.name
+lacewing.packetloaders.client.Request.name
+lacewing.packetloaders.server.ChannelPeer.name
+lacewing.packetloaders.server.Peer.name
+lacewing.packetloaders.server.Response.name
+lacewing.protocol.BaseProtocol.name
+lacewing.server.ServerChannel.name" class="py-name" href="#" onclick="return doclink('link-184', 'name', 'link-25');">name</a></tt> </tt>
+<a name="L147"></a><tt class="py-lineno">147</tt>  <tt class="py-line">                    <tt id="link-185" class="py-name"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-185', 'player', 'link-38');">player</a></tt><tt class="py-op">.</tt><tt id="link-186" class="py-name"><a title="lacewing.client.ClientChannel.name
+lacewing.client.Peer.name
+lacewing.moo.client.Channel.name
+lacewing.moo.client.Player.name
+lacewing.moo.protocol.MooProtocol.name
+lacewing.moo.server.Channel.name
+lacewing.packetloaders.client.Request.name
+lacewing.packetloaders.server.ChannelPeer.name
+lacewing.packetloaders.server.Peer.name
+lacewing.packetloaders.server.Response.name
+lacewing.protocol.BaseProtocol.name
+lacewing.server.ServerChannel.name" class="py-name" href="#" onclick="return doclink('link-186', 'name', 'link-25');">name</a></tt> <tt class="py-op">=</tt> <tt id="link-187" class="py-name"><a title="lacewing.moo.packetloaders.client.SetName.playerName
+lacewing.moo.packetloaders.server.ChannelJoined.playerName
+lacewing.moo.packetloaders.server.PlayerChanged.playerName" class="py-name" href="#" onclick="return doclink('link-187', 'playerName', 'link-114');">playerName</a></tt> </tt>
+<a name="L148"></a><tt class="py-lineno">148</tt>  <tt class="py-line">                    <tt class="py-keyword">if</tt> <tt id="link-188" class="py-name"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-188', 'player', 'link-38');">player</a></tt><tt class="py-op">.</tt><tt id="link-189" class="py-name" targets="Method lacewing.moo.client.Player.isPeer()=lacewing.moo.client.Player-class.html#isPeer"><a title="lacewing.moo.client.Player.isPeer" class="py-name" href="#" onclick="return doclink('link-189', 'isPeer', 'link-189');">isPeer</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L149"></a><tt class="py-lineno">149</tt>  <tt class="py-line">                        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-190" class="py-name" targets="Method lacewing.client.ClientProtocol.channelUserChanged()=lacewing.client.ClientProtocol-class.html#channelUserChanged,Method lacewing.moo.client.MooClientProtocol.channelUserChanged()=lacewing.moo.client.MooClientProtocol-class.html#channelUserChanged"><a title="lacewing.client.ClientProtocol.channelUserChanged
+lacewing.moo.client.MooClientProtocol.channelUserChanged" class="py-name" href="#" onclick="return doclink('link-190', 'channelUserChanged', 'link-190');">channelUserChanged</a></tt><tt class="py-op">(</tt><tt id="link-191" class="py-name"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-191', 'player', 'link-38');">player</a></tt><tt class="py-op">,</tt> <tt class="py-name">oldName</tt><tt class="py-op">,</tt> <tt id="link-192" class="py-name"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-192', 'player', 'link-38');">player</a></tt><tt class="py-op">.</tt><tt id="link-193" class="py-name"><a title="lacewing.client.ClientChannel.name
+lacewing.client.Peer.name
+lacewing.moo.client.Channel.name
+lacewing.moo.client.Player.name
+lacewing.moo.protocol.MooProtocol.name
+lacewing.moo.server.Channel.name
+lacewing.packetloaders.client.Request.name
+lacewing.packetloaders.server.ChannelPeer.name
+lacewing.packetloaders.server.Peer.name
+lacewing.packetloaders.server.Response.name
+lacewing.protocol.BaseProtocol.name
+lacewing.server.ServerChannel.name" class="py-name" href="#" onclick="return doclink('link-193', 'name', 'link-25');">name</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L150"></a><tt class="py-lineno">150</tt>  <tt class="py-line">                    <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L151"></a><tt class="py-lineno">151</tt>  <tt class="py-line">                        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-194" class="py-name" targets="Method lacewing.client.ClientProtocol.nameChanged()=lacewing.client.ClientProtocol-class.html#nameChanged,Method lacewing.moo.client.MooClientProtocol.nameChanged()=lacewing.moo.client.MooClientProtocol-class.html#nameChanged,Method lacewing.moo.server.MooServerProtocol.nameChanged()=lacewing.moo.server.MooServerProtocol-class.html#nameChanged,Method lacewing.server.ServerProtocol.nameChanged()=lacewing.server.ServerProtocol-class.html#nameChanged"><a title="lacewing.client.ClientProtocol.nameChanged
+lacewing.moo.client.MooClientProtocol.nameChanged
+lacewing.moo.server.MooServerProtocol.nameChanged
+lacewing.server.ServerProtocol.nameChanged" class="py-name" href="#" onclick="return doclink('link-194', 'nameChanged', 'link-194');">nameChanged</a></tt><tt class="py-op">(</tt><tt id="link-195" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-195', 'channel', 'link-28');">channel</a></tt><tt class="py-op">,</tt> <tt class="py-name">oldName</tt><tt class="py-op">,</tt> <tt id="link-196" class="py-name"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-196', 'player', 'link-38');">player</a></tt><tt class="py-op">.</tt><tt id="link-197" class="py-name"><a title="lacewing.client.ClientChannel.name
+lacewing.client.Peer.name
+lacewing.moo.client.Channel.name
+lacewing.moo.client.Player.name
+lacewing.moo.protocol.MooProtocol.name
+lacewing.moo.server.Channel.name
+lacewing.packetloaders.client.Request.name
+lacewing.packetloaders.server.ChannelPeer.name
+lacewing.packetloaders.server.Peer.name
+lacewing.packetloaders.server.Response.name
+lacewing.protocol.BaseProtocol.name
+lacewing.server.ServerChannel.name" class="py-name" href="#" onclick="return doclink('link-197', 'name', 'link-25');">name</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L152"></a><tt class="py-lineno">152</tt>  <tt class="py-line">         </tt>
+<a name="L153"></a><tt class="py-lineno">153</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">isinstance</tt><tt class="py-op">(</tt><tt class="py-name">loader</tt><tt class="py-op">,</tt> <tt id="link-198" class="py-name" targets="Class lacewing.moo.packetloaders.server.PlayerLeft=lacewing.moo.packetloaders.server.PlayerLeft-class.html"><a title="lacewing.moo.packetloaders.server.PlayerLeft" class="py-name" href="#" onclick="return doclink('link-198', 'PlayerLeft', 'link-198');">PlayerLeft</a></tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L154"></a><tt class="py-lineno">154</tt>  <tt class="py-line">            <tt id="link-199" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-199', 'channel', 'link-28');">channel</a></tt><tt class="py-op">,</tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-200" class="py-name"><a title="lacewing.moo.protocol.MooProtocol.channels
+lacewing.moo.server.MooServerFactory.channels
+lacewing.packetloaders.server.Response.channels
+lacewing.protocol.BaseProtocol.channels" class="py-name" href="#" onclick="return doclink('link-200', 'channels', 'link-121');">channels</a></tt><tt class="py-op">[</tt><tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-201" class="py-name"><a title="lacewing.moo.packetloaders.client.LeaveChannel.channelId
+lacewing.moo.packetloaders.client.PrivateMessage.channelId
+lacewing.moo.packetloaders.client.ToChannelMessage.channelId
+lacewing.moo.packetloaders.server.ChannelJoined.channelId
+lacewing.moo.packetloaders.server.FromChannelMessage.channelId
+lacewing.moo.packetloaders.server.PlayerLeft.channelId" class="py-name" href="#" onclick="return doclink('link-201', 'channelId', 'link-109');">channelId</a></tt><tt class="py-op">]</tt> </tt>
+<a name="L155"></a><tt class="py-lineno">155</tt>  <tt class="py-line">            <tt id="link-202" class="py-name"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-202', 'player', 'link-38');">player</a></tt><tt class="py-op">,</tt> <tt class="py-op">=</tt> <tt id="link-203" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-203', 'channel', 'link-28');">channel</a></tt><tt class="py-op">.</tt><tt id="link-204" class="py-name"><a title="lacewing.moo.client.Channel.connections
+lacewing.moo.server.Channel.connections
+lacewing.moo.server.MooServerFactory.connections" class="py-name" href="#" onclick="return doclink('link-204', 'connections', 'link-47');">connections</a></tt><tt class="py-op">[</tt><tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-205" class="py-name"><a title="lacewing.moo.packetloaders.client.PrivateMessage.playerId
+lacewing.moo.packetloaders.server.AssignedID.playerId
+lacewing.moo.packetloaders.server.ChannelJoined.playerId
+lacewing.moo.packetloaders.server.FromChannelMessage.playerId
+lacewing.moo.packetloaders.server.PlayerChanged.playerId
+lacewing.moo.packetloaders.server.PlayerLeft.playerId
+lacewing.packetloaders.server.Response.playerId" class="py-name" href="#" onclick="return doclink('link-205', 'playerId', 'link-99');">playerId</a></tt><tt class="py-op">]</tt> </tt>
+<a name="L156"></a><tt class="py-lineno">156</tt>  <tt class="py-line">            <tt class="py-keyword">if</tt> <tt id="link-206" class="py-name"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-206', 'player', 'link-38');">player</a></tt><tt class="py-op">.</tt><tt id="link-207" class="py-name"><a title="lacewing.moo.client.Player.isPeer" class="py-name" href="#" onclick="return doclink('link-207', 'isPeer', 'link-189');">isPeer</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+<a name="L157"></a><tt class="py-lineno">157</tt>  <tt class="py-line">                <tt id="link-208" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-208', 'channel', 'link-28');">channel</a></tt><tt class="py-op">.</tt><tt id="link-209" class="py-name" targets="Method lacewing.moo.client.Channel.removeConnection()=lacewing.moo.client.Channel-class.html#removeConnection,Method lacewing.moo.server.Channel.removeConnection()=lacewing.moo.server.Channel-class.html#removeConnection,Method lacewing.server.ServerChannel.removeConnection()=lacewing.server.ServerChannel-class.html#removeConnection"><a title="lacewing.moo.client.Channel.removeConnection
+lacewing.moo.server.Channel.removeConnection
+lacewing.server.ServerChannel.removeConnection" class="py-name" href="#" onclick="return doclink('link-209', 'removeConnection', 'link-209');">removeConnection</a></tt><tt class="py-op">(</tt><tt id="link-210" class="py-name"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-210', 'player', 'link-38');">player</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L158"></a><tt class="py-lineno">158</tt>  <tt class="py-line">                <tt id="link-211" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-211', 'channel', 'link-28');">channel</a></tt><tt class="py-op">.</tt><tt id="link-212" class="py-name"><a title="lacewing.moo.client.Channel.setMaster" class="py-name" href="#" onclick="return doclink('link-212', 'setMaster', 'link-119');">setMaster</a></tt><tt class="py-op">(</tt><tt class="py-name">loader</tt><tt class="py-op">.</tt><tt id="link-213" class="py-name"><a title="lacewing.moo.client.Channel.masterId
+lacewing.moo.packetloaders.server.ChannelJoined.masterId
+lacewing.moo.packetloaders.server.PlayerLeft.masterId" class="py-name" href="#" onclick="return doclink('link-213', 'masterId', 'link-48');">masterId</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L159"></a><tt class="py-lineno">159</tt>  <tt class="py-line">                <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-214" class="py-name" targets="Method lacewing.client.ClientProtocol.channelUserLeft()=lacewing.client.ClientProtocol-class.html#channelUserLeft,Method lacewing.moo.client.MooClientProtocol.channelUserLeft()=lacewing.moo.client.MooClientProtocol-class.html#channelUserLeft"><a title="lacewing.client.ClientProtocol.channelUserLeft
+lacewing.moo.client.MooClientProtocol.channelUserLeft" class="py-name" href="#" onclick="return doclink('link-214', 'channelUserLeft', 'link-214');">channelUserLeft</a></tt><tt class="py-op">(</tt><tt id="link-215" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-215', 'channel', 'link-28');">channel</a></tt><tt class="py-op">,</tt> <tt id="link-216" class="py-name"><a title="lacewing.moo.client.Channel.player" class="py-name" href="#" onclick="return doclink('link-216', 'player', 'link-38');">player</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L160"></a><tt class="py-lineno">160</tt>  <tt class="py-line">            <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L161"></a><tt class="py-lineno">161</tt>  <tt class="py-line">                <tt class="py-keyword">del</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-217" class="py-name"><a title="lacewing.moo.protocol.MooProtocol.channels
+lacewing.moo.server.MooServerFactory.channels
+lacewing.packetloaders.server.Response.channels
+lacewing.protocol.BaseProtocol.channels" class="py-name" href="#" onclick="return doclink('link-217', 'channels', 'link-121');">channels</a></tt><tt class="py-op">[</tt><tt id="link-218" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-218', 'channel', 'link-28');">channel</a></tt><tt class="py-op">]</tt> </tt>
+<a name="L162"></a><tt class="py-lineno">162</tt>  <tt class="py-line">                <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-219" class="py-name" targets="Method lacewing.client.ClientProtocol.channelLeft()=lacewing.client.ClientProtocol-class.html#channelLeft,Method lacewing.moo.client.MooClientProtocol.channelLeft()=lacewing.moo.client.MooClientProtocol-class.html#channelLeft,Method lacewing.moo.server.MooServerProtocol.channelLeft()=lacewing.moo.server.MooServerProtocol-class.html#channelLeft,Method lacewing.server.ServerProtocol.channelLeft()=lacewing.server.ServerProtocol-class.html#channelLeft"><a title="lacewing.client.ClientProtocol.channelLeft
+lacewing.moo.client.MooClientProtocol.channelLeft
+lacewing.moo.server.MooServerProtocol.channelLeft
+lacewing.server.ServerProtocol.channelLeft" class="py-name" href="#" onclick="return doclink('link-219', 'channelLeft', 'link-219');">channelLeft</a></tt><tt class="py-op">(</tt><tt id="link-220" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-220', 'channel', 'link-28');">channel</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L163"></a><tt class="py-lineno">163</tt>  <tt class="py-line">         </tt>
+<a name="L164"></a><tt class="py-lineno">164</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L165"></a><tt class="py-lineno">165</tt>  <tt class="py-line">            <tt class="py-keyword">raise</tt> <tt class="py-name">NotImplementedError</tt> </tt>
+</div><a name="L166"></a><tt class="py-lineno">166</tt>  <tt class="py-line">         </tt>
+<a name="L167"></a><tt class="py-lineno">167</tt>  <tt class="py-line">    <tt class="py-comment"># event-like</tt> </tt>
+<a name="L168"></a><tt class="py-lineno">168</tt>  <tt class="py-line">     </tt>
+<a name="MooClientProtocol.motdReceived"></a><div id="MooClientProtocol.motdReceived-def"><a name="L169"></a><tt class="py-lineno">169</tt> <a class="py-toggle" href="#" id="MooClientProtocol.motdReceived-toggle" onclick="return toggle('MooClientProtocol.motdReceived');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#motdReceived">motdReceived</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">value</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.motdReceived-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.motdReceived-expanded"><a name="L170"></a><tt class="py-lineno">170</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L171"></a><tt class="py-lineno">171</tt>  <tt class="py-line"><tt class="py-docstring">        Called upon receiving the MOTD</tt> </tt>
+<a name="L172"></a><tt class="py-lineno">172</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L173"></a><tt class="py-lineno">173</tt>  <tt class="py-line">     </tt>
+<a name="MooClientProtocol.connectionAccepted"></a><div id="MooClientProtocol.connectionAccepted-def"><a name="L174"></a><tt class="py-lineno">174</tt> <a class="py-toggle" href="#" id="MooClientProtocol.connectionAccepted-toggle" onclick="return toggle('MooClientProtocol.connectionAccepted');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#connectionAccepted">connectionAccepted</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.connectionAccepted-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.connectionAccepted-expanded"><a name="L175"></a><tt class="py-lineno">175</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L176"></a><tt class="py-lineno">176</tt>  <tt class="py-line"><tt class="py-docstring">        Called when the connection has been accepted, and the</tt> </tt>
+<a name="L177"></a><tt class="py-lineno">177</tt>  <tt class="py-line"><tt class="py-docstring">        client notified.</tt> </tt>
+<a name="L178"></a><tt class="py-lineno">178</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L179"></a><tt class="py-lineno">179</tt>  <tt class="py-line"> </tt>
+<a name="MooClientProtocol.messageReceived"></a><div id="MooClientProtocol.messageReceived-def"><a name="L180"></a><tt class="py-lineno">180</tt> <a class="py-toggle" href="#" id="MooClientProtocol.messageReceived-toggle" onclick="return toggle('MooClientProtocol.messageReceived');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#messageReceived">messageReceived</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">message</tt><tt class="py-op">,</tt> <tt class="py-param">subchannel</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.messageReceived-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.messageReceived-expanded"><a name="L181"></a><tt class="py-lineno">181</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L182"></a><tt class="py-lineno">182</tt>  <tt class="py-line"><tt class="py-docstring">        Called upon receiving a server message</tt> </tt>
+<a name="L183"></a><tt class="py-lineno">183</tt>  <tt class="py-line"><tt class="py-docstring">        </tt> </tt>
+<a name="L184"></a><tt class="py-lineno">184</tt>  <tt class="py-line"><tt class="py-docstring">        @type message: L{Message} object</tt> </tt>
+<a name="L185"></a><tt class="py-lineno">185</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L186"></a><tt class="py-lineno">186</tt>  <tt class="py-line">     </tt>
+<a name="MooClientProtocol.channelMessageReceived"></a><div id="MooClientProtocol.channelMessageReceived-def"><a name="L187"></a><tt class="py-lineno">187</tt> <a class="py-toggle" href="#" id="MooClientProtocol.channelMessageReceived-toggle" onclick="return toggle('MooClientProtocol.channelMessageReceived');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#channelMessageReceived">channelMessageReceived</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">channel</tt><tt class="py-op">,</tt> <tt class="py-param">connection</tt><tt class="py-op">,</tt> <tt class="py-param">message</tt><tt class="py-op">,</tt> <tt class="py-param">subchannel</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.channelMessageReceived-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.channelMessageReceived-expanded"><a name="L188"></a><tt class="py-lineno">188</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L189"></a><tt class="py-lineno">189</tt>  <tt class="py-line"><tt class="py-docstring">        Called when a channel message has been received</tt> </tt>
+<a name="L190"></a><tt class="py-lineno">190</tt>  <tt class="py-line"><tt class="py-docstring">        </tt> </tt>
+<a name="L191"></a><tt class="py-lineno">191</tt>  <tt class="py-line"><tt class="py-docstring">        @type message: lacewing.moo.packetloaders.message.Message object</tt> </tt>
+<a name="L192"></a><tt class="py-lineno">192</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L193"></a><tt class="py-lineno">193</tt>  <tt class="py-line"> </tt>
+<a name="MooClientProtocol.channelJoined"></a><div id="MooClientProtocol.channelJoined-def"><a name="L194"></a><tt class="py-lineno">194</tt> <a class="py-toggle" href="#" id="MooClientProtocol.channelJoined-toggle" onclick="return toggle('MooClientProtocol.channelJoined');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#channelJoined">channelJoined</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">channel</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.channelJoined-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.channelJoined-expanded"><a name="L195"></a><tt class="py-lineno">195</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L196"></a><tt class="py-lineno">196</tt>  <tt class="py-line"><tt class="py-docstring">        Called when the server has accepted a channel join request.</tt> </tt>
+<a name="L197"></a><tt class="py-lineno">197</tt>  <tt class="py-line"><tt class="py-docstring">        @arg channel: The channel the client has joined.</tt> </tt>
+<a name="L198"></a><tt class="py-lineno">198</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L199"></a><tt class="py-lineno">199</tt>  <tt class="py-line">         </tt>
+<a name="MooClientProtocol.channelLeft"></a><div id="MooClientProtocol.channelLeft-def"><a name="L200"></a><tt class="py-lineno">200</tt> <a class="py-toggle" href="#" id="MooClientProtocol.channelLeft-toggle" onclick="return toggle('MooClientProtocol.channelLeft');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#channelLeft">channelLeft</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">channel</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.channelLeft-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.channelLeft-expanded"><a name="L201"></a><tt class="py-lineno">201</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L202"></a><tt class="py-lineno">202</tt>  <tt class="py-line"><tt class="py-docstring">        Called when the server has accepted a channel leave request.</tt> </tt>
+<a name="L203"></a><tt class="py-lineno">203</tt>  <tt class="py-line"><tt class="py-docstring">        @arg channel: The channel the client has left.</tt> </tt>
+<a name="L204"></a><tt class="py-lineno">204</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L205"></a><tt class="py-lineno">205</tt>  <tt class="py-line">     </tt>
+<a name="MooClientProtocol.nameChanged"></a><div id="MooClientProtocol.nameChanged-def"><a name="L206"></a><tt class="py-lineno">206</tt> <a class="py-toggle" href="#" id="MooClientProtocol.nameChanged-toggle" onclick="return toggle('MooClientProtocol.nameChanged');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#nameChanged">nameChanged</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">channel</tt><tt class="py-op">,</tt> <tt class="py-param">oldName</tt><tt class="py-op">,</tt> <tt class="py-param">newName</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.nameChanged-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.nameChanged-expanded"><a name="L207"></a><tt class="py-lineno">207</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L208"></a><tt class="py-lineno">208</tt>  <tt class="py-line"><tt class="py-docstring">        Called when the server has told us we've changed</tt> </tt>
+<a name="L209"></a><tt class="py-lineno">209</tt>  <tt class="py-line"><tt class="py-docstring">        our name</tt> </tt>
+<a name="L210"></a><tt class="py-lineno">210</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L211"></a><tt class="py-lineno">211</tt>  <tt class="py-line"> </tt>
+<a name="MooClientProtocol.channelUserJoined"></a><div id="MooClientProtocol.channelUserJoined-def"><a name="L212"></a><tt class="py-lineno">212</tt> <a class="py-toggle" href="#" id="MooClientProtocol.channelUserJoined-toggle" onclick="return toggle('MooClientProtocol.channelUserJoined');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#channelUserJoined">channelUserJoined</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">channel</tt><tt class="py-op">,</tt> <tt class="py-param">client</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.channelUserJoined-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.channelUserJoined-expanded"><a name="L213"></a><tt class="py-lineno">213</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L214"></a><tt class="py-lineno">214</tt>  <tt class="py-line"><tt class="py-docstring">        Called when a client has joined the channel.</tt> </tt>
+<a name="L215"></a><tt class="py-lineno">215</tt>  <tt class="py-line"><tt class="py-docstring">        @arg channel: The channel the client has joined.</tt> </tt>
+<a name="L216"></a><tt class="py-lineno">216</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L217"></a><tt class="py-lineno">217</tt>  <tt class="py-line"> </tt>
+<a name="MooClientProtocol.channelUserExists"></a><div id="MooClientProtocol.channelUserExists-def"><a name="L218"></a><tt class="py-lineno">218</tt> <a class="py-toggle" href="#" id="MooClientProtocol.channelUserExists-toggle" onclick="return toggle('MooClientProtocol.channelUserExists');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#channelUserExists">channelUserExists</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">channel</tt><tt class="py-op">,</tt> <tt class="py-param">client</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.channelUserExists-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.channelUserExists-expanded"><a name="L219"></a><tt class="py-lineno">219</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L220"></a><tt class="py-lineno">220</tt>  <tt class="py-line"><tt class="py-docstring">        Called when a client exists in the channel.</tt> </tt>
+<a name="L221"></a><tt class="py-lineno">221</tt>  <tt class="py-line"><tt class="py-docstring">        @arg channel: The channel the client exists in.</tt> </tt>
+<a name="L222"></a><tt class="py-lineno">222</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L223"></a><tt class="py-lineno">223</tt>  <tt class="py-line"> </tt>
+<a name="MooClientProtocol.channelUserLeft"></a><div id="MooClientProtocol.channelUserLeft-def"><a name="L224"></a><tt class="py-lineno">224</tt> <a class="py-toggle" href="#" id="MooClientProtocol.channelUserLeft-toggle" onclick="return toggle('MooClientProtocol.channelUserLeft');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#channelUserLeft">channelUserLeft</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">channel</tt><tt class="py-op">,</tt> <tt class="py-param">client</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.channelUserLeft-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.channelUserLeft-expanded"><a name="L225"></a><tt class="py-lineno">225</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L226"></a><tt class="py-lineno">226</tt>  <tt class="py-line"><tt class="py-docstring">        Called when a client has left the channel.</tt> </tt>
+<a name="L227"></a><tt class="py-lineno">227</tt>  <tt class="py-line"><tt class="py-docstring">        @arg channel: The channel the client has left.</tt> </tt>
+<a name="L228"></a><tt class="py-lineno">228</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L229"></a><tt class="py-lineno">229</tt>  <tt class="py-line"> </tt>
+<a name="MooClientProtocol.channelUserChanged"></a><div id="MooClientProtocol.channelUserChanged-def"><a name="L230"></a><tt class="py-lineno">230</tt> <a class="py-toggle" href="#" id="MooClientProtocol.channelUserChanged-toggle" onclick="return toggle('MooClientProtocol.channelUserChanged');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#channelUserChanged">channelUserChanged</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">client</tt><tt class="py-op">,</tt> <tt class="py-param">oldName</tt><tt class="py-op">,</tt> <tt class="py-param">newName</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.channelUserChanged-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.channelUserChanged-expanded"><a name="L231"></a><tt class="py-lineno">231</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L232"></a><tt class="py-lineno">232</tt>  <tt class="py-line"><tt class="py-docstring">        Called when a client in the channel (including has changed name.</tt> </tt>
+<a name="L233"></a><tt class="py-lineno">233</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+</div><a name="L234"></a><tt class="py-lineno">234</tt>  <tt class="py-line">         </tt>
+<a name="L235"></a><tt class="py-lineno">235</tt>  <tt class="py-line">    <tt class="py-comment"># action-like</tt> </tt>
+<a name="L236"></a><tt class="py-lineno">236</tt>  <tt class="py-line">     </tt>
+<a name="MooClientProtocol.changeName"></a><div id="MooClientProtocol.changeName-def"><a name="L237"></a><tt class="py-lineno">237</tt> <a class="py-toggle" href="#" id="MooClientProtocol.changeName-toggle" onclick="return toggle('MooClientProtocol.changeName');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#changeName">changeName</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">name</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.changeName-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.changeName-expanded"><a name="L238"></a><tt class="py-lineno">238</tt>  <tt class="py-line">        <tt class="py-name">newChange</tt> <tt class="py-op">=</tt> <tt id="link-221" class="py-name" targets="Class lacewing.moo.packetloaders.client.ChangeName=lacewing.moo.packetloaders.client.ChangeName-class.html"><a title="lacewing.moo.packetloaders.client.ChangeName" class="py-name" href="#" onclick="return doclink('link-221', 'ChangeName', 'link-221');">ChangeName</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L239"></a><tt class="py-lineno">239</tt>  <tt class="py-line">        <tt class="py-name">newChange</tt><tt class="py-op">.</tt><tt id="link-222" class="py-name"><a title="lacewing.moo.packetloaders.client.ChangeName.newName" class="py-name" href="#" onclick="return doclink('link-222', 'newName', 'link-100');">newName</a></tt> <tt class="py-op">=</tt> <tt id="link-223" class="py-name"><a title="lacewing.client.ClientChannel.name
+lacewing.client.Peer.name
+lacewing.moo.client.Channel.name
+lacewing.moo.client.Player.name
+lacewing.moo.protocol.MooProtocol.name
+lacewing.moo.server.Channel.name
+lacewing.packetloaders.client.Request.name
+lacewing.packetloaders.server.ChannelPeer.name
+lacewing.packetloaders.server.Peer.name
+lacewing.packetloaders.server.Response.name
+lacewing.protocol.BaseProtocol.name
+lacewing.server.ServerChannel.name" class="py-name" href="#" onclick="return doclink('link-223', 'name', 'link-25');">name</a></tt> </tt>
+<a name="L240"></a><tt class="py-lineno">240</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-224" class="py-name"><a title="lacewing.client.ClientDatagram.sendLoader
+lacewing.client.ClientProtocol.sendLoader
+lacewing.moo.protocol.MooProtocol.sendLoader
+lacewing.moo.server.Channel.sendLoader
+lacewing.protocol.BaseProtocol.sendLoader
+lacewing.server.ServerChannel.sendLoader
+lacewing.server.ServerDatagram.sendLoader
+lacewing.server.ServerProtocol.sendLoader" class="py-name" href="#" onclick="return doclink('link-224', 'sendLoader', 'link-79');">sendLoader</a></tt><tt class="py-op">(</tt><tt class="py-name">newChange</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L241"></a><tt class="py-lineno">241</tt>  <tt class="py-line">     </tt>
+<a name="MooClientProtocol.sendMessage"></a><div id="MooClientProtocol.sendMessage-def"><a name="L242"></a><tt class="py-lineno">242</tt> <a class="py-toggle" href="#" id="MooClientProtocol.sendMessage-toggle" onclick="return toggle('MooClientProtocol.sendMessage');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#sendMessage">sendMessage</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">value</tt><tt class="py-op">,</tt> <tt class="py-param">subchannel</tt><tt class="py-op">,</tt> <tt class="py-param">type</tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.sendMessage-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.sendMessage-expanded"><a name="L243"></a><tt class="py-lineno">243</tt>  <tt class="py-line">        <tt class="py-docstring">"""</tt> </tt>
+<a name="L244"></a><tt class="py-lineno">244</tt>  <tt class="py-line"><tt class="py-docstring">        Sends a message to the other end</tt> </tt>
+<a name="L245"></a><tt class="py-lineno">245</tt>  <tt class="py-line"><tt class="py-docstring">        """</tt> </tt>
+<a name="L246"></a><tt class="py-lineno">246</tt>  <tt class="py-line">        <tt class="py-name">newValue</tt> <tt class="py-op">=</tt> <tt id="link-225" class="py-name"><a title="lacewing.moo.packetloaders.message.Message" class="py-name" href="#" onclick="return doclink('link-225', 'Message', 'link-65');">Message</a></tt><tt class="py-op">(</tt><tt class="py-op">**</tt><tt class="py-name">self</tt><tt class="py-op">.</tt><tt class="py-name">settings</tt><tt class="py-op">)</tt> </tt>
+<a name="L247"></a><tt class="py-lineno">247</tt>  <tt class="py-line">        <tt class="py-name">newValue</tt><tt class="py-op">.</tt><tt id="link-226" class="py-name"><a title="lacewing.moo.packetloaders.message.Message.type" class="py-name" href="#" onclick="return doclink('link-226', 'type', 'link-67');">type</a></tt> <tt class="py-op">=</tt> <tt id="link-227" class="py-name"><a title="lacewing.moo.packetloaders.message.Message.type" class="py-name" href="#" onclick="return doclink('link-227', 'type', 'link-67');">type</a></tt> <tt class="py-keyword">or</tt> <tt id="link-228" class="py-name"><a title="lacewing.moo.packetloaders.message.detectType
+lacewing.packetloaders.common.detectType" class="py-name" href="#" onclick="return doclink('link-228', 'detectType', 'link-69');">detectType</a></tt><tt class="py-op">(</tt><tt id="link-229" class="py-name"><a title="lacewing.moo.packetloaders.message.Message.value
+lacewing.multidict.DictItem.value
+lacewing.packetloaders.server.Response.value" class="py-name" href="#" onclick="return doclink('link-229', 'value', 'link-70');">value</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L248"></a><tt class="py-lineno">248</tt>  <tt class="py-line">        <tt class="py-name">newValue</tt><tt class="py-op">.</tt><tt id="link-230" class="py-name"><a title="lacewing.moo.packetloaders.message.Message.value
+lacewing.multidict.DictItem.value
+lacewing.packetloaders.server.Response.value" class="py-name" href="#" onclick="return doclink('link-230', 'value', 'link-70');">value</a></tt> <tt class="py-op">=</tt> <tt id="link-231" class="py-name"><a title="lacewing.moo.packetloaders.message.Message.value
+lacewing.multidict.DictItem.value
+lacewing.packetloaders.server.Response.value" class="py-name" href="#" onclick="return doclink('link-231', 'value', 'link-70');">value</a></tt> </tt>
+<a name="L249"></a><tt class="py-lineno">249</tt>  <tt class="py-line">        <tt class="py-name">newMessage</tt> <tt class="py-op">=</tt> <tt id="link-232" class="py-name" targets="Class lacewing.moo.packetloaders.client.ClientMessage=lacewing.moo.packetloaders.client.ClientMessage-class.html"><a title="lacewing.moo.packetloaders.client.ClientMessage" class="py-name" href="#" onclick="return doclink('link-232', 'ClientMessage', 'link-232');">ClientMessage</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L250"></a><tt class="py-lineno">250</tt>  <tt class="py-line">        <tt class="py-name">newMessage</tt><tt class="py-op">.</tt><tt id="link-233" class="py-name"><a title="lacewing.moo.packetloaders.client.ClientMessage.message
+lacewing.moo.packetloaders.client.PrivateMessage.message
+lacewing.moo.packetloaders.client.ToChannelMessage.message
+lacewing.moo.packetloaders.message
+lacewing.moo.packetloaders.server.FromChannelMessage.message" class="py-name" href="#" onclick="return doclink('link-233', 'message', 'link-24');">message</a></tt> <tt class="py-op">=</tt> <tt class="py-name">newValue</tt> </tt>
+<a name="L251"></a><tt class="py-lineno">251</tt>  <tt class="py-line">        <tt class="py-name">newMessage</tt><tt class="py-op">.</tt><tt id="link-234" class="py-name"><a title="lacewing.moo.packetloaders.client.ClientMessage.subchannel
+lacewing.moo.packetloaders.client.PrivateMessage.subchannel
+lacewing.moo.packetloaders.client.ToChannelMessage.subchannel
+lacewing.moo.packetloaders.server.FromChannelMessage.subchannel" class="py-name" href="#" onclick="return doclink('link-234', 'subchannel', 'link-76');">subchannel</a></tt> <tt class="py-op">=</tt> <tt id="link-235" class="py-name"><a title="lacewing.moo.packetloaders.client.ClientMessage.subchannel
+lacewing.moo.packetloaders.client.PrivateMessage.subchannel
+lacewing.moo.packetloaders.client.ToChannelMessage.subchannel
+lacewing.moo.packetloaders.server.FromChannelMessage.subchannel" class="py-name" href="#" onclick="return doclink('link-235', 'subchannel', 'link-76');">subchannel</a></tt> </tt>
+<a name="L252"></a><tt class="py-lineno">252</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-236" class="py-name"><a title="lacewing.client.ClientDatagram.sendLoader
+lacewing.client.ClientProtocol.sendLoader
+lacewing.moo.protocol.MooProtocol.sendLoader
+lacewing.moo.server.Channel.sendLoader
+lacewing.protocol.BaseProtocol.sendLoader
+lacewing.server.ServerChannel.sendLoader
+lacewing.server.ServerDatagram.sendLoader
+lacewing.server.ServerProtocol.sendLoader" class="py-name" href="#" onclick="return doclink('link-236', 'sendLoader', 'link-79');">sendLoader</a></tt><tt class="py-op">(</tt><tt class="py-name">newMessage</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L253"></a><tt class="py-lineno">253</tt>  <tt class="py-line">     </tt>
+<a name="MooClientProtocol.sendChannelMessage"></a><div id="MooClientProtocol.sendChannelMessage-def"><a name="L254"></a><tt class="py-lineno">254</tt> <a class="py-toggle" href="#" id="MooClientProtocol.sendChannelMessage-toggle" onclick="return toggle('MooClientProtocol.sendChannelMessage');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#sendChannelMessage">sendChannelMessage</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">channel</tt><tt class="py-op">,</tt> <tt class="py-op">*</tt><tt class="py-param">arg</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-param">kw</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.sendChannelMessage-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.sendChannelMessage-expanded"><a name="L255"></a><tt class="py-lineno">255</tt>  <tt class="py-line">        <tt id="link-237" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-237', 'channel', 'link-28');">channel</a></tt><tt class="py-op">.</tt><tt id="link-238" class="py-name"><a title="lacewing.client.ClientChannel.sendMessage
+lacewing.client.ClientProtocol.sendMessage
+lacewing.client.Peer.sendMessage
+lacewing.moo.client.Channel.sendMessage
+lacewing.moo.client.MooClientProtocol.sendMessage
+lacewing.moo.client.Player.sendMessage
+lacewing.moo.server.Channel.sendMessage
+lacewing.moo.server.MooServerProtocol.sendMessage
+lacewing.server.ServerChannel.sendMessage
+lacewing.server.ServerProtocol.sendMessage" class="py-name" href="#" onclick="return doclink('link-238', 'sendMessage', 'link-42');">sendMessage</a></tt><tt class="py-op">(</tt><tt class="py-name">self</tt><tt class="py-op">,</tt> <tt class="py-op">*</tt><tt class="py-name">arg</tt><tt class="py-op">,</tt> <tt class="py-op">**</tt><tt class="py-name">kw</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L256"></a><tt class="py-lineno">256</tt>  <tt class="py-line">     </tt>
+<a name="MooClientProtocol.joinChannel"></a><div id="MooClientProtocol.joinChannel-def"><a name="L257"></a><tt class="py-lineno">257</tt> <a class="py-toggle" href="#" id="MooClientProtocol.joinChannel-toggle" onclick="return toggle('MooClientProtocol.joinChannel');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#joinChannel">joinChannel</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">channelName</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.joinChannel-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.joinChannel-expanded"><a name="L258"></a><tt class="py-lineno">258</tt>  <tt class="py-line">        <tt class="py-name">newJoin</tt> <tt class="py-op">=</tt> <tt id="link-239" class="py-name" targets="Class lacewing.moo.packetloaders.client.JoinChannel=lacewing.moo.packetloaders.client.JoinChannel-class.html"><a title="lacewing.moo.packetloaders.client.JoinChannel" class="py-name" href="#" onclick="return doclink('link-239', 'JoinChannel', 'link-239');">JoinChannel</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L259"></a><tt class="py-lineno">259</tt>  <tt class="py-line">        <tt class="py-name">newJoin</tt><tt class="py-op">.</tt><tt id="link-240" class="py-name"><a title="lacewing.moo.packetloaders.client.JoinChannel.channelName
+lacewing.moo.packetloaders.server.ChannelJoined.channelName" class="py-name" href="#" onclick="return doclink('link-240', 'channelName', 'link-107');">channelName</a></tt> <tt class="py-op">=</tt> <tt id="link-241" class="py-name"><a title="lacewing.moo.packetloaders.client.JoinChannel.channelName
+lacewing.moo.packetloaders.server.ChannelJoined.channelName" class="py-name" href="#" onclick="return doclink('link-241', 'channelName', 'link-107');">channelName</a></tt> </tt>
+<a name="L260"></a><tt class="py-lineno">260</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-242" class="py-name"><a title="lacewing.client.ClientDatagram.sendLoader
+lacewing.client.ClientProtocol.sendLoader
+lacewing.moo.protocol.MooProtocol.sendLoader
+lacewing.moo.server.Channel.sendLoader
+lacewing.protocol.BaseProtocol.sendLoader
+lacewing.server.ServerChannel.sendLoader
+lacewing.server.ServerDatagram.sendLoader
+lacewing.server.ServerProtocol.sendLoader" class="py-name" href="#" onclick="return doclink('link-242', 'sendLoader', 'link-79');">sendLoader</a></tt><tt class="py-op">(</tt><tt class="py-name">newJoin</tt><tt class="py-op">)</tt> </tt>
+</div><a name="L261"></a><tt class="py-lineno">261</tt>  <tt class="py-line">     </tt>
+<a name="MooClientProtocol.leaveChannel"></a><div id="MooClientProtocol.leaveChannel-def"><a name="L262"></a><tt class="py-lineno">262</tt> <a class="py-toggle" href="#" id="MooClientProtocol.leaveChannel-toggle" onclick="return toggle('MooClientProtocol.leaveChannel');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.moo.client.MooClientProtocol-class.html#leaveChannel">leaveChannel</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">channel</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="MooClientProtocol.leaveChannel-collapsed" style="display:none;" pad="+++" indent="++++++++"></div><div id="MooClientProtocol.leaveChannel-expanded"><a name="L263"></a><tt class="py-lineno">263</tt>  <tt class="py-line">        <tt class="py-name">newLeave</tt> <tt class="py-op">=</tt> <tt id="link-243" class="py-name" targets="Class lacewing.moo.packetloaders.client.LeaveChannel=lacewing.moo.packetloaders.client.LeaveChannel-class.html"><a title="lacewing.moo.packetloaders.client.LeaveChannel" class="py-name" href="#" onclick="return doclink('link-243', 'LeaveChannel', 'link-243');">LeaveChannel</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L264"></a><tt class="py-lineno">264</tt>  <tt class="py-line">        <tt class="py-name">newLeave</tt><tt class="py-op">.</tt><tt class="py-name">setChannel</tt><tt class="py-op">(</tt><tt id="link-244" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.client.ChannelMaster.channel
+lacewing.packetloaders.client.Request.channel
+lacewing.packetloaders.server.Peer.channel
+lacewing.packetloaders.server.Response.channel" class="py-name" href="#" onclick="return doclink('link-244', 'channel', 'link-28');">channel</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L265"></a><tt class="py-lineno">265</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-245" class="py-name"><a title="lacewing.client.ClientDatagram.sendLoader
+lacewing.client.ClientProtocol.sendLoader
+lacewing.moo.protocol.MooProtocol.sendLoader
+lacewing.moo.server.Channel.sendLoader
+lacewing.protocol.BaseProtocol.sendLoader
+lacewing.server.ServerChannel.sendLoader
+lacewing.server.ServerDatagram.sendLoader
+lacewing.server.ServerProtocol.sendLoader" class="py-name" href="#" onclick="return doclink('link-245', 'sendLoader', 'link-79');">sendLoader</a></tt><tt class="py-op">(</tt><tt class="py-name">newLeave</tt><tt class="py-op">)</tt> </tt>
+</div></div><a name="L266"></a><tt class="py-lineno">266</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="lacewing-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://mp2.dk">Python Lacewing Library</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1 on Sun May 08 23:59:59 2011
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>
