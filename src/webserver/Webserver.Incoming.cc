@@ -454,6 +454,7 @@ void WebserverClient::Incoming::ProcessHeader(char * Line)
 void WebserverClient::Incoming::Reset()
 {
     State = 0;
+    *Method = 0;
 
     Headers   .Clear();
     GetItems  .Clear();
