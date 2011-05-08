@@ -73,16 +73,20 @@ Lacewing::Error * Lacewing::Error::Clone()
 
 void Lacewing::Error::Add(const char * Format, ...)
 {
+    va_list Arguments;
+    va_start (Arguments, Format);
+
+    Add(Format, Arguments);    
+
+    va_end (Arguments);
+}
+
+void Lacewing::Error::Add(const char * Format, va_list Arguments)
+{
     ErrorInternal &Internal = *((ErrorInternal *) InternalTag);
 
     char Buffer[2048];
-
-    va_list Arguments;
-    va_start (Arguments, Format);
-    
     vsnprintf(Buffer, sizeof(Buffer), Format, Arguments);
-    
-    va_end (Arguments);
 
     if(*Internal.Begin)
         Internal.Add(" - ");

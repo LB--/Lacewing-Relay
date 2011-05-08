@@ -191,8 +191,12 @@ LacewingFunction    const char* lw_guess_mime_type          (const char * filena
 
   LacewingFlat (lw_error);
 
-  /* TODO */
-
+  LacewingFunction       lw_error* lw_error_new                 ();
+  LacewingFunction           void  lw_error_delete              (lw_error *);
+  LacewingFunction           void  lw_error_add                 (lw_error *, long);
+  LacewingFunction           void  lw_error_addf                (lw_error *, const char * format, ...);
+  LacewingFunction     const char* lw_error_tostring            (lw_error *);
+  LacewingFunction       lw_error* lw_error_clone               (lw_error *);
 
 /* Client */
 
@@ -441,6 +445,7 @@ struct Error
     
     LacewingFunction void Add (const char * Format, ...);
     LacewingFunction void Add (int);
+    LacewingFunction void Add (const char * Format, va_list);
 
     LacewingFunction const char * ToString ();
     LacewingFunction operator const char * ();

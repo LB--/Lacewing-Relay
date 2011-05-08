@@ -431,6 +431,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\c\error_flat.cc"
+					>
+				</File>
+				<File
 					RelativePath="..\src\c\eventpump_flat.cc"
 					>
 				</File>
