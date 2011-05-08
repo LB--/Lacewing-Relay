@@ -1,0 +1,8 @@
+The Lacewing Relay protocol is a simple protocol for relaying messages between
+multiple clients, with a familiar IRC-like structure including things like
+named channels.
+
+It currently has implementations in Python (pylacewing) and C/C++ (part of
+liblacewing), and a Javascript implementation for the browser is being
+developed.
+
