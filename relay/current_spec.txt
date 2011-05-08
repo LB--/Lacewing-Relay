@@ -302,7 +302,12 @@ Table of Contents :-
                       Possible standard deny reasons (the actual format is up to
                       the server implementation) include:
                       
-                         - blah blah not finished
+                         - The name of the client was already taken in the
+                           channel they are trying to join
+                           
+                         - The channel would have been created, but the name
+                           was too long, too short or contained invalid
+                           characters
                          
                       If the channel join was accepted, the response parameters
                       will end with a list of peers on the channel.
