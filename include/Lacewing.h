@@ -1,7 +1,6 @@
 /*
     More information and docs: http://lacewing-project.org
 
-
     Copyright (C) 2011 James McLaughlin
 
     This file is part of Lacewing.

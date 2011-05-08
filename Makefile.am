@@ -35,7 +35,9 @@ liblacewing_la_SOURCES = \
     src/c/filter_flat.cc \
     src/c/udp_flat.cc \
     src/c/client_flat.cc \
-    src/c/error_flat.cc
+    src/c/error_flat.cc \
+    src/c/sync_flat.cc \
+    src/c/ssync_flat.cc
     
 library_includedir = $(includedir)
 library_include_HEADERS = ./include/Lacewing.h

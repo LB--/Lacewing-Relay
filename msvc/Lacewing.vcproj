@@ -451,6 +451,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\c\ssync_flat.cc"
+					>
+				</File>
+				<File
+					RelativePath="..\src\c\sync_flat.cc"
+					>
+				</File>
+				<File
 					RelativePath="..\src\c\timer_flat.cc"
 					>
 				</File>
