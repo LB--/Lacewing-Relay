@@ -26,6 +26,8 @@
     #undef Yield
 #endif
 
+#include <stdarg.h>
+
 #ifndef _WIN32
 
     #include <inttypes.h>
