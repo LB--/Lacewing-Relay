@@ -26,7 +26,7 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Updating JS..."
-				CommandLine="cd ..\..\js&#x0D;&#x0A;update&#x0D;&#x0A;cd ..\tests\msvc&#x0D;&#x0A;"
+				CommandLine="cd ..\..\js&#x0D;&#x0A;update&#x0D;&#x0A;cd ..\shell\msvc&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"

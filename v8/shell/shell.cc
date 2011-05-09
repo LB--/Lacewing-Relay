@@ -559,6 +559,9 @@ v8::Handle<v8::String> ReadFile(const char* name) {
 // The read-eval-execute loop of the shell.
 void RunShell(v8::Handle<v8::Context> context) {
   printf("V8 version %s\n", v8::V8::GetVersion());
+  printf("%s\n\n", Lacewing::Version());
+  printf("Try load('sample/hello_world.js'); for a simple test\n\n");
+  
   static const int kBufferSize = 256;
   // Enter the execution environment before evaluating any code.
   v8::Context::Scope context_scope(context);
