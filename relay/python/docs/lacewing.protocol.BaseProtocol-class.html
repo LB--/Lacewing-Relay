@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>lacewing.protocol.BaseProtocol</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="lacewing-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://mp2.dk">Python Lacewing Library</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="lacewing-module.html">Package&nbsp;lacewing</a> ::
+        <a href="lacewing.protocol-module.html">Module&nbsp;protocol</a> ::
+        Class&nbsp;BaseProtocol
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="lacewing.protocol.BaseProtocol-class.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS DESCRIPTION ==================== -->
+<h1 class="epydoc">Class BaseProtocol</h1><p class="nomargin-top"><span class="codelink"><a href="lacewing.protocol-pysrc.html#BaseProtocol">source&nbsp;code</a></span></p>
+<pre class="base-tree">
+twisted.internet.protocol.BaseProtocol --+    
+                                         |    
+        twisted.internet.protocol.Protocol --+
+                                             |
+                                            <strong class="uidshort">BaseProtocol</strong>
+</pre>
+
+<dl><dt>Known Subclasses:</dt>
+<dd>
+      <ul class="subclass-list">
+<li><a href="lacewing.client.ClientProtocol-class.html">client.ClientProtocol</a></li><li>, <a href="lacewing.server.ServerProtocol-class.html">server.ServerProtocol</a></li>  </ul>
+</dd></dl>
+
+<hr />
+<p>Baseclass that contains properties and methods common to both server 
+  and client protocols.</p>
+
+<!-- ==================== INSTANCE METHODS ==================== -->
+<a name="section-InstanceMethods"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td align="left" colspan="2" class="table-header">
+    <span class="table-header">Instance Methods</span></td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="lacewing.protocol.BaseProtocol-class.html#connectionMade" class="summary-sig-name">connectionMade</a>(<span class="summary-sig-arg">self</span>)</span><br />
+      Called when a connection is made.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="lacewing.protocol-pysrc.html#BaseProtocol.connectionMade">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="lacewing.protocol.BaseProtocol-class.html#dataReceived" class="summary-sig-name">dataReceived</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">data</span>)</span><br />
+      Called whenever data is received.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="lacewing.protocol-pysrc.html#BaseProtocol.dataReceived">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="sendLoader"></a><span class="summary-sig-name">sendLoader</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">loader</span>,
+        <span class="summary-sig-arg">asDatagram</span>=<span class="summary-sig-default">False</span>,
+        <span class="summary-sig-arg">**settings</span>)</span></td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="lacewing.protocol-pysrc.html#BaseProtocol.sendLoader">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a href="lacewing.protocol.BaseProtocol-class.html#loaderReceived" class="summary-sig-name">loaderReceived</a>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">loader</span>,
+        <span class="summary-sig-arg">isDatagram</span>=<span class="summary-sig-default">False</span>)</span><br />
+      Called when a packet is received.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="lacewing.protocol-pysrc.html#BaseProtocol.loaderReceived">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span class="summary-sig"><a name="validName"></a><span class="summary-sig-name">validName</span>(<span class="summary-sig-arg">self</span>,
+        <span class="summary-sig-arg">name</span>)</span><br />
+      Returns True if name is a valid Lacewing channel or client name.</td>
+          <td align="right" valign="top">
+            <span class="codelink"><a href="lacewing.protocol-pysrc.html#BaseProtocol.validName">source&nbsp;code</a></span>
+            
+          </td>
+        </tr>
+      </table>
+      
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>twisted.internet.protocol.Protocol</code></b>:
+      <code>connectionLost</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>twisted.internet.protocol.BaseProtocol</code></b>:
+      <code>__providedBy__</code>,
+      <code>makeConnection</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== CLASS VARIABLES ==================== -->
+<a name="section-ClassVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td align="left" colspan="2" class="table-header">
+    <span class="table-header">Class Variables</span></td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="revision"></a><span class="summary-name">revision</span> = <code title="'revision 2'"><code class="variable-quote">'</code><code class="variable-string">revision 2</code><code class="variable-quote">'</code></code>
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="udpEnabled"></a><span class="summary-name">udpEnabled</span> = <code title="False">False</code>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" class="summary">
+    <p class="indent-wrapped-lines"><b>Inherited from <code>twisted.internet.protocol.Protocol</code></b>:
+      <code>__implemented__</code>,
+      <code>__provides__</code>
+      </p>
+    <p class="indent-wrapped-lines"><b>Inherited from <code>twisted.internet.protocol.BaseProtocol</code></b>:
+      <code>connected</code>,
+      <code>transport</code>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- ==================== INSTANCE VARIABLES ==================== -->
+<a name="section-InstanceVariables"></a>
+<table class="summary" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td align="left" colspan="2" class="table-header">
+    <span class="table-header">Instance Variables</span></td>
+</tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="name"></a><span class="summary-name">name</span> = <code title="None">None</code><br />
+      The name of the client.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="id"></a><span class="summary-name">id</span> = <code title="None">None</code><br />
+      The ID of the client.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="isAccepted"></a><span class="summary-name">isAccepted</span> = <code title="False">False</code><br />
+      True if the client connection has been accepted.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="loggedIn"></a><span class="summary-name">loggedIn</span> = <code title="False">False</code><br />
+      True if the client is logged in with a name.
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">MultikeyDict</span>
+    </td><td class="summary">
+        <a name="channels"></a><span class="summary-name">channels</span> = <code title="None">None</code><br />
+      Channels the client is signed on to (has keys for both the ID and 
+      name).
+    </td>
+  </tr>
+<tr>
+    <td width="15%" align="right" valign="top" class="summary">
+      <span class="summary-type">&nbsp;</span>
+    </td><td class="summary">
+        <a name="privateAllowed"></a><span class="summary-name">privateAllowed</span><br />
+      False if the client has requested no private messages must be sent to
+      it.
+    </td>
+  </tr>
+</table>
+<!-- ==================== METHOD DETAILS ==================== -->
+<a name="section-MethodDetails"></a>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr bgcolor="#70b0f0" class="table-header">
+  <td align="left" colspan="2" class="table-header">
+    <span class="table-header">Method Details</span></td>
+</tr>
+</table>
+<a name="connectionMade"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">connectionMade</span>(<span class="sig-arg">self</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="lacewing.protocol-pysrc.html#BaseProtocol.connectionMade">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Called when a connection is made.</p>
+  <p>This may be considered the initializer of the protocol, because it is 
+  called when the connection is completed.  For clients, this is called 
+  once the connection to the server has been established; for servers, this
+  is called after an accept() call stops blocking and a socket has been 
+  received.  If you need to send any greeting or initial message, do it 
+  here.</p>
+  <dl class="fields">
+    <dt>Overrides:
+        twisted.internet.protocol.BaseProtocol.connectionMade
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="dataReceived"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">dataReceived</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">data</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="lacewing.protocol-pysrc.html#BaseProtocol.dataReceived">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Called whenever data is received.</p>
+  <p>Use this method to translate to a higher-level message.  Usually, some
+  callback will be made upon the receipt of each complete protocol 
+  message.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>data</code></strong> - a string of indeterminate length.  Please keep in mind that you 
+          will probably need to buffer some data, as partial (or multiple) 
+          protocol messages may be received!  I recommend that unit tests 
+          for protocols call through to this method with differing chunk 
+          sizes, down to one byte at a time.</li>
+    </ul></dd>
+    <dt>Overrides:
+        twisted.internet.protocol.Protocol.dataReceived
+        <dd><em class="note">(inherited documentation)</em></dd>
+    </dt>
+  </dl>
+</td></tr></table>
+</div>
+<a name="loaderReceived"></a>
+<div>
+<table class="details" border="1" cellpadding="3"
+       cellspacing="0" width="100%" bgcolor="white">
+<tr><td>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr valign="top"><td>
+  <h3 class="epydoc"><span class="sig"><span class="sig-name">loaderReceived</span>(<span class="sig-arg">self</span>,
+        <span class="sig-arg">loader</span>,
+        <span class="sig-arg">isDatagram</span>=<span class="sig-default">False</span>)</span>
+  </h3>
+  </td><td align="right" valign="top"
+    ><span class="codelink"><a href="lacewing.protocol-pysrc.html#BaseProtocol.loaderReceived">source&nbsp;code</a></span>&nbsp;
+    </td>
+  </tr></table>
+  
+  <p>Called when a packet is received.</p>
+  <dl class="fields">
+    <dt>Parameters:</dt>
+    <dd><ul class="nomargin-top">
+        <li><strong class="pname"><code>isDatagram</code></strong> - True if the message recieved was sent using UDP.</li>
+    </ul></dd>
+  </dl>
+</td></tr></table>
+</div>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="lacewing-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://mp2.dk">Python Lacewing Library</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1 on Sun May 08 23:59:58 2011
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>

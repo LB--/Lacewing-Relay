@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>lacewing.packetloaders.channelpacket</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="lacewing-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://mathias.aquadasoft.com">Python Lacewing Library</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        <a href="lacewing-module.html">Package&nbsp;lacewing</a> ::
+        <a href="lacewing.packetloaders-module.html">Package&nbsp;packetloaders</a> ::
+        Module&nbsp;channelpacket
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="lacewing.packetloaders.channelpacket-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="lacewing.packetloaders.channelpacket-module.html" onclick="show_private();">Module lacewing.packetloaders.channelpacket</a></h1>
+<pre class="py-src">
+<a name="L1"></a><tt class="py-lineno"> 1</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L2"></a><tt class="py-lineno"> 2</tt>  <tt class="py-line"><tt class="py-docstring">Channel join request.</tt> </tt>
+<a name="L3"></a><tt class="py-lineno"> 3</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L4"></a><tt class="py-lineno"> 4</tt>  <tt class="py-line"> </tt>
+<a name="L5"></a><tt class="py-lineno"> 5</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt class="py-name">struct</tt> <tt class="py-keyword">import</tt> <tt class="py-name">unpack_from</tt><tt class="py-op">,</tt> <tt class="py-name">pack</tt> </tt>
+<a name="L6"></a><tt class="py-lineno"> 6</tt>  <tt class="py-line"> </tt>
+<a name="L7"></a><tt class="py-lineno"> 7</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-0" class="py-name" targets="Package lacewing=lacewing-module.html"><a title="lacewing" class="py-name" href="#" onclick="return doclink('link-0', 'lacewing', 'link-0');">lacewing</a></tt><tt class="py-op">.</tt><tt id="link-1" class="py-name" targets="Module lacewing.baseloader=lacewing.baseloader-module.html"><a title="lacewing.baseloader" class="py-name" href="#" onclick="return doclink('link-1', 'baseloader', 'link-1');">baseloader</a></tt> <tt class="py-keyword">import</tt> <tt class="py-name">_BaseLoader</tt> </tt>
+<a name="L8"></a><tt class="py-lineno"> 8</tt>  <tt class="py-line"><tt class="py-keyword">from</tt> <tt id="link-2" class="py-name"><a title="lacewing" class="py-name" href="#" onclick="return doclink('link-2', 'lacewing', 'link-0');">lacewing</a></tt><tt class="py-op">.</tt><tt id="link-3" class="py-name" targets="Module lacewing.bitdict=lacewing.bitdict-module.html"><a title="lacewing.bitdict" class="py-name" href="#" onclick="return doclink('link-3', 'bitdict', 'link-3');">bitdict</a></tt> <tt class="py-keyword">import</tt> <tt id="link-4" class="py-name" targets="Class lacewing.bitdict.BitDict=lacewing.bitdict.BitDict-class.html"><a title="lacewing.bitdict.BitDict" class="py-name" href="#" onclick="return doclink('link-4', 'BitDict', 'link-4');">BitDict</a></tt> </tt>
+<a name="L9"></a><tt class="py-lineno"> 9</tt>  <tt class="py-line"> </tt>
+<a name="ChannelPacket"></a><div id="ChannelPacket-def"><a name="L10"></a><tt class="py-lineno">10</tt> <a class="py-toggle" href="#" id="ChannelPacket-toggle" onclick="return toggle('ChannelPacket');">-</a><tt class="py-line"><tt class="py-keyword">class</tt> <a class="py-def-name" href="lacewing.packetloaders.channelpacket.ChannelPacket-class.html">ChannelPacket</a><tt class="py-op">(</tt><tt class="py-base-class">_BaseLoader</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ChannelPacket-collapsed" style="display:none;" pad="++" indent="++++"></div><div id="ChannelPacket-expanded"><a name="L11"></a><tt class="py-lineno">11</tt>  <tt class="py-line">    <tt class="py-docstring">"""</tt> </tt>
+<a name="L12"></a><tt class="py-lineno">12</tt>  <tt class="py-line"><tt class="py-docstring">    This is sent by the client if it wants to join a</tt> </tt>
+<a name="L13"></a><tt class="py-lineno">13</tt>  <tt class="py-line"><tt class="py-docstring">    channel by name, or to leave a channel by ID.</tt> </tt>
+<a name="L14"></a><tt class="py-lineno">14</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L15"></a><tt class="py-lineno">15</tt>  <tt class="py-line"><tt class="py-docstring">    @ivar channel: The name of the channel to join.</tt> </tt>
+<a name="L16"></a><tt class="py-lineno">16</tt>  <tt class="py-line"><tt class="py-docstring">    @ivar channelId: The ID of the channel to leave.</tt> </tt>
+<a name="L17"></a><tt class="py-lineno">17</tt>  <tt class="py-line"><tt class="py-docstring">    @ivar flags: Flags to tell if we're leaving or to tell if the</tt> </tt>
+<a name="L18"></a><tt class="py-lineno">18</tt>  <tt class="py-line"><tt class="py-docstring">        channel should be hidden</tt> </tt>
+<a name="L19"></a><tt class="py-lineno">19</tt>  <tt class="py-line"><tt class="py-docstring">    """</tt> </tt>
+<a name="L20"></a><tt class="py-lineno">20</tt>  <tt class="py-line">    <tt id="link-5" class="py-name" targets="Variable lacewing.moo.client.Player.channel=lacewing.moo.client.Player-class.html#channel,Variable lacewing.packetloaders.channelpacket.ChannelPacket.channel=lacewing.packetloaders.channelpacket.ChannelPacket-class.html#channel"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.channelpacket.ChannelPacket.channel" class="py-name" href="#" onclick="return doclink('link-5', 'channel', 'link-5');">channel</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L21"></a><tt class="py-lineno">21</tt>  <tt class="py-line">    <tt id="link-6" class="py-name" targets="Variable lacewing.moo.packetloaders.client.LeaveChannel.channelId=lacewing.moo.packetloaders.client.LeaveChannel-class.html#channelId,Variable lacewing.moo.packetloaders.client.PrivateMessage.channelId=lacewing.moo.packetloaders.client.PrivateMessage-class.html#channelId,Variable lacewing.moo.packetloaders.client.ToChannelMessage.channelId=lacewing.moo.packetloaders.client.ToChannelMessage-class.html#channelId,Variable lacewing.moo.packetloaders.server.ChannelJoined.channelId=lacewing.moo.packetloaders.server.ChannelJoined-class.html#channelId,Variable lacewing.moo.packetloaders.server.FromChannelMessage.channelId=lacewing.moo.packetloaders.server.FromChannelMessage-class.html#channelId,Variable lacewing.moo.packetloaders.server.PlayerLeft.channelId=lacewing.moo.packetloaders.server.PlayerLeft-class.html#channelId,Variable lacewing.packetloaders.channelmessage.ToChannelMessage.channelId=lacewing.packetloaders.channelmessage.ToChannelMessage-class.html#channelId,Variable lacewing.packetloaders.channelpacket.ChannelPacket.channelId=lacewing.packetloaders.channelpacket.ChannelPacket-class.html#channelId,Variable lacewing.packetloaders.clientevent.ClientEvent.channelId=lacewing.packetloaders.clientevent.ClientEvent-class.html#channelId,Variable lacewing.packetloaders.peermessage.SendPrivate.channelId=lacewing.packetloaders.peermessage.SendPrivate-class.html#channelId,Variable lacewing.packetloaders.response.Response.channelId=lacewing.packetloaders.response.Response-class.html#channelId"><a title="lacewing.moo.packetloaders.client.LeaveChannel.channelId
+lacewing.moo.packetloaders.client.PrivateMessage.channelId
+lacewing.moo.packetloaders.client.ToChannelMessage.channelId
+lacewing.moo.packetloaders.server.ChannelJoined.channelId
+lacewing.moo.packetloaders.server.FromChannelMessage.channelId
+lacewing.moo.packetloaders.server.PlayerLeft.channelId
+lacewing.packetloaders.channelmessage.ToChannelMessage.channelId
+lacewing.packetloaders.channelpacket.ChannelPacket.channelId
+lacewing.packetloaders.clientevent.ClientEvent.channelId
+lacewing.packetloaders.peermessage.SendPrivate.channelId
+lacewing.packetloaders.response.Response.channelId" class="py-name" href="#" onclick="return doclink('link-6', 'channelId', 'link-6');">channelId</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L22"></a><tt class="py-lineno">22</tt>  <tt class="py-line"> </tt>
+<a name="L23"></a><tt class="py-lineno">23</tt>  <tt class="py-line">    <tt id="link-7" class="py-name" targets="Variable lacewing.packetloaders.channelpacket.ChannelPacket.flags=lacewing.packetloaders.channelpacket.ChannelPacket-class.html#flags,Variable lacewing.packetloaders.clientevent.ClientEvent.flags=lacewing.packetloaders.clientevent.ClientEvent-class.html#flags,Variable lacewing.packetloaders.handshake.Hello.flags=lacewing.packetloaders.handshake.Hello-class.html#flags,Variable lacewing.packetloaders.handshake.Welcome.flags=lacewing.packetloaders.handshake.Welcome-class.html#flags"><a title="lacewing.packetloaders.channelpacket.ChannelPacket.flags
+lacewing.packetloaders.clientevent.ClientEvent.flags
+lacewing.packetloaders.handshake.Hello.flags
+lacewing.packetloaders.handshake.Welcome.flags" class="py-name" href="#" onclick="return doclink('link-7', 'flags', 'link-7');">flags</a></tt> <tt class="py-op">=</tt> <tt class="py-name">None</tt> </tt>
+<a name="L24"></a><tt class="py-lineno">24</tt>  <tt class="py-line"> </tt>
+<a name="ChannelPacket.initialize"></a><div id="ChannelPacket.initialize-def"><a name="L25"></a><tt class="py-lineno">25</tt> <a class="py-toggle" href="#" id="ChannelPacket.initialize-toggle" onclick="return toggle('ChannelPacket.initialize');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.packetloaders.channelpacket.ChannelPacket-class.html#initialize">initialize</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ChannelPacket.initialize-collapsed" style="display:none;" pad="++" indent="++++++++"></div><div id="ChannelPacket.initialize-expanded"><a name="L26"></a><tt class="py-lineno">26</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-8" class="py-name"><a title="lacewing.packetloaders.channelpacket.ChannelPacket.flags
+lacewing.packetloaders.clientevent.ClientEvent.flags
+lacewing.packetloaders.handshake.Hello.flags
+lacewing.packetloaders.handshake.Welcome.flags" class="py-name" href="#" onclick="return doclink('link-8', 'flags', 'link-7');">flags</a></tt> <tt class="py-op">=</tt> <tt id="link-9" class="py-name"><a title="lacewing.bitdict.BitDict" class="py-name" href="#" onclick="return doclink('link-9', 'BitDict', 'link-4');">BitDict</a></tt><tt class="py-op">(</tt> </tt>
+<a name="L27"></a><tt class="py-lineno">27</tt>  <tt class="py-line">            <tt class="py-string">'Hidden'</tt><tt class="py-op">,</tt> </tt>
+<a name="L28"></a><tt class="py-lineno">28</tt>  <tt class="py-line">            <tt class="py-string">'Leaving'</tt><tt class="py-op">,</tt> </tt>
+<a name="L29"></a><tt class="py-lineno">29</tt>  <tt class="py-line">            <tt class="py-string">'AutoClose'</tt><tt class="py-op">,</tt> </tt>
+<a name="L30"></a><tt class="py-lineno">30</tt>  <tt class="py-line">            <tt id="link-10" class="py-name" targets="Variable lacewing.bitdict.BitDict.default=lacewing.bitdict.BitDict-class.html#default"><a title="lacewing.bitdict.BitDict.default" class="py-name" href="#" onclick="return doclink('link-10', 'default', 'link-10');">default</a></tt> <tt class="py-op">=</tt> <tt class="py-name">False</tt> </tt>
+<a name="L31"></a><tt class="py-lineno">31</tt>  <tt class="py-line">        <tt class="py-op">)</tt> </tt>
+</div><a name="L32"></a><tt class="py-lineno">32</tt>  <tt class="py-line">     </tt>
+<a name="ChannelPacket.read"></a><div id="ChannelPacket.read-def"><a name="L33"></a><tt class="py-lineno">33</tt> <a class="py-toggle" href="#" id="ChannelPacket.read-toggle" onclick="return toggle('ChannelPacket.read');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.packetloaders.channelpacket.ChannelPacket-class.html#read">read</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">,</tt> <tt class="py-param">data</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ChannelPacket.read-collapsed" style="display:none;" pad="++" indent="++++++++"></div><div id="ChannelPacket.read-expanded"><a name="L34"></a><tt class="py-lineno">34</tt>  <tt class="py-line">        <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-11" class="py-name"><a title="lacewing.packetloaders.channelpacket.ChannelPacket.flags
+lacewing.packetloaders.clientevent.ClientEvent.flags
+lacewing.packetloaders.handshake.Hello.flags
+lacewing.packetloaders.handshake.Welcome.flags" class="py-name" href="#" onclick="return doclink('link-11', 'flags', 'link-7');">flags</a></tt><tt class="py-op">.</tt><tt id="link-12" class="py-name" targets="Method lacewing.bitdict.BitDict.setFlags()=lacewing.bitdict.BitDict-class.html#setFlags"><a title="lacewing.bitdict.BitDict.setFlags" class="py-name" href="#" onclick="return doclink('link-12', 'setFlags', 'link-12');">setFlags</a></tt><tt class="py-op">(</tt><tt class="py-name">unpack_from</tt><tt class="py-op">(</tt><tt class="py-string">'&lt;B'</tt><tt class="py-op">,</tt> <tt id="link-13" class="py-name" targets="Method lacewing.bytereader.ByteReader.data()=lacewing.bytereader.ByteReader-class.html#data"><a title="lacewing.bytereader.ByteReader.data" class="py-name" href="#" onclick="return doclink('link-13', 'data', 'link-13');">data</a></tt><tt class="py-op">)</tt><tt class="py-op">[</tt><tt class="py-number">0</tt><tt class="py-op">]</tt><tt class="py-op">)</tt> </tt>
+<a name="L35"></a><tt class="py-lineno">35</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-14" class="py-name"><a title="lacewing.packetloaders.channelpacket.ChannelPacket.flags
+lacewing.packetloaders.clientevent.ClientEvent.flags
+lacewing.packetloaders.handshake.Hello.flags
+lacewing.packetloaders.handshake.Welcome.flags" class="py-name" href="#" onclick="return doclink('link-14', 'flags', 'link-7');">flags</a></tt><tt class="py-op">[</tt><tt class="py-string">'Leaving'</tt><tt class="py-op">]</tt><tt class="py-op">:</tt> </tt>
+<a name="L36"></a><tt class="py-lineno">36</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-15" class="py-name"><a title="lacewing.moo.packetloaders.client.LeaveChannel.channelId
+lacewing.moo.packetloaders.client.PrivateMessage.channelId
+lacewing.moo.packetloaders.client.ToChannelMessage.channelId
+lacewing.moo.packetloaders.server.ChannelJoined.channelId
+lacewing.moo.packetloaders.server.FromChannelMessage.channelId
+lacewing.moo.packetloaders.server.PlayerLeft.channelId
+lacewing.packetloaders.channelmessage.ToChannelMessage.channelId
+lacewing.packetloaders.channelpacket.ChannelPacket.channelId
+lacewing.packetloaders.clientevent.ClientEvent.channelId
+lacewing.packetloaders.peermessage.SendPrivate.channelId
+lacewing.packetloaders.response.Response.channelId" class="py-name" href="#" onclick="return doclink('link-15', 'channelId', 'link-6');">channelId</a></tt><tt class="py-op">,</tt> <tt class="py-op">=</tt> <tt class="py-name">unpack_from</tt><tt class="py-op">(</tt><tt class="py-string">'&lt;H'</tt><tt class="py-op">,</tt> <tt id="link-16" class="py-name"><a title="lacewing.bytereader.ByteReader.data" class="py-name" href="#" onclick="return doclink('link-16', 'data', 'link-13');">data</a></tt><tt class="py-op">,</tt> <tt class="py-number">1</tt><tt class="py-op">)</tt> </tt>
+<a name="L37"></a><tt class="py-lineno">37</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L38"></a><tt class="py-lineno">38</tt>  <tt class="py-line">            <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-17" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.channelpacket.ChannelPacket.channel" class="py-name" href="#" onclick="return doclink('link-17', 'channel', 'link-5');">channel</a></tt> <tt class="py-op">=</tt> <tt id="link-18" class="py-name"><a title="lacewing.bytereader.ByteReader.data" class="py-name" href="#" onclick="return doclink('link-18', 'data', 'link-13');">data</a></tt><tt class="py-op">[</tt><tt class="py-number">1</tt><tt class="py-op">:</tt><tt class="py-op">]</tt> </tt>
+</div><a name="L39"></a><tt class="py-lineno">39</tt>  <tt class="py-line"> </tt>
+<a name="ChannelPacket.generate"></a><div id="ChannelPacket.generate-def"><a name="L40"></a><tt class="py-lineno">40</tt> <a class="py-toggle" href="#" id="ChannelPacket.generate-toggle" onclick="return toggle('ChannelPacket.generate');">-</a><tt class="py-line">    <tt class="py-keyword">def</tt> <a class="py-def-name" href="lacewing.packetloaders.channelpacket.ChannelPacket-class.html#generate">generate</a><tt class="py-op">(</tt><tt class="py-param">self</tt><tt class="py-op">)</tt><tt class="py-op">:</tt> </tt>
+</div><div id="ChannelPacket.generate-collapsed" style="display:none;" pad="++" indent="++++++++"></div><div id="ChannelPacket.generate-expanded"><a name="L41"></a><tt class="py-lineno">41</tt>  <tt class="py-line">        <tt id="link-19" class="py-name"><a title="lacewing.packetloaders.channelpacket.ChannelPacket.flags
+lacewing.packetloaders.clientevent.ClientEvent.flags
+lacewing.packetloaders.handshake.Hello.flags
+lacewing.packetloaders.handshake.Welcome.flags" class="py-name" href="#" onclick="return doclink('link-19', 'flags', 'link-7');">flags</a></tt> <tt class="py-op">=</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-20" class="py-name"><a title="lacewing.packetloaders.channelpacket.ChannelPacket.flags
+lacewing.packetloaders.clientevent.ClientEvent.flags
+lacewing.packetloaders.handshake.Hello.flags
+lacewing.packetloaders.handshake.Welcome.flags" class="py-name" href="#" onclick="return doclink('link-20', 'flags', 'link-7');">flags</a></tt><tt class="py-op">.</tt><tt id="link-21" class="py-name" targets="Method lacewing.bitdict.BitDict.getFlags()=lacewing.bitdict.BitDict-class.html#getFlags,Function lacewing.byteflag.getFlags()=lacewing.byteflag-module.html#getFlags"><a title="lacewing.bitdict.BitDict.getFlags
+lacewing.byteflag.getFlags" class="py-name" href="#" onclick="return doclink('link-21', 'getFlags', 'link-21');">getFlags</a></tt><tt class="py-op">(</tt><tt class="py-op">)</tt> </tt>
+<a name="L42"></a><tt class="py-lineno">42</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-22" class="py-name"><a title="lacewing.packetloaders.channelpacket.ChannelPacket.flags
+lacewing.packetloaders.clientevent.ClientEvent.flags
+lacewing.packetloaders.handshake.Hello.flags
+lacewing.packetloaders.handshake.Welcome.flags" class="py-name" href="#" onclick="return doclink('link-22', 'flags', 'link-7');">flags</a></tt><tt class="py-op">[</tt><tt class="py-string">'Leaving'</tt><tt class="py-op">]</tt><tt class="py-op">:</tt> </tt>
+<a name="L43"></a><tt class="py-lineno">43</tt>  <tt class="py-line">            <tt class="py-keyword">return</tt> <tt class="py-name">pack</tt><tt class="py-op">(</tt><tt class="py-string">'&lt;BH'</tt><tt class="py-op">,</tt> <tt id="link-23" class="py-name"><a title="lacewing.packetloaders.channelpacket.ChannelPacket.flags
+lacewing.packetloaders.clientevent.ClientEvent.flags
+lacewing.packetloaders.handshake.Hello.flags
+lacewing.packetloaders.handshake.Welcome.flags" class="py-name" href="#" onclick="return doclink('link-23', 'flags', 'link-7');">flags</a></tt><tt class="py-op">,</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-24" class="py-name"><a title="lacewing.moo.packetloaders.client.LeaveChannel.channelId
+lacewing.moo.packetloaders.client.PrivateMessage.channelId
+lacewing.moo.packetloaders.client.ToChannelMessage.channelId
+lacewing.moo.packetloaders.server.ChannelJoined.channelId
+lacewing.moo.packetloaders.server.FromChannelMessage.channelId
+lacewing.moo.packetloaders.server.PlayerLeft.channelId
+lacewing.packetloaders.channelmessage.ToChannelMessage.channelId
+lacewing.packetloaders.channelpacket.ChannelPacket.channelId
+lacewing.packetloaders.clientevent.ClientEvent.channelId
+lacewing.packetloaders.peermessage.SendPrivate.channelId
+lacewing.packetloaders.response.Response.channelId" class="py-name" href="#" onclick="return doclink('link-24', 'channelId', 'link-6');">channelId</a></tt><tt class="py-op">)</tt> </tt>
+<a name="L44"></a><tt class="py-lineno">44</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt> </tt>
+<a name="L45"></a><tt class="py-lineno">45</tt>  <tt class="py-line">            <tt class="py-keyword">return</tt> <tt class="py-name">pack</tt><tt class="py-op">(</tt><tt class="py-string">'&lt;B'</tt><tt class="py-op">,</tt> <tt id="link-25" class="py-name"><a title="lacewing.packetloaders.channelpacket.ChannelPacket.flags
+lacewing.packetloaders.clientevent.ClientEvent.flags
+lacewing.packetloaders.handshake.Hello.flags
+lacewing.packetloaders.handshake.Welcome.flags" class="py-name" href="#" onclick="return doclink('link-25', 'flags', 'link-7');">flags</a></tt><tt class="py-op">)</tt> <tt class="py-op">+</tt> <tt class="py-name">self</tt><tt class="py-op">.</tt><tt id="link-26" class="py-name"><a title="lacewing.moo.client.Player.channel
+lacewing.packetloaders.channelpacket.ChannelPacket.channel" class="py-name" href="#" onclick="return doclink('link-26', 'channel', 'link-5');">channel</a></tt> </tt>
+</div></div><a name="L46"></a><tt class="py-lineno">46</tt>  <tt class="py-line"> </tt>
+<a name="L47"></a><tt class="py-lineno">47</tt>  <tt class="py-line"><tt class="py-name">__all__</tt> <tt class="py-op">=</tt> <tt class="py-op">[</tt><tt class="py-string">'ChannelPacket'</tt><tt class="py-op">]</tt> </tt>
+<a name="L48"></a><tt class="py-lineno">48</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+  <!-- Home link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="lacewing-module.html">Home</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Project homepage -->
+      <th class="navbar" align="right" width="100%">
+        <table border="0" cellpadding="0" cellspacing="0">
+          <tr><th class="navbar" align="center"
+            ><a class="navbar" target="_top" href="http://mathias.aquadasoft.com">Python Lacewing Library</a></th>
+          </tr></table></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1 on Thu Sep 16 22:07:43 2010
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>
