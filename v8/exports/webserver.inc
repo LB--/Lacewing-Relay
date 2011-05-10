@@ -27,7 +27,6 @@
     void webserver_onGet(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
     {
         Persistent <Function> Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
-
         Local <Value> args [2];
         
         args[0] = String::New("get");
@@ -38,22 +37,57 @@
 
     void webserver_onPost(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
     {
+        Persistent <Function> Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
+        Local <Value> args [2];
+        
+        args[0] = String::New("post");
+        args[1] = External::New(&Request);
+        
+        Callback->Call(Callback, 2, args);
     }
 
     void webserver_onHead(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
     {
+        Persistent <Function> Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
+        Local <Value> args [2];
+        
+        args[0] = String::New("head");
+        args[1] = External::New(&Request);
+        
+        Callback->Call(Callback, 2, args);
     }
 
-    void webserver_onError(Lacewing::Webserver &Webserver, Lacewing::Error &)
+    void webserver_onError(Lacewing::Webserver &Webserver, Lacewing::Error &Error)
     {
+        Persistent <Function> Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
+        Local <Value> args [2];
+        
+        args[0] = String::New("error");
+        args[1] = External::New(&Error);
+        
+        Callback->Call(Callback, 2, args);
     }
 
     void webserver_onConnect(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
     {
+        Persistent <Function> Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
+        Local <Value> args [2];
+        
+        args[0] = String::New("connect");
+        args[1] = External::New(&Request);
+        
+        Callback->Call(Callback, 2, args);
     }
 
     void webserver_onDisconnect(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
     {
+        Persistent <Function> Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
+        Local <Value> args [2];
+        
+        args[0] = String::New("disconnect");
+        args[1] = External::New(&Request);
+        
+        Callback->Call(Callback, 2, args);
     }
 
     void webserver_onUploadStart(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request,

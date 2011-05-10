@@ -58,6 +58,8 @@ struct CallbackInfo
     #include "exports/eventpump.inc"
     #include "exports/global.inc"
     #include "exports/webserver.inc"
+    #include "exports/address.inc"
+    #include "exports/error.inc"
     
 #undef ExportBodies
 #undef Export
@@ -75,6 +77,8 @@ Handle<Function> Lacewing::V8::Create()
         #include "exports/eventpump.inc"
         #include "exports/global.inc"
         #include "exports/webserver.inc"
+        #include "exports/address.inc"
+        #include "exports/error.inc"
     
     #undef Export
         
