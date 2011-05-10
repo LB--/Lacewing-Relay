@@ -213,10 +213,10 @@ class ServerProtocol(BaseProtocol):
         """
         BaseProtocol.connectionLost(self, reason)
         factory = self.factory
-        if self._timeoutCall is not None:
+        if self._timeoutCall is not None and self._timeoutCall.active():
             self._timeoutCall.cancel()
             self._timeoutCall = None
-        if self._currentPing is not None:
+        if self._currentPing is not None and self._currentPing.active():
             self._currentPing.cancel()
             self._currentPing = None
         
