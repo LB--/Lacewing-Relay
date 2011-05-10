@@ -434,6 +434,10 @@ void Lacewing::Server::Host(Lacewing::Filter &Filter, bool)
         ::DisableNagling(Internal.Socket);
 
     fcntl(Internal.Socket, F_SETFL, fcntl(Internal.Socket, F_GETFL, 0) | O_NONBLOCK);
+       
+    {   int reuse = Filter.Reuse() ? 1 : 0;
+        setsockopt(Internal.Socket, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof(reuse));
+    }
 
     sockaddr_in Address;
     memset(&Address, 0, sizeof(Address));

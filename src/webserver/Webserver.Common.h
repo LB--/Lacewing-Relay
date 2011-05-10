@@ -223,8 +223,9 @@ public:
         int State;
 
         char Method     [8];
-        char Version    [12];
+        char Version    [16];
         char URL        [4096];
+        char Hostname   [128];
 
         Map Headers, GetItems, PostItems, Cookies;
 

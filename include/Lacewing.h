@@ -187,6 +187,8 @@ LacewingFunction    const char* lw_guess_mime_type          (const char * filena
   LacewingFunction        lw_addr* lw_filter_get_remote_addr    (lw_filter *);
   LacewingFunction           void  lw_filter_set_local_port     (lw_filter *, long port);
   LacewingFunction           long  lw_filter_get_local_port     (lw_filter *);
+  LacewingFunction           void  lw_filter_set_reuse          (lw_filter *);
+  LacewingFunction        lw_bool  lw_filter_is_reuse_set       (lw_filter *);
 
 /* Error */
 
@@ -602,6 +604,9 @@ struct Filter
 
     LacewingFunction void RemoteAddress(Address &);
     LacewingFunction Address &RemoteAddress() const;
+
+    LacewingFunction void Reuse(bool Enabled);
+    LacewingFunction bool Reuse() const;
 };
 
 struct Client

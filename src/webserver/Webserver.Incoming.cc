@@ -440,8 +440,24 @@ void WebserverClient::Incoming::ProcessHeader(char * Line)
             break;
         }
 
+        if(!stricmp(Name, "Host"))
+        {
+            /* The hostname gets stored separately with the port removed for
+               the Request.Hostname() function (the raw header is still saved) */
 
-        /* Default - store the header */
+            strncpy(Hostname, Line, sizeof(Hostname));
+
+            for(char * i = Hostname; *i; ++ i)
+            {
+                if(*i == ':')
+                {
+                    *i = 0;
+                    break;
+                }
+            }
+        }   
+
+        /* Store the header */
 
         Headers.Set(Name, Line);
 

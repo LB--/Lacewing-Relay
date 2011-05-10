@@ -465,9 +465,7 @@ bool Lacewing::Webserver::Request::Secure()
 
 const char * Lacewing::Webserver::Request::Hostname()
 {
-    /* TODO: Strip port? */
-
-    return Header("Host");
+    return ((WebserverClient *) InternalTag)->Input.Hostname;
 }
 
 const char * Lacewing::Webserver::Request::URL()

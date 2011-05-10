@@ -27,12 +27,16 @@ struct FilterInternal
     {
         LocalIP = 0;
         LocalPort = 0;
+
+        Reuse = false;
     }
 
     int LocalIP;
     int LocalPort;
 
     Lacewing::Address RemoteAddress;
+    
+    bool Reuse;
 };
 
 Lacewing::Filter::Filter()
@@ -88,5 +92,15 @@ int Lacewing::Filter::LocalPort() const
 Lacewing::Address &Lacewing::Filter::RemoteAddress() const
 {
     return ((FilterInternal *) InternalTag)->RemoteAddress;
+}
+
+void Lacewing::Filter::Reuse(bool Enabled)
+{
+    ((FilterInternal *) InternalTag)->Reuse = Enabled;
+}
+
+bool Lacewing::Filter::Reuse() const
+{
+    return ((FilterInternal *) InternalTag)->Reuse;
 }
 

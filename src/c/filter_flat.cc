@@ -45,4 +45,10 @@ void lw_filter_set_local_port (lw_filter * filter, long port)
 long lw_filter_get_local_port (lw_filter * filter)
     { return ((Lacewing::Filter *) filter)->LocalPort();
     }
+void lw_filter_set_reuse (lw_filter * filter, lw_bool reuse)
+    { ((Lacewing::Filter *) filter)->Reuse(reuse != 0);
+    }
+lw_bool lw_filter_is_reuse_set (lw_filter * filter)
+    { return ((Lacewing::Filter *) filter)->Reuse();
+    }
 

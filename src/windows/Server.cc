@@ -718,6 +718,10 @@ void Lacewing::Server::Host(Lacewing::Filter &Filter, bool ClientSpeaksFirst)
     Address.sin_family = AF_INET;
     Address.sin_port = htons(Filter.LocalPort() ? Filter.LocalPort() : 0);
     Address.sin_addr.s_addr = Filter.LocalIP() ? Filter.LocalIP() : htonl(INADDR_ANY);
+        
+    {   int reuse = Filter.Reuse() ? 1 : 0;
+        setsockopt(Internal.Socket, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof(reuse));
+    }
 
     if(bind(Internal.Socket, (LPSOCKADDR) &Address, sizeof(Address)) == SOCKET_ERROR)
     {
