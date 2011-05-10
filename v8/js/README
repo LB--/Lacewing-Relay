@@ -1,0 +1,3 @@
+The file "liblacewing.js" is converted to a C++ header file and compiled into the source.
+
+If you modify it, make sure you run ./update before you build with LacewingV8.cc.

@@ -1,0 +1,3 @@
+cc -o gen gen.cc
+./gen
+rm -f gen

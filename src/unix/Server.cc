@@ -151,6 +151,8 @@ struct ServerInternal
         HandlerError      = 0;
 
         Nagle = true;
+
+        BytesReceived = 0;
     }
 
     ~ServerInternal()
@@ -167,6 +169,8 @@ struct ServerInternal
 
     char Passphrase[128];
     bool Nagle;
+
+    lw_i64 BytesReceived;
 
     /* When multithreading support is added, there will be one ReceiveBuffer per client.
        Until then, we can save RAM by having a single ReceiveBuffer global to the server. */
@@ -319,6 +323,7 @@ void ClientSocketReadReady(ServerClientInternal &Client, bool Gone)
         }
 
         Internal.Buffer.Received(Received);
+        Internal.BytesReceived += Received;
 
         if(Internal.HandlerReceive)
             Internal.HandlerReceive(Internal.Server, Client.Public, Internal.Buffer, Received);
@@ -495,7 +500,8 @@ int Lacewing::Server::ClientCount()
 {
     ServerInternal &Internal = *((ServerInternal *) InternalTag);
   
-    return 0; /* TODO */
+    Lacewing::SpinSync::ReadLock Lock(Internal.Sync_Clients);
+    return Internal.Clients.size();
 }
 
 lw_i64 Lacewing::Server::BytesSent()
@@ -509,7 +515,7 @@ lw_i64 Lacewing::Server::BytesReceived()
 {
     ServerInternal &Internal = *(ServerInternal *) InternalTag;
 
-    return 0; /* TODO */
+    return Internal.BytesReceived;
 }
 
 void Lacewing::Server::DisableNagling()

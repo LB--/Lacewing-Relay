@@ -1,0 +1,6 @@
+This is a binding of Lacewing::Webserver to V8.  Other classes from liblacewing will follow.
+
+Note that these bindings are licensed under the BSD license, rather than the LGPL like liblacewing itself.  That means that these bindings may be compiled directly into a closed-source executable just like V8, although the executable must still link dynamically with liblacewing to comply with the LGPL.
+
+See the 'shell' folder for a modified V8 shell, which includes the liblacewing V8 exports.
+
