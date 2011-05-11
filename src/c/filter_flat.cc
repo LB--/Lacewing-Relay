@@ -34,10 +34,10 @@ long lw_filter_get_local_ip (lw_filter * filter)
     { return ((Lacewing::Filter *) filter)->LocalIP();
     }
 void lw_filter_set_remote_addr (lw_filter * filter, lw_addr * addr)
-    { ((Lacewing::Filter *) filter)->RemoteAddress(*(Lacewing::Address *) addr);
+    { ((Lacewing::Filter *) filter)->Remote(*(Lacewing::Address *) addr);
     }
 lw_addr * lw_filter_get_remote_addr (lw_filter * filter)
-    { return (lw_addr *) &((Lacewing::Filter *) filter)->RemoteAddress();
+    { return (lw_addr *) &((Lacewing::Filter *) filter)->Remote();
     }
 void lw_filter_set_local_port (lw_filter * filter, long port)
     { ((Lacewing::Filter *) filter)->LocalPort(port);
@@ -51,4 +51,12 @@ void lw_filter_set_reuse (lw_filter * filter, lw_bool reuse)
 lw_bool lw_filter_is_reuse_set (lw_filter * filter)
     { return ((Lacewing::Filter *) filter)->Reuse();
     }
+void lw_filter_set_local (lw_filter * filter, const char * name)
+    { ((Lacewing::Filter *) filter)->Local(name);
+    }
+void lw_filter_set_remote (lw_filter * filter, const char * name)
+    { ((Lacewing::Filter *) filter)->Remote(name);
+    }
+
+
 

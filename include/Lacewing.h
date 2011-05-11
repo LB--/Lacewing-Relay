@@ -183,8 +183,10 @@ LacewingFunction    const char* lw_guess_mime_type          (const char * filena
   LacewingFunction           void  lw_filter_delete             (lw_filter *);
   LacewingFunction           void  lw_filter_set_local_ip       (lw_filter *, long ip);
   LacewingFunction           long  lw_filter_get_local_ip       (lw_filter *);
+  LacewingFunction           void  lw_filter_set_local          (lw_filter *, const char * name);
   LacewingFunction           void  lw_filter_set_remote_addr    (lw_filter *, lw_addr *);
   LacewingFunction        lw_addr* lw_filter_get_remote_addr    (lw_filter *);
+  LacewingFunction           void  lw_filter_set_remote         (lw_filter *, const char * name);
   LacewingFunction           void  lw_filter_set_local_port     (lw_filter *, long port);
   LacewingFunction           long  lw_filter_get_local_port     (lw_filter *);
   LacewingFunction           void  lw_filter_set_reuse          (lw_filter *);
@@ -602,8 +604,11 @@ struct Filter
     LacewingFunction void LocalPort(int Port);
     LacewingFunction  int LocalPort() const;
 
-    LacewingFunction void RemoteAddress(Address &);
-    LacewingFunction Address &RemoteAddress() const;
+    LacewingFunction void Local (const char *);
+    
+    LacewingFunction void Remote (const char *);
+    LacewingFunction void Remote (Address &);
+    LacewingFunction Address &Remote () const;
 
     LacewingFunction void Reuse(bool Enabled);
     LacewingFunction bool Reuse() const;

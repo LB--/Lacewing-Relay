@@ -136,7 +136,7 @@
                 return exports.lwjs_ws_host(this._lw_ref, port);
                 
             if(port instanceof Lacewing.Filter)
-                return exports.lwjs_ws_host_filter(this._lw_ref, port);
+                return exports.lwjs_ws_host_filter(this._lw_ref, port._lw_ref);
                 
             throw "Invalid port";
         },
@@ -357,6 +357,71 @@
         },
         toString: function()
         {   return exports.lwjs_address_tostring(this._lw_ref);
+        }
+    };
+    
+    /*** Filter ***/
+    
+    (Lacewing.Filter = function(a, b)
+    {
+       if(a === undefined)
+           this._lw_ref = exports.lwjs_filter_new();
+       else if(a === exports)
+           this._lw_ref = b;
+       else throw "Invalid parameters";
+           
+       return this;
+
+    }).prototype =
+    {
+        local: function(a)
+        {
+            if(a === undefined)
+                return exports.lwjs_filter_get_local_ip(this._lw_ref);
+                
+            if(typeof(a) === 'string')
+            {   exports.lwjs_filter_set_local(this._lw_ref, a);
+                return this;
+            }
+            
+            throw "Invalid arguments";
+            return this;
+        },
+        remote: function(a)
+        {
+            if(a === undefined)
+                return new Lacewing.Address(exports, exports.lwjs_filter_get_remote_addr(this._lw_ref));
+                
+            if(a instanceof Lacewing.Address)
+            {   exports.lwjs_filter_set_remote_addr(this._lw_ref, a.lw_ref);
+                return this;
+            }
+            
+            if(typeof(a) === 'string')
+            {   exports.lwjs_filter_set_remote(this._lw_ref, a);
+                return this;
+            }
+            
+            throw "Invalid arguments";
+            return this;
+        },
+        localPort: function(port)
+        {
+            if(port === undefined)
+                return exports.lwjs_filter_get_local_port(this._lw_ref);
+                
+            exports.lwjs_filter_set_local_port(this._lw_ref, port);
+            return this;
+        },
+        reuse: function(enabled)
+        {
+            if(enabled === undefined)
+                return exports.lwjs_filter_is_reuse_set(this._lw_ref);
+         
+            if(enabled === true || enabled === false)
+                exports.lwjs_filter_set_reuse(enabled);
+                
+            return this;
         }
     };
     

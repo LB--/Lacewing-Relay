@@ -61,7 +61,7 @@ int main (int argc, char * argv[])
         first = 0;
     }
     
-    out("};", output);
+    out("};\r\n\r\n", output);
     
     fclose(output);
     

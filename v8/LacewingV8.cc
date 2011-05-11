@@ -41,6 +41,7 @@ struct CallbackInfo
 #define Read_Reference(T, N) T &N = *(T *) Get_Pointer();
 #define Read_Int(N) int N = Get_Argument()->ToInt32()->Int32Value();
 #define Read_Int64(N) int N = Get_Argument()->ToInteger()->IntegerValue();
+#define Read_Bool(N) bool N = Get_Argument()->ToInt32()->BooleanValue();
 #define Read_String(N) String::AsciiValue _##N(Get_Argument()->ToString()); \
                         const char * N = *_##N;
 #define Read_Function(N) Handle<Function> N = Handle<Function> (Function::Cast(*Get_Argument()));
@@ -94,6 +95,7 @@ Local <Value> MakeRefLocal (void * ptr)
     #include "exports/webserver.inc"
     #include "exports/address.inc"
     #include "exports/error.inc"
+    #include "exports/filter.inc"
     
 #undef ExportBodies
 #undef Export
@@ -118,6 +120,7 @@ Handle<Function> Lacewing::V8::Create()
         #include "exports/webserver.inc"
         #include "exports/address.inc"
         #include "exports/error.inc"
+        #include "exports/filter.inc"
     
     #undef Export
         

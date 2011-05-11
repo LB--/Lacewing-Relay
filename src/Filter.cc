@@ -50,7 +50,7 @@ Lacewing::Filter::Filter(const Filter &_Filter)
     InternalTag = new FilterInternal;
     Tag         = 0;
 
-    RemoteAddress (_Filter.RemoteAddress());
+    Remote        (_Filter.Remote());
     LocalIP       (_Filter.LocalIP());
     LocalPort     (_Filter.LocalPort());
 }
@@ -60,7 +60,7 @@ Lacewing::Filter::~Filter()
     delete ((FilterInternal *) InternalTag);
 }
 
-void Lacewing::Filter::RemoteAddress(Lacewing::Address &Address)
+void Lacewing::Filter::Remote(Lacewing::Address &Address)
 {
     while(!Address.Ready())
         LacewingYield();
@@ -89,7 +89,7 @@ int Lacewing::Filter::LocalPort() const
     return ((FilterInternal *) InternalTag)->LocalPort;
 }
 
-Lacewing::Address &Lacewing::Filter::RemoteAddress() const
+Lacewing::Address &Lacewing::Filter::Remote() const
 {
     return ((FilterInternal *) InternalTag)->RemoteAddress;
 }
@@ -103,4 +103,19 @@ bool Lacewing::Filter::Reuse() const
 {
     return ((FilterInternal *) InternalTag)->Reuse;
 }
+
+void Lacewing::Filter::Local (const char * Name)
+{
+    Lacewing::Address Address(Name, 0, true);
+    
+    LocalIP(Address.IP());
+    LocalPort(Address.Port());
+}
+
+void Lacewing::Filter::Remote (const char * Name)
+{
+    Lacewing::Address Address(Name, 0, true);
+    Remote (Address);
+}
+
 
