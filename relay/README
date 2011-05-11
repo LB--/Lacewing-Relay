@@ -1,5 +1,5 @@
-The Lacewing Relay protocol is a simple protocol for relaying messages between multiple clients.
-It runs over TCP and optionally also UDP, providing a familiar IRC-like structure with things like named channels.
+The Lacewing Relay protocol will be a simple protocol for relaying messages between multiple clients.
+It can run over TCP and optionally also UDP, providing a familiar IRC-like structure with things like named channels.
 
 Current implementations :-
 

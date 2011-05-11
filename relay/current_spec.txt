@@ -1,5 +1,5 @@
 
-Lacewing Relay Protocol Specification
+Lacewing Relay Protocol Draft
 
 Table of Contents :-
 
