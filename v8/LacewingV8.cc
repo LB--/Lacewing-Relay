@@ -36,7 +36,7 @@ struct CallbackInfo
 #define BeginExportGlobal() int _arg_index = 0;
 
 #define Get_Argument() args[_arg_index ++]
-#define Get_Pointer() External::Unwrap(Get_Argument())
+#define Get_Pointer() External::Unwrap(Get_Argument()->ToObject()->GetInternalField(0))
 
 #define Read_Reference(T, N) T &N = *(T *) Get_Pointer();
 #define Read_Int(N) int N = Get_Argument()->ToInt32()->Int32Value();
@@ -50,7 +50,41 @@ struct CallbackInfo
 #define Return_String(x) return String::New(x);
 #define Return_Int(x) return Int32::New(x);
 #define Return_Int64(x) return Integer::New(x);
-#define Return_Ptr(x) return External::New(x);
+#define Return_Ref(x) return MakeRef (&x);
+#define Return_New(x, c) return MakeRef (x, c);
+
+Persistent <FunctionTemplate> RefTemplate;
+
+Handle <Value> RefConstructor(const Arguments &)
+{
+    return Handle <Value> ();
+}
+
+Handle <Object> MakeRef (void * ptr, WeakReferenceCallback delete_callback)
+{
+    HandleScope Scope;
+    Persistent <Object> Ref = Persistent <Object>::New (RefTemplate->GetFunction()->NewInstance());
+   
+    Ref->SetInternalField(0, External::New(ptr));
+    Ref.MakeWeak(0, delete_callback);
+    
+    return Ref;
+}
+
+Handle <Object> MakeRef (void * ptr)
+{
+    HandleScope Scope;
+
+    Handle <Object> Ref = RefTemplate->GetFunction()->NewInstance();
+    Ref->SetInternalField(0, External::New(ptr));
+   
+    return Scope.Close(Ref);
+}
+
+Local <Value> MakeRefLocal (void * ptr)
+{
+    return Local<Value>::New(MakeRef(ptr));
+}
 
 #define ExportBodies
 #define Export(x) Handle<Value> x (const Arguments &args)
@@ -69,6 +103,11 @@ struct CallbackInfo
 Handle<Function> Lacewing::V8::Create()
 {
     HandleScope Scope;
+
+    RefTemplate = Persistent <FunctionTemplate>::New (FunctionTemplate::New(RefConstructor));
+    Handle <ObjectTemplate> RefInstTemplate = RefTemplate->InstanceTemplate();
+    RefInstTemplate->SetInternalFieldCount(1);
+
     Handle <Object> Exports = Object::New();
     
     #define Export(x) Handle <FunctionTemplate> x##_template = FunctionTemplate::New(x); \

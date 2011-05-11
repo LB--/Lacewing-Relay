@@ -21,6 +21,17 @@
     THE SOFTWARE. 
 */
     
+#ifdef ExportBodies
+
+    void ErrorDeleter (Persistent<Value> Ref, void *)
+    {
+        printf("Deleting Error!\n");
+        
+        delete ((Lacewing::Error *) External::Unwrap(Object::Cast(*Ref)->GetInternalField(0)));
+    }
+    
+#endif
+
 #define BeginExport() BeginExportGlobal(); \
     Read_Reference(Lacewing::Error, Error);
 
@@ -28,7 +39,7 @@ Export(lwjs_error_new)
     #ifdef ExportBodies
     {
         BeginExportGlobal();
-        Return_Ptr(new Lacewing::Error());
+        Return_New(new Lacewing::Error(), ErrorDeleter);
     }
     #endif
 Export(lwjs_error_delete)
@@ -59,7 +70,7 @@ Export(lwjs_error_clone)
     #ifdef ExportBodies
     {
         BeginExport();
-        Return_Ptr(new Lacewing::Error(Error));
+        Return_New(new Lacewing::Error(Error), ErrorDeleter);
     }
     #endif
     

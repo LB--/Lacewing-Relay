@@ -94,7 +94,7 @@
     
     (Lacewing.Webserver = function(eventPump)
     {
-        if(!eventPump instanceof Lacewing.EventPump)
+        if(!(eventPump instanceof Lacewing.EventPump))
             throw "EventPump invalid or not specified";
         
         var self = this, callbacks = {};

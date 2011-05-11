@@ -20,6 +20,17 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE. 
 */
+
+#ifdef ExportBodies
+
+    void AddressDeleter (Persistent<Value> Ref, void *)
+    {
+        printf("Deleting Address!\n");
+        
+        delete ((Lacewing::Address *) External::Unwrap(Object::Cast(*Ref)->GetInternalField(0)));
+    }
+    
+#endif
     
 #define BeginExport() BeginExportGlobal(); \
     Read_Reference(Lacewing::Address, Address);
@@ -28,7 +39,7 @@ Export(lwjs_address_new)
     #ifdef ExportBodies
     {
         BeginExportGlobal();
-        Return_Ptr(new Lacewing::Address());
+        Return_New(new Lacewing::Address(), AddressDeleter);
     }
     #endif
 Export(lwjs_address_new_name)
@@ -37,7 +48,7 @@ Export(lwjs_address_new_name)
         BeginExportGlobal();
         Read_String(Name)
         Read_Int(Port)
-        Return_Ptr(new Lacewing::Address(Name, Port, false));
+        Return_New(new Lacewing::Address(Name, Port, false), AddressDeleter);
     }
     #endif
 Export(lwjs_address_new_name_blocking)
@@ -46,14 +57,14 @@ Export(lwjs_address_new_name_blocking)
         BeginExportGlobal();
         Read_String(Name)
         Read_Int(Port)
-        Return_Ptr(new Lacewing::Address(Name, Port, true));
+        Return_New(new Lacewing::Address(Name, Port, true), AddressDeleter);
     }
     #endif
 Export(lwjs_address_copy)
     #ifdef ExportBodies
     {
         BeginExport();
-        Return_Ptr(new Lacewing::Address(Address));
+        Return_New(new Lacewing::Address(Address), AddressDeleter);
     }
     #endif
 Export(lwjs_address_delete)

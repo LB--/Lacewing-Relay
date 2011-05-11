@@ -20,6 +20,17 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE. 
 */
+
+#ifdef ExportBodies
+
+    void EventPumpDeleter (Persistent<Value> Ref, void *)
+    {
+        printf("Deleting EventPump!\n");
+        
+        delete ((Lacewing::EventPump *) External::Unwrap(Object::Cast(*Ref)->GetInternalField(0)));
+    }
+    
+#endif
     
 #define BeginExport() BeginExportGlobal(); \
     Read_Reference(Lacewing::EventPump, EventPump);
@@ -28,7 +39,7 @@ Export(lwjs_eventpump_new)
     #ifdef ExportBodies
     {
         BeginExportGlobal();
-        Return_Ptr(new Lacewing::EventPump());
+        Return_New(new Lacewing::EventPump(), EventPumpDeleter);
     }
     #endif
 Export(lwjs_eventpump_delete)

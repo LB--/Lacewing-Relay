@@ -30,7 +30,7 @@
         Local <Value> args [2];
         
         args[0] = String::New("get");
-        args[1] = External::New(&Request);
+        args[1] = MakeRefLocal (&Request);
         
         Callback->Call(Callback, 2, args);
     }
@@ -41,7 +41,7 @@
         Local <Value> args [2];
         
         args[0] = String::New("post");
-        args[1] = External::New(&Request);
+        args[1] = MakeRefLocal (&Request);
         
         Callback->Call(Callback, 2, args);
     }
@@ -52,7 +52,7 @@
         Local <Value> args [2];
         
         args[0] = String::New("head");
-        args[1] = External::New(&Request);
+        args[1] = MakeRefLocal (&Request);
         
         Callback->Call(Callback, 2, args);
     }
@@ -63,7 +63,7 @@
         Local <Value> args [2];
         
         args[0] = String::New("error");
-        args[1] = External::New(&Error);
+        args[1] = MakeRefLocal (&Error);
         
         Callback->Call(Callback, 2, args);
     }
@@ -74,7 +74,7 @@
         Local <Value> args [2];
         
         args[0] = String::New("connect");
-        args[1] = External::New(&Request);
+        args[1] = MakeRefLocal (&Request);
         
         Callback->Call(Callback, 2, args);
     }
@@ -85,7 +85,7 @@
         Local <Value> args [2];
         
         args[0] = String::New("disconnect");
-        args[1] = External::New(&Request);
+        args[1] = MakeRefLocal (&Request);
         
         Callback->Call(Callback, 2, args);
     }
@@ -110,6 +110,13 @@
     {
     }
 
+    void WebserverDeleter (Persistent<Value> Ref, void *)
+    {
+        printf("Deleting webserver!\n");
+        
+        delete ((Lacewing::Webserver *) External::Unwrap(Object::Cast(*Ref)->GetInternalField(0)));
+    }
+    
 #endif
 
 #define BeginExport() BeginExportGlobal(); \
@@ -137,7 +144,7 @@ Export(lwjs_ws_new)
         Webserver.onUploadDone (webserver_onUploadDone);
         Webserver.onUploadPost (webserver_onUploadPost);
         
-        Return_Ptr(&Webserver);
+        Return_New(&Webserver, WebserverDeleter);
     }
     #endif
 Export(lwjs_ws_delete)
@@ -295,7 +302,7 @@ Export(lwjs_ws_req_addr)
     #ifdef ExportBodies
     {
         BeginExport();
-        Return_Ptr(&Request.GetAddress());
+        Return_Ref(Request.GetAddress());
     }
     #endif
 Export(lwjs_ws_req_secure)
