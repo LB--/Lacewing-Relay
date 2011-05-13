@@ -28,5 +28,57 @@ Export(lwjs_version)
         Return_String(Lacewing::Version());
     }
     #endif
-    
+Export(lwjs_file_last_modified)
+    #ifdef ExportBodies
+    {
+        BeginExportGlobal();
+        Read_String(Filename);
+        Return_Int64(Lacewing::LastModified(Filename));
+    }
+    #endif
+Export(lwjs_file_exists)
+    #ifdef ExportBodies
+    {
+        BeginExportGlobal();
+        Read_String(Filename);
+        Return_Bool(Lacewing::FileExists(Filename));
+    }
+    #endif
+Export(lwjs_file_size)
+    #ifdef ExportBodies
+    {
+        BeginExportGlobal();
+        Read_String(Filename);
+        Return_Int64(Lacewing::FileSize(Filename));
+    }
+    #endif
+Export(lwjs_temp_path)
+    #ifdef ExportBodies
+    {
+        BeginExportGlobal();
+
+        char Path[2048];
+        Lacewing::TempPath(Path, sizeof(Path));
+        Return_String(Path);
+    }
+    #endif
+Export(lwjs_new_temp_file)
+    #ifdef ExportBodies
+    {
+        BeginExportGlobal();
+
+        char Path[2048];
+        Lacewing::NewTempFile(Path, sizeof(Path));
+        Return_String(Path);
+    }
+    #endif
+Export(lwjs_guess_mime_type)
+    #ifdef ExportBodies
+    {
+        BeginExportGlobal();
+        Read_String(Filename);
+        Return_String(Lacewing::GuessMimeType(Filename));
+    }
+    #endif
+
 

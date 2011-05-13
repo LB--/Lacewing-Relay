@@ -42,8 +42,28 @@
         }) () }
     };
       
+    /*** Global ***/
+    
     Lacewing.version = function()
     {  return exports.lwjs_version();
+    };
+    Lacewing.lastModified = function(filename)
+    {  return exports.lwjs_file_last_modified(filename);
+    };
+    Lacewing.fileExists = function(filename)
+    {  return exports.lwjs_file_exists(filename);
+    };
+    Lacewing.fileSize = function(filename)
+    {  return exports.lwjs_file_size(filename);
+    };
+    Lacewing.tempPath = function()
+    {  return exports.lwjs_temp_path();
+    };
+    Lacewing.newTempFile = function()
+    {  return exports.lwjs_new_temp_file();
+    };
+    Lacewing.guessMimeType = function(filename)
+    {  return exports.lwjs_guess_mime_type();
     };
     
     /*** EventPump ***/
