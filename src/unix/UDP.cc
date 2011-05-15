@@ -86,7 +86,7 @@ void Lacewing::UDP::Host(int Port)
 void Lacewing::UDP::Host(Lacewing::Address &Address)
 {
     Lacewing::Filter Filter;
-    Filter.RemoteAddress(Address);
+    Filter.Remote(Address);
 
     Host(Filter);
 }
@@ -109,7 +109,7 @@ void Lacewing::UDP::Host(Lacewing::Filter &Filter)
     }
 
     Internal.Socket   = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    Internal.RemoteIP = Filter.RemoteAddress().IP();
+    Internal.RemoteIP = Filter.Remote().IP();
 
     fcntl(Internal.Socket, F_SETFL, fcntl(Internal.Socket, F_GETFL, 0) | O_NONBLOCK);
 
