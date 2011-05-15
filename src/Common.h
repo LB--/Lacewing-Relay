@@ -304,31 +304,14 @@ inline void DisableNagling (SOCKET Socket)
 
 inline int LacewingFormat(char *& Output, const char * Format, va_list args)
 {
-    #ifdef HAVE_DECL_VASPRINTF
+    /* TODO : Alternative for where vasprintf is not supported? */
 
-        int Count = vasprintf(Output, Format, args);
+    int Count = vasprintf(&Output, Format, args);
 
-        if(Count == -1)
-            Output = 0;
+    if(Count == -1)
+        Output = 0;
 
-        return Count;
-
-    #else
-
-        int Count = lw_vsnprintf(0, 0, Format, args); 
-
-        char * Buffer = (char *) malloc(Count + 1);
-
-        if(!Buffer)
-        {
-            Output = 0;
-            return 0;
-        }
-
-        lw_vsnprintf(Buffer, Count + 1, Format, args);
-        return Count;
-
-    #endif
+    return Count;
 }
 
 #include <fstream>
