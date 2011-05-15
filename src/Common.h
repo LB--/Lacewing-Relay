@@ -209,6 +209,10 @@ void LacewingInitialise();
         #endif
     #endif
 
+    #ifndef __APPLE__
+        #define LacewingAllowCork
+    #endif
+
     #ifdef HAVE_SYS_EPOLL_H
 
         #define LacewingUseEPoll

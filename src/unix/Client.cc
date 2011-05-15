@@ -318,8 +318,10 @@ void Lacewing::Client::StartBuffering()
 
     ClientInternal &Internal = *(ClientInternal *) InternalTag;
 
-    int Enabled = 1;
-    setsockopt(Internal.Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof(Enabled));
+    #ifdef LacewingAllowCork
+        int Enabled = 1;
+        setsockopt(Internal.Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof(Enabled));
+    #endif
 }
 
 void Lacewing::Client::Flush()
@@ -329,8 +331,10 @@ void Lacewing::Client::Flush()
 
     ClientInternal &Internal = *(ClientInternal *) InternalTag;
 
-    int Enabled = 0;
-    setsockopt(Internal.Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof(Enabled));
+    #ifdef LacewingAllowCork    
+        int Enabled = 0;
+        setsockopt(Internal.Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof(Enabled));
+    #endif
 }
 
 
