@@ -84,7 +84,7 @@ void Lacewing::Pump::Post (void * Function, void * Parameter)
     PumpInternal &Internal = *((PumpInternal *) InternalTag);
 
     if(!Internal.PostFD_Added)
-        AddRead (Internal.PostFD_Read, 0);
+        Internal.AddRead (Internal.PostFD_Read, 0, 0);
 
     PumpInternal::Event &Event = Internal.EventBacklog.Borrow(Internal);
 
