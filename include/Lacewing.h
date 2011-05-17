@@ -486,6 +486,8 @@ struct Error
 
         virtual void AddRead (int FD, void * Tag) = 0;
         virtual void AddReadWrite (int FD, void * Tag) = 0;
+
+        LacewingFunction virtual bool IsEventPump ();
     };
 
     struct EventPump : public Pump
@@ -501,8 +503,10 @@ struct Error
     
     private:
 
-        void AddRead (int FD, void * Tag);
-        void AddReadWrite (int FD, void * Tag);
+        LacewingFunction void AddRead (int FD, void * Tag);
+        LacewingFunction void AddReadWrite (int FD, void * Tag);
+
+        LacewingFunction bool IsEventPump ();
     };
 
 #else

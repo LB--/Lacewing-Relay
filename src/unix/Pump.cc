@@ -138,3 +138,9 @@ PumpInternal::PumpInternal (Lacewing::Pump &_Pump) : Pump(_Pump)
     PostFD_Added = false;
 }
 
+bool Lacewing::Pump::IsEventPump ()
+{
+    return false;
+}
+
+

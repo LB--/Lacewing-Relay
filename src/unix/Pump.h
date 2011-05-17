@@ -58,6 +58,8 @@ struct PumpInternal
     queue<Event *> PostQueue;
     Lacewing::Sync Sync_PostQueue;
 
+    bool IsEventPump;
+
     friend struct Lacewing::Pump;
 };
 

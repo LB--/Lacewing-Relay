@@ -182,4 +182,3 @@ Lacewing::Error * Lacewing::EventPump::StartSleepyTicking(void (LacewingHandler 
     return 0;
 }
 
-

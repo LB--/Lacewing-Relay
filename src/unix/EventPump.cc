@@ -20,24 +20,7 @@
 */
 
 #include "../Common.h"
-
-struct EventPumpInternal
-{  
-    Lacewing::EventPump &EventPump;
-
-    int Queue;
-
-    EventPumpInternal(Lacewing::EventPump &_EventPump, int MaxHint) : EventPump(_EventPump)
-    {
-        #ifdef LacewingUseEPoll
-            Queue = epoll_create(MaxHint);
-        #endif
-
-        #ifdef LacewingUseKQueue
-            Queue = kqueue();
-        #endif
-    }
-};
+#include "EventPump.h"
 
 Lacewing::EventPump::EventPump(int MaxHint)
 {
@@ -226,5 +209,10 @@ void Lacewing::EventPump::AddReadWrite(int FD, void * Tag)
         }
 
     #endif
+}
+
+bool Lacewing::EventPump::IsEventPump ()
+{
+    return true;
 }
 

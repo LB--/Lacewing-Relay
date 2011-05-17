@@ -34,11 +34,9 @@ struct TimerInternal
     #ifdef LacewingUseTimerFD
         int FD;
     #else
-        #ifndef LacewingUseKQueue
-            ThreadTracker Threads;
-            Lacewing::Event StopEvent;
-            int Interval;
-        #endif
+        ThreadTracker Threads;
+        Lacewing::Event StopEvent;
+        int Interval;
     #endif
 
     TimerInternal(Lacewing::Timer &_Timer, PumpInternal &_EventPump)
@@ -66,7 +64,6 @@ void TimerTick(TimerInternal &Internal)
         Internal.HandlerTick(Internal.Timer);
 }
 
-#ifndef LacewingUseKQueue
 #ifndef LacewingUseTimerFD
 
     LacewingThread(LegacyTimer, TimerInternal, Internal)
@@ -78,11 +75,10 @@ void TimerTick(TimerInternal &Internal)
             if(Internal.StopEvent.Signalled())
                 break;
 
-            Internal.EventPump.EventPump.Post((void *) TimerTick, &Internal);
+            Internal.EventPump.Pump.Post((void *) TimerTick, &Internal);
         }
     }
 
-#endif
 #endif
 
 Lacewing::Timer::Timer(Lacewing::Pump &Pump)
@@ -104,15 +100,25 @@ void Lacewing::Timer::Start(int Interval)
 
     #ifdef LacewingUseKQueue
     
-        struct kevent Change;
-        EV_SET(&Change, 0, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR, 0, Interval, this);
-        
-        if(kevent(Internal.EventPump.Queue, &Change, 1, 0, 0, 0) == -1)
+        if(Internal.Pump.Pump.IsEventPump())
         {
-            DebugOut("Timer: Failed to add timer to kqueue: " << strerror(errno));
-            return;
+            EventPumpInternal &EventPump = *(EventPumpInternal *) Internal.Pump.Pump.EPInternalTag;
+
+            struct kevent Change;
+            EV_SET(&Change, 0, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR, 0, Interval, this);
+            
+            if(kevent(EventPump.Queue, &Change, 1, 0, 0, 0) == -1)
+            {
+                DebugOut("Timer: Failed to add timer to kqueue: " << strerror(errno));
+                return;
+            }
         }
-        
+        else
+        {
+            Internal.Interval = Interval;
+            Internal.Threads.Start ((void *) LegacyTimer, &Internal);
+        }
+
     #else
         #ifdef LacewingUseTimerFD
         
@@ -140,6 +146,14 @@ void Lacewing::Timer::Stop()
 
     TimerInternal &Internal = *((TimerInternal *) InternalTag);
 
+    #ifndef LacewingUseTimerFD
+
+        Internal.StopEvent.Signal();
+        Internal.Threads.WaitUntilDead();
+        Internal.StopEvent.Unsignal();
+
+    #endif
+
     #ifdef LacewingUseKQueue
 
         /* TODO */
@@ -148,12 +162,7 @@ void Lacewing::Timer::Stop()
         #ifdef LacewingUseTimerFD
             itimerspec spec;
             memset(&spec, 0, sizeof(itimerspec));
-
             timerfd_settime(Internal.FD, 0, &spec, 0);
-        #else        
-            Internal.StopEvent.Signal();
-            Internal.Threads.WaitUntilDead();
-            Internal.StopEvent.Unsignal();
         #endif
     #endif
 }
