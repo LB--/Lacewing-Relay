@@ -101,11 +101,11 @@ void WebserverInternal::SocketError(Lacewing::Server &Server, Lacewing::Error &E
 
 /* Public - constructor/destructor */
 
-Lacewing::Webserver::Webserver(Lacewing::EventPump &EventPump)
+Lacewing::Webserver::Webserver(Lacewing::Pump &EventPump)
 {
     LacewingInitialise();
 
-    InternalTag = new WebserverInternal(*this, *(EventPumpInternal *) EventPump.InternalTag);
+    InternalTag = new WebserverInternal(*this, *(PumpInternal *) EventPump.InternalTag);
     Tag         = 0;
 }
 

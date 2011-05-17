@@ -47,8 +47,8 @@ struct RelayServerInternal
     Lacewing::RelayServer::HandlerLeaveChannel      HandlerLeaveChannel;
     Lacewing::RelayServer::HandlerSetName           HandlerSetName;
 
-    RelayServerInternal(Lacewing::RelayServer &_Server, Lacewing::EventPump &EventPump)
-            : Server(_Server), Builder(false), Timer(EventPump)
+    RelayServerInternal(Lacewing::RelayServer &_Server, Lacewing::Pump &Pump)
+            : Server(_Server), Builder(false), Timer(Pump)
     {
         HandlerConnect          = 0;
         HandlerDisconnect       = 0;
@@ -324,7 +324,7 @@ void HandlerUDPError(Lacewing::UDP &UDP, Lacewing::Error &Error)
         Internal.HandlerError(Internal.Server, Error);
 }
 
-Lacewing::RelayServer::RelayServer(Lacewing::EventPump &EventPump) : Socket(EventPump), UDP(EventPump)
+Lacewing::RelayServer::RelayServer(Lacewing::Pump &Pump) : Socket(Pump), UDP(Pump)
 {
     LacewingInitialise();
 
@@ -336,7 +336,7 @@ Lacewing::RelayServer::RelayServer(Lacewing::EventPump &EventPump) : Socket(Even
     UDP.onReceive  (::HandlerUDPReceive);
     UDP.onError    (::HandlerUDPError);
 
-    Socket.Tag = UDP.Tag = InternalTag = new RelayServerInternal(*this, EventPump);
+    Socket.Tag = UDP.Tag = InternalTag = new RelayServerInternal(*this, Pump);
     
     Socket.DisableNagling ();
 }

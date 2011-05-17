@@ -21,79 +21,51 @@
 
 #include "../Common.h"
 
+struct EventPumpInternal
+{  
+    Lacewing::EventPump &EventPump;
+
+    int Queue;
+
+    EventPumpInternal(Lacewing::EventPump &_EventPump, int MaxHint) : EventPump(_EventPump)
+    {
+        #ifdef LacewingUseEPoll
+            Queue = epoll_create(MaxHint);
+        #endif
+
+        #ifdef LacewingUseKQueue
+            Queue = kqueue();
+        #endif
+    }
+};
+
 Lacewing::EventPump::EventPump(int MaxHint)
 {
-    InternalTag = new EventPumpInternal(*this, MaxHint);
-    Tag         = 0;
+    EPInternalTag = new EventPumpInternal(*this, MaxHint);
+    EPTag         = 0;
 }
 
 Lacewing::EventPump::~EventPump()
 {
-    EventPumpInternal &Internal = *((EventPumpInternal *) InternalTag);
-
-    delete ((EventPumpInternal *) InternalTag);
+    delete ((EventPumpInternal *) EPInternalTag);
 }
-
-void Process(EventPumpInternal &Internal, EventPumpInternal::Event * Event, bool Gone, bool CanRead, bool CanWrite)
-{
-    if((!Event->ReadCallback) && (!Event->WriteCallback))
-    {
-        /* Post() */
-
-        {   Lacewing::Sync::Lock Lock(Internal.Sync_PostQueue);
-
-            while(!Internal.PostQueue.empty())
-            {
-                Event = Internal.PostQueue.front();
-                Internal.PostQueue.pop();
-
-                ((void (*) (void *)) Event->ReadCallback) (Event->Tag);
-
-                Internal.EventBacklog.Return(*Event);
-            }
-        }
-
-        return;
-    }
-
-    if(CanWrite)
-    {
-        if(!Event->Removing)
-            ((void (*) (void *)) Event->WriteCallback) (Event->Tag);
-    }
-    
-    if(CanRead)
-    {
-        if(Event->ReadCallback == SigRemoveClient)
-            Internal.EventBacklog.Return(*(EventPumpInternal::Event *) Event->Tag);
-        else
-        {
-            if(!Event->Removing)
-                ((void (*) (void *, bool)) Event->ReadCallback) (Event->Tag, Gone);
-        }
-    }
-
-    if(Gone)
-        Event->Removing = true;
-}
-
 
 const int MaxEvents = 32;
 
 Lacewing::Error * Lacewing::EventPump::Tick()
 {
-    EventPumpInternal &Internal = *((EventPumpInternal *) InternalTag);
+    EventPumpInternal &Internal = *((EventPumpInternal *) EPInternalTag);
 
     #ifdef LacewingUseEPoll
     
-        epoll_event * EPollEvents = (epoll_event *) alloca(sizeof(epoll_event) * MaxEvents);
+        epoll_event EPollEvents [MaxEvents];
         int Count = epoll_wait(Internal.Queue, EPollEvents, MaxEvents, 0);
     
         for(int i = 0; i < Count; ++ i)
         {
             epoll_event &EPollEvent = EPollEvents[i];
 
-            Process(Internal, (EventPumpInternal::Event *) EPollEvent.data.ptr,
+            Ready (EPollEvent.data.ptr,
                 (EPollEvent.events & EPOLLRDHUP) != 0 || (EPollEvent.events & EPOLLHUP) != 0,
                     (EPollEvent.events & EPOLLIN) != 0, (EPollEvent.events & EPOLLOUT) != 0);
         }
@@ -102,7 +74,7 @@ Lacewing::Error * Lacewing::EventPump::Tick()
     
     #ifdef LacewingUseKQueue
     
-        struct kevent * KEvents = (struct kevent *) alloca(sizeof(struct kevent) * MaxEvents);
+        struct kevent KEvents [MaxEvents];
 
         timespec Zero;
         memset(&Zero, 0, sizeof(Zero));
@@ -113,8 +85,8 @@ Lacewing::Error * Lacewing::EventPump::Tick()
         {
             struct kevent &KEvent = KEvents[i];
 
-            Process(Internal, (EventPumpInternal::Event *) KEvent.udata, (KEvent.flags & EV_EOF) != 0,
-                                KEvent.filter == EVFILT_READ, KEvent.filter == EVFILT_WRITE);
+            Ready (KEvent.udata, (KEvent.flags & EV_EOF) != 0, KEvent.filter == EVFILT_READ,
+                        KEvent.filter == EVFILT_WRITE);
         }
         
     #endif
@@ -124,29 +96,29 @@ Lacewing::Error * Lacewing::EventPump::Tick()
 
 Lacewing::Error * Lacewing::EventPump::StartEventLoop()
 {
-    EventPumpInternal &Internal = *((EventPumpInternal *) InternalTag);
+    EventPumpInternal &Internal = *((EventPumpInternal *) EPInternalTag);
 
     for(;;)
     {
         #ifdef LacewingUseEPoll
         
-            epoll_event * EPollEvents = (epoll_event *) alloca(sizeof(epoll_event) * MaxEvents);
+            epoll_event EPollEvents [MaxEvents];
             int Count = epoll_wait(Internal.Queue, EPollEvents, MaxEvents, -1);
         
             for(int i = 0; i < Count; ++ i)
             {
                 epoll_event &EPollEvent = EPollEvents[i];
 
-                Process(Internal, (EventPumpInternal::Event *) EPollEvent.data.ptr,
-                    (EPollEvent.events & EPOLLRDHUP) != 0 || (EPollEvent.events & EPOLLHUP) != 0,
-                        (EPollEvent.events & EPOLLIN) != 0, (EPollEvent.events & EPOLLOUT) != 0);
+                Ready (EPollEvent.data.ptr, (EPollEvent.events & EPOLLRDHUP) != 0 ||
+                        (EPollEvent.events & EPOLLHUP) != 0, (EPollEvent.events & EPOLLIN) != 0,
+                        (EPollEvent.events & EPOLLOUT) != 0);
             }
        
         #endif
         
         #ifdef LacewingUseKQueue
         
-            struct kevent * KEvents = (struct kevent *) alloca(sizeof(struct kevent) * MaxEvents);
+            struct kevent KEvents [MaxEvents];
             int Count = kevent(Internal.Queue, 0, 0, KEvents, MaxEvents, 0);
 
             for(int i = 0; i < Count; ++ i)
@@ -159,8 +131,7 @@ Lacewing::Error * Lacewing::EventPump::StartEventLoop()
                 }
                 else
                 {
-                    Process(Internal, (EventPumpInternal::Event *) KEvent.udata,
-                                    (KEvent.flags & EV_EOF) != 0, KEvent.filter == EVFILT_READ,
+                    Ready (KEvent.udata, (KEvent.flags & EV_EOF) != 0, KEvent.filter == EVFILT_READ,
                                             KEvent.filter == EVFILT_WRITE);
                 }
             }
@@ -171,43 +142,18 @@ Lacewing::Error * Lacewing::EventPump::StartEventLoop()
     return 0;
 }
 
-void Lacewing::EventPump::Post(void * Function, void * Parameter)
-{
-    EventPumpInternal &Internal = *((EventPumpInternal *) InternalTag);
-
-    EventPumpInternal::Event &Event = Internal.EventBacklog.Borrow(Internal);
-
-    LacewingAssert(Function != 0);
-
-    Event.ReadCallback  = Function;
-    Event.WriteCallback = 0;
-    Event.Tag           = Parameter;
-    Event.Removing      = false;
-
-    {   Lacewing::Sync::Lock Lock(Internal.Sync_PostQueue);
-        Internal.PostQueue.push (&Event);
-    }
-
-    write(Internal.PostFD_Write, "", 1);
-}
-
 Lacewing::Error * Lacewing::EventPump::StartSleepyTicking(void (LacewingHandler * onTickNeeded) (Lacewing::EventPump &EventPump))
 {
-    EventPumpInternal &Internal = *((EventPumpInternal *) InternalTag);
+    EventPumpInternal &Internal = *((EventPumpInternal *) EPInternalTag);
 
     /* TODO */
 
     return 0;
 }
 
-void * EventPumpInternal::AddRead(int FD, void * Tag, void * Callback)
+void Lacewing::EventPump::AddRead(int FD, void * Tag)
 {
-    Event &E = EventBacklog.Borrow(*this);
-
-    E.Tag           = Tag;
-    E.ReadCallback  = Callback;
-    E.WriteCallback = 0;
-    E.Removing      = false;
+    EventPumpInternal &Internal = *((EventPumpInternal *) EPInternalTag);
 
     #ifdef LacewingUseEPoll
     
@@ -215,12 +161,12 @@ void * EventPumpInternal::AddRead(int FD, void * Tag, void * Callback)
         memset(&Event, 0, sizeof(epoll_event));
 
         Event.events = EPOLLIN | EPOLLET;
-        Event.data.ptr = &E;
+        Event.data.ptr = Tag;
 
-        if(epoll_ctl(Queue, EPOLL_CTL_ADD, FD, &Event) == -1)
+        if(epoll_ctl(Internal.Queue, EPOLL_CTL_ADD, FD, &Event) == -1)
         {
             DebugOut("EventPump: Failed to add FD: " << strerror(errno));
-            return false;
+            return;
         }
             
     #endif
@@ -228,27 +174,20 @@ void * EventPumpInternal::AddRead(int FD, void * Tag, void * Callback)
     #ifdef LacewingUseKQueue
     
         struct kevent Change;
-        EV_SET(&Change, FD, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, &E); /* EV_CLEAR = edge triggered */
+        EV_SET(&Change, FD, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, Tag); /* EV_CLEAR = edge triggered */
         
-        if(kevent(Queue, &Change, 1, 0, 0, 0) == -1)
+        if(kevent(Internal.Queue, &Change, 1, 0, 0, 0) == -1)
         {
             DebugOut("EventPump: Failed to add FD: " << strerror(errno));
-            return false;
+            return;
         }
         
     #endif
-
-    return &E;
 }
 
-void * EventPumpInternal::AddReadWrite(int FD, void * Tag, void * ReadCallback, void * WriteCallback)
+void Lacewing::EventPump::AddReadWrite(int FD, void * Tag)
 {
-    Event &E = EventBacklog.Borrow(*this);
-
-    E.Tag            = Tag;
-    E.ReadCallback   = ReadCallback;
-    E.WriteCallback  = WriteCallback;
-    E.Removing       = false;
+    EventPumpInternal &Internal = *((EventPumpInternal *) EPInternalTag);
 
     #ifdef LacewingUseEPoll
     
@@ -256,12 +195,12 @@ void * EventPumpInternal::AddReadWrite(int FD, void * Tag, void * ReadCallback, 
         memset(&Event, 0, sizeof(epoll_event));
 
         Event.events = EPOLLIN | EPOLLOUT | EPOLLET;
-        Event.data.ptr = &E;
+        Event.data.ptr = Tag;
 
-        if(epoll_ctl(Queue, EPOLL_CTL_ADD, FD, &Event) == -1)
+        if(epoll_ctl(Internal.Queue, EPOLL_CTL_ADD, FD, &Event) == -1)
         {
             DebugOut("EventPump: Failed to add FD: " << strerror(errno));
-            return false;
+            return;
         }
             
     #endif
@@ -270,24 +209,22 @@ void * EventPumpInternal::AddReadWrite(int FD, void * Tag, void * ReadCallback, 
     
         struct kevent Change;
 
-        EV_SET(&Change, FD, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, &E); /* EV_CLEAR = edge triggered */
+        EV_SET(&Change, FD, EVFILT_READ, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, Tag); /* EV_CLEAR = edge triggered */
         
-        if(kevent(Queue, &Change, 1, 0, 0, 0) == -1)
+        if(kevent(Internal.Queue, &Change, 1, 0, 0, 0) == -1)
         {
             DebugOut("EventPump: Failed to add FD: " << strerror(errno));
-            return false;
+            return;
         }
 
-        EV_SET(&Change, FD, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, &E);
+        EV_SET(&Change, FD, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, Tag);
         
-        if(kevent(Queue, &Change, 1, 0, 0, 0) == -1)
+        if(kevent(Internal.Queue, &Change, 1, 0, 0, 0) == -1)
         {
             DebugOut("EventPump: Failed to add FD: " << strerror(errno));
-            return false;
+            return;
         }
 
     #endif
-
-    return &E;
 }
 

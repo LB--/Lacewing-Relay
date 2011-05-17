@@ -27,12 +27,12 @@
 
 struct EventPumpInternal
 {  
-    Lacewing::EventPump &EventPump;
+    Lacewing::EventPump &Pump;
     ThreadTracker Threads;
 
     HANDLE CompletionPort;
 
-    EventPumpInternal(Lacewing::EventPump &_EventPump) : EventPump(_EventPump)
+    EventPumpInternal(Lacewing::EventPump &_Pump) : Pump(_Pump)
     {
         CompletionPort     = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 3, 0);
         HandlerTickNeeded  = 0;
@@ -56,7 +56,7 @@ struct EventPumpInternal
     inline void Remove (void * RemoveKey)
     {
         ((Event *) RemoveKey)->Removing = true;
-        EventPump.Post(SigRemoveClient, RemoveKey);
+        Pump.Post(SigRemoveClient, RemoveKey);
     }
 
     struct Event
@@ -81,6 +81,8 @@ struct EventPumpInternal
     Lacewing::Event WatcherResumeEvent;
     int WatcherError;
 };
+
+typedef EventPumpInternal PumpInternal;
 
 #endif
 

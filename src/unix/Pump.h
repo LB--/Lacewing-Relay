@@ -19,63 +19,46 @@
 
 */
 
-#ifndef LacewingEventPump
-#define LacewingEventPump
+#ifndef LacewingPump
+#define LacewingPump
 
 #define SigRemoveClient        (void *) 0
 #define SigEndWatcherThread    (void *) 1
 
-struct EventPumpInternal
-{  
-    Lacewing::EventPump &EventPump;
-    ThreadTracker Threads;
+struct PumpInternal
+{
+    Lacewing::Pump &Pump;
 
-    int Queue;
     int PostFD_Read, PostFD_Write;
+    bool PostFD_Added;
 
-    EventPumpInternal(Lacewing::EventPump &_EventPump, int MaxHint) : EventPump(_EventPump)
-    {
-        #ifdef LacewingUseEPoll
-            Queue = epoll_create(MaxHint);
-        #endif
-
-        #ifdef LacewingUseKQueue
-            Queue = kqueue();
-        #endif
-
-        int PostPipe[2];
-        pipe(PostPipe);
-        
-        PostFD_Read  = PostPipe[0];
-        PostFD_Write = PostPipe[1];
-
-        AddRead (PostFD_Read, 0, 0);
-    }
-
+    PumpInternal (Lacewing::Pump &_Pump);
+    
     void * AddRead      (int FD, void * Tag, void * Callback);
     void * AddReadWrite (int FD, void * Tag, void * ReadCallback, void * WriteCallback);
-    
-    inline void Remove (void * RemoveKey)
-    {
-        ((Event *) RemoveKey)->Removing = true;
-        EventPump.Post(SigRemoveClient, RemoveKey);
-    }
 
     struct Event
     {
-        Event(EventPumpInternal &)
+        Event(PumpInternal &)
         {
         }
 
         void * Tag, * ReadCallback, * WriteCallback;
-
         bool Removing;
     };
 
-    Backlog<EventPumpInternal, Event> EventBacklog;
+    inline void Remove (void * RemoveKey)
+    {
+        ((Event *) RemoveKey)->Removing = true;
+        Pump.Post(SigRemoveClient, RemoveKey);
+    }
+    
+    Backlog<PumpInternal, Event> EventBacklog;
 
     queue<Event *> PostQueue;
     Lacewing::Sync Sync_PostQueue;
+
+    friend struct Lacewing::Pump;
 };
 
 #endif

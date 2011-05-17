@@ -427,7 +427,7 @@ void Lacewing::Server::Client::Disconnect()
     if(Client.Connecting)
         return;
 
-    Internal.EventPump.EventPump.Post(Disconnecter, &Client);
+    Internal.EventPump.Pump.Post(Disconnecter, &Client);
 }
 
 void ClientSocketCompletion(ServerClientInternal &Client, ServerOverlapped &Overlapped, unsigned int BytesTransferred, int Error)

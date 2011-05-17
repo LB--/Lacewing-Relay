@@ -1,6 +1,5 @@
-/*
-    More information and docs: http://lacewing-project.org
 
+/*
     Copyright (C) 2011 James McLaughlin
 
     This file is part of Lacewing.
@@ -17,6 +16,7 @@
 
     You should have received a copy of the GNU Lesser General Public License
     along with Lacewing.  If not, see <http://www.gnu.org/licenses/>.
+
 */
 
 #ifndef LacewingIncluded
@@ -458,25 +458,78 @@ struct Error
     LacewingFunction Lacewing::Error * Clone();
 };
 
-struct EventPump
-{
-    void * InternalTag, * Tag;
+/* On Windows, there's only Lacewing::EventPump, of which Lacewing::Pump is a typedef.
 
-    LacewingFunction  EventPump(int MaxHint = 1024);
-    LacewingFunction ~EventPump();
+   On *nix, Lacewing::EventPump derives from Lacewing::Pump, which is a virtual class for
+   watching FDs.  It is therefore possible to bypass Lacewing::EventPump entirely and use a custom
+   class deriving from Lacewing::Pump, allowing Lacewing to be used in situations where
+   EventPump is not practical (ie. when some form of event watcher already exists). */
 
-    LacewingFunction Lacewing::Error * Tick();
-    LacewingFunction Lacewing::Error * StartEventLoop();
-    LacewingFunction Lacewing::Error * StartSleepyTicking(void (LacewingHandler * onTickNeeded) (Lacewing::EventPump &EventPump));
+#ifndef _WIN32
 
-    LacewingFunction void Post(void * Function, void * Parameter);
-};
+    struct Pump
+    {
+        void * InternalTag, * Tag;
+
+        LacewingFunction  Pump ();
+        LacewingFunction ~Pump ();
+    
+        LacewingFunction void Post (void * Function, void * Parameter);
+    
+        #ifdef LacewingInternal
+            friend struct ::PumpInternal;
+        #endif
+
+    protected:
+
+        LacewingFunction void Ready (void * Tag, bool Gone, bool CanRead, bool CanWrite);
+
+        virtual void AddRead (int FD, void * Tag) = 0;
+        virtual void AddReadWrite (int FD, void * Tag) = 0;
+    };
+
+    struct EventPump : public Pump
+    {
+        void * EPInternalTag, * EPTag;
+
+        LacewingFunction  EventPump (int MaxHint = 1024);
+        LacewingFunction ~EventPump ();
+
+        LacewingFunction Lacewing::Error * Tick();
+        LacewingFunction Lacewing::Error * StartEventLoop();
+        LacewingFunction Lacewing::Error * StartSleepyTicking(void (LacewingHandler * onTickNeeded) (Lacewing::EventPump &EventPump));
+    
+    private:
+
+        void AddRead (int FD, void * Tag);
+        void AddReadWrite (int FD, void * Tag);
+    };
+
+#else
+
+    struct EventPump
+    {
+        void * InternalTag, * Tag;
+
+        LacewingFunction  EventPump (int MaxHint = 1024);
+        LacewingFunction ~EventPump ();
+
+        LacewingFunction Lacewing::Error * Tick();
+        LacewingFunction Lacewing::Error * StartEventLoop();
+        LacewingFunction Lacewing::Error * StartSleepyTicking(void (LacewingHandler * onTickNeeded) (Lacewing::EventPump &EventPump));
+    
+        LacewingFunction void Post (void * Function, void * Parameter);
+    };
+
+    typedef EventPump Pump;
+
+#endif
 
 struct Timer
 {
     void * InternalTag, * Tag;
 
-    LacewingFunction  Timer (EventPump &);
+    LacewingFunction  Timer (Pump &);
     LacewingFunction ~Timer ();
 
     LacewingFunction void Start (int Milliseconds);
@@ -618,7 +671,7 @@ struct Client
 {
     void * InternalTag, * Tag;
 
-    LacewingFunction  Client(EventPump &);
+    LacewingFunction  Client(Pump &);
     LacewingFunction ~Client();
 
     LacewingFunction void Connect(const char * Host, int Port);
@@ -653,7 +706,7 @@ struct Server
 {
     void * InternalTag, * Tag;
 
-    LacewingFunction  Server(EventPump &);
+    LacewingFunction  Server(Pump &);
     LacewingFunction ~Server();
 
     LacewingFunction void Host    (int Port, bool ClientSpeaksFirst = false);
@@ -720,7 +773,7 @@ struct UDP
 {
     void * InternalTag, * Tag;
 
-    LacewingFunction  UDP (EventPump &);
+    LacewingFunction  UDP (Pump &);
     LacewingFunction ~UDP ();
 
     LacewingFunction void Host (int Port);
@@ -747,7 +800,7 @@ struct Webserver
 {
     void * InternalTag, * Tag;
 
-    LacewingFunction  Webserver(EventPump &);
+    LacewingFunction  Webserver(Pump &);
     LacewingFunction ~Webserver();
 
     LacewingFunction void Host         (int Port = 80);
@@ -881,7 +934,7 @@ public:
 
     void * InternalTag, * Tag;
 
-    LacewingFunction  RelayClient (EventPump &);
+    LacewingFunction  RelayClient (Pump &);
     LacewingFunction ~RelayClient ();
 
     LacewingFunction void Connect    (const char * Host, int Port = 6121);
@@ -1048,7 +1101,7 @@ struct RelayServer
     Lacewing::Server Socket;
     Lacewing::UDP UDP;
 
-    LacewingFunction  RelayServer(Lacewing::EventPump &);
+    LacewingFunction  RelayServer(Pump &);
     LacewingFunction ~RelayServer();
 
     LacewingFunction void Host (int Port = 6121);
@@ -1199,7 +1252,7 @@ struct FlashPlayerPolicy
 
     Server Socket;
 
-    LacewingFunction  FlashPlayerPolicy(EventPump &);
+    LacewingFunction  FlashPlayerPolicy(Pump &);
     LacewingFunction ~FlashPlayerPolicy();
 
     LacewingFunction void Host(const char * Filename, int Port = 843);

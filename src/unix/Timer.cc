@@ -27,7 +27,7 @@ void TimerTick(TimerInternal &Internal);
 struct TimerInternal
 {
     Lacewing::Timer   &Timer;
-    EventPumpInternal &EventPump;
+    PumpInternal  &EventPump;
 
     Lacewing::Timer::HandlerTick HandlerTick;
 
@@ -41,7 +41,7 @@ struct TimerInternal
         #endif
     #endif
 
-    TimerInternal(Lacewing::Timer &_Timer, EventPumpInternal &_EventPump)
+    TimerInternal(Lacewing::Timer &_Timer, PumpInternal &_EventPump)
                     : Timer(_Timer), EventPump(_EventPump)
     {
         HandlerTick = 0;
@@ -85,9 +85,9 @@ void TimerTick(TimerInternal &Internal)
 #endif
 #endif
 
-Lacewing::Timer::Timer(Lacewing::EventPump &EventPump)
+Lacewing::Timer::Timer(Lacewing::Pump &Pump)
 {
-    InternalTag = new TimerInternal(*this, *(EventPumpInternal *) EventPump.InternalTag);
+    InternalTag = new TimerInternal(*this, *(PumpInternal *) Pump.InternalTag);
     Tag         = 0;
 }
 

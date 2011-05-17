@@ -84,6 +84,10 @@ inline void LacewingAssert(bool Expression)
 
 void LacewingInitialise();
 
+#ifndef LacewingWindows
+    struct PumpInternal;
+#endif
+
 #include "../include/Lacewing.h"
 
 #ifdef LacewingWindows
@@ -304,14 +308,37 @@ inline void DisableNagling (SOCKET Socket)
 
 inline int LacewingFormat(char *& Output, const char * Format, va_list args)
 {
-    /* TODO : Alternative for where vasprintf is not supported? */
+    #ifndef LacewingWindows
 
-    int Count = vasprintf(&Output, Format, args);
+        /* TODO : Alternative for where vasprintf is not supported? */
 
-    if(Count == -1)
-        Output = 0;
+        int Count = vasprintf(&Output, Format, args);
 
-    return Count;
+        if(Count == -1)
+            Output = 0;
+
+        return Count;
+
+    #else
+
+        int Count = _vscprintf(Format, args);
+
+        Output = (char *) malloc(Count + 1);
+
+        if(!Output)
+            return 0;
+
+        if(vsprintf(Output, Format, args) < 0)
+        {
+            free(Output);
+            Output = 0;
+
+            return 0;
+        }
+
+        return Count;
+
+    #endif
 }
 
 #include <fstream>
@@ -418,7 +445,7 @@ inline void LacewingSyncExchange(volatile long * Target, long NewValue)
 #ifdef LacewingWindows
     #include "windows/EventPump.h"
 #else
-    #include "unix/EventPump.h"
+    #include "unix/Pump.h"
 #endif
 
 #define AutoHandlerFunctions(Public, Internal, HandlerName)              \

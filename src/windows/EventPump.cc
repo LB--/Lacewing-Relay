@@ -165,7 +165,7 @@ LacewingThread(TickNeededWatcher, EventPumpInternal, Internal)
         if(Internal.WatcherEvent->Callback == SigEndWatcherThread)
             break;
 
-        Internal.HandlerTickNeeded(Internal.EventPump);
+        Internal.HandlerTickNeeded(Internal.Pump);
 
         Internal.WatcherResumeEvent.Wait();
         Internal.WatcherResumeEvent.Unsignal();

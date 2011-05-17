@@ -25,7 +25,7 @@ struct ClientInternal;
 
 struct ClientInternal
 {
-    EventPumpInternal  &EventPump;
+    PumpInternal &EventPump;
 
     Lacewing::Client::HandlerConnect     HandlerConnect;
     Lacewing::Client::HandlerDisconnect  HandlerDisconnect;
@@ -34,7 +34,7 @@ struct ClientInternal
 
     Lacewing::Client &Public;
 
-    ClientInternal(Lacewing::Client &_Public, EventPumpInternal &_EventPump)
+    ClientInternal(Lacewing::Client &_Public, PumpInternal &_EventPump)
             : Public(_Public), EventPump(_EventPump)
     {
         Connected = Connecting = false;
@@ -71,10 +71,10 @@ struct ClientInternal
     int QueuedOffset;
 };
 
-Lacewing::Client::Client(Lacewing::EventPump &EventPump)
+Lacewing::Client::Client(Lacewing::Pump &EventPump)
 {
     LacewingInitialise();
-    InternalTag = new ClientInternal(*this, *(EventPumpInternal *) EventPump.InternalTag);
+    InternalTag = new ClientInternal(*this, *(PumpInternal *) EventPump.InternalTag);
 }
 
 Lacewing::Client::~Client()
@@ -239,7 +239,7 @@ void Lacewing::Client::Connect(Lacewing::Address &Address)
 
     Internal.EventPump.AddReadWrite(Internal.Socket, (void *) &Internal, (void *) ReadReady, (void *) WriteReady);
 
-    if(connect(Internal.Socket, (const sockaddr*) &Internal.HostStructure, sizeof(sockaddr)) == -1)
+    if(connect(Internal.Socket, (sockaddr *) &Internal.HostStructure, sizeof(sockaddr)) == -1)
     {
         if(errno == EINPROGRESS)
             return;

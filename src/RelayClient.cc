@@ -56,7 +56,7 @@ struct RelayClientInternal
     Lacewing::RelayClient::HandlerChannelListReceived  HandlerChannelListReceived;
 
     RelayClientInternal(Lacewing::RelayClient &_Client, Lacewing::Client &_Socket,
-                Lacewing::UDP &_UDP, Lacewing::EventPump &_EventPump) : Client(_Client),
+                Lacewing::UDP &_UDP, Lacewing::Pump &_EventPump) : Client(_Client),
                     Socket(_Socket), UDP(_UDP), Message (true), Timer(_EventPump)
     {
         HandlerConnect              = 0;
@@ -285,7 +285,7 @@ void HandlerClientUDPError(Lacewing::UDP &UDP, Lacewing::Error &Error)
         Internal.HandlerError(Internal.Client, Error);
 }
 
-Lacewing::RelayClient::RelayClient(Lacewing::EventPump &EventPump) : Socket(EventPump), UDP(EventPump)
+Lacewing::RelayClient::RelayClient(Lacewing::Pump &EventPump) : Socket(EventPump), UDP(EventPump)
 {
     LacewingInitialise();
 

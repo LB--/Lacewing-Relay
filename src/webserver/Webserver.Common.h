@@ -100,8 +100,8 @@ class WebserverInternal
 {
 public:
 
-    ThreadTracker      Threads;
-    EventPumpInternal  &EventPump;
+    ThreadTracker  Threads;
+    PumpInternal   &EventPump;
 
     const static size_t SendBufferSize    = 1024 * 32;  /* Maximum of 32 KB wasted per SendFile/SendConstant */
     const static size_t SendBufferBacklog = 32;         /* 256 KB allocated initially and when the server runs out */
@@ -133,7 +133,7 @@ public:
     {
         if(!Socket)
         {
-            Socket = new Lacewing::Server(EventPump.EventPump);
+            Socket = new Lacewing::Server(EventPump.Pump);
 
             Socket->Tag = this;
 
@@ -148,7 +148,7 @@ public:
     {
         if(!SecureSocket)
         {
-            SecureSocket = new Lacewing::Server(EventPump.EventPump);
+            SecureSocket = new Lacewing::Server(EventPump.Pump);
     
             SecureSocket->Tag = this;
 
@@ -172,7 +172,7 @@ public:
     Lacewing::Webserver::HandlerUploadDone   HandlerUploadDone;
     Lacewing::Webserver::HandlerUploadPost   HandlerUploadPost;
 
-    inline WebserverInternal(Lacewing::Webserver &_Webserver, EventPumpInternal &_EventPump)
+    inline WebserverInternal(Lacewing::Webserver &_Webserver, PumpInternal &_EventPump)
             : Webserver(_Webserver), EventPump(_EventPump)
     {
         Socket = SecureSocket = 0;

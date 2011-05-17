@@ -26,6 +26,7 @@ liblacewing_la_SOURCES = \
     src/unix/Timer.cc \
     src/unix/UDP.cc \
     src/unix/Client.cc \
+    src/unix/Pump.cc \
     src/c/addr_flat.cc \
     src/c/eventpump_flat.cc \
     src/c/global_flat.cc \

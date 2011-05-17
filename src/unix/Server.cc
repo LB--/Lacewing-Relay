@@ -132,14 +132,14 @@ struct ServerInternal
     int Port;
     int Socket;
 
-    EventPumpInternal &EventPump;
+    PumpInternal &EventPump;
     
     Lacewing::Server::HandlerConnect    HandlerConnect;
     Lacewing::Server::HandlerDisconnect HandlerDisconnect;
     Lacewing::Server::HandlerReceive    HandlerReceive;
     Lacewing::Server::HandlerError      HandlerError;
 
-    ServerInternal(Lacewing::Server &_Server, EventPumpInternal &_EventPump)
+    ServerInternal(Lacewing::Server &_Server, PumpInternal &_EventPump)
             : Server(_Server), EventPump(_EventPump)
     {
         Socket  = -1;
@@ -178,11 +178,11 @@ struct ServerInternal
     ReceiveBuffer Buffer;
 };
     
-Lacewing::Server::Server(Lacewing::EventPump &EventPump)
+Lacewing::Server::Server(Lacewing::Pump &Pump)
 {
     LacewingInitialise();
     
-    InternalTag = new ServerInternal(*this, *(EventPumpInternal *) EventPump.InternalTag);
+    InternalTag = new ServerInternal(*this, *(PumpInternal *) Pump.InternalTag);
     Tag = 0;
 }
 

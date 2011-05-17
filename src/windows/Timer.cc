@@ -62,7 +62,7 @@ LacewingThread(TimerThread, TimerInternal, Internal)
         if(Result != WAIT_OBJECT_0)
             break;
 
-        Internal.EventPump.EventPump.Post((void *) TimerCompletion, &Internal);
+        Internal.EventPump.Pump.Post((void *) TimerCompletion, &Internal);
     }
 }
 

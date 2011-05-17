@@ -23,11 +23,11 @@
 
 struct UDPInternal
 {
-    EventPumpInternal &EventPump;
+    PumpInternal &EventPump;
 
     Lacewing::UDP &Public;
     
-    UDPInternal(Lacewing::UDP &_Public, EventPumpInternal &_EventPump)
+    UDPInternal(Lacewing::UDP &_Public, PumpInternal &_EventPump)
             : Public(_Public), EventPump(_EventPump)
     {
         RemoteIP       = 0;
@@ -155,10 +155,10 @@ void Lacewing::UDP::Unhost()
     Internal.Socket = -1;
 }
 
-Lacewing::UDP::UDP(Lacewing::EventPump &EventPump)
+Lacewing::UDP::UDP(Lacewing::Pump &Pump)
 {
     LacewingInitialise();  
-    InternalTag = new UDPInternal(*this, *(EventPumpInternal *) EventPump.InternalTag);
+    InternalTag = new UDPInternal(*this, *(PumpInternal *) Pump.InternalTag);
 }
 
 Lacewing::UDP::~UDP()
