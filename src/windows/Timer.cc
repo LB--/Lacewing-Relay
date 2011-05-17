@@ -20,7 +20,6 @@
 */
 
 #include "../Common.h"
-#include "EventPump.h"
 
 struct TimerInternal;
 

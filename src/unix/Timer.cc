@@ -20,6 +20,7 @@
 */
 
 #include "../Common.h"
+#include "EventPump.h"
 
 struct TimerInternal;
 void TimerTick(TimerInternal &Internal);
@@ -100,9 +101,10 @@ void Lacewing::Timer::Start(int Interval)
 
     #ifdef LacewingUseKQueue
     
-        if(Internal.Pump.Pump.IsEventPump())
+        if(Internal.EventPump.Pump.IsEventPump())
         {
-            EventPumpInternal &EventPump = *(EventPumpInternal *) Internal.Pump.Pump.EPInternalTag;
+            EventPumpInternal &EventPump = *(EventPumpInternal *)
+                    ((Lacewing::EventPump *) &Internal.EventPump.Pump)->EPInternalTag;
 
             struct kevent Change;
             EV_SET(&Change, 0, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR, 0, Interval, this);

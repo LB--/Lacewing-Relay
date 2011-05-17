@@ -475,6 +475,7 @@ struct Error
         LacewingFunction ~Pump ();
     
         LacewingFunction void Post (void * Function, void * Parameter);
+        LacewingFunction virtual bool IsEventPump ();
     
         #ifdef LacewingInternal
             friend struct ::PumpInternal;
@@ -486,8 +487,6 @@ struct Error
 
         virtual void AddRead (int FD, void * Tag) = 0;
         virtual void AddReadWrite (int FD, void * Tag) = 0;
-
-        LacewingFunction virtual bool IsEventPump ();
     };
 
     struct EventPump : public Pump
