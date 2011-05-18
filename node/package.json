@@ -1,0 +1,17 @@
+{
+  "author": "James McLaughlin <jamie@lacewing-project.org>",
+  "name": "liblacewing",
+  "description": "Cross platform, high-level networking library.",
+  "version": "0.1.0",
+  "homepage": "http://lacewing-project.org",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/udp/lacewing.git"
+  },
+  "main": "Lacewing",
+  "engines": {
+    "node": "~v0.3.0"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

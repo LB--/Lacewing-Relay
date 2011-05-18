@@ -23,8 +23,6 @@
 
 #include "LacewingLEv.h"
 
-#include <stdio.h>
-
 struct Watcher
 {
     ev_io watcher;
@@ -32,7 +30,7 @@ struct Watcher
     void * tag;
 };
 
-void Lacewing::LEvPump::callback (struct ev_loop * loop, ev_io * _watcher, int events)
+void Lacewing::LEvPump::callback (ev_io * _watcher, int events)
 {
     Watcher * watcher = (Watcher *) _watcher;
     
@@ -48,7 +46,7 @@ void Lacewing::LEvPump::AddRead (int FD, void * Tag)
     watcher->pump = this;
     watcher->tag = Tag;
     
-    ev_io_start (EV_DEFAULT, &watcher->watcher);
+    ev_io_start (EV_DEFAULT_ &watcher->watcher);
 }
 
 void Lacewing::LEvPump::AddReadWrite (int FD, void * Tag)
@@ -59,6 +57,6 @@ void Lacewing::LEvPump::AddReadWrite (int FD, void * Tag)
     watcher->pump = this;
     watcher->tag = Tag;
     
-    ev_io_start (EV_DEFAULT, &watcher->watcher);
+    ev_io_start (EV_DEFAULT_ &watcher->watcher);
 }
 

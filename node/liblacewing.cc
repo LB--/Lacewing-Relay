@@ -21,29 +21,26 @@
     THE SOFTWARE. 
 */
 
-#ifndef LacewingLEv
-#define LacewingLEv
+#include "../v8/LacewingV8.h"
+#include "../ev/LacewingLEv.h"
 
-#ifdef _WIN32
-    #pragma warning("LibEvPump is for *nix only")
-#else
+#include <node.h>
 
-#include <Lacewing.h>
-#include <ev.h>
+using namespace node;
+using namespace v8;
 
-namespace Lacewing
+Lacewing::LEvPump * LNodePump;        
+        
+extern "C"
 {
-    class LEvPump : public Lacewing::Pump
+    static void init(Handle<Object> target)
     {
-    protected:
+        LNodePump = new Lacewing::LEvPump;
         
-        void AddRead (int FD, void * Tag);
-        void AddReadWrite (int FD, void * Tag);
-        
-        static void callback(ev_io *, int);
-    };
+        target->Set(String::New("Lacewing"),
+            Lacewing::V8::Create(*(Lacewing::Pump *) LNodePump));
+    }
+    
+    NODE_MODULE(liblacewing, init); 
 }
-
-#endif
-#endif
 

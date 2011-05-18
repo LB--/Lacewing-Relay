@@ -1,5 +1,5 @@
-Experiment to allow Lacewing to run with libev on *nix, made for a future
-liblacewing node.js add-on.  To use:
+Experiment to allow Lacewing to run with libev on *nix, made for the liblacewing
+node.js addon.  To use :-
 
 - Include LacewingLEv.h
 - Compile with LacewingLEv.cc
