@@ -1,6 +1,6 @@
 
-/* AJAX example (C++) - this would be very possible in C and Javascript, too,
-   but I haven't translated the example. */
+/* AJAX example (C++) - see ajax.js for a Javascript version.  This would be
+   very possible in C, too, but I haven't translated the example. */
 
 #include <Lacewing.h>
 

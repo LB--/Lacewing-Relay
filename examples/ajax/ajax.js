@@ -1,6 +1,5 @@
 
-/* AJAX example (C++) - this would be very possible in C and Javascript, too,
-   but I haven't translated the example. */
+/* AJAX example (Javascript) - see ajax.cc for a C++ version */
 
 waitingRequests = [];
 
