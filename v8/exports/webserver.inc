@@ -512,8 +512,7 @@ Export(lwjs_ws_req_GET)
     {
         BeginExport();
         Read_String(Name);
-        Request.GET(Name);
-        Return();
+        Return_String(Request.GET(Name));
     }
     #endif
 Export(lwjs_ws_req_POST)
@@ -521,8 +520,7 @@ Export(lwjs_ws_req_POST)
     {
         BeginExport();
         Read_String(Name);
-        Request.POST(Name);
-        Return();
+        Return_String(Request.POST(Name));
     }
     #endif
 Export(lwjs_ws_req_disable_cache)
