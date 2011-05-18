@@ -1,6 +1,21 @@
-Lacewing is a cross platform networking library, designed around the idea that a high level of abstraction can both:
+Lacewing is a cross platform networking library with a C, C++ and Javascript API.
 
-- Make the library easy to use
-- Provide lots of room for platform specific optimisation
+INSTALLING
+----------
 
-Lacewing is still very much a work in progress.  More information and documentation soon :-)
+On Windows, use the MSVC project file in the 'msvc' directory to build a DLL/LIB.
+
+On Linux/BSD/OS X:
+
+    ./autogen.sh
+    ./configure
+    make
+    sudo make install
+    
+Node.JS module (after installing liblacewing):
+
+    cd node
+    node-waf configure build
+    node-waf install
+    
+    
