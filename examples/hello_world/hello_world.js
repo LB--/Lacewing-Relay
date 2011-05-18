@@ -11,7 +11,7 @@ webserver = new Lacewing.Webserver();
 
 webserver.bind('get', function(request)
 {
-    request.write('Hello world!');
+    request.write('Hello world from ' + Lacewing.version());
 });
 
 webserver.host(8080);

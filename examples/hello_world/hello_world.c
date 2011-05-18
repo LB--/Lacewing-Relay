@@ -10,7 +10,7 @@
 
 void onGet(lw_ws * webserver, lw_ws_req * request)
 {
-    lw_ws_req_sendf(request, "Hello world");
+    lw_ws_req_sendf(request, "Hello world from %s", lw_version());
 }
 
 int main(int argc, char * argv[])
