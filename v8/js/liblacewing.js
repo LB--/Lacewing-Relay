@@ -21,12 +21,9 @@
     THE SOFTWARE. 
 */
 
-(function(exports)
+(function(exports, Lacewing)
 {
-    var Lacewing = function()
-    {   return Lacewing.version();
-    },
-    addBinders = function(c, callbacks, on)
+    var addBinders = function(c, callbacks, on)
     {   c.bind = function(ev, fn)
         {   callbacks[ev].push(fn);
             return c;
@@ -40,6 +37,16 @@
             { return c.bind(cb, fn);
             }
         }) () }
+    
+    }, getEventPumpRef = function(eventPump)
+    {
+        if(exports.lwjs_global_eventpump)
+            return exports.lwjs_global_eventpump;
+            
+        if(!(eventPump instanceof Lacewing.EventPump))
+            throw "EventPump invalid or not specified";
+            
+        return eventPump._lw_ref;
     };
       
     /*** Global ***/
@@ -68,22 +75,25 @@
     
     /*** EventPump ***/
     
-    (Lacewing.EventPump = function()
-    {            
-       this._lw_ref = exports.lwjs_eventpump_new();
-       return this;
-       
-    }).prototype =
+    if(exports.lwjs_eventpump_new)
     {
-        tick: function()
-        {   exports.lwjs_eventpump_tick(this._lw_ref);
-            return this;
-        },
-        startEventLoop: function()
-        {   exports.lwjs_eventpump_start_event_loop(this._lw_ref);
-            return this;
-        }
-    };
+        (Lacewing.EventPump = function()
+        {            
+           this._lw_ref = exports.lwjs_eventpump_new();
+           return this;
+           
+        }).prototype =
+        {
+            tick: function()
+            {   exports.lwjs_eventpump_tick(this._lw_ref);
+                return this;
+            },
+            startEventLoop: function()
+            {   exports.lwjs_eventpump_start_event_loop(this._lw_ref);
+                return this;
+            }
+        };
+    }
     
     /*** Error ***/
     
@@ -114,13 +124,10 @@
     
     (Lacewing.Webserver = function(eventPump)
     {
-        if(!(eventPump instanceof Lacewing.EventPump))
-            throw "EventPump invalid or not specified";
-        
-        var self = this, callbacks = {};
+        var eventPumpRef = getEventPumpRef(eventPump), self = this, callbacks = {};
         addBinders(this, callbacks, 'error get post head connect disconnect');
         
-        this._lw_ref = exports.lwjs_ws_new(eventPump._lw_ref, function(_callback)
+        this._lw_ref = exports.lwjs_ws_new(eventPumpRef, function(_callback)
         {   try
             {   var ret, callback = '' + _callback,
                     list = callbacks[callback],

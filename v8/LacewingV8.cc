@@ -102,20 +102,35 @@ Local <Value> MakeRefLocal (void * ptr)
 
 #include "js/liblacewing.js.inc"
 
-Handle<Function> Lacewing::V8::Create()
+namespace Lacewing
+{
+    namespace V8
+    {
+        Lacewing::Pump * Pump = 0;
+    }    
+}
+
+void Lacewing::V8::Export(Handle<Object> Target)
 {
     HandleScope Scope;
 
     RefTemplate = Persistent <FunctionTemplate>::New (FunctionTemplate::New(RefConstructor));
     Handle <ObjectTemplate> RefInstTemplate = RefTemplate->InstanceTemplate();
     RefInstTemplate->SetInternalFieldCount(1);
-
+    
     Handle <Object> Exports = Object::New();
     
     #define Export(x) Handle <FunctionTemplate> x##_template = FunctionTemplate::New(x); \
                 Exports->Set(String::New(#x), x##_template->GetFunction());
-        
-        #include "exports/eventpump.inc"
+
+        if(!Pump)
+        {
+            #include "exports/eventpump.inc"
+        }
+        else
+        {   Exports->Set(String::New("lwjs_global_eventpump"), MakeRef(Pump));
+        }
+
         #include "exports/global.inc"
         #include "exports/webserver.inc"
         #include "exports/address.inc"
@@ -128,12 +143,28 @@ Handle<Function> Lacewing::V8::Create()
             String::New((const char *) LacewingJS, (int) sizeof(LacewingJS)),
             String::New("liblacewing.js"))->Run());
 
-    Handle<Value> ExportsParam = Exports;
-    return Scope.Close(Handle<Function> (Function::Cast(*function->Call(function, 1, &ExportsParam))));
+    Handle <Value> Params [] = { Exports, Target };
+    function->Call(function, 2, Params);
 }
 
 void Lacewing::V8::Export(Handle<Context> Context)
 {
-    Context->Global()->Set(String::New("Lacewing"), Lacewing::V8::Create());
+    HandleScope Scope;
+    
+    Handle <Object> Target = Object::New();
+    Export (Target);
+    
+    Context->Global()->Set(String::New("Lacewing"), Scope.Close(Target));
 }
 
+void Lacewing::V8::Export(Handle<Object> Target, Lacewing::Pump &Pump)
+{
+    Lacewing::V8::Pump = &Pump;
+    Export (Target);
+}
+
+void Lacewing::V8::Export(Handle<Context> Context, Lacewing::Pump &Pump)
+{
+    Lacewing::V8::Pump = &Pump;
+    Export (Context);
+}

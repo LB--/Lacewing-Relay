@@ -37,8 +37,7 @@ extern "C"
     {
         LNodePump = new Lacewing::LEvPump;
         
-        target->Set(String::New("Lacewing"),
-            Lacewing::V8::Create(*(Lacewing::Pump *) LNodePump));
+        Lacewing::V8::Export(target, *(Lacewing::Pump *) LNodePump);
     }
     
     NODE_MODULE(liblacewing, init); 

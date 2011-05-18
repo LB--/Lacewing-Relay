@@ -1,0 +1,4 @@
+To run the Javascript examples, install the liblacewing Node.JS addon and run eg:
+
+    node hello_world.js
+    

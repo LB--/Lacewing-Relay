@@ -1,3 +1,2 @@
-This is a liblacewing addon for Node.JS
-
-Work in progress!
+This is a liblacewing addon for Node.JS.  Supports everything from the V8 API
+(at the time of writing, only the webserver).

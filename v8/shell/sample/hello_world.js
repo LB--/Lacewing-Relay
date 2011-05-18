@@ -7,8 +7,7 @@ print('Hosting hello world example...');
 eventPump = new Lacewing.EventPump();
 webserver = new Lacewing.Webserver(eventPump);
 
-/* Handler for GET requests */
-webserver.get(function(request)
+webserver.bind('get', function(request)
 {
     print('Got request from ' + request.address + ' for "' + request.URL + '"');
     
@@ -16,8 +15,7 @@ webserver.get(function(request)
            .write ('I am ' + Lacewing.version());
 });
 
-/* Handler for errors */
-webserver.error(function(e)
+webserver.bind('error', function(e)
 {
     print('Error: ' + e);
 });

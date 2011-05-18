@@ -40,7 +40,7 @@ namespace Lacewing
         void AddRead (int FD, void * Tag);
         void AddReadWrite (int FD, void * Tag);
         
-        static void callback(ev_io *, int);
+        static void callback(EV_P_ ev_io *, int);
     };
 }
 

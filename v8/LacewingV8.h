@@ -28,7 +28,22 @@ namespace Lacewing
 {
     namespace V8
     {
-        v8::Handle <v8::Function> Create ();
+        /* If you don't pass a Pump to Export, Lacewing.EventPump will be
+           exported and the Javascript will have to create an EventPump,
+           construct the Lacewing classes with it, call startEventLoop() or
+           tick(), etc ...
+           
+           If you do pass a Pump, Lacewing.EventPump won't be exported to the
+           Javascript, and that Pump will be used whenever a Lacewing class is
+           to be constructed.  This makes it possible to eg. use the existing
+           libev loop in Node.JS.
+        */
+        
         void Export (v8::Handle<v8::Context> Context);
+        void Export (v8::Handle<v8::Context> Context, Lacewing::Pump &);
+        
+        void Export (v8::Handle<v8::Object> Object);
+        void Export (v8::Handle<v8::Object> Object, Lacewing::Pump &);
     }
 }
+

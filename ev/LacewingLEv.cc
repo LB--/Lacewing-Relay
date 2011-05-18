@@ -30,7 +30,7 @@ struct Watcher
     void * tag;
 };
 
-void Lacewing::LEvPump::callback (ev_io * _watcher, int events)
+void Lacewing::LEvPump::callback (EV_P_ ev_io * _watcher, int events)
 {
     Watcher * watcher = (Watcher *) _watcher;
     

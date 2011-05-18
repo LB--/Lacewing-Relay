@@ -44,7 +44,7 @@
     #ifndef LacewingFunction
         #define LacewingFunction
     #endif
-
+    
 #else
 
     #ifdef _WIN64
@@ -500,12 +500,12 @@ struct Error
         LacewingFunction Lacewing::Error * StartEventLoop();
         LacewingFunction Lacewing::Error * StartSleepyTicking(void (LacewingHandler * onTickNeeded) (Lacewing::EventPump &EventPump));
     
+        LacewingFunction bool IsEventPump ();
+
     private:
 
         LacewingFunction void AddRead (int FD, void * Tag);
         LacewingFunction void AddReadWrite (int FD, void * Tag);
-
-        LacewingFunction bool IsEventPump ();
     };
 
 #else

@@ -1,3 +1,6 @@
+
+On Windows, use the MSVC project file in the 'msvc' directory to build a DLL/LIB.
+
 On Linux/BSD/OS X:
 
     ./autogen.sh
@@ -5,4 +8,10 @@ On Linux/BSD/OS X:
     make
     sudo make install
     
-On Windows, use the MSVC project file in the 'msvc' directory to build a DLL/LIB.
+Node.JS module (after installing liblacewing):
+
+    cd node
+    node-waf configure build
+    node-waf install
+    
+    
