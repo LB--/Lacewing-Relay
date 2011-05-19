@@ -1,5 +1,4 @@
 *.svn
-m4/*
 bin/*
 build/*
 ignores
