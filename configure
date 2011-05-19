@@ -700,7 +700,7 @@ MAKEFLAGS=
 
 # Identity of this package.
 PACKAGE_NAME='Lacewing'
-PACKAGE_TARNAME='lacewing-1.0.0'
+PACKAGE_TARNAME='lacewing-0.1.0'
 PACKAGE_VERSION='0.1.0'
 PACKAGE_STRING='Lacewing 0.1.0'
 PACKAGE_BUGREPORT='http://lacewing-project.org'
@@ -1474,7 +1474,7 @@ Fine tuning of the installation directories:
   --infodir=DIR           info documentation [DATAROOTDIR/info]
   --localedir=DIR         locale-dependent data [DATAROOTDIR/locale]
   --mandir=DIR            man documentation [DATAROOTDIR/man]
-  --docdir=DIR            documentation root [DATAROOTDIR/doc/lacewing-1.0.0]
+  --docdir=DIR            documentation root [DATAROOTDIR/doc/lacewing-0.1.0]
   --htmldir=DIR           html documentation [DOCDIR]
   --dvidir=DIR            dvi documentation [DOCDIR]
   --pdfdir=DIR            pdf documentation [DOCDIR]
@@ -14124,7 +14124,7 @@ fi
 
 
 # Define the identity of the package.
- PACKAGE='lacewing-1.0.0'
+ PACKAGE='lacewing-0.1.0'
  VERSION='0.1.0'
 
 
