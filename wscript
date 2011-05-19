@@ -1,6 +1,8 @@
 
 # This is ONLY for building the Node module.  To build liblacewing, just use the regular Makefile.
 
+from os import *
+
 def set_options(opt):
     opt.tool_options("compiler_cxx")
 
@@ -9,6 +11,7 @@ def configure(conf):
     conf.check_tool("node_addon")
 
 def build(bld):
+    system("./configure")
     obj = bld.new_task_gen("cxx", "shlib", "node_addon")
     obj.target = "liblacewing"
     obj.cxxflags = ["-DHAVE_CONFIG_H"]
