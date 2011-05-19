@@ -2,10 +2,6 @@
 m4/*
 bin/*
 build/*
-configure
-Makefile
-Makefile.in
-install-sh
 ignores
 liblacewing.la
 config.h
@@ -21,13 +17,8 @@ Debug
 .libs
 *.lo
 *.pc
-config.*
 *.cache
-depcomp
-ltmain.sh
-missing
 stamp-h1
 libtool
-aclocal.m4
 *.obj
 
