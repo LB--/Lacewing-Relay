@@ -14,7 +14,6 @@ On Linux/BSD/OS X:
     
 Node.JS module:
 
-    ./configure
     node-waf configure build
     node-waf install
     
