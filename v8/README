@@ -1,5 +1,5 @@
 This is a binding of Lacewing::Webserver to V8.  Other classes from liblacewing will follow.
 
 - See the 'shell' folder for a modified V8 shell, which includes the liblacewing V8 exports
-- See the 'node' folder in the root of liblacewing for a liblacewing node.js module
+- Liblacewing itself may be build as a node.js module - see README in the liblacewing root
 

@@ -26,7 +26,7 @@
  * SUCH DAMAGE.
  */
  
-#include "../v8/LacewingV8.h"
+#include "LacewingV8.h"
 #include "../ev/LacewingLEv.h"
 
 #include <node.h>

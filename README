@@ -1,5 +1,6 @@
 Lacewing is a cross platform networking library with a C, C++ and Javascript API.
 
+
 INSTALLING
 ----------
 
@@ -7,14 +8,13 @@ On Windows, use the MSVC project file in the 'msvc' directory to build a DLL/LIB
 
 On Linux/BSD/OS X:
 
-    ./autogen.sh
     ./configure
     make
-    sudo make install
+    make install
     
-Node.JS module (after installing liblacewing):
+Node.JS module:
 
-    cd node
+    ./configure
     node-waf configure build
     node-waf install
     

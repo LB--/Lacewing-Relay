@@ -53,7 +53,7 @@
 #else
 
     #ifdef HAVE_CONFIG_H
-        #include "config.h"
+        #include "../config.h"
     #else
         #error Valid config.h required for non-MSVC! Run ./configure
     #endif
