@@ -1,0 +1,19 @@
+
+Ideally, all you should have to do is this:
+
+    ./configure
+    make
+    make install
+    
+Unfortunately, I've had problems with automake on some systems - if anyone knows
+what's wrong, please let me know!  If this affects you, it might be necessary to
+first run autogen.sh:
+
+    ./autogen.sh
+    ./configure
+    make
+    make install
+
+For this, you will need a recent version of autoconf, automake and libtool
+installed.
+
