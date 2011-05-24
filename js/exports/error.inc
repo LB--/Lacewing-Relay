@@ -28,12 +28,7 @@
     
 #ifdef ExportBodies
 
-    void ErrorDeleter (Persistent<Value> Ref, void *)
-    {
-        printf("Deleting Error!\n");
-        
-        delete ((Lacewing::Error *) External::Unwrap(Object::Cast(*Ref)->GetInternalField(0)));
-    }
+    Deleter (Error);
     
 #endif
 

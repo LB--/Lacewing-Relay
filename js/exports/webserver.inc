@@ -30,68 +30,80 @@
     
     void webserver_onGet(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
     {
-        Persistent <Function> Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
-        Local <Value> args [2];
+		CALLBACK_INIT ();
+		
+        CALLBACK_TYPE Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
+        CALLBACK_ARG_TYPE args [2];
         
-        args[0] = String::New("get");
-        args[1] = MakeRefLocal (&Request);
+        args[0] = CALLBACK_ARG_STRING("get");
+        args[1] = CALLBACK_ARG_REF (Request);
         
-        Callback->Call(Callback, 2, args);
+        CALLBACK_DO (Callback, 2, args);
     }
 
     void webserver_onPost(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
     {
-        Persistent <Function> Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
-        Local <Value> args [2];
+		CALLBACK_INIT ();
+		
+        CALLBACK_TYPE Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
+        CALLBACK_ARG_TYPE args [2];
         
-        args[0] = String::New("post");
-        args[1] = MakeRefLocal (&Request);
+        args[0] = CALLBACK_ARG_STRING("post");
+        args[1] = CALLBACK_ARG_REF (Request);
         
-        Callback->Call(Callback, 2, args);
+        CALLBACK_DO (Callback, 2, args);
     }
 
     void webserver_onHead(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
     {
-        Persistent <Function> Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
-        Local <Value> args [2];
+		CALLBACK_INIT ();
+		
+        CALLBACK_TYPE Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
+        CALLBACK_ARG_TYPE args [2];
         
-        args[0] = String::New("head");
-        args[1] = MakeRefLocal (&Request);
+        args[0] = CALLBACK_ARG_STRING("head");
+        args[1] = CALLBACK_ARG_REF (Request);
         
-        Callback->Call(Callback, 2, args);
+        CALLBACK_DO (Callback, 2, args);
     }
 
     void webserver_onError(Lacewing::Webserver &Webserver, Lacewing::Error &Error)
     {
-        Persistent <Function> Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
-        Local <Value> args [2];
+	    CALLBACK_INIT ();
+		
+        CALLBACK_TYPE Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
+        CALLBACK_ARG_TYPE args [2];
         
-        args[0] = String::New("error");
-        args[1] = MakeRefLocal (&Error);
+        args[0] = CALLBACK_ARG_STRING("error");
+        args[1] = CALLBACK_ARG_REF (Error);
         
-        Callback->Call(Callback, 2, args);
+        CALLBACK_DO (Callback, 2, args);
     }
 
     void webserver_onConnect(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
     {
-        Persistent <Function> Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
-        Local <Value> args [2];
+		CALLBACK_INIT ();
+		
+        CALLBACK_TYPE Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
+        CALLBACK_ARG_TYPE args [2];
         
-        args[0] = String::New("connect");
-        args[1] = MakeRefLocal (&Request);
+        args[0] = CALLBACK_ARG_STRING("connect");
+        args[1] = CALLBACK_ARG_REF (Request);
         
-        Callback->Call(Callback, 2, args);
+        CALLBACK_DO (Callback, 2, args);
     }
 
     void webserver_onDisconnect(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
     {
-        Persistent <Function> Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
-        Local <Value> args [2];
+		CALLBACK_INIT ();
+		
+        CALLBACK_TYPE Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
+        CALLBACK_ARG_TYPE args [2];
         
-        args[0] = String::New("disconnect");
-        args[1] = MakeRefLocal (&Request);
+        args[0] = CALLBACK_ARG_STRING("disconnect");
+        args[1] = CALLBACK_ARG_REF (Request);
         
-        Callback->Call(Callback, 2, args);
+        CALLBACK_DO (Callback, 2, args);
     }
 
     void webserver_onUploadStart(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request,
@@ -130,7 +142,7 @@ Export(lwjs_ws_new)
         Read_Function(Callback);
         
         Lacewing::Webserver &Webserver = *new Lacewing::Webserver(EventPump);
-        Webserver.Tag = new CallbackInfo (Persistent<Function>::New (Callback));
+        Webserver.Tag = CALLBACK_INFO (Callback);
         
         Webserver.onGet (webserver_onGet);
         Webserver.onPost (webserver_onPost);

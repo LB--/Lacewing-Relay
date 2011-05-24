@@ -26,22 +26,13 @@
  * SUCH DAMAGE.
  */
 
-#ifdef ExportBodies
-
-    void AddressDeleter (Persistent<Value> Ref, void *)
-    {
-        printf("Deleting Address!\n");
-        
-        delete ((Lacewing::Address *) External::Unwrap(Object::Cast(*Ref)->GetInternalField(0)));
-    }
-    
-#endif
+Deleter (Address);
     
 #define BeginExport() BeginExportGlobal(); \
     Read_Reference(Lacewing::Address, Address);
 
 Export(lwjs_address_new)
-    #ifdef ExportBodies
+    #ifdef ExportBodies 
     {
         BeginExportGlobal();
         Return_New(new Lacewing::Address(), AddressDeleter);

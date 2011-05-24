@@ -26,16 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#ifdef ExportBodies
-
-    void EventPumpDeleter (Persistent<Value> Ref, void *)
-    {
-        printf("Deleting EventPump!\n");
-        
-        delete ((Lacewing::EventPump *) External::Unwrap(Object::Cast(*Ref)->GetInternalField(0)));
-    }
-    
-#endif
+Deleter (EventPump);    
     
 #define BeginExport() BeginExportGlobal(); \
     Read_Reference(Lacewing::EventPump, EventPump);

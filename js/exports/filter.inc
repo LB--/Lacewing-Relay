@@ -26,14 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#ifdef ExportBodies
-
-    void FilterDeleter (Persistent<Value> Ref, void *)
-    {
-        delete ((Lacewing::Filter *) External::Unwrap(Object::Cast(*Ref)->GetInternalField(0)));
-    }
-    
-#endif
+Deleter (Filter);
     
 #define BeginExport() BeginExportGlobal(); \
     Read_Reference(Lacewing::Filter, Filter);
