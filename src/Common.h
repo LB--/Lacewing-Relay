@@ -100,8 +100,13 @@ void LacewingInitialise();
 
 #ifdef LacewingWindows
 
-    #define WINVER        0x0501
-    #define _WIN32_WINNT  0x0501
+    #ifndef WINVER
+        #define WINVER 0x0501
+    #endif
+
+    #ifndef _WIN32_WINNT
+        #define _WIN32_WINNT 0x0501
+    #endif
 
     #define I64Format   "%I64d"
     #define UDFormat    "%d"

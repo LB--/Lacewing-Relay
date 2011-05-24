@@ -39,7 +39,7 @@ Lacewing::Pump::~Pump()
     delete ((PumpInternal *) InternalTag);
 }
 
-void Lacewing::Pump::Ready (void * Tag, bool Gone, bool CanRead, bool CanWrite)
+bool Lacewing::Pump::Ready (void * Tag, bool Gone, bool CanRead, bool CanWrite)
 {
     PumpInternal &Internal = *((PumpInternal *) InternalTag);
 
@@ -62,7 +62,7 @@ void Lacewing::Pump::Ready (void * Tag, bool Gone, bool CanRead, bool CanWrite)
             }
         }
 
-        return;
+        return true;
     }
 
     if(CanWrite)
@@ -73,6 +73,9 @@ void Lacewing::Pump::Ready (void * Tag, bool Gone, bool CanRead, bool CanWrite)
     
     if(CanRead)
     {
+        if(Event->ReadCallback == SigExitEventLoop)
+            return false;
+
         if(Event->ReadCallback == SigRemoveClient)
             Internal.EventBacklog.Return(*(PumpInternal::Event *) Event->Tag);
         else
@@ -84,6 +87,8 @@ void Lacewing::Pump::Ready (void * Tag, bool Gone, bool CanRead, bool CanWrite)
 
     if(Gone)
         Event->Removing = true;
+
+    return true;
 }
 
 void Lacewing::Pump::Post (void * Function, void * Parameter)
@@ -148,6 +153,11 @@ PumpInternal::PumpInternal (Lacewing::Pump &_Pump) : Pump(_Pump)
 bool Lacewing::Pump::IsEventPump ()
 {
     return false;
+}
+
+void Lacewing::Pump::PostEventLoopExit ()
+{
+    Post (SigExitEventLoop, 0);
 }
 
 

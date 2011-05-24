@@ -117,6 +117,7 @@ Lacewing::Error * Lacewing::EventPump::StartEventLoop()
     unsigned int BytesTransferred;
     
     EventPumpInternal::Event * Event;
+    bool Exit = false;
 
     for(;;)
     {
@@ -133,6 +134,12 @@ Lacewing::Error * Lacewing::EventPump::StartEventLoop()
                 continue;
         }
 
+        if(Event->Callback == SigExitEventLoop)
+        {
+            Internal.EventBacklog.Return(*Event);
+            break;
+        }
+ 
         Process(Internal, Overlapped, BytesTransferred, *Event, Error);
     }
         
@@ -149,6 +156,11 @@ void Lacewing::EventPump::Post(void * Function, void * Parameter)
     Event.Tag      = Parameter;
 
     PostQueuedCompletionStatus(Internal.CompletionPort, 0, (ULONG_PTR) &Event, (OVERLAPPED *) 1);
+}
+
+void Lacewing::EventPump::PostEventLoopExit ()
+{
+    Post (SigExitEventLoop, 0);
 }
 
 LacewingThread(TickNeededWatcher, EventPumpInternal, Internal)

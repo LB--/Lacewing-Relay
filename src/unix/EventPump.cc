@@ -90,6 +90,8 @@ Lacewing::Error * Lacewing::EventPump::StartEventLoop()
 
     for(;;)
     {
+        bool Continue = false;
+
         #ifdef LacewingUseEPoll
         
             epoll_event EPollEvents [MaxEvents];
@@ -99,7 +101,7 @@ Lacewing::Error * Lacewing::EventPump::StartEventLoop()
             {
                 epoll_event &EPollEvent = EPollEvents[i];
 
-                Ready (EPollEvent.data.ptr, (EPollEvent.events & EPOLLRDHUP) != 0 ||
+                Continue = Ready (EPollEvent.data.ptr, (EPollEvent.events & EPOLLRDHUP) != 0 ||
                         (EPollEvent.events & EPOLLHUP) != 0, (EPollEvent.events & EPOLLIN) != 0,
                         (EPollEvent.events & EPOLLOUT) != 0);
             }
@@ -121,15 +123,23 @@ Lacewing::Error * Lacewing::EventPump::StartEventLoop()
                 }
                 else
                 {
-                    Ready (KEvent.udata, (KEvent.flags & EV_EOF) != 0, KEvent.filter == EVFILT_READ,
-                                            KEvent.filter == EVFILT_WRITE);
+                    Continue = Ready (KEvent.udata, (KEvent.flags & EV_EOF) != 0, KEvent.filter == EVFILT_READ,
+                                                 KEvent.filter == EVFILT_WRITE);
                 }
             }
             
         #endif
+
+        if(!Continue)
+            break;
     }
         
     return 0;
+}
+
+void Lacewing::EventPump::PostEventLoopExit ()
+{
+    Post (SigExitEventLoop, 0);
 }
 
 Lacewing::Error * Lacewing::EventPump::StartSleepyTicking(void (LacewingHandler * onTickNeeded) (Lacewing::EventPump &EventPump))

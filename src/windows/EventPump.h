@@ -31,6 +31,7 @@
 
 #define SigRemoveClient        (void *) 0
 #define SigEndWatcherThread    (void *) 1
+#define SigExitEventLoop       (void *) 2
 
 struct EventPumpInternal
 {  

@@ -483,14 +483,15 @@ struct Error
     
         LacewingFunction void Post (void * Function, void * Parameter);
         LacewingFunction virtual bool IsEventPump ();
-    
+        LacewingFunction void PostEventLoopExit ();
+
         #ifdef LacewingInternal
             friend struct ::PumpInternal;
         #endif
 
     protected:
 
-        LacewingFunction void Ready (void * Tag, bool Gone, bool CanRead, bool CanWrite);
+        LacewingFunction bool Ready (void * Tag, bool Gone, bool CanRead, bool CanWrite);
 
         virtual void AddRead (int FD, void * Tag) = 0;
         virtual void AddReadWrite (int FD, void * Tag) = 0;
@@ -529,6 +530,7 @@ struct Error
         LacewingFunction Lacewing::Error * StartSleepyTicking(void (LacewingHandler * onTickNeeded) (Lacewing::EventPump &EventPump));
     
         LacewingFunction void Post (void * Function, void * Parameter);
+        LacewingFunction void PostEventLoopExit ();
     };
 
     typedef EventPump Pump;
