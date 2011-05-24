@@ -27,7 +27,7 @@
  */
  
 #include "LacewingV8.h"
-#include "../ev/LacewingLEv.h"
+#include "../../ev/LacewingLEv.h"
 
 #include <node.h>
 
@@ -42,7 +42,7 @@ extern "C"
     {
         LNodePump = new Lacewing::LEvPump;
         
-        Lacewing::V8::Export(target, *(Lacewing::Pump *) LNodePump);
+        Lacewing::V8::Export(target, (Lacewing::Pump *) LNodePump);
     }
     
     NODE_MODULE(liblacewing, init); 

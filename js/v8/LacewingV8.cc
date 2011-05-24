@@ -28,15 +28,6 @@
 
 #include "LacewingV8.h"
 using namespace v8;
-
-struct CallbackInfo
-{
-	CallbackInfo (Persistent<Function> _Callback) : Callback(_Callback)
-	{
-	}
-	
-	Persistent<Function> Callback;
-};
     
 #define BeginExportGlobal() int _arg_index = 0;
 
@@ -45,7 +36,7 @@ struct CallbackInfo
 
 #define Read_Reference(T, N) T &N = *(T *) Get_Pointer();
 #define Read_Int(N) int N = Get_Argument()->ToInt32()->Int32Value();
-#define Read_Int64(N) int N = Get_Argument()->ToInteger()->IntegerValue();
+#define Read_Int64(N) lw_i64 N = Get_Argument()->ToInteger()->IntegerValue();
 #define Read_Bool(N) bool N = Get_Argument()->ToInt32()->BooleanValue();
 #define Read_String(N) String::AsciiValue _##N(Get_Argument()->ToString()); \
                         const char * N = *_##N;
@@ -58,6 +49,23 @@ struct CallbackInfo
 #define Return_Int64(x) return Integer::New(x);
 #define Return_Ref(x) return MakeRef (&x);
 #define Return_New(x, c) return MakeRef (x, c);
+
+#define CALLBACK_INIT()
+#define CALLBACK_TYPE Persistent <Function>
+#define CALLBACK_ARG_TYPE Local <Value>
+#define CALLBACK_ARG_STRING(x) String::New(x)
+#define CALLBACK_ARG_REF(x) MakeRef (&x)
+#define CALLBACK_DO(callback, argc, argv) callback->Call(argc, argv);
+#define CALLBACK_INFO(c) new CallbackInfo (c)
+
+struct CallbackInfo
+{
+	CallbackInfo (CALLBACK_TYPE _Callback) : Callback(_Callback)
+	{
+	}
+	
+	CALLBACK_TYPE Callback;
+};
 
 Persistent <FunctionTemplate> RefTemplate;
 
@@ -94,28 +102,23 @@ Local <Value> MakeRefLocal (void * ptr)
 
 #define ExportBodies
 #define Export(x) Handle<Value> x (const Arguments &args)
+#define Deleter(x) void x##Deleter (Persistent<Value> obj, void * ptr) { \
+                        delete ((Lacewing::x *) ptr); }
 
-    #include "exports/eventpump.inc"
-    #include "exports/global.inc"
-    #include "exports/webserver.inc"
-    #include "exports/address.inc"
-    #include "exports/error.inc"
-    #include "exports/filter.inc"
-    
+    #include "../exports/eventpump.inc"
+    #include "../exports/global.inc"
+    #include "../exports/webserver.inc"
+    #include "../exports/address.inc"
+    #include "../exports/error.inc"
+    #include "../exports/filter.inc"
+
+#undef Deleter
 #undef ExportBodies
 #undef Export
 
-#include "js/liblacewing.js.inc"
+#include "../js/liblacewing.js.inc"
 
-namespace Lacewing
-{
-    namespace V8
-    {
-        Lacewing::Pump * Pump = 0;
-    }    
-}
-
-void Lacewing::V8::Export(Handle<Object> Target)
+void Lacewing::V8::Export(Handle<Object> Target, Lacewing::Pump * Pump)
 {
     HandleScope Scope;
 
@@ -127,21 +130,23 @@ void Lacewing::V8::Export(Handle<Object> Target)
     
     #define Export(x) Handle <FunctionTemplate> x##_template = FunctionTemplate::New(x); \
                 Exports->Set(String::New(#x), x##_template->GetFunction());
+    #define Deleter(x)
 
         if(!Pump)
         {
-            #include "exports/eventpump.inc"
+            #include "../exports/eventpump.inc"
         }
         else
         {   Exports->Set(String::New("lwjs_global_eventpump"), MakeRef(Pump));
         }
 
-        #include "exports/global.inc"
-        #include "exports/webserver.inc"
-        #include "exports/address.inc"
-        #include "exports/error.inc"
-        #include "exports/filter.inc"
+        #include "../exports/global.inc"
+        #include "../exports/webserver.inc"
+        #include "../exports/address.inc"
+        #include "../exports/error.inc"
+        #include "../exports/filter.inc"
     
+    #undef Deleter
     #undef Export
         
     Local<Function> function = Function::Cast(*Script::Compile(
@@ -152,24 +157,13 @@ void Lacewing::V8::Export(Handle<Object> Target)
     function->Call(function, 2, Params);
 }
 
-void Lacewing::V8::Export(Handle<Context> Context)
+void Lacewing::V8::Export(Handle<Context> Context, Lacewing::Pump * Pump)
 {
     HandleScope Scope;
     
     Handle <Object> Target = Object::New();
-    Export (Target);
+    Export (Target, Pump);
     
     Context->Global()->Set(String::New("Lacewing"), Scope.Close(Target));
 }
 
-void Lacewing::V8::Export(Handle<Object> Target, Lacewing::Pump &Pump)
-{
-    Lacewing::V8::Pump = &Pump;
-    Export (Target);
-}
-
-void Lacewing::V8::Export(Handle<Context> Context, Lacewing::Pump &Pump)
-{
-    Lacewing::V8::Pump = &Pump;
-    Export (Context);
-}

@@ -225,17 +225,6 @@ int RunMain(int argc, char* argv[]) {
   }
 
   Lacewing::V8::Export(context);
-
-  { v8::Handle<v8::String> source = ReadFile("../js/liblacewing.js");
-    if (source.IsEmpty()) {
-        v8::ThrowException(v8::String::New("Error loading ../js/liblacewing.js"));
-        return 1;
-    }
-    if (!ExecuteString(source, v8::String::New("liblacewing.js"), false, false)) {
-        v8::ThrowException(v8::String::New("Error executing liblacewing.js"));
-        return 1;
-    }
-  }
     
   bool run_shell = (argc == 1);
   int num_isolates = 1;

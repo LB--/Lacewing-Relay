@@ -114,12 +114,7 @@
     {
     }
 
-    void WebserverDeleter (Persistent<Value> Ref, void *)
-    {
-        printf("Deleting webserver!\n");
-        
-        delete ((Lacewing::Webserver *) External::Unwrap(Object::Cast(*Ref)->GetInternalField(0)));
-    }
+    Deleter (Webserver);
     
 #endif
 

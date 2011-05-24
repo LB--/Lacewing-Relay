@@ -27,11 +27,13 @@
  */
 
 #include <Lacewing.h>
-#include <v8.h>
+
+#include <jsapi.h>
+#include <jsstr.h>
 
 namespace Lacewing
 {
-    namespace V8
+    namespace MozJS
     {
         /* If you don't pass a Pump to Export, Lacewing.EventPump will be
            exported and the Javascript will have to create an EventPump,
@@ -44,8 +46,8 @@ namespace Lacewing
            libev loop in Node.JS.
         */
         
-        void Export (v8::Handle<v8::Context> Context, Lacewing::Pump * Pump = 0);
-        void Export (v8::Handle<v8::Object> Object, Lacewing::Pump * Pump = 0);
+        void Export (JSContext *, Lacewing::Pump * Pump = 0);        
+        void Export (JSContext *, JSObject *, Lacewing::Pump * Pump = 0);
     }
 }
 
