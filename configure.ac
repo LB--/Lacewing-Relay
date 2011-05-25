@@ -1,5 +1,5 @@
 AC_PREREQ([2.49])
-AC_INIT([Lacewing], [0.1.0], [http://lacewing-project.org], [lacewing-0.1.0], [http://lacewing-project.org/])
+AC_INIT([liblacewing], [0.1.0], [])
 
 AC_PROG_CXX
 AC_PROG_LIBTOOL

@@ -3,7 +3,6 @@ ACLOCAL_AMFLAGS = ${ACLOCAL_FLAGS} -I m4
 lib_LTLIBRARIES = liblacewing.la
 
 liblacewing_la_LIBADD = -lpthread -lssl
-liblacewing_la_LDFLAGS = -version-info 0:1:0
 
 liblacewing_la_SOURCES = \
     src/Global.cc \
