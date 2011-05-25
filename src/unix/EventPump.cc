@@ -137,11 +137,6 @@ Lacewing::Error * Lacewing::EventPump::StartEventLoop()
     return 0;
 }
 
-void Lacewing::EventPump::PostEventLoopExit ()
-{
-    Post (SigExitEventLoop, 0);
-}
-
 Lacewing::Error * Lacewing::EventPump::StartSleepyTicking(void (LacewingHandler * onTickNeeded) (Lacewing::EventPump &EventPump))
 {
     EventPumpInternal &Internal = *((EventPumpInternal *) EPInternalTag);
