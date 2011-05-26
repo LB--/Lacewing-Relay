@@ -394,7 +394,7 @@ void Lacewing::MD5 (char * Output, const char * Input, int Length)
         MD5_CTX Context;
         MD5_Init(&Context);
 
-        MD5_Update(&Context, Input, Size);
+        MD5_Update(&Context, Input, Length);
 
         MD5_Final((unsigned char *) Output, &Context);
 
