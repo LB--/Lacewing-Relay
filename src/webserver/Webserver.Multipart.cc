@@ -370,7 +370,7 @@ void Multipart::CallRequestHandler()
     LacewingAssert(Client.RequestUnfinished);
 
     if(Client.Server.HandlerUploadPost)
-        Client.Server.HandlerUploadPost(Client.Server.Webserver, Client.Request, &Uploads[0], Uploads.size());
+        Client.Server.HandlerUploadPost(Client.Server.Webserver, Client.Request, Uploads.size() ? &Uploads[0] : 0, Uploads.size());
 }
 
 const char * Lacewing::Webserver::Upload::Filename()
