@@ -349,7 +349,7 @@ void Lacewing::NewTempFile(char * Buffer, int Length)
         for(int i = 0; i < sizeof(TempName); i += sizeof(lw_i64))
             *(lw_i64 *) (TempName + i) = i % 2 == 0 ? (lw_i64) time(0) : (lw_i64) rand();
 
-        Lacewing::MD5 (TempName, TempName, sizeof(TempName));
+        Lacewing::MD5_Base64 (TempName, TempName, sizeof(TempName));
 
         char Path[MAX_PATH];
         TempPath(Path, sizeof(Path));
