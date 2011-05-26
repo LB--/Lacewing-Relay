@@ -776,6 +776,8 @@ bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, lw_i
         {
             /* Either completed immediately or failed */
 
+            DebugOut("SSL file transfer completed immediately or failed");
+
             delete Transfer;
             Transfer = 0;
             

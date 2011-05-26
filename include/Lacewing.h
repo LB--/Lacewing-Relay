@@ -136,6 +136,7 @@ LacewingFunction          void  lw_md5_base64               (char * output, cons
   LacewingFunction           void  lw_eventpump_start_sleepy_ticking (lw_eventpump *, void (LacewingHandler * on_tick_needed) (lw_eventpump));
   LacewingFunction           void  lw_eventpump_post_eventloop_exit  (lw_eventpump *);
   LacewingFunction        lw_bool  lw_eventpump_in_use               (lw_eventpump *);
+  LacewingFunction           void  lw_eventpump_set_in_use           (lw_eventpump *, lw_bool);
 
 /* Timer */
 
@@ -493,6 +494,7 @@ struct Error
         LacewingFunction virtual bool IsEventPump ();
         LacewingFunction void PostEventLoopExit ();
         LacewingFunction bool InUse ();
+        LacewingFunction void InUse (bool);
 
         #ifdef LacewingInternal
             friend struct ::PumpInternal;
@@ -548,6 +550,7 @@ struct Error
         LacewingFunction void Post (void * Function, void * Parameter);
         LacewingFunction void PostEventLoopExit ();
         LacewingFunction bool InUse ();
+        LacewingFunction void InUse (bool);
     };
 
     typedef EventPump Pump;

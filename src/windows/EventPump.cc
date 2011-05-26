@@ -206,3 +206,8 @@ bool Lacewing::EventPump::InUse ()
     return ((EventPumpInternal *) InternalTag)->InUse;
 }
 
+void Lacewing::EventPump::InUse (bool InUse)
+{
+    ((EventPumpInternal *) InternalTag)->InUse = InUse;
+}
+

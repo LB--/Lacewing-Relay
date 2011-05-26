@@ -93,6 +93,8 @@ Lacewing::Timer::Timer(Lacewing::Pump &Pump)
 {
     InternalTag = new TimerInternal(*this, *(PumpInternal *) Pump.InternalTag);
     Tag         = 0;
+    
+    Pump.InUse (true);
 }
 
 Lacewing::Timer::~Timer()

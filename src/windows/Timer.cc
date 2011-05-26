@@ -78,6 +78,8 @@ Lacewing::Timer::Timer(Lacewing::EventPump &EventPump)
     InternalTag = new TimerInternal(*this, *(EventPumpInternal *) EventPump.InternalTag);
     Tag         = 0;
 
+    EventPump.InUse (true);
+
     ((TimerInternal *) InternalTag)->Threads.Start(TimerThread, InternalTag);
 }
 

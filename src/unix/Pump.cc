@@ -99,7 +99,10 @@ void Lacewing::Pump::Post (void * Function, void * Parameter)
     PumpInternal &Internal = *((PumpInternal *) InternalTag);
 
     if(!Internal.PostFD_Added)
+    {
         Internal.AddRead (Internal.PostFD_Read, 0, 0);
+        Internal.PostFD_Added = true;
+    }
 
     PumpInternal::Event &Event = Internal.EventBacklog.Borrow(Internal);
 
@@ -170,6 +173,11 @@ void Lacewing::Pump::PostEventLoopExit ()
 bool Lacewing::Pump::InUse()
 {
     return ((PumpInternal *) InternalTag)->InUse;
+}
+
+void Lacewing::Pump::InUse(bool InUse)
+{
+    ((PumpInternal *) InternalTag)->InUse = InUse;
 }
 
 void Lacewing::Pump::Gone(void *)

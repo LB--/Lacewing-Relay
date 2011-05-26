@@ -206,40 +206,42 @@ protected:
 
     bool Ready()
     {
-        if(!Read())
-            return false;
-
-        int Bytes = SSL_write(To, Chunk, ChunkSize);
-
-        if(Bytes == 0)
-            return false;
-
-        if(Bytes > 0)
+        for(;;)
         {
-            ChunkSize = -1;
-
             if(!Read())
                 return false;
 
-            SendOn = SendOnWriteReady;
-            return true;
-        }
+            int Bytes = SSL_write(To, Chunk, ChunkSize);
 
-        switch(SSL_get_error(To, Bytes))
-        {
-            case SSL_ERROR_WANT_READ:
-
-                SendOn = SendOnReadReady;
-                break;
-
-            case SSL_ERROR_WANT_WRITE:
-
-                SendOn = SendOnWriteReady;
-                break;
-
-            default:
+            if(Bytes == 0)
                 return false;
-        };
+
+            if(Bytes > 0)
+            {
+                /* Onwards to the next chunk */
+
+                ChunkSize = -1;
+                continue;
+            }
+
+            /* We're not ready to send any more (or there was an error) */
+
+            switch(SSL_get_error(To, Bytes))
+            {
+                case SSL_ERROR_WANT_READ:
+
+                    SendOn = SendOnReadReady;
+                    return true;
+
+                case SSL_ERROR_WANT_WRITE:
+
+                    SendOn = SendOnWriteReady;
+                    return true;
+
+                default:
+                    return false;
+            };
+        }
 
         return true;
     }

@@ -49,4 +49,7 @@ void lw_eventpump_post_eventloop_exit (lw_eventpump * eventpump)
 lw_bool lw_eventpump_in_use (lw_eventpump * eventpump)
     { return ((Lacewing::EventPump *) eventpump)->InUse();
     }
+void lw_eventpump_set_in_use (lw_eventpump * eventpump, lw_bool in_use)
+    { ((Lacewing::EventPump *) eventpump)->InUse(in_use != 0);
+    }
 
