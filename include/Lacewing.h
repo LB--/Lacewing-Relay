@@ -530,7 +530,6 @@ struct Error
 
         LacewingFunction void * AddRead (int FD, void * Tag);
         LacewingFunction void * AddReadWrite (int FD, void * Tag);
-        LacewingFunction void Gone (void *);
     };
 
 #else
