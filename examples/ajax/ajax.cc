@@ -47,6 +47,22 @@ void onPost(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Reques
     }
 }
 
+void onDisconnect(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
+{
+    /* Remove the request from our list when it disconnects (it will be freed
+       right after this handler) */
+
+    for(list<Lacewing::Webserver::Request *>::iterator it = WaitingRequests.begin();
+            it != WaitingRequests.end(); ++ it)
+    {
+        if(*it == &Request)
+        {
+            WaitingRequests.erase(it);
+            break;
+        }
+    }
+}
+
 int main(int argc, char * argv[])
 {
     Lacewing::EventPump EventPump;
@@ -60,6 +76,7 @@ int main(int argc, char * argv[])
     
     Webserver.onGet(onGet);
     Webserver.onPost(onPost);
+    Webserver.onDisconnect(onDisconnect);
     
     Webserver.Host(8080);    
     

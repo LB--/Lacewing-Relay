@@ -39,7 +39,6 @@ WebserverClient::WebserverClient(Lacewing::Server::Client &_Socket)
 
     ConnectHandlerCalled  = false;
     RequestUnfinished     = false;
-    Disconnected          = false;
 }
 
 char * WebserverInternal::BorrowSendBuffer()
@@ -75,17 +74,13 @@ void WebserverInternal::SocketDisconnect(Lacewing::Server &Server, Lacewing::Ser
     WebserverInternal &Webserver = *(WebserverInternal *) Server.Tag;
     WebserverClient &WebClient = *(WebserverClient *) Client.Tag;
 
-    WebClient.Disconnected = true;
-
     if(WebClient.ConnectHandlerCalled)
     {
         if(Webserver.HandlerDisconnect)
             Webserver.HandlerDisconnect(Webserver.Webserver, WebClient.Request);
     }
-    else
-    {
-        /* TODO - Return the request struct */
-    }
+
+    Webserver.ClientBacklog.Return (WebClient);
 }
 
 void WebserverInternal::SocketReceive(Lacewing::Server &Server, Lacewing::Server::Client &Client, char * Buffer, int Size)
@@ -404,23 +399,8 @@ void Lacewing::Webserver::Request::Finish(const char * Data, int Size)
 {
     WebserverClient &Client = *((WebserverClient *) InternalTag);
 
-
-    /* For a disconnected client, Finish() is either called in the disconnect handler or
-       afterwards.  After the disconnect handler has been called, Lacewing::Server won't
-       call any more handlers, so there's no sync issue with the Disconnected bool. */
-
-    if(Client.Disconnected)
-    {
-        DebugOut("Finish: Was DC'd");
-
-        Client.Server.ClientBacklog.Return(Client);
-        return;
-    }
-
     if(!Client.RequestUnfinished)
     {
-        LacewingAssert(false);
-
         DebugOut("Finish: Request not marked as unfinished");
         return;
     }

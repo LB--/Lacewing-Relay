@@ -353,7 +353,12 @@ void Multipart::ToFile(const char * Data, size_t Size)
 
         /* Auto save */
 
-        fwrite(Data, 1, Size, CurrentUpload->AutoSaveFile);
+        if(fwrite(Data, 1, Size, CurrentUpload->AutoSaveFile) != Size)
+        {
+            CurrentUpload->AutoSaveFile = 0;
+            Client.Socket.Disconnect ();
+        }
+
         return;
     }
 

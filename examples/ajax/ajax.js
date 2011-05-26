@@ -17,6 +17,14 @@ webserver.bind('get', function(req)
     req.sendFile('ajax.html').finish();
 });
 
+webserver.bind('disconnect', function(req)
+{
+    var index = waitingRequests.indexOf(req);
+    
+    if(index != -1)
+        waitingRequests.splice(index, 1);
+});
+
 webserver.bind('post', function(req)
 {
     if(req.URL == 'poll')

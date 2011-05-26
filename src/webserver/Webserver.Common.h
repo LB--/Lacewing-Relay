@@ -296,7 +296,7 @@ public:
 
     WebserverClient(Lacewing::Server::Client &_Socket);
     
-    bool ConnectHandlerCalled, Disconnected, RequestUnfinished;
+    bool ConnectHandlerCalled, RequestUnfinished;
     Map  Cookies, SessionDataCopies;
     
     bool Secure;
