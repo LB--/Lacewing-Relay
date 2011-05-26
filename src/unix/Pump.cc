@@ -77,7 +77,10 @@ bool Lacewing::Pump::Ready (void * Tag, bool Gone, bool CanRead, bool CanWrite)
             return false;
 
         if(Event->ReadCallback == SigRemoveClient)
+        {
+            this->Gone (Event->GoneKey);
             Internal.EventBacklog.Return(*(PumpInternal::Event *) Event->Tag);
+        }
         else
         {
             if(!Event->Removing)
@@ -116,27 +119,29 @@ void Lacewing::Pump::Post (void * Function, void * Parameter)
 
 void * PumpInternal::AddRead (int FD, void * Tag, void * Callback)
 {
+    InUse = true;
     Event &E = EventBacklog.Borrow(*this);
 
     E.Tag           = Tag;
     E.ReadCallback  = Callback;
     E.WriteCallback = 0;
     E.Removing      = false;
+    E.GoneKey       = Pump.AddRead(FD, &E);
 
-    Pump.AddRead(FD, &E);
     return &E;
 }
 
 void * PumpInternal::AddReadWrite (int FD, void * Tag, void * ReadCallback, void * WriteCallback)
 {
+    InUse = true;
     Event &E = EventBacklog.Borrow(*this);
 
     E.Tag           = Tag;
     E.ReadCallback  = ReadCallback;
     E.WriteCallback = WriteCallback;
     E.Removing      = false;
+    E.GoneKey       = Pump.AddReadWrite(FD, &E);
 
-    Pump.AddReadWrite(FD, &E);
     return &E;
 }
 
@@ -148,6 +153,8 @@ PumpInternal::PumpInternal (Lacewing::Pump &_Pump) : Pump(_Pump)
     PostFD_Read  = PostPipe[0];
     PostFD_Write = PostPipe[1];
     PostFD_Added = false;
+    
+    InUse = false;
 }
 
 bool Lacewing::Pump::IsEventPump ()
@@ -160,4 +167,12 @@ void Lacewing::Pump::PostEventLoopExit ()
     Post (SigExitEventLoop, 0);
 }
 
+bool Lacewing::Pump::InUse()
+{
+    return ((PumpInternal *) InternalTag)->InUse;
+}
+
+void Lacewing::Pump::Gone(void *)
+{
+}
 

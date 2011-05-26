@@ -46,3 +46,7 @@ void lw_eventpump_start_sleepy_ticking (lw_eventpump * eventpump, void (Lacewing
 void lw_eventpump_post_eventloop_exit (lw_eventpump * eventpump)
     { ((Lacewing::EventPump *) eventpump)->PostEventLoopExit();
     }
+lw_bool lw_eventpump_in_use (lw_eventpump * eventpump)
+    { return ((Lacewing::EventPump *) eventpump)->InUse();
+    }
+

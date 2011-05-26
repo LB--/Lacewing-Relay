@@ -26,7 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#include <Lacewing.h>
+#include "../../include/Lacewing.h"
 
 #include <jsapi.h>
 #include <jsstr.h>

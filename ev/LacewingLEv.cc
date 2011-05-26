@@ -43,7 +43,7 @@ void Lacewing::LEvPump::callback (EV_P_ ev_io * _watcher, int events)
                     events & EV_READ, events & EV_WRITE);
 }
 
-void Lacewing::LEvPump::AddRead (int FD, void * Tag)
+void * Lacewing::LEvPump::AddRead (int FD, void * Tag)
 {
     Watcher * watcher = new Watcher;
     ev_io_init (&watcher->watcher, callback, FD, EV_READ);
@@ -52,9 +52,11 @@ void Lacewing::LEvPump::AddRead (int FD, void * Tag)
     watcher->tag = Tag;
     
     ev_io_start (EV_DEFAULT_ &watcher->watcher);
+
+    return watcher;
 }
 
-void Lacewing::LEvPump::AddReadWrite (int FD, void * Tag)
+void * Lacewing::LEvPump::AddReadWrite (int FD, void * Tag)
 {
     Watcher * watcher = new Watcher;
     ev_io_init (&watcher->watcher, callback, FD, EV_READ | EV_WRITE);
@@ -63,5 +65,15 @@ void Lacewing::LEvPump::AddReadWrite (int FD, void * Tag)
     watcher->tag = Tag;
     
     ev_io_start (EV_DEFAULT_ &watcher->watcher);
+    
+    return watcher;
+}
+
+void Lacewing::LEvPump::Gone (void * Key)
+{
+    Watcher * watcher = (Watcher *) Key;
+
+    ev_io_stop (EV_DEFAULT_ &watcher->watcher);
+    delete watcher;
 }
 

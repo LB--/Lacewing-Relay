@@ -33,7 +33,7 @@
     #pragma warning("LibEvPump is for *nix only")
 #else
 
-#include <Lacewing.h>
+#include "../include/Lacewing.h"
 #include <ev.h>
 
 namespace Lacewing
@@ -42,8 +42,9 @@ namespace Lacewing
     {
     protected:
         
-        void AddRead (int FD, void * Tag);
-        void AddReadWrite (int FD, void * Tag);
+        void * AddRead (int FD, void * Tag);
+        void * AddReadWrite (int FD, void * Tag);
+        void Gone (void *);
         
         static void callback(EV_P_ ev_io *, int);
     };

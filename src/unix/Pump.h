@@ -51,7 +51,7 @@ struct PumpInternal
         {
         }
 
-        void * Tag, * ReadCallback, * WriteCallback;
+        void * Tag, * ReadCallback, * WriteCallback, * GoneKey;
         bool Removing;
     };
 
@@ -66,7 +66,7 @@ struct PumpInternal
     queue<Event *> PostQueue;
     Lacewing::Sync Sync_PostQueue;
 
-    bool IsEventPump;
+    bool IsEventPump, InUse;
 
     friend struct Lacewing::Pump;
 };

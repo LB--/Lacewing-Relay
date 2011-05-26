@@ -135,6 +135,7 @@ LacewingFunction          void  lw_md5_base64               (char * output, cons
   LacewingFunction           void  lw_eventpump_start_multithreading (lw_eventpump *);
   LacewingFunction           void  lw_eventpump_start_sleepy_ticking (lw_eventpump *, void (LacewingHandler * on_tick_needed) (lw_eventpump));
   LacewingFunction           void  lw_eventpump_post_eventloop_exit  (lw_eventpump *);
+  LacewingFunction        lw_bool  lw_eventpump_in_use               (lw_eventpump *);
 
 /* Timer */
 
@@ -491,6 +492,7 @@ struct Error
         LacewingFunction void Post (void * Function, void * Parameter);
         LacewingFunction virtual bool IsEventPump ();
         LacewingFunction void PostEventLoopExit ();
+        LacewingFunction bool InUse ();
 
         #ifdef LacewingInternal
             friend struct ::PumpInternal;
@@ -500,8 +502,15 @@ struct Error
 
         LacewingFunction bool Ready (void * Tag, bool Gone, bool CanRead, bool CanWrite);
 
-        virtual void AddRead (int FD, void * Tag) = 0;
-        virtual void AddReadWrite (int FD, void * Tag) = 0;
+        virtual void * AddRead (int FD, void * Tag) = 0;
+        virtual void * AddReadWrite (int FD, void * Tag) = 0;
+
+        /* AddRead/AddReadWrite may return a pointer-sized key, which will be passed
+           to Gone() when the FD is dead.  EventPump doesn't use this mechanism, but
+           the libev pump does (it returns a pointer to the watcher so that Gone()
+           can delete it) */
+
+        LacewingFunction virtual void Gone (void *);
     };
 
     struct EventPump : public Pump
@@ -519,8 +528,9 @@ struct Error
 
     private:
 
-        LacewingFunction void AddRead (int FD, void * Tag);
-        LacewingFunction void AddReadWrite (int FD, void * Tag);
+        LacewingFunction void * AddRead (int FD, void * Tag);
+        LacewingFunction void * AddReadWrite (int FD, void * Tag);
+        LacewingFunction void Gone (void *);
     };
 
 #else
@@ -538,6 +548,7 @@ struct Error
     
         LacewingFunction void Post (void * Function, void * Parameter);
         LacewingFunction void PostEventLoopExit ();
+        LacewingFunction bool InUse ();
     };
 
     typedef EventPump Pump;

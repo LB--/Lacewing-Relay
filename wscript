@@ -9,13 +9,13 @@ def set_options(opt):
 def configure(conf):
     conf.check_tool("compiler_cxx")
     conf.check_tool("node_addon")
+    system("./configure")
 
 def build(bld):
-    system("./configure")
     obj = bld.new_task_gen("cxx", "shlib", "node_addon")
     obj.target = "liblacewing"
     obj.cxxflags = ["-DHAVE_CONFIG_H"]
-    obj.source = "v8/LacewingNode.cc v8/LacewingV8.cc ev/LacewingLEv.cc \
+    obj.source = "js/v8/LacewingNode.cc js/v8/LacewingV8.cc ev/LacewingLEv.cc \
                     src/Global.cc \
                     src/Sync.cc \
                     src/SpinSync.cc \

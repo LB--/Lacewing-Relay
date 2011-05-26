@@ -146,7 +146,7 @@ Lacewing::Error * Lacewing::EventPump::StartSleepyTicking(void (LacewingHandler 
     return 0;
 }
 
-void Lacewing::EventPump::AddRead(int FD, void * Tag)
+void * Lacewing::EventPump::AddRead(int FD, void * Tag)
 {
     EventPumpInternal &Internal = *((EventPumpInternal *) EPInternalTag);
 
@@ -161,7 +161,7 @@ void Lacewing::EventPump::AddRead(int FD, void * Tag)
         if(epoll_ctl(Internal.Queue, EPOLL_CTL_ADD, FD, &Event) == -1)
         {
             DebugOut("EventPump: Failed to add FD: " << strerror(errno));
-            return;
+            return 0;
         }
             
     #endif
@@ -174,13 +174,15 @@ void Lacewing::EventPump::AddRead(int FD, void * Tag)
         if(kevent(Internal.Queue, &Change, 1, 0, 0, 0) == -1)
         {
             DebugOut("EventPump: Failed to add FD: " << strerror(errno));
-            return;
+            return 0;
         }
         
     #endif
+
+    return 0;
 }
 
-void Lacewing::EventPump::AddReadWrite(int FD, void * Tag)
+void * Lacewing::EventPump::AddReadWrite(int FD, void * Tag)
 {
     EventPumpInternal &Internal = *((EventPumpInternal *) EPInternalTag);
 
@@ -195,7 +197,7 @@ void Lacewing::EventPump::AddReadWrite(int FD, void * Tag)
         if(epoll_ctl(Internal.Queue, EPOLL_CTL_ADD, FD, &Event) == -1)
         {
             DebugOut("EventPump: Failed to add FD: " << strerror(errno));
-            return;
+            return 0;
         }
             
     #endif
@@ -209,7 +211,7 @@ void Lacewing::EventPump::AddReadWrite(int FD, void * Tag)
         if(kevent(Internal.Queue, &Change, 1, 0, 0, 0) == -1)
         {
             DebugOut("EventPump: Failed to add FD: " << strerror(errno));
-            return;
+            return 0;
         }
 
         EV_SET(&Change, FD, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, Tag);
@@ -217,10 +219,12 @@ void Lacewing::EventPump::AddReadWrite(int FD, void * Tag)
         if(kevent(Internal.Queue, &Change, 1, 0, 0, 0) == -1)
         {
             DebugOut("EventPump: Failed to add FD: " << strerror(errno));
-            return;
+            return 0;
         }
 
     #endif
+
+    return 0;
 }
 
 bool Lacewing::EventPump::IsEventPump ()

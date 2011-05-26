@@ -201,3 +201,8 @@ Lacewing::Error * Lacewing::EventPump::StartSleepyTicking(void (LacewingHandler 
     return 0;
 }
 
+bool Lacewing::EventPump::InUse ()
+{
+    return ((EventPumpInternal *) InternalTag)->InUse;
+}
+

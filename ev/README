@@ -7,7 +7,3 @@ node.js addon.  To use :-
 - Pass the Lacewing::LEvPump (cast it to Lacewing::Pump &) to the constructor of
   any Lacewing class
 
-Note that this probably leaks horribly at the moment, because libev doesn't have
-any EOF indication like epoll/kqueue do, and Lacewing has no way to tell the pump
-when an FD is dead.  It really is just a proof of concept.
-
