@@ -54,9 +54,9 @@ using namespace v8;
 #define CALLBACK_TYPE Persistent <Function>
 #define CALLBACK_ARG_TYPE Local <Value>
 #define CALLBACK_ARG_STRING(x) String::New(x)
-#define CALLBACK_ARG_REF(x) MakeRef (&x)
-#define CALLBACK_DO(callback, argc, argv) callback->Call(argc, argv);
-#define CALLBACK_INFO(c) new CallbackInfo (c)
+#define CALLBACK_ARG_REF(x) MakeRefLocal (&x)
+#define CALLBACK_DO(callback, argc, argv) callback->Call(callback, argc, argv);
+#define CALLBACK_INFO(c) new CallbackInfo (Persistent <Function>::New(c))
 
 struct CallbackInfo
 {

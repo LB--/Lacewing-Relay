@@ -97,11 +97,14 @@ LacewingFunction        lw_i64  lw_current_thread_id        ();
 LacewingFunction        lw_i64  lw_file_last_modified       (const char * filename);
 LacewingFunction       lw_bool  lw_file_exists              (const char * filename);
 LacewingFunction        lw_i64  lw_file_size                (const char * filename);
+LacewingFunction       lw_bool  lw_path_exists              (const char * filename);
 LacewingFunction          void  lw_int64_to_string          (lw_i64, char *);
 LacewingFunction          void  lw_temp_path                (char * buffer, long length);
 LacewingFunction          void  lw_new_temp_file            (char * buffer, long length);
 LacewingFunction          long  lw_count_processors         ();
 LacewingFunction    const char* lw_guess_mime_type          (const char * filename);
+LacewingFunction          void  lw_md5                      (char * output, const char * input, long length);
+LacewingFunction          void  lw_md5_base64               (char * output, const char * input, long length);
 
 /* Address */
 
@@ -131,6 +134,7 @@ LacewingFunction    const char* lw_guess_mime_type          (const char * filena
   LacewingFunction           void  lw_eventpump_start_event_loop     (lw_eventpump *);
   LacewingFunction           void  lw_eventpump_start_multithreading (lw_eventpump *);
   LacewingFunction           void  lw_eventpump_start_sleepy_ticking (lw_eventpump *, void (LacewingHandler * on_tick_needed) (lw_eventpump));
+  LacewingFunction           void  lw_eventpump_post_eventloop_exit  (lw_eventpump *);
 
 /* Timer */
 
@@ -442,11 +446,14 @@ LacewingFunction       lw_i64  CurrentThreadID         ();
 LacewingFunction       lw_i64  LastModified            (const char * Filename);
 LacewingFunction         bool  FileExists              (const char * Filename);
 LacewingFunction       lw_i64  FileSize                (const char * Filename);
+LacewingFunction         bool  PathExists              (const char * Filename);
 LacewingFunction         void  Int64ToString           (lw_i64, char *);
 LacewingFunction         void  TempPath                (char * Buffer, int Length);
 LacewingFunction         void  NewTempFile             (char * Buffer, int Length);
 LacewingFunction          int  CountProcessors         ();
 LacewingFunction   const char* GuessMimeType           (const char * Filename);
+LacewingFunction         void  MD5                     (char * Output, const char * Input, int Length = -1);
+LacewingFunction         void  MD5_Base64              (char * Output, const char * Input, int Length = -1);
 
 struct Error
 {

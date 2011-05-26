@@ -52,6 +52,9 @@ lw_i64 lw_file_last_modified (const char * filename)
 lw_bool lw_file_exists (const char * filename)
     { return Lacewing::FileExists(filename);
     }
+lw_bool lw_path_exists (const char * filename)
+    { return Lacewing::PathExists(filename);
+    }
 lw_i64 lw_file_size (const char * filename)
     { return Lacewing::FileSize(filename);
     }
@@ -67,4 +70,9 @@ void lw_new_temp_file (char * buffer, long length)
 long lw_count_processors ()
     { return Lacewing::CountProcessors();
     }
-
+void lw_md5 (char * output, const char * input, long length)
+    { Lacewing::MD5 (output, input, length);
+    }
+void lw_md5_base64 (char * output, const char * input, long length)
+    { Lacewing::MD5_Base64 (output, input, length);
+    }

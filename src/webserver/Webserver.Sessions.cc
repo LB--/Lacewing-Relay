@@ -43,7 +43,7 @@ void Lacewing::Webserver::Request::Session(const char * Key, const char * Value)
             Internal.Socket.GetAddress().ToString(), (int) time(0),
                     rand(), rand(), rand(), (int) (lw_iptr) this);
 
-        Internal.Server.MD5.HashBase64(Session, strlen(Session));
+        Lacewing::MD5_Base64 (Session, Session);
         
         Cookie(SessionCookie, Session);
     }

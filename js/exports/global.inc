@@ -49,6 +49,14 @@ Export(lwjs_file_exists)
         Return_Bool(Lacewing::FileExists(Filename));
     }
     #endif
+Export(lwjs_path_exists)
+    #ifdef ExportBodies
+    {
+        BeginExportGlobal();
+        Read_String(Filename);
+        Return_Bool(Lacewing::PathExists(Filename));
+    }
+    #endif
 Export(lwjs_file_size)
     #ifdef ExportBodies
     {
@@ -85,5 +93,17 @@ Export(lwjs_guess_mime_type)
         Return_String(Lacewing::GuessMimeType(Filename));
     }
     #endif
-
-
+Export(lwjs_md5)
+    #ifdef ExportBodies
+    {
+        BeginExportGlobal();
+        Read_String(str);
+        
+        char Output[41];
+        Lacewing::MD5_Base64(Output, str);
+        
+        Return_String(Output);
+    }
+    #endif
+    
+    

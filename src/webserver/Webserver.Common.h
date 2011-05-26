@@ -127,8 +127,6 @@ public:
     Lacewing::SpinSync Sync_Sessions;
     map<string, Map> Sessions;
 
-    MD5Hasher MD5;
-
     bool AutoFinish;
 
     static void SocketConnect(Lacewing::Server &, Lacewing::Server::Client &);

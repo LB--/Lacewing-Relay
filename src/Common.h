@@ -449,7 +449,6 @@ inline void LacewingSyncExchange(volatile long * Target, long NewValue)
 #include "Looper.h"
 #include "TimeHelper.h"
 #include "ThreadTracker.h"
-#include "MD5Hasher.h"
 #include "ReceiveBuffer.h"
 #include "MessageBuilder.h"
 #include "MessageReader.h"

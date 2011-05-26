@@ -72,7 +72,7 @@ am_liblacewing_la_OBJECTS = Global.lo Sync.lo SpinSync.lo Filter.lo \
 	Address.lo Error.lo RelayServer.lo Webserver.lo \
 	Webserver.Incoming.lo Webserver.Outgoing.lo \
 	Webserver.Sessions.lo Webserver.Multipart.lo \
-	Webserver.MimeTypes.lo Event.lo MD5Hasher.lo EventPump.lo \
+	Webserver.MimeTypes.lo Event.lo EventPump.lo \
 	Server.lo Timer.lo UDP.lo Client.lo Pump.lo addr_flat.lo \
 	eventpump_flat.lo global_flat.lo server_flat.lo timer_flat.lo \
 	webserver_flat.lo filter_flat.lo udp_flat.lo client_flat.lo \
@@ -232,7 +232,6 @@ liblacewing_la_SOURCES = \
     src/webserver/Webserver.Multipart.cc \
     src/webserver/Webserver.MimeTypes.cc \
     src/unix/Event.cc \
-    src/unix/MD5Hasher.cc \
     src/unix/EventPump.cc \
     src/unix/Server.cc \
     src/unix/Timer.cc \
@@ -357,7 +356,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EventPump.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Filter.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Global.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MD5Hasher.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Pump.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RelayServer.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Server.Plo@am__quote@
@@ -502,13 +500,6 @@ Event.lo: src/unix/Event.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='src/unix/Event.cc' object='Event.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Event.lo `test -f 'src/unix/Event.cc' || echo '$(srcdir)/'`src/unix/Event.cc
-
-MD5Hasher.lo: src/unix/MD5Hasher.cc
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MD5Hasher.lo -MD -MP -MF "$(DEPDIR)/MD5Hasher.Tpo" -c -o MD5Hasher.lo `test -f 'src/unix/MD5Hasher.cc' || echo '$(srcdir)/'`src/unix/MD5Hasher.cc; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MD5Hasher.Tpo" "$(DEPDIR)/MD5Hasher.Plo"; else rm -f "$(DEPDIR)/MD5Hasher.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='src/unix/MD5Hasher.cc' object='MD5Hasher.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MD5Hasher.lo `test -f 'src/unix/MD5Hasher.cc' || echo '$(srcdir)/'`src/unix/MD5Hasher.cc
 
 EventPump.lo: src/unix/EventPump.cc
 @am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EventPump.lo -MD -MP -MF "$(DEPDIR)/EventPump.Tpo" -c -o EventPump.lo `test -f 'src/unix/EventPump.cc' || echo '$(srcdir)/'`src/unix/EventPump.cc; \

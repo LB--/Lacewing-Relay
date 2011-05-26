@@ -68,6 +68,9 @@
     Lacewing.fileSize = function(filename)
     {  return exports.lwjs_file_size(filename);
     };
+    Lacewing.pathExists = function(filename)
+    {  return exports.lwjs_path_exists(filename);
+    };
     Lacewing.tempPath = function()
     {  return exports.lwjs_temp_path();
     };
@@ -76,6 +79,9 @@
     };
     Lacewing.guessMimeType = function(filename)
     {  return exports.lwjs_guess_mime_type();
+    };
+    Lacewing.md5 = function(str)
+    {  return exports.lwjs_md5(str);
     };
     
     /*** EventPump ***/

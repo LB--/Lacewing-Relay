@@ -277,10 +277,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\MD5Hasher.h"
-				>
-			</File>
-			<File
 				RelativePath="..\src\MessageBuilder.h"
 				>
 			</File>
@@ -417,26 +413,6 @@
 				</File>
 				<File
 					RelativePath="..\src\unix\EventPump.cc"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\src\unix\MD5Hasher.cc"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -629,10 +605,6 @@
 				</File>
 				<File
 					RelativePath="..\src\windows\EventPump.h"
-					>
-				</File>
-				<File
-					RelativePath="..\src\windows\MD5Hasher.cc"
 					>
 				</File>
 				<File

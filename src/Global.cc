@@ -121,6 +121,27 @@ bool Lacewing::FileExists(const char * Filename)
     return false;
 }
 
+bool Lacewing::PathExists(const char * Filename)
+{
+    #ifdef LacewingWindows
+
+        int attr = GetFileAttributesA(Filename);
+        return attr != 0xFFFFFFFF && (attr & FILE_ATTRIBUTE_DIRECTORY) != 0;
+        
+    #else
+
+        struct stat Attributes;
+
+        if(stat(Filename, &Attributes) == 0)
+            return S_ISDIR(Attributes.st_mode);
+
+        return false;
+
+    #endif
+
+    return false;
+}
+
 lw_i64 Lacewing::FileSize(const char * Filename)
 {
     #ifdef LacewingWindows
@@ -328,8 +349,7 @@ void Lacewing::NewTempFile(char * Buffer, int Length)
         for(int i = 0; i < sizeof(TempName); i += sizeof(lw_i64))
             *(lw_i64 *) (TempName + i) = i % 2 == 0 ? (lw_i64) time(0) : (lw_i64) rand();
 
-        MD5Hasher MD5;
-        MD5.HashBase64(TempName, sizeof(TempName));
+        Lacewing::MD5 (TempName, TempName, sizeof(TempName));
 
         char Path[MAX_PATH];
         TempPath(Path, sizeof(Path));
@@ -345,5 +365,51 @@ void Lacewing::NewTempFile(char * Buffer, int Length)
     while(Lacewing::FileExists(Buffer) || !(File = fopen(Buffer, "wb")));
 
     fclose(File);
+}
+
+void Lacewing::MD5 (char * Output, const char * Input, int Length)
+{
+    if (Length == -1)
+        Length = strlen(Input);
+
+    #ifdef LacewingWindows
+
+        static HCRYPTPROV Context = 0;
+
+        if (!Context)
+            CryptAcquireContext(&Context, 0, 0, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT);
+
+        HCRYPTPROV CryptProv;
+
+        CryptCreateHash (Context, CALG_MD5, 0, 0, &CryptProv);
+        CryptHashData (CryptProv, (BYTE *) Input, Length, 0);
+
+        DWORD HashLength = 16;
+        CryptGetHashParam (CryptProv, HP_HASHVAL, (BYTE *) Output, &HashLength, 0);
+
+        CryptDestroyHash (CryptProv);
+
+    #else
+
+        MD5_CTX Context;
+        MD5_Init(&Context);
+
+        MD5_Update(&Context, Input, Size);
+
+        MD5_Final((unsigned char *) Output, &Context);
+
+    #endif
+}
+
+void Lacewing::MD5_Base64 (char * Output, const char * Input, int Length)
+{
+    MD5 (Output, Input, Length);
+
+    char Base64 [40];
+    
+    for(int i = 0; i < 16; ++ i)
+        sprintf(Base64 + (i * 2), "%02x", ((unsigned char *) Output) [i]);
+
+    strcpy(Output, Base64);
 }
 

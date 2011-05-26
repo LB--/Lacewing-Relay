@@ -19,7 +19,6 @@ liblacewing_la_SOURCES = \
     src/webserver/Webserver.Multipart.cc \
     src/webserver/Webserver.MimeTypes.cc \
     src/unix/Event.cc \
-    src/unix/MD5Hasher.cc \
     src/unix/EventPump.cc \
     src/unix/Server.cc \
     src/unix/Timer.cc \
