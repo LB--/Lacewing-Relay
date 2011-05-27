@@ -37,7 +37,10 @@
 #define Read_Int(N) int N = JSVAL_TO_INT(Get_Argument());
 #define Read_Int64(N) lw_i64 N = JSVAL_TO_INT(Get_Argument());
 #define Read_Bool(N) bool N = JSVAL_TO_BOOLEAN(Get_Argument());
-#define Read_String(N) const char * N; { const jschar * _str = JS_GetStringCharsZ(Context, JSVAL_TO_STRING(Get_Argument())); \
+#define Read_String(N) const char * N; { JSString * __str = JSVAL_TO_STRING(Get_Argument()); \
+                            if(!__str) return JS_FALSE; \
+                            const jschar * _str = JS_GetStringCharsZ(Context, __str); \
+                            if(!_str) return JS_FALSE; \
                             N = js_DeflateString(Context, _str, js_strlen(_str)); }
                             
 #define Read_Function(N) jsval N = Get_Argument();

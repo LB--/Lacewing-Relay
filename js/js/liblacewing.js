@@ -278,7 +278,7 @@
             return this;
         },
         redirect: function(url)
-        {   exports.lwjs_ws_req_set_redirect(this._lw_ref, u'' + rl);
+        {   exports.lwjs_ws_req_set_redirect(this._lw_ref, '' + url);
             return this;
         },
         responseType: function(code, message)
