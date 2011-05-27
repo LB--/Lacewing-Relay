@@ -60,16 +60,16 @@
     {  return exports.lwjs_version();
     };
     Lacewing.lastModified = function(filename)
-    {  return exports.lwjs_file_last_modified(filename);
+    {  return exports.lwjs_file_last_modified('' + filename);
     };
     Lacewing.fileExists = function(filename)
-    {  return exports.lwjs_file_exists(filename);
+    {  return exports.lwjs_file_exists('' + filename);
     };
     Lacewing.fileSize = function(filename)
-    {  return exports.lwjs_file_size(filename);
+    {  return exports.lwjs_file_size('' + filename);
     };
     Lacewing.pathExists = function(filename)
-    {  return exports.lwjs_path_exists(filename);
+    {  return exports.lwjs_path_exists('' + filename);
     };
     Lacewing.tempPath = function()
     {  return exports.lwjs_temp_path();
@@ -78,10 +78,10 @@
     {  return exports.lwjs_new_temp_file();
     };
     Lacewing.guessMimeType = function(filename)
-    {  return exports.lwjs_guess_mime_type();
+    {  return exports.lwjs_guess_mime_type('' + filename);
     };
     Lacewing.md5 = function(str)
-    {  return exports.lwjs_md5(str);
+    {  return exports.lwjs_md5('' + str);
     };
     
     /*** EventPump ***/
@@ -227,7 +227,7 @@
         {   return exports.lwjs_ws_bytes_received(this._lw_ref);
         },
         closeSession: function(session)
-        {   exports.lwjs_ws_close_session(this._lw_ref, session);
+        {   exports.lwjs_ws_close_session(this._lw_ref, '' + session);
             return this;
         },
         enableManualRequestFinish: function()
@@ -250,19 +250,19 @@
     }).prototype =
     {
         write: function(text)
-        {   exports.lwjs_ws_req_send_text(this._lw_ref, text);
+        {   exports.lwjs_ws_req_send_text(this._lw_ref, '' + text);
             return this;
         },
         writeFile: function(filename)
-        {   exports.lwjs_ws_req_sendfile(this._lw_ref, filename);
+        {   exports.lwjs_ws_req_sendfile(this._lw_ref, '' + filename);
             return this;
         },
         send: function(text)
-        {   exports.lwjs_ws_req_send_text(this._lw_ref, text);
+        {   exports.lwjs_ws_req_send_text(this._lw_ref, '' + text);
             return this;
         },
         sendFile: function(filename)
-        {   exports.lwjs_ws_req_sendfile(this._lw_ref, filename);
+        {   exports.lwjs_ws_req_sendfile(this._lw_ref, '' + filename);
             return this;
         },
         reset: function()
@@ -278,23 +278,23 @@
             return this;
         },
         redirect: function(url)
-        {   exports.lwjs_ws_req_set_redirect(this._lw_ref, url);
+        {   exports.lwjs_ws_req_set_redirect(this._lw_ref, u'' + rl);
             return this;
         },
         responseType: function(code, message)
-        {   exports.lwjs_ws_req_set_response_type(this._lw_ref, code, message ? message : '');
+        {   exports.lwjs_ws_req_set_response_type(this._lw_ref, 1 * code, '' + (message ? message : ''));
             return this;
         },
         mimeType: function(type)
-        {   exports.lwjs_ws_req_set_mime_type(this._lw_ref, type);
+        {   exports.lwjs_ws_req_set_mime_type(this._lw_ref, '' + type);
             return this;
         },
         guessMimeType: function(type)
-        {   exports.lwjs_ws_req_set_mime_type(this._lw_ref, type);
+        {   exports.lwjs_ws_req_set_mime_type(this._lw_ref, '' + type);
             return this;
         },
         charset: function(charset)
-        {   exports.lwjs_ws_req_set_charset(this._lw_ref, charset);
+        {   exports.lwjs_ws_req_set_charset(this._lw_ref, '' + charset);
             return this;
         },
         setUnmodified: function()
@@ -317,22 +317,22 @@
         {   return exports.lwjs_ws_req_last_modified(this._lw_ref);
         },
         set lastModified (modified)
-        {   exports.lwjs_ws_req_set_last_modified(this._lw_ref, modified);
+        {   exports.lwjs_ws_req_set_last_modified(this._lw_ref, 1 * modified);
         },
         header: function(name, value)
         {
             if(value === undefined)
-                return exports.lwjs_ws_req_header(this._lw_ref, name);
+                return exports.lwjs_ws_req_header(this._lw_ref, '' + name);
 
-            exports.lwjs_ws_req_set_header(this._lw_ref, name, value);
+            exports.lwjs_ws_req_set_header(this._lw_ref, '' + name, '' + value);
             return this;
         },
         cookie: function(name, value)
         {
             if(value === undefined)
-                return exports.lwjs_ws_req_cookie(this._lw_ref, name);
+                return exports.lwjs_ws_req_cookie(this._lw_ref, '' + name);
 
-            exports.lwjs_ws_req_set_cookie(this._lw_ref, name, value);
+            exports.lwjs_ws_req_set_cookie(this._lw_ref, '' + name, '' + value);
             return this;
         },
         session: function(name, value)
@@ -341,9 +341,9 @@
                 return exports.lwjs_ws_req_session_id(this._lw_ref);
                 
             if(value === undefined)
-                return exports.lwjs_ws_req_session_read(this._lw_ref, name);
+                return exports.lwjs_ws_req_session_read(this._lw_ref, '' + name);
         
-            exports.lwjs_ws_req_session_write(this._lw_ref, name, value);
+            exports.lwjs_ws_req_session_write(this._lw_ref, '' + name, '' + value);
             return this;
         },
         closeSession: function()
@@ -351,10 +351,10 @@
             return this;
         },
         GET: function(name)
-        {   return exports.lwjs_ws_req_GET(this._lw_ref, name);
+        {   return exports.lwjs_ws_req_GET(this._lw_ref, '' + name);
         },
         POST: function(name)
-        {   return exports.lwjs_ws_req_POST(this._lw_ref, name);
+        {   return exports.lwjs_ws_req_POST(this._lw_ref, '' + name);
         },
         disableCache: function()
         {   exports.lwjs_ws_req_disable_cache(this._lw_ref);
@@ -370,7 +370,7 @@
            this._lw_ref = exports.lwjs_address_new();
        else if(typeof(a) == 'string')
            this._lw_ref = (b ? exports.lwjs_address_new_name_blocking
-                                : exports.lwjs_address_new_name)(a);
+                                : exports.lwjs_address_new_name)('' + a);
        else if(a instanceof Lacewing.Address)
            this._lw_ref = exports.lwjs_address_copy(a._lw_ref);
        else if(a === exports)
@@ -384,7 +384,7 @@
         port: function(port)
         {
             if(port !== undefined)
-            {   exports.lwjs_address_set_port(this._lw_ref, port);
+            {   exports.lwjs_address_set_port(this._lw_ref, 1 * port);
                 return this;
             }
             else
