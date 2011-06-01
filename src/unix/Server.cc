@@ -587,7 +587,7 @@ bool Lacewing::Server::LoadCertificateFile(const char * Filename, const char * P
              | SSL_MODE_RELEASE_BUFFERS
         #endif
     );
-
+    
     SSL_CTX_set_default_passwd_cb(Internal.Context, PasswordCallback);
     SSL_CTX_set_default_passwd_cb_userdata(Internal.Context, &Internal);
 
@@ -739,7 +739,7 @@ bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, lw_i
     
     int File = open(Filename, O_RDONLY, 0);
 
-    if(!File)
+    if(File == -1)
     {
         DebugOut("Failed to open " << Filename);
 
