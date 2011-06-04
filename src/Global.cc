@@ -339,8 +339,6 @@ void Lacewing::TempPath(char * Buffer, int Length)
 
 void Lacewing::NewTempFile(char * Buffer, int Length)
 {
-    /* TODO: This ignores Length */
-
     FILE * File;
 
     do
@@ -360,7 +358,7 @@ void Lacewing::NewTempFile(char * Buffer, int Length)
             Path[strlen(Path)]     = '/';
         }
 
-        sprintf(Buffer, "%slw-temp-%s", Path, TempName);
+        lw_snprintf(Buffer, Length, "%slw-temp-%s", Path, TempName);
     }
     while(Lacewing::FileExists(Buffer) || !(File = fopen(Buffer, "wb")));
 
@@ -406,6 +404,52 @@ void Lacewing::MD5_Base64 (char * Output, const char * Input, int Length)
     MD5 (Output, Input, Length);
 
     char Base64 [40];
+    
+    for(int i = 0; i < 16; ++ i)
+        sprintf(Base64 + (i * 2), "%02x", ((unsigned char *) Output) [i]);
+
+    strcpy(Output, Base64);
+}
+
+void Lacewing::SHA1 (char * Output, const char * Input, int Length)
+{
+    if (Length == -1)
+        Length = strlen(Input);
+
+    #ifdef LacewingWindows
+
+        static HCRYPTPROV Context = 0;
+
+        if (!Context)
+            CryptAcquireContext(&Context, 0, 0, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT);
+
+        HCRYPTPROV CryptProv;
+
+        CryptCreateHash (Context, CALG_SHA1, 0, 0, &CryptProv);
+        CryptHashData (CryptProv, (BYTE *) Input, Length, 0);
+
+        DWORD HashLength = 20;
+        CryptGetHashParam (CryptProv, HP_HASHVAL, (BYTE *) Output, &HashLength, 0);
+
+        CryptDestroyHash (CryptProv);
+
+    #else
+
+        SHA_CTX Context;
+        SHA1_Init(&Context);
+
+        SHA1_Update(&Context, Input, Length);
+
+        SHA1_Final((unsigned char *) Output, &Context);
+
+    #endif
+}
+
+void Lacewing::SHA1_Base64 (char * Output, const char * Input, int Length)
+{
+    SHA1 (Output, Input, Length);
+
+    char Base64 [48];
     
     for(int i = 0; i < 16; ++ i)
         sprintf(Base64 + (i * 2), "%02x", ((unsigned char *) Output) [i]);

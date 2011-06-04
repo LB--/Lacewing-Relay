@@ -105,5 +105,17 @@ Export(lwjs_md5)
         Return_String(Output);
     }
     #endif
+Export(lwjs_sha1)
+    #ifdef ExportBodies
+    {
+        BeginExportGlobal();
+        Read_String(str);
+        
+        char Output[49];
+        Lacewing::SHA1_Base64(Output, str);
+        
+        Return_String(Output);
+    }
+    #endif
     
-    
+   

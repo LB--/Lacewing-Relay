@@ -83,6 +83,9 @@
     Lacewing.md5 = function(str)
     {  return exports.lwjs_md5('' + str);
     };
+    Lacewing.sha1 = function(str)
+    {  return exports.lwjs_sha1('' + str);
+    };
     
     /*** EventPump ***/
     

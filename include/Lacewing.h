@@ -105,6 +105,8 @@ LacewingFunction          long  lw_count_processors         ();
 LacewingFunction    const char* lw_guess_mime_type          (const char * filename);
 LacewingFunction          void  lw_md5                      (char * output, const char * input, long length);
 LacewingFunction          void  lw_md5_base64               (char * output, const char * input, long length);
+LacewingFunction          void  lw_sha1                     (char * output, const char * input, long length);
+LacewingFunction          void  lw_sha1_base64              (char * output, const char * input, long length);
 
 /* Address */
 
@@ -456,6 +458,8 @@ LacewingFunction          int  CountProcessors         ();
 LacewingFunction   const char* GuessMimeType           (const char * Filename);
 LacewingFunction         void  MD5                     (char * Output, const char * Input, int Length = -1);
 LacewingFunction         void  MD5_Base64              (char * Output, const char * Input, int Length = -1);
+LacewingFunction         void  SHA1                    (char * Output, const char * Input, int Length = -1);
+LacewingFunction         void  SHA1_Base64             (char * Output, const char * Input, int Length = -1);
 
 struct Error
 {

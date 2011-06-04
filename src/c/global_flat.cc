@@ -76,3 +76,9 @@ void lw_md5 (char * output, const char * input, long length)
 void lw_md5_base64 (char * output, const char * input, long length)
     { Lacewing::MD5_Base64 (output, input, length);
     }
+void lw_sha1 (char * output, const char * input, long length)
+    { Lacewing::SHA1 (output, input, length);
+    }
+void lw_sha1_base64 (char * output, const char * input, long length)
+    { Lacewing::SHA1_Base64 (output, input, length);
+    }

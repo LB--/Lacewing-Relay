@@ -177,6 +177,7 @@ void LacewingInitialise();
     #define LacewingYield()             Sleep(0)
     #define LacewingSocketError(E)      WSA##E
     #define lw_vsnprintf                _vsnprintf
+    #define lw_snprintf                 _snprintf
 
 #else
 
@@ -273,6 +274,7 @@ void LacewingInitialise();
     #ifdef HAVE_OPENSSL_MD5_H
         #include <openssl/ssl.h>
         #include <openssl/md5.h>
+        #include <openssl/sha.h>
         #include <openssl/err.h>
     #else
         #pragma error "OpenSSL not found. Install OpenSSL and run ./configure again."
@@ -303,7 +305,9 @@ void LacewingInitialise();
 
     #define LacewingYield()             sched_yield()
     #define LacewingSocketError(E)      E
+
     #define lw_vsnprintf                vsnprintf
+    #define lw_snprintf                 snprintf
     
 #endif
 
