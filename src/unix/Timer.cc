@@ -82,7 +82,7 @@ void TimerTick(TimerInternal &Internal)
 
             if(Internal.StopEvent.Signalled())
                 break;
-
+            
             Internal.EventPump.Pump.Post((void *) TimerTick, &Internal);
         }
     }
@@ -138,8 +138,8 @@ void Lacewing::Timer::Start(int Interval)
             spec.it_interval.tv_sec  = Interval / 1000;
             spec.it_interval.tv_nsec = (Interval % 1000) * 1000000;
 
-            memcpy(&spec.it_interval, &spec.it_value, sizeof(spec.it_interval));
-
+            memcpy(&spec.it_value, &spec.it_interval, sizeof(spec.it_interval));
+            
             timerfd_settime(Internal.FD, 0, &spec, 0);
             
         #else
