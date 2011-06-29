@@ -59,7 +59,8 @@ struct ServerClientInternal
     Lacewing::Address * Address;
 
     int Socket;
-
+    void * GoneKey;
+    
     SSL * Context;
     BIO * SSLBio;
 
@@ -200,36 +201,9 @@ Lacewing::Server::~Server()
     delete ((ServerInternal *) InternalTag);
 }
 
-void ClientSocketReadReady(ServerClientInternal &Client, bool Gone)
+void ClientSocketReadReady (ServerClientInternal &Client)
 {
     ServerInternal &Internal = Client.Server;
-
-    if(Gone)
-    {
-        /* The client disconnected */
-
-        Client.Socket = -1;
-        
-        if(Internal.HandlerDisconnect)
-            Internal.HandlerDisconnect(Internal.Server, Client.Public);
-
-        {   Lacewing::SpinSync::WriteLock Lock(Internal.Sync_Clients);
-
-            for(list<ServerClientInternal *>::iterator it = Internal.Clients.begin();
-                    it != Internal.Clients.end(); ++ it)
-            {
-                if(*it == &Client)
-                {
-                    Internal.Clients.erase(it);
-                    break;
-                }
-            }
-        }
-
-        Internal.ClientStructureBacklog.Return(Client);
-        
-        return;
-    }
     
     if(Client.Transfer)
     {
@@ -245,7 +219,8 @@ void ClientSocketReadReady(ServerClientInternal &Client, bool Gone)
     /* Data is ready to receive */
 
     int Received;
-
+    bool Disconnected = false;
+    
     for(;;)
     {
         Internal.Buffer.Prepare();
@@ -256,8 +231,17 @@ void ClientSocketReadReady(ServerClientInternal &Client, bool Gone)
 
             Received = recv(Client.Socket, Internal.Buffer, Internal.Buffer.Size, MSG_DONTWAIT);
             
-            if(Received <= 0)
+            if(Received < 0)
+            {
+                Disconnected = (errno != EAGAIN && errno != EWOULDBLOCK);
                 break;
+            }
+            
+            if (Received == 0)
+            {
+                Disconnected = true;
+                break;
+            }
         }
         else
         {
@@ -292,6 +276,11 @@ void ClientSocketReadReady(ServerClientInternal &Client, bool Gone)
                             
                             First->Type = QueuedSendType::Data;
                             break;
+                            
+                        default:
+                            
+                            Disconnected = true;
+                            break;
                     };                    
                 }                   
             }
@@ -301,7 +290,10 @@ void ClientSocketReadReady(ServerClientInternal &Client, bool Gone)
             Received = SSL_read(Client.Context, Internal.Buffer, Internal.Buffer.Size);
 
             if(Received == 0)
+            {
+                Disconnected = true;
                 break;
+            }
             
             if(Received < 0)
             {
@@ -325,7 +317,9 @@ void ClientSocketReadReady(ServerClientInternal &Client, bool Gone)
                 }
 
                 /* Unknown error */
-                return;
+                
+                Disconnected = true;
+                break;
             }
         }
 
@@ -335,7 +329,31 @@ void ClientSocketReadReady(ServerClientInternal &Client, bool Gone)
         if(Internal.HandlerReceive)
             Internal.HandlerReceive(Internal.Server, Client.Public, Internal.Buffer, Received);
     }
+    
+    if (Disconnected)
+    {
+        Internal.EventPump.Remove (Client.GoneKey);
+        
+        Client.Socket = -1;
+        
+        if(Internal.HandlerDisconnect)
+            Internal.HandlerDisconnect(Internal.Server, Client.Public);
 
+        {   Lacewing::SpinSync::WriteLock Lock(Internal.Sync_Clients);
+
+            for(list<ServerClientInternal *>::iterator it = Internal.Clients.begin();
+                    it != Internal.Clients.end(); ++ it)
+            {
+                if(*it == &Client)
+                {
+                    Internal.Clients.erase(it);
+                    break;
+                }
+            }
+        }
+
+        Internal.ClientStructureBacklog.Return(Client);
+    }
 }
 
 void ClientSocketWriteReady(ServerClientInternal &Client)
@@ -343,7 +361,7 @@ void ClientSocketWriteReady(ServerClientInternal &Client)
     if(Client.SSLReadWhenWriteReady)
     {
         Client.SSLReadWhenWriteReady = false;
-        ClientSocketReadReady(Client, false);
+        ClientSocketReadReady(Client);
     }
 
     ServerInternal &Internal = Client.Server;
@@ -402,8 +420,8 @@ void ListenSocketReadReady(ServerInternal &Internal, bool)
         if(Internal.HandlerConnect)
             Internal.HandlerConnect(Internal.Server, Client.Public);
         
-        Internal.EventPump.AddReadWrite(Client.Socket, &Client, (void *) ClientSocketReadReady,
-                                                    (void *) ClientSocketWriteReady);
+        Client.GoneKey = Internal.EventPump.AddReadWrite(Client.Socket, &Client,
+                        (void *) ClientSocketReadReady, (void *) ClientSocketWriteReady);
         
         Lacewing::SpinSync::WriteLock Lock(Internal.Sync_Clients);
         Internal.Clients.push_back(&Client);

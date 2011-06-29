@@ -55,9 +55,8 @@ Lacewing::Error * Lacewing::EventPump::Tick()
         {
             epoll_event &EPollEvent = EPollEvents[i];
 
-            Ready (EPollEvent.data.ptr,
-                (EPollEvent.events & EPOLLRDHUP) != 0 || (EPollEvent.events & EPOLLHUP) != 0,
-                    (EPollEvent.events & EPOLLIN) != 0, (EPollEvent.events & EPOLLOUT) != 0);
+            Ready (EPollEvent.data.ptr, (EPollEvent.events & EPOLLIN) != 0,
+                        (EPollEvent.events & EPOLLOUT) != 0);
         }
    
     #endif
@@ -75,8 +74,7 @@ Lacewing::Error * Lacewing::EventPump::Tick()
         {
             struct kevent &KEvent = KEvents[i];
 
-            Ready (KEvent.udata, (KEvent.flags & EV_EOF) != 0, KEvent.filter == EVFILT_READ,
-                        KEvent.filter == EVFILT_WRITE);
+            Ready (KEvent.udata, KEvent.filter == EVFILT_READ, KEvent.filter == EVFILT_WRITE);
         }
         
     #endif
@@ -101,9 +99,10 @@ Lacewing::Error * Lacewing::EventPump::StartEventLoop()
             {
                 epoll_event &EPollEvent = EPollEvents[i];
 
-                Continue = Ready (EPollEvent.data.ptr, (EPollEvent.events & EPOLLRDHUP) != 0 ||
-                        (EPollEvent.events & EPOLLHUP) != 0, (EPollEvent.events & EPOLLIN) != 0,
-                        (EPollEvent.events & EPOLLOUT) != 0);
+                Continue = Ready (EPollEvent.data.ptr, (EPollEvent.events & EPOLLIN) != 0
+                                        || (EPollEvent.events & EPOLLHUP) != 0 ||
+                                        (EPollEvent.events & EPOLLRDHUP) != 0,
+                                        (EPollEvent.events & EPOLLOUT) != 0);
             }
        
         #endif
@@ -123,8 +122,8 @@ Lacewing::Error * Lacewing::EventPump::StartEventLoop()
                 }
                 else
                 {
-                    Continue = Ready (KEvent.udata, (KEvent.flags & EV_EOF) != 0, KEvent.filter == EVFILT_READ,
-                                                 KEvent.filter == EVFILT_WRITE);
+                    Continue = Ready (KEvent.udata, KEvent.filter == EVFILT_READ,
+                                            KEvent.filter == EVFILT_WRITE);
                 }
             }
             

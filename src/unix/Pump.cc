@@ -39,7 +39,7 @@ Lacewing::Pump::~Pump()
     delete ((PumpInternal *) InternalTag);
 }
 
-bool Lacewing::Pump::Ready (void * Tag, bool Gone, bool CanRead, bool CanWrite)
+bool Lacewing::Pump::Ready (void * Tag, bool CanRead, bool CanWrite)
 {
     PumpInternal &Internal = *((PumpInternal *) InternalTag);
 
@@ -84,12 +84,9 @@ bool Lacewing::Pump::Ready (void * Tag, bool Gone, bool CanRead, bool CanWrite)
         else
         {
             if(!Event->Removing)
-                ((void (*) (void *, bool)) Event->ReadCallback) (Event->Tag, Gone);
+                ((void (*) (void *)) Event->ReadCallback) (Event->Tag);
         }
     }
-
-    if(Gone)
-        Event->Removing = true;
 
     return true;
 }
