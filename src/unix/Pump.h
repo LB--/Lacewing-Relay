@@ -29,9 +29,9 @@
 #ifndef LacewingPump
 #define LacewingPump
 
-#define SigRemoveClient        (void *) 0
-#define SigEndWatcherThread    (void *) 1
-#define SigExitEventLoop       (void *) 1
+#define SigRemoveClient        (void *) 1
+#define SigEndWatcherThread    (void *) 2
+#define SigExitEventLoop       (void *) 3
 
 struct PumpInternal
 {

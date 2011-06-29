@@ -56,8 +56,17 @@ bool Lacewing::Pump::Ready (void * Tag, bool CanRead, bool CanWrite)
                 Event = Internal.PostQueue.front();
                 Internal.PostQueue.pop();
 
-                ((void (*) (void *)) Event->ReadCallback) (Event->Tag);
+                if(Event->ReadCallback == SigExitEventLoop)
+                    return false;
 
+                if(Event->ReadCallback == SigRemoveClient)
+                {
+                    this->Gone (Event->GoneKey);
+                    Internal.EventBacklog.Return(*(PumpInternal::Event *) Event->Tag);
+                }
+                else
+                    ((void (*) (void *)) Event->ReadCallback) (Event->Tag);
+        
                 Internal.EventBacklog.Return(*Event);
             }
         }
@@ -73,19 +82,8 @@ bool Lacewing::Pump::Ready (void * Tag, bool CanRead, bool CanWrite)
     
     if(CanRead)
     {
-        if(Event->ReadCallback == SigExitEventLoop)
-            return false;
-
-        if(Event->ReadCallback == SigRemoveClient)
-        {
-            this->Gone (Event->GoneKey);
-            Internal.EventBacklog.Return(*(PumpInternal::Event *) Event->Tag);
-        }
-        else
-        {
-            if(!Event->Removing)
-                ((void (*) (void *)) Event->ReadCallback) (Event->Tag);
-        }
+        if(!Event->Removing)
+            ((void (*) (void *)) Event->ReadCallback) (Event->Tag);
     }
 
     return true;
