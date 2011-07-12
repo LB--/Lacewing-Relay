@@ -132,13 +132,17 @@ inline time_t ParseTimeString(const char * StringC)
 
     ParseTime(Time, TM);
 
-    #ifdef LacewingWindows
-        return _mkgmtime(&TM);
+    #ifdef ANDROID
+        return timegm64(&TM);
     #else
-        #if HAVE_TIMEGM
-            return timegm(&TM);
+        #ifdef LacewingWindows
+            return _mkgmtime(&TM);
         #else
-            #pragma error "Can't find a suitable way to convert a tm to a UTC UNIX time"
+            #if HAVE_TIMEGM
+                return timegm(&TM);
+            #else
+                #pragma error "Can't find a suitable way to convert a tm to a UTC UNIX time"
+            #endif
         #endif
     #endif
 }

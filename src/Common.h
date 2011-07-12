@@ -52,12 +52,16 @@
 
 #else
 
-    #ifdef HAVE_CONFIG_H
-        #include "../config.h"
+    #ifdef LacewingAndroid
+        #include "../jni/config.h"
     #else
-        #error Valid config.h required for non-MSVC! Run ./configure
+        #ifdef HAVE_CONFIG_H
+            #include "../config.h"
+        #else
+            #error Valid config.h required for non-MSVC! Run ./configure
+        #endif
     #endif
-
+    
 #endif
 
 #ifdef LacewingLibrary
@@ -204,6 +208,11 @@ void LacewingInitialise();
     #include <arpa/inet.h>
     #include <fcntl.h>
     #include <sched.h>
+    #include <ctype.h>
+    
+    #ifdef ANDROID
+        #include <time64.h>
+    #endif
     
     #ifdef HAVE_SYS_TIMERFD_H
         #include <sys/timerfd.h>

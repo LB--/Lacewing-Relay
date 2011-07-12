@@ -264,7 +264,7 @@ void Lacewing::SetCurrentThreadName(const char * Name)
     #else
 
         #if HAVE_DECL_PR_SET_NAME != 0
-            prctl(PR_SET_NAME, Name, 0, 0, 0);
+            prctl(PR_SET_NAME, (unsigned long) Name, 0, 0, 0);
         #endif
         
     #endif
