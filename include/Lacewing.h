@@ -409,34 +409,57 @@ LacewingFunction          void  lw_sha1_base64              (char * output, cons
 #ifdef __cplusplus
 }
 
-#include <sstream>
+#if defined(ANDROID) && !defined(LacewingHaveSTL)
 
-#define LacewingStream(C, F)                                \
-        std::ostringstream * S;                             \
-        template<class T> inline C & operator << (T V)      \
-        {   (*(S ? S : (S = new std::ostringstream))) << V; \
-            const std::string &Text = (*S).str();           \
-            if(Text.length())                               \
-            {   F(Text.c_str(), Text.length());             \
-                (*S).str("");                               \
-            }                                               \
-            return *this;                                   \
-        }                                                   \
-        inline C & operator << (lw_i64 V)                   \
-        {   char Buffer[64];                                \
-            Int64ToString(V, Buffer);                       \
-            (*this) << Buffer;                              \
-            return *this;                                   \
-        }                                                   \
-        inline C & operator << (const char * V)             \
-        {   F (V, -1);                                      \
-            return *this;                                   \
-        }                                                   \
-        inline C & operator << (char * V)                   \
-        {   F (V, -1);                                      \
-            return *this;                                   \
-        }                                                   \
+    /* No support for the generic << without STL (for now) */
+    
+    #define LacewingStream(C, F)                                \
+            inline C & operator << (lw_i64 V)                   \
+            {   char Buffer[64];                                \
+                Int64ToString(V, Buffer);                       \
+                (*this) << Buffer;                              \
+                return *this;                                   \
+            }                                                   \
+            inline C & operator << (const char * V)             \
+            {   F (V, -1);                                      \
+                return *this;                                   \
+            }                                                   \
+            inline C & operator << (char * V)                   \
+            {   F (V, -1);                                      \
+                return *this;                                   \
+            }                                                   \
+            
+#else
 
+    #include <sstream>
+    
+    #define LacewingStream(C, F)                                \
+            std::ostringstream * S;                             \
+            template<class T> inline C & operator << (T V)      \
+            {   (*(S ? S : (S = new std::ostringstream))) << V; \
+                const std::string &Text = (*S).str();           \
+                if(Text.length())                               \
+                {   F(Text.c_str(), Text.length());             \
+                    (*S).str("");                               \
+                }                                               \
+                return *this;                                   \
+            }                                                   \
+            inline C & operator << (lw_i64 V)                   \
+            {   char Buffer[64];                                \
+                Int64ToString(V, Buffer);                       \
+                (*this) << Buffer;                              \
+                return *this;                                   \
+            }                                                   \
+            inline C & operator << (const char * V)             \
+            {   F (V, -1);                                      \
+                return *this;                                   \
+            }                                                   \
+            inline C & operator << (char * V)                   \
+            {   F (V, -1);                                      \
+                return *this;                                   \
+            }                                                   \
+
+#endif
 
 namespace Lacewing
 {
