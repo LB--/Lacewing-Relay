@@ -2,7 +2,6 @@ AC_PREREQ([2.49])
 AC_INIT([liblacewing], [0.1.0], [])
 
 AC_PROG_CXX
-AC_PROG_LIBTOOL
 
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -20,16 +19,15 @@ AC_ARG_ENABLE([i486],
     [enable_i486=no]
 )
 
+CXXFLAGS="$CXXFLAGS -DLacewingLibrary -DHAVE_CONFIG_H -fno-exceptions -fno-rtti -fvisibility=hidden -fPIC"
+
 if test "x$enable_debug" = xyes; then
-    CFLAGS="$CFLAGS -DPOSIX_SOURCE -DDEBUG -DLacewingDebug -g -O0"
     CXXFLAGS="$CXXFLAGS -DPOSIX_SOURCE -DDEBUG -DLacewingDebug -g -O0"
 else
-    CFLAGS="$CFLAGS -DPOSIX_SOURCE -O2"
     CXXFLAGS="$CXXFLAGS -DPOSIX_SOURCE -O2"
 fi
 
 if test "x$enable_i486" = xyes; then
-    CFLAGS="$CFLAGS -march=i486"
     CXXFLAGS="$CXXFLAGS -march=i486"
 fi
 
@@ -53,10 +51,8 @@ AC_CHECK_DECLS([EPOLLRDHUP], [], [], [AC_INCLUDES_DEFAULT
 AC_CHECK_DECLS([SSL_MODE_RELEASE_BUFFERS], [], [], [AC_INCLUDES_DEFAULT
 [#include <openssl/ssl.h>]])
 
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
-
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile lacewing.pc])
+AC_CONFIG_FILES([Makefile])
 
 AC_OUTPUT
 
