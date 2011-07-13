@@ -409,6 +409,8 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
 #ifdef __cplusplus
 }
 
+/* TODO : Other types? */
+
 #define LacewingStream(C, F)                                \
         inline C & operator << (lw_i64 V)                   \
         {   char Buffer[64];                                \
