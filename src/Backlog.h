@@ -31,7 +31,7 @@ template<class P, class T> class Backlog
 protected:
 
     unsigned int Count;
-    vector<T *> List;
+    List <T *> Items;
 
     Lacewing::SpinSync Sync;
 
@@ -49,22 +49,22 @@ public:
 
     inline ~Backlog()
     {
-        for(typename vector<T *>::iterator it = List.begin(); it != List.end(); ++ it)
+        for (typename List <T *>::Element * E = Items.First; E; E = E->Next)
         {
             #ifdef LacewingWindows
             #ifdef LacewingDebug
 
                 DWORD Old;
 
-                VirtualProtect(*it, sizeof(T), PAGE_READWRITE, &Old);
-                VirtualFree(*it, MEM_RELEASE, 0);
+                VirtualProtect(** E, sizeof(T), PAGE_READWRITE, &Old);
+                VirtualFree(** E, MEM_RELEASE, 0);
 
                 continue;
 
             #endif
             #endif
 
-            free(*it);
+            free (** E);
         }
     }
 
@@ -74,25 +74,24 @@ public:
 
         {   Lacewing::SpinSync::WriteLock Lock(Sync);
 
-            if(!List.size())
+            if(!Items.First)
             {
                 for(unsigned int i = Count; i; -- i)
                 {
                     #ifdef LacewingDebug
                     #ifdef LacewingWindows
         
-                        List.push_back((T *) VirtualAlloc(0, sizeof(T), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
+                        Items.Push ((T *) VirtualAlloc(0, sizeof(T), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
                         continue;
 
                     #endif
                     #endif
             
-                    List.push_back((T *) malloc(sizeof(T)));
+                    Items.Push ((T *) malloc(sizeof(T)));
                 }
             }
 
-            Borrowed = List.back();
-            List.pop_back();
+            Borrowed = Items.Pop ();
         }
 
         #ifdef LacewingDebug
@@ -130,7 +129,7 @@ public:
         #endif
 
         Lacewing::SpinSync::WriteLock Lock(Sync);
-        List.push_back(&Object);
+        Items.Push (&Object);
     }
 
 

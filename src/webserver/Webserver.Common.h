@@ -97,7 +97,7 @@ struct Multipart : public BodyProcBase
     Map Disposition;
     Map Headers;
 
-    vector<Lacewing::Webserver::Upload *> Uploads;
+    Array <Lacewing::Webserver::Upload *> Uploads;
     UploadInternal * CurrentUpload;
 
     MessageBuilder Buffer;
@@ -119,13 +119,63 @@ public:
         ClientBacklog;
 
     Lacewing::Sync Sync_SendBuffers;
-    list<char *> SendBuffers;
+    List <char *> SendBuffers;
 
     char * BorrowSendBuffer();
     void ReturnSendBuffer(char * SendBuffer);
 
-    Lacewing::SpinSync Sync_Sessions;
-    map<string, Map> Sessions;
+    struct Session
+    {
+        lw_i64 ID_Part1;
+        lw_i64 ID_Part2;
+
+        Session * Next;
+
+        Map Data;
+
+    } * FirstSession;
+
+    inline Session * FindSession (const char * SessionID_Hex)
+    {
+        if (strlen (SessionID_Hex) != 32)
+            return 0;
+
+        union
+        {
+            char SessionID_Bytes [16];
+            
+            struct
+            {
+                lw_i64 Part1;
+                lw_i64 Part2;
+
+            } SessionID;
+        };
+
+        char hex [3];
+        hex [2] = 0;
+
+        for (int i = 0, c = 0; i < 16; ++ i, c += 2)
+        {
+            hex [0] = SessionID_Hex [c];
+            hex [1] = SessionID_Hex [c + 1];
+
+            SessionID_Bytes [i] = (char) strtol (hex, 0, 16);
+        }
+
+        Session * S;
+
+        for (S = FirstSession; S; S = S->Next)
+        {
+            if (S->ID_Part1 == SessionID.Part1 &&
+                    S->ID_Part2 == SessionID.Part2)
+            {
+                break;
+            }
+        }
+
+        return S;
+    }
 
     bool AutoFinish;
 
@@ -194,6 +244,7 @@ public:
         HandlerUploadPost   = 0;
 
         AutoFinish = true;
+        FirstSession = 0;
     }
 };
 
@@ -272,7 +323,7 @@ public:
 
         /* For the response body */
 
-        list<char *> SendBuffers;
+        List <char *> SendBuffers;
         size_t LastSendBufferSize;
 
         File * FirstFile;
@@ -295,7 +346,7 @@ public:
     WebserverClient(Lacewing::Server::Client &_Socket);
     
     bool ConnectHandlerCalled, RequestUnfinished;
-    Map  Cookies, SessionDataCopies;
+    Map  Cookies;
     
     bool Secure;
 };

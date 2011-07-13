@@ -73,12 +73,12 @@ long lw_count_processors ()
 void lw_md5 (char * output, const char * input, long length)
     { Lacewing::MD5 (output, input, length);
     }
-void lw_md5_base64 (char * output, const char * input, long length)
-    { Lacewing::MD5_Base64 (output, input, length);
+void lw_md5_hex (char * output, const char * input, long length)
+    { Lacewing::MD5_Hex (output, input, length);
     }
 void lw_sha1 (char * output, const char * input, long length)
     { Lacewing::SHA1 (output, input, length);
     }
-void lw_sha1_base64 (char * output, const char * input, long length)
-    { Lacewing::SHA1_Base64 (output, input, length);
+void lw_sha1_hex (char * output, const char * input, long length)
+    { Lacewing::SHA1_Hex (output, input, length);
     }

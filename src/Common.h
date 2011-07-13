@@ -69,7 +69,7 @@
         #define LacewingFunction __declspec(dllexport)
     #else
         #ifdef __GNUC__
-            #define LacewingFunction __attribute__((visibility("default"))
+            #define LacewingFunction __attribute__((visibility("default")))
         #else
             #error "Don't know how to build the library with this compiler"
         #endif
@@ -102,6 +102,11 @@ void LacewingInitialise();
 
 #include "../include/Lacewing.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <new>
+
 #ifdef LacewingWindows
 
     #ifndef WINVER
@@ -127,10 +132,7 @@ void LacewingInitialise();
     #include <wincrypt.h>
     #include <wintrust.h>
     #include <schannel.h>
-
     #include <process.h>
-    #include <new.h>
-
     #include <ctime>
 
     #undef SendMessage
@@ -326,9 +328,7 @@ inline void DisableNagling (SOCKET Socket)
     setsockopt(Socket, SOL_SOCKET, TCP_NODELAY, (char *) &Yes, sizeof(Yes));
 }
 
-#include <stdarg.h>
-
-#ifdef HAVE_MALLOC_H
+#if defined(HAVE_MALLOC_H) || defined(LacewingWindows)
     #include <malloc.h>
 #endif
 
@@ -367,34 +367,33 @@ inline int LacewingFormat(char *& Output, const char * Format, va_list args)
     #endif
 }
 
-#include <fstream>
-#include <vector>
-#include <list>
-#include <set>
-#include <queue>
-#include <map>
-#include <deque>
-#include <stack>
-#include <sstream>
-
-using namespace std;
-
-#include <iostream>
-using namespace std;
-
-extern Lacewing::Sync Sync_DebugOutput;
-extern ostringstream DebugOutput;
 
 #ifdef LacewingDebug
-    #ifdef COXSDK
-        #define DebugOut(X) do { Lacewing::Sync::Lock Lock(Sync_DebugOutput); \
-                                 DebugOutput << "Thread " << (int) Lacewing::CurrentThreadID() \
-                                    << ": " << X << endl; OutputDebugString(DebugOutput.str().c_str()); DebugOutput.str(""); } while(0);
-    #else
-        #define DebugOut(X) do { Lacewing::Sync::Lock Lock(Sync_DebugOutput); \
-                                 DebugOutput << "Thread " << (int) Lacewing::CurrentThreadID() \
-                                    << ": " << X << endl; printf("%s", DebugOutput.str().c_str()); DebugOutput.str(""); } while(0);
-    #endif
+
+    extern Lacewing::Sync Sync_DebugOutput;
+
+    inline void DebugOut (const char * format, ...)
+    {
+        va_list args;
+        va_start (args, format);
+        
+        char * data;
+        int size = LacewingFormat (data, format, args);
+        
+        if(size > 0)
+        {
+            Lacewing::Sync::Lock Lock (Sync_DebugOutput);
+
+            #ifdef COXSDK
+                OutputDebugString (data);
+            #else
+                printf ("[Lacewing] %s", data);
+            #endif
+        }
+
+        va_end (args);
+    }
+
 #else
     #define DebugOut(X)
 #endif
@@ -459,7 +458,7 @@ inline void LacewingSyncExchange(volatile long * Target, long NewValue)
     #endif
 }
 
-#include "Looper.h"
+#include "Utility.h"
 #include "TimeHelper.h"
 #include "ThreadTracker.h"
 #include "ReceiveBuffer.h"

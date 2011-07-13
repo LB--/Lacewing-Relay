@@ -51,11 +51,10 @@ bool Lacewing::Pump::Ready (void * Tag, bool CanRead, bool CanWrite)
 
         {   Lacewing::Sync::Lock Lock(Internal.Sync_PostQueue);
 
-            while(!Internal.PostQueue.empty())
+            while(Internal.PostQueue.Size)
             {
-                Event = Internal.PostQueue.front();
-                Internal.PostQueue.pop();
-
+                Event = Internal.PostQueue.PopFront ();
+                
                 if(Event->ReadCallback == SigExitEventLoop)
                     return false;
 
@@ -109,7 +108,7 @@ void Lacewing::Pump::Post (void * Function, void * Parameter)
     Event.Removing      = false;
 
     {   Lacewing::Sync::Lock Lock(Internal.Sync_PostQueue);
-        Internal.PostQueue.push (&Event);
+        Internal.PostQueue.Push (&Event);
     }
 
     write(Internal.PostFD_Write, "", 1);

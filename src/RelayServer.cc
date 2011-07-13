@@ -67,7 +67,7 @@ struct RelayServerInternal
         HandlerLeaveChannel     = 0;
         HandlerSetName          = 0;
 
-        WelcomeMessage += Lacewing::Version();
+        WelcomeMessage = Lacewing::Version();
     
         Timer.Tag = this;
         Timer.onTick(ServerTimerTick);
@@ -111,9 +111,9 @@ struct RelayServerInternal
         
         void MessageHandler (unsigned char Type, char * Message, int Size, bool Blasted);
 
-        list <Channel *> Channels;
+        List <Channel *> Channels;
 
-        string Name;
+        String Name;
 
         unsigned short ID;
     
@@ -146,9 +146,9 @@ struct RelayServerInternal
             Server.ChannelIDs.Return(ID);
         }
 
-        list <RelayServerInternal::Client *> Clients;
+        List <RelayServerInternal::Client *> Clients;
 
-        string Name;
+        String Name;
     
         unsigned short ID;
 
@@ -172,38 +172,35 @@ struct RelayServerInternal
 
     FrameBuilder Builder;
 
-    string WelcomeMessage;
+    String WelcomeMessage;
 
-    list<Channel *> Channels;
+    List <Channel *> Channels;
 
     void TimerTick()
     {
         Lacewing::Server &Socket = Server.Socket;
-        list<RelayServerInternal::Client *> ToDisconnect;
+        List <RelayServerInternal::Client *> ToDisconnect;
 
         Builder.AddHeader(9, 0); /* Ping */
         
-        for(void * ID = Socket.ClientLoop(); ID; ID = Socket.ClientLoop(ID))
+        for (Lacewing::Server::Client * ClientSocket = Socket.FirstClient (); ClientSocket; ClientSocket = ClientSocket->Next ())
         {
-            RelayServerInternal::Client &Client = *(RelayServerInternal::Client *) Socket.ClientLoopIndex(ID).Tag;
+            RelayServerInternal::Client &Client = *(RelayServerInternal::Client *) ClientSocket->Tag;
             
-            if(!Client.Ponged)
+            if (!Client.Ponged)
             {
-                ToDisconnect.push_back(&Client);
+                ToDisconnect.Push (&Client);
                 continue;
             }
 
             Client.Ponged = false;
-            Builder.Send(Client.Socket, false);
+            Builder.Send (Client.Socket, false);
         }
 
         Builder.FrameReset();
 
-        for(list<RelayServerInternal::Client *>::iterator it = ToDisconnect.begin();
-                it != ToDisconnect.end(); ++ it)
-        {
-            (*it)->Socket.Disconnect();
-        }
+        for(List <RelayServerInternal::Client *>::Element * E = ToDisconnect.First; E; E = E->Next)
+            (** E)->Socket.Disconnect();
     }
 };
 
@@ -222,9 +219,9 @@ RelayServerInternal::Channel * RelayServerInternal::Client::ReadChannel(MessageR
     if(Reader.Failed)
         return 0;
 
-    for(list<RelayServerInternal::Channel *>::iterator it = Channels.begin(); it != Channels.end(); ++ it)
-        if((*it)->ID == ChannelID)
-            return *it;
+    for(List <RelayServerInternal::Channel *>::Element * E = Channels.First; E; E = E->Next)
+        if((** E)->ID == ChannelID)
+            return ** E;
      
     Reader.Failed = true;
     return 0;
@@ -237,9 +234,9 @@ RelayServerInternal::Client * RelayServerInternal::Channel::ReadPeer(MessageRead
     if(Reader.Failed)
         return 0;
 
-    for(list<RelayServerInternal::Client *>::iterator it = Clients.begin(); it != Clients.end(); ++ it)
-        if((*it)->ID == PeerID)
-            return *it;
+    for(List <RelayServerInternal::Client *>::Element * E = Clients.First; E; E = E->Next)
+        if((** E)->ID == PeerID)
+            return ** E;
      
     Reader.Failed = true;
     return 0;
@@ -258,10 +255,9 @@ void HandlerDisconnect(Lacewing::Server &Server, Lacewing::Server::Client &Clien
     RelayServerInternal &Internal        = *(RelayServerInternal *) Server.Tag;
     RelayServerInternal::Client &Client  = *(RelayServerInternal::Client *) ClientSocket.Tag;
 
-    for(list<RelayServerInternal::Channel *>::iterator it = Client.Channels.begin();
-            it != Client.Channels.end(); ++ it)
+    for(List <RelayServerInternal::Channel *>::Element * E = Client.Channels.First; E; E = E->Next)
     {
-        (*it)->RemoveClient(Client);
+        (** E)->RemoveClient(Client);
     }
 
     if(Client.Handshook && Internal.HandlerDisconnect)
@@ -303,10 +299,10 @@ void HandlerUDPReceive(Lacewing::UDP &UDP, Lacewing::Address &Address, char * Da
 
     Lacewing::Server &Socket = Internal.Server.Socket;
 
-    for(void * Loop = Socket.ClientLoop(); Loop; Loop = Socket.ClientLoop(Loop))
+    for (Lacewing::Server::Client * ClientSocket = Socket.FirstClient (); ClientSocket; ClientSocket = ClientSocket->Next ())
     {
-        RelayServerInternal::Client &Client = *(RelayServerInternal::Client *) Socket.ClientLoopIndex(Loop).Tag;
-
+        RelayServerInternal::Client &Client = *(RelayServerInternal::Client *) ClientSocket->Tag;
+        
         if(Client.ID == ID)
         {
             if(Client.Socket.GetAddress().IP() != Address.IP())
@@ -315,7 +311,6 @@ void HandlerUDPReceive(Lacewing::UDP &UDP, Lacewing::Address &Address, char * Da
             Client.UDPAddress.Port(Address.Port());
             Client.MessageHandler(Type, Data, Size, true);
 
-            Socket.EndClientLoop(Loop);
             break;
         }
     }
@@ -405,18 +400,18 @@ void RelayServerInternal::Channel::Close()
     Builder.Add <unsigned char>   (1); /* Success */
     Builder.Add <unsigned short> (ID);
 
-    for(list<RelayServerInternal::Client *>::iterator it = Clients.begin();
-            it != Clients.end(); ++ it)
+    for(List <RelayServerInternal::Client *>::Element * E = Clients.First;
+            E; E = E->Next)
     {
-        RelayServerInternal::Client &Client = **it;
+        RelayServerInternal::Client &Client = *** E;
         Builder.Send(Client.Socket, false);
 
-        for(list<RelayServerInternal::Channel *>::iterator it2 = Client.Channels.begin();
-                it2 != Client.Channels.end(); ++ it)
+        for(List <RelayServerInternal::Channel *>::Element * E2 = Client.Channels.First;
+                E2; E2 = E2->Next)
         {
-            if(*it2 == this)
+            if(** E2 == this)
             {
-                Client.Channels.erase(it2);
+                Client.Channels.Erase (E2);
                 break;
             }
         }
@@ -427,12 +422,12 @@ void RelayServerInternal::Channel::Close()
     
     /* Remove this channel from the channel list and return it to the backlog. */
 
-    for(list<RelayServerInternal::Channel *>::iterator it = Server.Channels.begin();
-            it != Server.Channels.end(); ++ it)
+    for(List <RelayServerInternal::Channel *>::Element * E = Server.Channels.First;
+            E; E = E->Next)
     {
-        if((*it) == this)
+        if(** E == this)
         {
-            Server.Channels.erase(it);
+            Server.Channels.Erase(E);
             break;
         }
     }
@@ -442,19 +437,19 @@ void RelayServerInternal::Channel::Close()
 
 void RelayServerInternal::Channel::RemoveClient(RelayServerInternal::Client &Client)
 {
-    for(list<RelayServerInternal::Client *>::iterator it = Clients.begin();
-            it != Clients.end(); ++ it)
+    for(List <RelayServerInternal::Client *>::Element * E = Clients.First;
+            E; E = E->Next)
     {
-        if((*it) == &Client)
+        if(** E == &Client)
         {
-            Clients.erase(it);
+            Clients.Erase (E);
             break;
         }
     }
 
-    if((!Clients.size()) || (ChannelMaster == &Client && AutoClose))
+    if((!Clients.Size) || (ChannelMaster == &Client && AutoClose))
     {   
-        Close();
+        Close ();
         return;
     }
 
@@ -471,10 +466,10 @@ void RelayServerInternal::Channel::RemoveClient(RelayServerInternal::Client &Cli
     Builder.Add <unsigned short> (ID);
     Builder.Add <unsigned short> (Client.ID);
 
-    for(list<RelayServerInternal::Client *>::iterator it = Clients.begin();
-            it != Clients.end(); ++ it)
+    for(List <RelayServerInternal::Client *>::Element * E = Clients.First;
+            E; E = E->Next)
     {
-        Builder.Send((*it)->Socket, false);
+        Builder.Send((** E)->Socket, false);
     }
 
     Builder.FrameReset();
@@ -575,17 +570,15 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
 
                     bool Taken = false;
 
-                    for(list<RelayServerInternal::Channel *>::iterator it = Channels.begin();
-                            it != Channels.end(); ++ it)
+                    for(List <RelayServerInternal::Channel *>::Element * E = Channels.First;
+                            E; E = E->Next)
                     {
-                        RelayServerInternal::Channel * Channel = *it;
+                        RelayServerInternal::Channel * Channel = ** E;
 
-                        for(list<RelayServerInternal::Client *>::iterator it2 = Channel->Clients.begin();
-                                it2 != Channel->Clients.end(); ++ it2)
+                        for(List <RelayServerInternal::Client *>::Element * E2 = Channel->Clients.First;
+                                E2; E2 = E2->Next)
                         {
-                            RelayServerInternal::Client * Client = *it2;
-
-                            if(!stricmp(Client->Name.c_str(), Name))
+                            if(!stricmp((** E2)->Name, Name))
                             {
                                 Taken = true;
                                 break;
@@ -612,8 +605,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                         break;
                     }
 
-                    this->Name  = "";
-                    this->Name += Name;
+                    this->Name = Name;
 
                     if(Server.HandlerSetName && !Server.HandlerSetName(Server.Server, Public, Name))
                     {
@@ -635,31 +627,33 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                     Builder.Add <unsigned char> (1);  /* SetName */
                     Builder.Add <unsigned char> (1);  /* Success */
                 
-                    Builder.Add <unsigned char> (this->Name.length());
+                    Builder.Add <unsigned char> (this->Name.Length);
                     Builder.Add (this->Name);
 
                     Builder.Send(Socket);
 
-                    for(list<RelayServerInternal::Channel *>::iterator it = Channels.begin();
-                            it != Channels.end(); ++ it)
+                    for(List <RelayServerInternal::Channel *>::Element * E = Channels.First;
+                            E; E = E->Next)
                     {
-                        RelayServerInternal::Channel * Channel = *it;
+                        RelayServerInternal::Channel * Channel = ** E;
 
-                        for(list<RelayServerInternal::Client *>::iterator it2 = Channel->Clients.begin();
-                                it2 != Channel->Clients.end(); ++ it2)
+                        Builder.AddHeader (7, 0); /* Peer */
+                        
+                        Builder.Add <unsigned short> (Channel->ID);
+                        Builder.Add <unsigned short> (ID);
+                        Builder.Add <unsigned char>  (this == Channel->ChannelMaster ? 1 : 0);
+                        Builder.Add (this->Name);
+
+                        for(List <RelayServerInternal::Client *>::Element * E2 = Channel->Clients.First;
+                                E2; E2 = E2->Next)
                         {
-                            if(*it2 == this)
+                            if(** E2 == this)
                                 continue;
 
-                            Builder.AddHeader (7, 0); /* Peer */
-                            
-                            Builder.Add <unsigned short> (Channel->ID);
-                            Builder.Add <unsigned short> (ID);
-                            Builder.Add <unsigned char>  (this == Channel->ChannelMaster ? 1 : 0);
-                            Builder.Add (this->Name);
-
-                            Builder.Send((*it2)->Socket);
+                            Builder.Send((** E2)->Socket, false);
                         }
+
+                        Builder.Reset ();
                     }
 
                     break;
@@ -667,7 +661,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
 
                 case 2: /* JoinChannel */
                 {            
-                    if(!this->Name.length())
+                    if(!this->Name.Length)
                         Reader.Failed = true;
 
                     unsigned char Flags = Reader.Get <unsigned char> ();
@@ -678,12 +672,12 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
 
                     RelayServerInternal::Channel * Channel = 0;
 
-                    for(list<RelayServerInternal::Channel *>::iterator it = Server.Channels.begin();
-                            it != Server.Channels.end(); ++ it)
+                    for(List <RelayServerInternal::Channel *>::Element * E = Server.Channels.First;
+                            E; E = E->Next)
                     {
-                        if(!stricmp((*it)->Name.c_str(), Name))
+                        if(!stricmp((** E)->Name, Name))
                         {
-                            Channel = *it;
+                            Channel = ** E;
                             break;
                         }
                     }
@@ -694,12 +688,12 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
 
                         bool NameTaken = false;
 
-                        for(list<RelayServerInternal::Client *>::iterator it2 = Channel->Clients.begin();
-                                it2 != Channel->Clients.end(); ++ it2)
+                        for(List <RelayServerInternal::Client *>::Element * E = Channel->Clients.First;
+                                E; E = E->Next)
                         {
-                            RelayServerInternal::Client * Client = *it2;
+                            RelayServerInternal::Client * Client = ** E;
 
-                            if(!stricmp(Client->Name.c_str(), Name))
+                            if(!stricmp (Client->Name, Name))
                             {
                                 NameTaken = true;
                                 break;
@@ -728,7 +722,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                             Builder.Add <unsigned char> (2);  /* JoinChannel */
                             Builder.Add <unsigned char> (0);  /* Failed */
 
-                            Builder.Add <unsigned char> (Channel->Name.length());
+                            Builder.Add <unsigned char> (Channel->Name.Length);
                             Builder.Add (Channel->Name);
 
                             Builder.Add ("Join refused by server");
@@ -743,19 +737,19 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                         Builder.Add <unsigned char> (1);  /* Success */
                         Builder.Add <unsigned char> (0);  /* Not the channel master */
 
-                        Builder.Add <unsigned char> (Channel->Name.length());
+                        Builder.Add <unsigned char> (Channel->Name.Length);
                         Builder.Add (Channel->Name);
 
                         Builder.Add <unsigned short> (Channel->ID);
                         
-                        for(list<RelayServerInternal::Client *>::iterator it = Channel->Clients.begin();
-                                it != Channel->Clients.end(); ++ it)
+                        for(List <RelayServerInternal::Client *>::Element * E = Channel->Clients.First;
+                                E; E = E->Next)
                         {
-                            RelayServerInternal::Client * Client = *it;
+                            RelayServerInternal::Client * Client = ** E;
 
                             Builder.Add <unsigned short> (Client->ID);
                             Builder.Add <unsigned char>  (Channel->ChannelMaster == Client ? 1 : 0);
-                            Builder.Add <unsigned char>  (Client->Name.length());
+                            Builder.Add <unsigned char>  (Client->Name.Length);
                             Builder.Add (Client->Name);
                         }
 
@@ -771,10 +765,10 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
 
                         /* Notify the other clients on the channel that this client has joined */
 
-                        for(list<RelayServerInternal::Client *>::iterator it = Channel->Clients.begin();
-                                it != Channel->Clients.end(); ++ it)
+                        for(List <RelayServerInternal::Client *>::Element * E = Channel->Clients.First;
+                                E; E = E->Next)
                         {
-                            Builder.Send((*it)->Socket, false);
+                            Builder.Send((** E)->Socket, false);
                         }
 
                         Builder.FrameReset();
@@ -782,8 +776,8 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
 
                         /* Add this client to the channel */
 
-                        Channels.push_back (Channel);
-                        Channel->Clients.push_back (this);
+                        Channels.Push (Channel);
+                        Channel->Clients.Push (this);
 
                         break;
                     }
@@ -792,7 +786,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
 
                     Channel = &Server.ChannelBacklog.Borrow(Server);
 
-                    Channel->Name          += Name;
+                    Channel->Name          =  Name;
                     Channel->ChannelMaster =  this;
                     Channel->Hidden        =  (Flags & 1) != 0;
                     Channel->AutoClose     =  (Flags & 2) != 0;
@@ -803,7 +797,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                         Builder.Add <unsigned char> (2);  /* JoinChannel */
                         Builder.Add <unsigned char> (0);  /* Failed */
 
-                        Builder.Add <unsigned char> (Channel->Name.length());
+                        Builder.Add <unsigned char> (Channel->Name.Length);
                         Builder.Add (Channel->Name);
 
                         Builder.Add ("Join refused by server");
@@ -814,16 +808,16 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                         break;
                     }
 
-                    Server.Channels.push_back (Channel);
-                    Channels.push_back (Channel);
-                    Channel->Clients.push_back (this);
+                    Server.Channels.Push (Channel);
+                    Channels.Push (Channel);
+                    Channel->Clients.Push (this);
 
                     Builder.AddHeader        (0, 0);  /* Response */
                     Builder.Add <unsigned char> (2);  /* JoinChannel */
                     Builder.Add <unsigned char> (1);  /* Success */
                     Builder.Add <unsigned char> (1);  /* Channel master */
 
-                    Builder.Add <unsigned char> (Channel->Name.length());
+                    Builder.Add <unsigned char> (Channel->Name.Length);
                     Builder.Add (Channel->Name);
 
                     Builder.Add <unsigned short> (Channel->ID);
@@ -854,11 +848,11 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                         break;
                     }
 
-                    for(list<RelayServerInternal::Channel *>::iterator it = Channels.begin(); it != Channels.end(); ++ it)
+                    for(List <RelayServerInternal::Channel *>::Element * E = Channels.First; E; E = E->Next)
                     {
-                        if(*it == Channel)
+                        if(** E == Channel)
                         {
-                            Channels.erase(it);
+                            Channels.Erase(E);
                             break;
                         }
                     } 
@@ -883,17 +877,17 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                     Builder.Add <unsigned char> (4);  /* ChannelList */
                     Builder.Add <unsigned char> (1);  /* Success */
 
-                    for(list<RelayServerInternal::Channel *>::iterator it = Server.Channels.begin();
-                            it != Server.Channels.end(); ++ it)
+                    for(List <RelayServerInternal::Channel *>::Element * E = Server.Channels.First;
+                            E; E = E->Next)
                     {
-                        RelayServerInternal::Channel &Channel = **it;
+                        RelayServerInternal::Channel * Channel = ** E;
 
-                        if(Channel.Hidden)
+                        if(Channel->Hidden)
                             continue;
 
-                        Builder.Add <unsigned short> (Channel.Clients.size());
-                        Builder.Add <unsigned char>  (Channel.Name.length());
-                        Builder.Add (Channel.Name);
+                        Builder.Add <unsigned short> (Channel->Clients.Size);
+                        Builder.Add <unsigned char>  (Channel->Name.Length);
+                        Builder.Add (Channel->Name);
                     }
 
                     Builder.Send(Socket);
@@ -953,16 +947,15 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
             Builder.Add <unsigned short> (ID);
             Builder.Add (Message, Size);
 
-            for(list<RelayServerInternal::Client *>::iterator it = Channel->Clients.begin();
-                    it != Channel->Clients.end(); ++ it)
+            for(List <RelayServerInternal::Client *>::Element * E = Channel->Clients.First; E; E = E->Next)
             {
-                if(*it == this)
+                if(** E == this)
                     continue;
 
                 if(Blasted)
-                    Builder.Send(Server.Server.UDP, (*it)->UDPAddress, false);
+                    Builder.Send(Server.Server.UDP, (** E)->UDPAddress, false);
                 else
-                    Builder.Send((*it)->Socket, false);
+                    Builder.Send((** E)->Socket, false);
             }
 
             Builder.FrameReset();
@@ -1095,13 +1088,12 @@ int Lacewing::RelayServer::Client::ID()
 
 const char * Lacewing::RelayServer::Channel::Name()
 {
-    return ((RelayServerInternal::Channel *) InternalTag)->Name.c_str();
+    return ((RelayServerInternal::Channel *) InternalTag)->Name;
 }
 
 void Lacewing::RelayServer::Channel::Name(const char * Name)
 {
-    ((RelayServerInternal::Channel *) InternalTag)->Name  = "";
-    ((RelayServerInternal::Channel *) InternalTag)->Name += Name;
+    ((RelayServerInternal::Channel *) InternalTag)->Name = Name;
 }
 
 bool Lacewing::RelayServer::Channel::Hidden()
@@ -1116,10 +1108,7 @@ bool Lacewing::RelayServer::Channel::AutoCloseEnabled()
 
 void Lacewing::RelayServer::SetWelcomeMessage(const char * Message)
 {
-    RelayServerInternal &Internal = *(RelayServerInternal *) InternalTag;
-
-    Internal.WelcomeMessage  = "";
-    Internal.WelcomeMessage += Message;
+    ((RelayServerInternal *) InternalTag)->WelcomeMessage = Message;
 }
 
 Lacewing::RelayServer::Client * Lacewing::RelayServer::Channel::ChannelMaster()
@@ -1146,54 +1135,56 @@ Lacewing::Address &Lacewing::RelayServer::Client::GetAddress()
 
 const char * Lacewing::RelayServer::Client::Name()
 {
-    return ((RelayServerInternal::Client *) InternalTag)->Name.c_str();
+    return ((RelayServerInternal::Client *) InternalTag)->Name;
 }
 
 void Lacewing::RelayServer::Client::Name(const char * Name)
 {
-    ((RelayServerInternal::Client *) InternalTag)->Name  = "";
-    ((RelayServerInternal::Client *) InternalTag)->Name += Name;
-}
-
-void * Lacewing::RelayServer::ClientLoop(void * ID)
-{
-    return Socket.ClientLoop(ID);
-}
-
-Lacewing::RelayServer::Client &Lacewing::RelayServer::ClientLoopIndex(void * ID)
-{
-    return ((RelayServerInternal::Client *) Socket.ClientLoopIndex(ID).Tag)->Public;
-}
-
-void Lacewing::RelayServer::EndClientLoop(void * ID)
-{
-    Socket.EndClientLoop(ID);
+    ((RelayServerInternal::Client *) InternalTag)->Name = Name;
 }
 
 int Lacewing::RelayServer::ChannelCount()
 {
-    return ((RelayServerInternal *) InternalTag)->Channels.size();
+    return ((RelayServerInternal *) InternalTag)->Channels.Size;
 }
 
 int Lacewing::RelayServer::Channel::ClientCount()
 {
-    return ((RelayServerInternal::Channel *) InternalTag)->Clients.size();
+    return ((RelayServerInternal::Channel *) InternalTag)->Clients.Size;
 }
 
 int Lacewing::RelayServer::Client::ChannelCount()
 {
-    return ((RelayServerInternal::Client *) InternalTag)->Channels.size();
+    return ((RelayServerInternal::Client *) InternalTag)->Channels.Size;
+}
+
+Lacewing::RelayServer::Client * Lacewing::RelayServer::FirstClient ()
+{
+    return Socket.FirstClient () ?
+        (Lacewing::RelayServer::Client *) Socket.FirstClient ()->Tag : 0;
+}
+
+Lacewing::RelayServer::Client * Lacewing::RelayServer::Client::Next ()
+{
+    Lacewing::Server::Client * NextSocket =
+        ((RelayServerInternal::Client *) InternalTag)->Socket.Next ();
+
+    return NextSocket ? (Lacewing::RelayServer::Client *) NextSocket->Tag : 0;
 }
 
 
+
+
+/*
 Looper(A, RelayServer, Channel, RelayServerInternal, Channels, ((void) 0), 0,
-        list<RelayServerInternal::Channel *>::iterator, Lacewing::RelayServer::Channel &, ->Public);
+        List <RelayServerInternal::Channel *>::Element *, Lacewing::RelayServer::Channel &, ->Public);
 
 Looper(B, RelayServer::Client, Channel, RelayServerInternal::Client, Channels, ((void) 0), 0,
-        list<RelayServerInternal::Channel *>::iterator, Lacewing::RelayServer::Channel &, ->Public);
+        List <RelayServerInternal::Channel *>::Element *, Lacewing::RelayServer::Channel &, ->Public);
 
 Looper(A, RelayServer::Channel, Client, RelayServerInternal::Channel, Clients, ((void) 0), 0,
-        list<RelayServerInternal::Client *>::iterator, Lacewing::RelayServer::Client &, ->Public);
+        List <RelayServerInternal::Client *>::Element *, Lacewing::RelayServer::Client &, ->Public);
+*/
 
 AutoHandlerFunctions(Lacewing::RelayServer, RelayServerInternal, Connect)
 AutoHandlerFunctions(Lacewing::RelayServer, RelayServerInternal, Disconnect)

@@ -106,23 +106,23 @@ struct RelayClientInternal
 
     FrameBuilder Message;
 
-    list <Lacewing::RelayClient::ChannelListing *> ChannelList;
+    List <Lacewing::RelayClient::ChannelListing *> ChannelList;
 
     void ClearChannelList()
     {
-        for(list<Lacewing::RelayClient::ChannelListing *>::iterator it = ChannelList.begin(); it != ChannelList.end(); ++ it)
-            delete *it;
+        for (List <Lacewing::RelayClient::ChannelListing *>::Element * E = ChannelList.First; E; E = E->Next)
+            delete ** E;
         
-        ChannelList.clear();
+        ChannelList.Clear();
     }
 
     void Clear();
 
-    list <ChannelInternal *> Channels;
-    string Name;
+    List <ChannelInternal *> Channels;
+    String Name;
 
     int ID;
-    string WelcomeMessage;
+    String WelcomeMessage;
 
     bool UDPAcknowledged;
 };
@@ -130,6 +130,7 @@ struct RelayClientInternal
 struct PeerInternal
 {
     Lacewing::RelayClient::Channel::Peer Public;
+    List <PeerInternal *>::Element * Element;
 
     ChannelInternal &Channel;
 
@@ -139,8 +140,8 @@ struct PeerInternal
         Public.Tag = 0;
     }
 
-    int     ID;
-    string  Name;
+    int ID;
+    String Name;
    
     bool IsChannelMaster;
 };
@@ -148,6 +149,7 @@ struct PeerInternal
 struct ChannelInternal
 {
     Lacewing::RelayClient::Channel Public;
+    List <ChannelInternal *>::Element * Element;
 
     RelayClientInternal &Client;
 
@@ -162,11 +164,11 @@ struct ChannelInternal
 
     }
 
-    int     ID;
-    string  Name;
-    bool    IsChannelMaster;
+    int ID;
+    String Name;
+    bool IsChannelMaster;
 
-    list<PeerInternal *> Peers;
+    List <PeerInternal *> Peers;
 
     PeerInternal * ReadPeer(MessageReader &Reader)
     {
@@ -175,10 +177,14 @@ struct ChannelInternal
         if(Reader.Failed)
             return 0;
 
-        for(list<PeerInternal *>::iterator it = Peers.begin(); it != Peers.end(); ++ it)
-            if((*it)->ID == PeerID)
-                return *it;
-         
+        for(List <PeerInternal *>::Element * E = Peers.First; E; E = E->Next)
+        {
+            PeerInternal * Peer = ** E;
+
+            if(Peer->ID == PeerID)
+                return Peer;
+        }
+
         Reader.Failed = true;
         return 0;
     }
@@ -189,9 +195,9 @@ struct ChannelInternal
 
         Peer->ID               = PeerID;
         Peer->IsChannelMaster  = (Flags & 1) != 0;
-        Peer->Name            += Name;
+        Peer->Name             = Name;
 
-        Peers.push_back(Peer);
+        Peer->Element = Peers.Push (Peer);
 
         return Peer;
     }
@@ -201,10 +207,10 @@ void RelayClientInternal::Clear()
 {
     ClearChannelList();
 
-    for(list<ChannelInternal *>::iterator it = Channels.begin(); it != Channels.end(); ++ it)
-        delete *it;
+    for(List <ChannelInternal *>::Element * E = Channels.First; E; E = E->Next)
+        delete ** E;
     
-    Channels.clear();
+    Channels.Clear();
 
     Name = "";
     ID   = -1;
@@ -219,9 +225,9 @@ ChannelInternal * RelayClientInternal::ReadChannel(MessageReader &Reader)
     if(Reader.Failed)
         return 0;
 
-    for(list<ChannelInternal *>::iterator it = Channels.begin(); it != Channels.end(); ++ it)
-        if((*it)->ID == ChannelID)
-            return *it;
+    for(List <ChannelInternal *>::Element * E = Channels.First; E; E = E->Next)
+        if((** E)->ID == ChannelID)
+            return ** E;
      
     Reader.Failed = true;
     return 0;
@@ -347,7 +353,7 @@ bool Lacewing::RelayClient::Connecting()
 
 const char * Lacewing::RelayClient::Name()
 {
-    return ((RelayClientInternal *) InternalTag)->Name.c_str();
+    return ((RelayClientInternal *) InternalTag)->Name;
 }
 
 void Lacewing::RelayClient::ListChannels()
@@ -537,22 +543,22 @@ void Lacewing::RelayClient::Channel::Leave()
 
 const char * Lacewing::RelayClient::Channel::Name()
 {
-    return ((ChannelInternal *) InternalTag)->Name.c_str();
+    return ((ChannelInternal *) InternalTag)->Name;
 }
 
 int Lacewing::RelayClient::Channel::PeerCount()
 {
-    return ((ChannelInternal *) InternalTag)->Peers.size();
+    return ((ChannelInternal *) InternalTag)->Peers.Size;
 }
 
 const char * Lacewing::RelayClient::Channel::Peer::Name()
 {
-    return ((PeerInternal *) InternalTag)->Name.c_str();
+    return ((PeerInternal *) InternalTag)->Name;
 }
 
 int Lacewing::RelayClient::ChannelCount()
 {
-     return ((RelayClientInternal *) InternalTag)->Channels.size();
+     return ((RelayClientInternal *) InternalTag)->Channels.Size;
 }
 
 int Lacewing::RelayClient::ID()
@@ -591,9 +597,7 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
                     if(Succeeded)
                     {
                         ID = Reader.Get <unsigned short> ();
-
-                        WelcomeMessage  = "";
-                        WelcomeMessage += Reader.GetRemaining();
+                        WelcomeMessage = Reader.GetRemaining();
 
                         if(Reader.Failed)
                             break;
@@ -622,23 +626,20 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
 
                     if(Succeeded)
                     {
-                        if(!this->Name.length())
+                        if(!this->Name.Length)
                         {
-                            this->Name += Name;
+                            this->Name = Name;
 
                             if(HandlerNameSet)
                                 HandlerNameSet(Client);
                         }
                         else
                         {
-                            string OldName = "";
-                            OldName += this->Name;
-
-                            this->Name  = "";
-                            this->Name += Name;
+                            String OldName = this->Name;
+                            this->Name = Name;
 
                             if(HandlerNameChanged)
-                                HandlerNameChanged(Client, OldName.c_str());
+                                HandlerNameChanged(Client, OldName);
                         }
                     }
                     else
@@ -671,7 +672,7 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
                         ChannelInternal * Channel = new ChannelInternal(*this);
 
                         Channel->ID              = ChannelID;
-                        Channel->Name           += Name;
+                        Channel->Name            = Name;
                         Channel->IsChannelMaster = (Flags & 1) != 0;
 
                         for(;;)
@@ -691,7 +692,7 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
                             Channel->AddNewPeer(PeerID, Flags, Name);
                         }
 
-                        Channels.push_back(Channel);
+                        Channel->Element = Channels.Push (Channel);
 
                         if(HandlerJoin)
                             HandlerJoin(Client, Channel->Public);
@@ -716,14 +717,7 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
 
                     if(Succeeded)
                     {
-                        for(list<ChannelInternal *>::iterator it = Channels.begin(); it != Channels.end(); ++ it)
-                        {
-                            if(*it == Channel)
-                            {
-                                Channels.erase(it);
-                                break;
-                            }
-                        }
+                        Channels.Erase (Channel->Element);
 
                         if(HandlerLeave)
                             HandlerLeave(Client, Channel->Public);
@@ -760,10 +754,9 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
 
                         Lacewing::RelayClient::ChannelListing * Listing = new Lacewing::RelayClient::ChannelListing;
 
-                        Listing->Name       = strdup(Name);
-                        Listing->PeerCount  = PeerCount;
-
-                        ChannelList.push_back(Listing);
+                        Listing->Name         = strdup(Name);
+                        Listing->PeerCount    = PeerCount;
+                        Listing->InternalTag  = ChannelList.Push (Listing);
                     }
 
                     if(HandlerChannelListReceived)
@@ -859,11 +852,11 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
             int PeerID = Reader.Get <unsigned short> ();
             PeerInternal * Peer = 0;
 
-            for(list<PeerInternal *>::iterator it = Channel->Peers.begin(); it != Channel->Peers.end(); ++ it)
+            for(List <PeerInternal *>::Element * E = Channel->Peers.First; E; E = E->Next)
             {
-                if((*it)->ID == PeerID)
+                if((** E)->ID == PeerID)
                 {
-                    Peer = *it;
+                    Peer = ** E;
                     break;
                 }
             }
@@ -877,15 +870,8 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
         
                 if(!Peer)
                     break;
-
-                for(list<PeerInternal *>::iterator it = Channel->Peers.begin(); it != Channel->Peers.end(); ++ it)
-                {
-                    if(*it == Peer)
-                    {
-                        Channel->Peers.erase(it);
-                        break;
-                    }
-                }
+                
+                Channel->Peers.Erase (Peer->Element);
 
                 if(HandlerPeerDisconnect)
                     HandlerPeerDisconnect(Client, Channel->Public, Peer->Public);
@@ -908,18 +894,15 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
 
             /* Existing peer */
 
-            if(strcmp(Name, Peer->Name.c_str()))
+            if(strcmp(Name, Peer->Name))
             {
                 /* Peer is changing their name */
 
-                string OldName = "";
-                OldName += Peer->Name;
-
-                Peer->Name =  "";
-                Peer->Name += Name;
+                String OldName = Peer->Name;
+                Peer->Name = Name;
 
                 if(HandlerPeerChangeName)
-                    HandlerPeerChangeName(Client, Channel->Public, Peer->Public, OldName.c_str());
+                    HandlerPeerChangeName(Client, Channel->Public, Peer->Public, OldName);
             }
 
             Peer->IsChannelMaster = (Flags & 1) != 0;
@@ -933,7 +916,7 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
             UDPAcknowledged = true;
 
             if(HandlerConnect)
-                HandlerConnect(Client, WelcomeMessage.c_str());
+                HandlerConnect(Client, WelcomeMessage);
 
             break;
 
@@ -985,9 +968,34 @@ bool Lacewing::RelayClient::Channel::IsChannelMaster()
     return Internal.IsChannelMaster;
 }
 
-Looper(A, RelayClient, Channel, RelayClientInternal, Channels, ;, ;, list<ChannelInternal *>::iterator, Lacewing::RelayClient::Channel &, ->Public);
-Looper(A, RelayClient::Channel, Peer, ChannelInternal, Peers, ;, ;, list<PeerInternal *>::iterator, Lacewing::RelayClient::Channel::Peer &, ->Public);
-Looper(A, RelayClient, ChannelList, RelayClientInternal, ChannelList, ;, ;, list<Lacewing::RelayClient::ChannelListing *>::iterator, Lacewing::RelayClient::ChannelListing *, ;);
+Lacewing::RelayClient::Channel * Lacewing::RelayClient::Channel::Next ()
+{
+    return ((ChannelInternal *) InternalTag)->Element->Next ?
+        &(** ((ChannelInternal *) InternalTag)->Element->Next)->Public : 0;
+}
+
+Lacewing::RelayClient::Channel::Peer * Lacewing::RelayClient::Channel::FirstPeer ()
+{
+    return ((ChannelInternal *) InternalTag)->Peers.First ?
+            &(** ((ChannelInternal *) InternalTag)->Peers.First)->Public : 0;
+}
+
+Lacewing::RelayClient::Channel::Peer * Lacewing::RelayClient::Channel::Peer::Next ()
+{
+    return ((PeerInternal *) InternalTag)->Element->Next ?
+        &(** ((PeerInternal *) InternalTag)->Element->Next)->Public : 0;
+}
+
+int Lacewing::RelayClient::ChannelListingCount ()
+{
+    return ((RelayClientInternal *) InternalTag)->ChannelList.Size;
+}
+
+Lacewing::RelayClient::ChannelListing * Lacewing::RelayClient::ChannelListing::Next ()
+{
+    return ((List <Lacewing::RelayClient::ChannelListing *>::Element *) InternalTag)->Next ?
+        ** ((List <Lacewing::RelayClient::ChannelListing *>::Element *) InternalTag)->Next : 0; 
+}
 
 AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, Connect)
 AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, ConnectionDenied)

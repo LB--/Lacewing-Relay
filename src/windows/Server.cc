@@ -152,6 +152,8 @@ struct ServerClientInternal
     bool Send          (bool AllowQueue, const char * Data, int Size);
     bool SendFile      (bool AllowQueue, const char * Filename, __int64 Offset, __int64 Size);
     bool SendWritable  (bool AllowQueue, char * Data, int Size);
+
+    List <ServerClientInternal *>::Element * Element;
 };
 
 void ServerClientInternal::PostReceive()
@@ -206,8 +208,7 @@ struct ServerInternal
 
     SOCKET Socket;
 
-    Lacewing::SpinSync Sync_Clients;
-    list<ServerClientInternal *> Clients;
+    List <ServerClientInternal *> Clients;
 
     Backlog<ServerInternal, ServerClientInternal>
         ClientStructureBacklog;
@@ -269,7 +270,6 @@ ServerClientInternal::ServerClientInternal(ServerInternal &_Server)
 
     Public.InternalTag  = this;
     Public.Tag          = 0;
-    Public.S            = 0;
 
     Buffer.len = sizeof(ReceiveBuffer);
     Buffer.buf = ReceiveBuffer;
@@ -284,6 +284,7 @@ ServerClientInternal::ServerClientInternal(ServerInternal &_Server)
 
     Address   = 0;
     Receiving = 0;
+    Element   = 0;
 
     Disconnecting   = false;
     SendingFile     = false;
@@ -394,19 +395,8 @@ void Disconnecter(ServerClientInternal &Client)
     while(InterlockedCompareExchange(&Client.Receiving, -1, 0) != 0)
         LacewingYield();
 
-    {   Lacewing::SpinSync::WriteLock Lock(Internal.Sync_Clients);
-
-        for(list<ServerClientInternal *>::iterator it = Internal.Clients.begin();
-                it != Internal.Clients.end(); ++ it)
-        {
-            if(*it == &Client)
-            {
-                Internal.Clients.erase(it);
-                break;
-            }
-        }
-    }
-
+    Internal.Clients.Erase (Client.Element);
+    
     if(Internal.HandlerDisconnect)
         Internal.HandlerDisconnect(Internal.Public, Client.Public);
 
@@ -617,10 +607,7 @@ void ListenSocketCompletion(ServerInternal &Internal, ServerOverlapped &Overlapp
         Client.ReceiveOverlapped.Type = OverlappedType::Receive;
         Client.Connecting = false;
 
-        {   Lacewing::SpinSync::WriteLock Lock(Internal.Sync_Clients);
-            Internal.Clients.push_back(&Client);
-        }
-
+        Client.Element = Internal.Clients.Push (&Client);
         Client.RemoveKey = Internal.EventPump.Add((HANDLE) Client.Socket, (void *) &Client, (void *) ClientSocketCompletion);
 
         if(BytesTransferred > 0)
@@ -781,15 +768,13 @@ void Lacewing::Server::Unhost()
 
     ServerInternal &Internal = *(ServerInternal *) InternalTag;
 
-    for(void * ID = ClientLoop(); ID; ID = ClientLoop(ID))
+    for (List <ServerClientInternal *>::Element * E = Internal.Clients.First;
+            E; E = E->Next)
     {
-        ServerClientInternal &Client =
-               *(ServerClientInternal *) ClientLoopIndex(ID).InternalTag;
-
-        LacewingCloseSocket(Client.Socket);
+        (** E)->Public.Disconnect ();
     }
 
-    LacewingCloseSocket(Internal.Socket);
+    LacewingCloseSocket (Internal.Socket);
     Internal.Socket = SOCKET_ERROR;
 }
 
@@ -1462,7 +1447,7 @@ void SecureClientInternal::ProcessMessageData(char * &Buffer, unsigned int &Size
 
         Lacewing::Error Error;
         Error.Add(Status);
-        DebugOut("Error decrypting the message: " << Error);
+        DebugOut("Error decrypting the message: %s", Error.ToString ());
 
         Client.Public.Disconnect();
         return;
@@ -1620,10 +1605,7 @@ void SecureClientInternal::ProcessHandshakeData(char * Buffer, unsigned int &Siz
 
 int Lacewing::Server::ClientCount()
 {
-    ServerInternal &Internal = *(ServerInternal *) InternalTag;
-
-    Lacewing::SpinSync::ReadLock Lock(Internal.Sync_Clients);
-    return Internal.Clients.size();
+    return ((ServerInternal *) InternalTag)->Clients.Size;
 }
 
 lw_i64 Lacewing::Server::BytesSent()
@@ -1658,10 +1640,17 @@ void Lacewing::Server::DisableNagling()
     Internal.Nagle = false;
 }
 
-Looper(A, Server, Client, ServerInternal,
-        Clients, LooperSpinSync(ServerInternal, Sync_Clients), 0,
-        list<ServerClientInternal *>::iterator,
-        Lacewing::Server::Client &, ->Public);
+Lacewing::Server::Client * Lacewing::Server::Client::Next ()
+{
+    return ((ServerClientInternal *) InternalTag)->Element->Next ?
+        &(** ((ServerClientInternal *) InternalTag)->Element->Next)->Public : 0;
+}
+
+Lacewing::Server::Client * Lacewing::Server::FirstClient ()
+{
+    return ((ServerInternal *) InternalTag)->Clients.First ?
+            &(** ((ServerInternal *) InternalTag)->Clients.First)->Public : 0;
+}
 
 AutoHandlerFunctions(Lacewing::Server, ServerInternal, Connect)
 AutoHandlerFunctions(Lacewing::Server, ServerInternal, Disconnect)

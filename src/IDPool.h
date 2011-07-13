@@ -34,7 +34,7 @@ class IDPool
     
 protected:
 
-    set <unsigned short> IDs;
+    List <unsigned short> IDs;
 
     unsigned short NextID;
     int BorrowedCount;
@@ -51,26 +51,29 @@ public:
     {
         ++ BorrowedCount;
 
-        if(IDs.size())
-        {
-            unsigned short ID = *IDs.begin();
-            IDs.erase(IDs.begin());
-
-            return ID;
-        }
-        else
-            return NextID ++;
+        return IDs.Size ? IDs.PopFront () : NextID ++;
     }
 
     inline void Return(unsigned short ID)
     {
         if((-- BorrowedCount) == 0)
         {
-            IDs.clear();
+            IDs.Clear ();
             NextID = 0;
         }
         else
-            IDs.insert(ID);
+        {
+            for (List <unsigned short>::Element * E = IDs.First; E; E = E->Next)
+            {
+                if (** E > ID)
+                {
+                    IDs.InsertBefore (E, ID);
+                    return;
+                }
+            }
+
+            IDs.Push (ID);
+        }
     }
 };
 

@@ -30,95 +30,91 @@
 
 const char * const SessionCookie = "LacewingSession";
 
-
 void Lacewing::Webserver::Request::Session(const char * Key, const char * Value)
 {
     WebserverClient &Internal = *((WebserverClient *) InternalTag);
 
-    if(!*Session("LacewingValidSession"))
+    WebserverInternal::Session * Session = Internal.Server.FindSession (Cookie (SessionCookie));
+
+    if (!Session)
     {
-        char Session[128];
+        char SessionID [128];
 
-        sprintf(Session, "Session-%s-%d%d%d%d%d",
+        sprintf(SessionID, "Session-%s-%d%d%d",
             Internal.Socket.GetAddress().ToString(), (int) time(0),
-                    rand(), rand(), rand(), (int) (lw_iptr) this);
+                rand(), (int) (lw_iptr) this);
 
-        Lacewing::MD5_Base64 (Session, Session);
-        
-        Cookie(SessionCookie, Session);
-    }
+        Lacewing::MD5 (SessionID, SessionID);
 
-    const char * Session = Cookie(SessionCookie);
+        {   char SessionID_Hex [40];
+            
+            for(int i = 0; i < 16; ++ i)
+                sprintf (SessionID_Hex + (i * 2), "%02x", ((unsigned char *) SessionID) [i]);
 
-    Lacewing::SpinSync::WriteLock Lock(Internal.Server.Sync_Sessions);
-        
-        map<string, Map> &Sessions = Internal.Server.Sessions;
-        map<string, Map>::iterator Found = Sessions.find(Session);
-
-        if(Found == Sessions.end())
-        {
-            Sessions[Session].Set("LacewingValidSession", "1");
-            Found = Sessions.find(Session);
+            Cookie (SessionCookie, SessionID_Hex);
         }
 
-        Found->second.Set(Key, Value);
+        Session = new WebserverInternal::Session;
+
+        Session->ID_Part1 = ((lw_i64 *) SessionID) [0];
+        Session->ID_Part2 = ((lw_i64 *) SessionID) [1];
+
+        if (Internal.Server.FirstSession)
+        {
+            Session->Next = Internal.Server.FirstSession;
+            Internal.Server.FirstSession = Session;
+        }
+        else
+        {
+            Session->Next = 0;
+            Internal.Server.FirstSession = Session;
+        }
+    }
+
+    Session->Data.Set (Key, Value);
 }
 
 const char * Lacewing::Webserver::Request::Session(const char * Key)
 {
-    WebserverClient &Internal = *((WebserverClient *) InternalTag);
- 
-    const char * Session = Cookie(SessionCookie);
-
-    if(!*Session)
+    WebserverInternal::Session * Session = ((WebserverClient *) InternalTag)->Server
+                                                    .FindSession (Cookie (SessionCookie));
+    if (!Session)
         return "";
 
-    Lacewing::SpinSync::ReadLock Lock(Internal.Server.Sync_Sessions);
-        
-        map<string, Map> &Sessions = Internal.Server.Sessions;
-        map<string, Map>::iterator Found = Sessions.find(Session);
-
-        if(Found == Sessions.end())
-            return "";
-
-        const char * Result = Found->second.Get(Key);
-
-        if(!*Result)
-            return "";
-
-
-        /* Using a Map to create request-local copies, since the session Map is shared among
-           threads (so the returned value isn't safe once Sync_Sessions is unlocked). */
-
-        const char * CurrentCopy = Internal.SessionDataCopies.Get(Key);
-
-        if(!strcmp(CurrentCopy, Result))
-            return CurrentCopy;
-
-        return Internal.SessionDataCopies.Set(Key, Result);
+    return Session->Data.Get (Key);
 }
 
-void Lacewing::Webserver::CloseSession(const char * Session)
+void Lacewing::Webserver::CloseSession (const char * ID)
 {
-    WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
+    WebserverClient &Internal = *((WebserverClient *) InternalTag);
 
-    Lacewing::SpinSync::WriteLock Lock(Internal.Sync_Sessions);
-        
-        map<string, Map>::iterator Found = Internal.Sessions.find(Session);
+    WebserverInternal::Session * Session = Internal.Server.FindSession (ID);
 
-        if(Found != Internal.Sessions.end())
-            Internal.Sessions.erase(Found);
+    if (Session == Internal.Server.FirstSession)
+        Internal.Server.FirstSession = Session->Next;
+    else
+    {
+        for (WebserverInternal::Session * S = Internal.Server.FirstSession; S; S = S->Next)
+        {
+            if (S->Next == Session)
+            {
+                S->Next = Session->Next;
+                break;
+            }
+        }
+    }
+
+    delete Session;
 }
 
 void Lacewing::Webserver::Request::CloseSession()
 {
-    WebserverClient &Internal = *((WebserverClient *) InternalTag);
-    Internal.Server.Webserver.CloseSession(Session());
+    ((WebserverClient *) InternalTag)->Server.Webserver.CloseSession(Session ());
 }
 
 const char * Lacewing::Webserver::Request::Session()
 {
-    return Cookie(SessionCookie);
+    return Cookie (SessionCookie);
 }
 
 

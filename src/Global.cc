@@ -28,8 +28,9 @@
 
 #include "Common.h"
 
-Lacewing::Sync Sync_DebugOutput;
-ostringstream DebugOutput;
+#ifdef LacewingDebug
+    Lacewing::Sync Sync_DebugOutput;
+#endif
 
 #ifdef LacewingWindows
     Lacewing::Sync Sync_GMTime;
@@ -347,7 +348,7 @@ void Lacewing::NewTempFile(char * Buffer, int Length)
         for(int i = 0; i < sizeof(TempName); i += sizeof(lw_i64))
             *(lw_i64 *) (TempName + i) = i % 2 == 0 ? (lw_i64) time(0) : (lw_i64) rand();
 
-        Lacewing::MD5_Base64 (TempName, TempName, sizeof(TempName));
+        Lacewing::MD5_Hex (TempName, TempName, sizeof(TempName));
 
         char Path[MAX_PATH];
         TempPath(Path, sizeof(Path));
@@ -399,16 +400,16 @@ void Lacewing::MD5 (char * Output, const char * Input, int Length)
     #endif
 }
 
-void Lacewing::MD5_Base64 (char * Output, const char * Input, int Length)
+void Lacewing::MD5_Hex (char * Output, const char * Input, int Length)
 {
     MD5 (Output, Input, Length);
 
-    char Base64 [40];
+    char Hex [40];
     
     for(int i = 0; i < 16; ++ i)
-        sprintf(Base64 + (i * 2), "%02x", ((unsigned char *) Output) [i]);
+        sprintf(Hex + (i * 2), "%02x", ((unsigned char *) Output) [i]);
 
-    strcpy(Output, Base64);
+    strcpy(Output, Hex);
 }
 
 void Lacewing::SHA1 (char * Output, const char * Input, int Length)
@@ -445,15 +446,15 @@ void Lacewing::SHA1 (char * Output, const char * Input, int Length)
     #endif
 }
 
-void Lacewing::SHA1_Base64 (char * Output, const char * Input, int Length)
+void Lacewing::SHA1_Hex (char * Output, const char * Input, int Length)
 {
     SHA1 (Output, Input, Length);
 
-    char Base64 [48];
+    char Hex [48];
     
     for(int i = 0; i < 16; ++ i)
-        sprintf(Base64 + (i * 2), "%02x", ((unsigned char *) Output) [i]);
+        sprintf(Hex + (i * 2), "%02x", ((unsigned char *) Output) [i]);
 
-    strcpy(Output, Base64);
+    strcpy(Output, Hex);
 }
 

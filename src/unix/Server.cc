@@ -58,6 +58,8 @@ struct ServerClientInternal
     Lacewing::Server::Client Public;
     Lacewing::Address * Address;
 
+    List <ServerClientInternal *>::Element * Element;
+
     int Socket;
     void * GoneKey;
     
@@ -170,8 +172,7 @@ struct ServerInternal
     Backlog <ServerInternal, ServerClientInternal>
         ClientStructureBacklog;
         
-    Lacewing::SpinSync Sync_Clients;
-    list<ServerClientInternal *> Clients;
+    List <ServerClientInternal *> Clients;
 
     SSL_CTX * Context;
 
@@ -339,18 +340,7 @@ void ClientSocketReadReady (ServerClientInternal &Client)
         if(Internal.HandlerDisconnect)
             Internal.HandlerDisconnect(Internal.Server, Client.Public);
 
-        {   Lacewing::SpinSync::WriteLock Lock(Internal.Sync_Clients);
-
-            for(list<ServerClientInternal *>::iterator it = Internal.Clients.begin();
-                    it != Internal.Clients.end(); ++ it)
-            {
-                if(*it == &Client)
-                {
-                    Internal.Clients.erase(it);
-                    break;
-                }
-            }
-        }
+        Internal.Clients.Erase (Client.Element);
 
         Internal.ClientStructureBacklog.Return(Client);
     }
@@ -423,8 +413,7 @@ void ListenSocketReadReady(ServerInternal &Internal, bool)
         Client.GoneKey = Internal.EventPump.AddReadWrite(Client.Socket, &Client,
                         (void *) ClientSocketReadReady, (void *) ClientSocketWriteReady);
         
-        Lacewing::SpinSync::WriteLock Lock(Internal.Sync_Clients);
-        Internal.Clients.push_back(&Client);
+        Client.Element = Internal.Clients.Push (&Client);
     }
 }
 
@@ -527,10 +516,7 @@ bool Lacewing::Server::Hosting()
 
 int Lacewing::Server::ClientCount()
 {
-    ServerInternal &Internal = *((ServerInternal *) InternalTag);
-  
-    Lacewing::SpinSync::ReadLock Lock(Internal.Sync_Clients);
-    return Internal.Clients.size();
+    return ((ServerInternal *) InternalTag)->Clients.Size;
 }
 
 lw_i64 Lacewing::Server::BytesSent()
@@ -883,9 +869,17 @@ Lacewing::Address &Lacewing::Server::Client::GetAddress()
     return *Internal.Address;
 }
 
-Looper(A, Server, Client, ServerInternal,
-        Clients, LooperSpinSync(ServerInternal, Sync_Clients), 0,
-        list<ServerClientInternal *>::iterator, Lacewing::Server::Client &, ->Public);
+Lacewing::Server::Client * Lacewing::Server::Client::Next ()
+{
+    return ((ServerClientInternal *) InternalTag)->Element->Next ?
+        &(** ((ServerClientInternal *) InternalTag)->Element->Next)->Public : 0;
+}
+
+Lacewing::Server::Client * Lacewing::Server::FirstClient ()
+{
+    return ((ServerInternal *) InternalTag)->Clients.First ?
+            &(** ((ServerInternal *) InternalTag)->Clients.First)->Public : 0;
+}
 
 AutoHandlerFunctions(Lacewing::Server, ServerInternal, Connect)
 AutoHandlerFunctions(Lacewing::Server, ServerInternal, Disconnect)

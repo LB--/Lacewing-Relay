@@ -47,7 +47,7 @@ public:
         Buffer = 0;
     }
 
-    inline ~MessageBuilder()
+    inline ~ MessageBuilder()
     {
         free(Buffer);
     }
@@ -74,12 +74,12 @@ public:
         this->Size += Size;
     }
 
-    inline void Add(const string &Text)
+    inline void Add(const String &Text)
     {
-        Add(Text.c_str(), Text.length());
+        Add(Text.Buffer, Text.Length);
     }
 
-    template<class T> inline void Add(T Value)
+    template<class T> inline void Add (T Value)
     {
         Add((const char *) &Value, sizeof(T));
     }

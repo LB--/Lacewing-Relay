@@ -63,7 +63,7 @@ struct PumpInternal
     
     Backlog<PumpInternal, Event> EventBacklog;
 
-    queue<Event *> PostQueue;
+    List <Event *> PostQueue;
     Lacewing::Sync Sync_PostQueue;
 
     bool IsEventPump, InUse;

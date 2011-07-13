@@ -150,15 +150,11 @@ Lacewing::Address::Address(const char * Hostname, int Port, bool Blocking)
 
     if((Internal.IP = inet_addr(Trimmed)) != INADDR_NONE)
     {   
-        DebugOut("inet_addr for " << Trimmed << " was valid " << Internal.IP);
-
         Internal.MakeStringIP();
         free(Internal.Hostname);
     }
     else
     {
-        DebugOut("inet_addr for " << Trimmed << " was blank");
-
         Internal.IP = 0;
 
         if(Blocking)

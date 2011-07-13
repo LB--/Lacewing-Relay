@@ -38,7 +38,7 @@ protected:
     unsigned int Size;
     unsigned int Offset;
 
-    list<char *> ToFree;
+    List <char *> ToFree;
 
 public:
 
@@ -56,8 +56,8 @@ public:
 
     inline ~MessageReader()
     {
-        for(list<char *>::iterator it = ToFree.begin(); it != ToFree.end(); ++ it)
-            delete [] *it;
+        for (List <char *>::Element * e = ToFree.First; e; e = e->Next)
+            delete [] (** e);
     }
 
     inline bool Check(unsigned int Size)
@@ -98,7 +98,7 @@ public:
             return 0;
         }
 
-        ToFree.push_back(Output);
+        ToFree.Push (Output);
 
         memcpy(Output, Buffer + Offset, Size);
         Output[Size] = 0;

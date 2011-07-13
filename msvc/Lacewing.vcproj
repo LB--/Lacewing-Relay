@@ -316,6 +316,10 @@
 				RelativePath="..\src\TimeHelper.h"
 				>
 			</File>
+			<File
+				RelativePath="..\src\Utility.h"
+				>
+			</File>
 			<Filter
 				Name="c"
 				>

@@ -1,7 +1,7 @@
 LOCAL_PATH := $(call my-dir)
   
 include $(CLEAR_VARS)
-  
+
 LOCAL_LDLIBS := -llog -lssl -lcrypto
 
 LOCAL_CPP_EXTENSION := cc
@@ -40,6 +40,7 @@ LOCAL_SRC_FILES     := \
     ../src/c/sync_flat.cc \
     ../src/c/ssync_flat.cc
 
-LOCAL_CFLAGS        := -DLacewingAndroid -fno-exceptions -fno-rtti
+LOCAL_CFLAGS := -DLacewingAndroid -DLacewingLibrary -fno-exceptions -fno-rtti -fvisibility=hidden
 
 include $(BUILD_SHARED_LIBRARY)
+

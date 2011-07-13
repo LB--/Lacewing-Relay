@@ -66,10 +66,10 @@ Multipart::Multipart(WebserverClient &_Client, const char * ContentType) : Clien
 
 Multipart::~Multipart()
 {
-    for(vector<Lacewing::Webserver::Upload *>::iterator it = Uploads.begin(); it != Uploads.end(); ++ it)
-        delete ((UploadInternal *) (*it)->InternalTag);
+    for (int i = 0; i < Uploads.Size; ++ i)
+        delete Uploads [i];
     
-    Uploads.clear();
+    Uploads.Clear ();
 }
 
 size_t Multipart::Process(char * Data, size_t Size)
@@ -142,9 +142,9 @@ size_t Multipart::Process(char * Data, size_t Size)
             if(CurrentUpload)
             {
                 if(Parent)
-                    Parent->Uploads.push_back(&CurrentUpload->Upload);
+                    Parent->Uploads.Push (&CurrentUpload->Upload);
                 else
-                    Uploads.push_back(&CurrentUpload->Upload);
+                    Uploads.Push (&CurrentUpload->Upload);
 
                 if(!CurrentUpload->AutoSaveFile)
                 {
@@ -370,7 +370,7 @@ void Multipart::CallRequestHandler()
     LacewingAssert(Client.RequestUnfinished);
 
     if(Client.Server.HandlerUploadPost)
-        Client.Server.HandlerUploadPost(Client.Server.Webserver, Client.Request, Uploads.size() ? &Uploads[0] : 0, Uploads.size());
+        Client.Server.HandlerUploadPost(Client.Server.Webserver, Client.Request, Uploads.Items, Uploads.Size);
 }
 
 const char * Lacewing::Webserver::Upload::Filename()

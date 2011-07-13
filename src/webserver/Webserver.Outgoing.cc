@@ -122,8 +122,8 @@ void WebserverClient::Outgoing::Respond()
 
     lw_i64 ContentLength = TotalFileSize;
 
-    if(SendBuffers.size())
-        ContentLength += (WebserverInternal::SendBufferSize * (SendBuffers.size() - 1)) + LastSendBufferSize;
+    if(SendBuffers.Size)
+        ContentLength += (WebserverInternal::SendBufferSize * (SendBuffers.Size - 1)) + LastSendBufferSize;
 
     Socket << "\r\nContent-Length: " << ContentLength;
     Socket << "\r\n\r\n";
@@ -153,16 +153,16 @@ void WebserverClient::Outgoing::Respond()
     }
 
     int SendBufferIndex = 0;
-    list<char *>::iterator SendBufferIterator = SendBuffers.begin();
+    List <char *>::Element * SendBufferIterator = SendBuffers.First;
 
-    for(; SendBufferIterator != SendBuffers.end(); ++ SendBufferIndex, ++ SendBufferIterator)
+    for(; SendBufferIterator; ++ SendBufferIndex, SendBufferIterator = SendBufferIterator->Next)
     {
-        char * CurrentSendBuffer = *SendBufferIterator;
+        char * CurrentSendBuffer = ** SendBufferIterator;
 
         if(!FirstFile || FirstFile->Position != SendBufferIndex)
         {
             Socket.Send(CurrentSendBuffer,
-                CurrentSendBuffer == SendBuffers.back() ? LastSendBufferSize : WebserverInternal::SendBufferSize);
+                SendBufferIterator == SendBuffers.Last ? LastSendBufferSize : WebserverInternal::SendBufferSize);
 
             Server.ReturnSendBuffer(CurrentSendBuffer);
 
@@ -185,7 +185,7 @@ void WebserverClient::Outgoing::Respond()
             if(FirstFile && FirstFile->Position == SendBufferIndex)
                 continue;
 
-            if(CurrentSendBuffer == SendBuffers.back())
+            if(SendBufferIterator == SendBuffers.Last)
             {
                 Socket.Send(CurrentSendBuffer + StartAt, LastSendBufferSize - StartAt);
                 Server.ReturnSendBuffer(CurrentSendBuffer);
@@ -211,7 +211,7 @@ void WebserverClient::Outgoing::Respond()
 
     /* All the send buffers have been returned now, so the send buffers in SendBuffers aren't ours */
 
-    SendBuffers.clear();
+    SendBuffers.Clear();
 
 
     /* Both input and output are reset by Respond() */
@@ -245,13 +245,13 @@ void WebserverClient::Outgoing::AddSend(const char * Data, size_t Size)
     if(!Size)
         return;
 
-    if(!SendBuffers.size())
+    if(!SendBuffers.Size)
     {
         LastSendBufferSize = 0;
-        SendBuffers.push_back(Server.BorrowSendBuffer());
+        SendBuffers.Push (Server.BorrowSendBuffer());
     }
 
-    char * LastSendBuffer = SendBuffers.back();
+    char * LastSendBuffer = ** SendBuffers.Last;
 
     if(Size < (WebserverInternal::SendBufferSize - LastSendBufferSize))
     {
@@ -275,7 +275,7 @@ void WebserverClient::Outgoing::AddSend(const char * Data, size_t Size)
     /* Now create a new send buffer and recurse */
 
     LastSendBufferSize = 0;
-    SendBuffers.push_back(Server.BorrowSendBuffer());
+    SendBuffers.Push (Server.BorrowSendBuffer());
 
     AddSend(Data, Size);
 }
@@ -300,7 +300,7 @@ void WebserverClient::Outgoing::AddFileSend(const char * Filename, int FilenameL
     }
 
     File->Next = 0;
-    File->Position = SendBuffers.size() - 1;
+    File->Position = SendBuffers.Size - 1;
     File->Offset = LastSendBufferSize;
 
     memcpy(File->Filename, Filename, FilenameLength);

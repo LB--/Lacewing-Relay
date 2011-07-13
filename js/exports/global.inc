@@ -100,7 +100,7 @@ Export(lwjs_md5)
         Read_String(str);
         
         char Output[41];
-        Lacewing::MD5_Base64(Output, str);
+        Lacewing::MD5_Hex(Output, str);
         
         Return_String(Output);
     }
@@ -112,7 +112,7 @@ Export(lwjs_sha1)
         Read_String(str);
         
         char Output[49];
-        Lacewing::SHA1_Base64(Output, str);
+        Lacewing::SHA1_Hex(Output, str);
         
         Return_String(Output);
     }

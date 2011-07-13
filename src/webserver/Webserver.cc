@@ -45,19 +45,17 @@ char * WebserverInternal::BorrowSendBuffer()
 {
     Lacewing::Sync::Lock Lock(Sync_SendBuffers);
 
-    if(SendBuffers.empty())
+    if(!SendBuffers.First)
         for(int i = WebserverInternal::SendBufferBacklog; i; -- i)
-            SendBuffers.push_back(new char[WebserverInternal::SendBufferSize]);
+            SendBuffers.Push (new char [WebserverInternal::SendBufferSize]);
 
-    char * Back = SendBuffers.back();
-    SendBuffers.pop_back();
-    return Back;
+    return SendBuffers.Pop ();
 }
 
 void WebserverInternal::ReturnSendBuffer(char * SendBuffer)
 {
     Lacewing::Sync::Lock Lock(Sync_SendBuffers);
-    SendBuffers.push_back(SendBuffer);
+    SendBuffers.Push (SendBuffer);
 }
 
 void WebserverInternal::SocketConnect(Lacewing::Server &Server, Lacewing::Server::Client &Client)
@@ -318,8 +316,8 @@ void Lacewing::Webserver::Request::Reset()
 {
     WebserverClient::Outgoing &Output = ((WebserverClient *) InternalTag)->Output;
 
-    for(list<char *>::iterator it = Output.SendBuffers.begin(); it != Output.SendBuffers.end(); ++ it)
-        Output.Server.ReturnSendBuffer(*it);
+    for(List <char *>::Element * E = Output.SendBuffers.First; E; E = E->Next)
+        Output.Server.ReturnSendBuffer(** E);
     
     Output.LastSendBufferSize = 0;
     

@@ -104,9 +104,9 @@ LacewingFunction          void  lw_new_temp_file            (char * buffer, long
 LacewingFunction          long  lw_count_processors         ();
 LacewingFunction    const char* lw_guess_mime_type          (const char * filename);
 LacewingFunction          void  lw_md5                      (char * output, const char * input, long length);
-LacewingFunction          void  lw_md5_base64               (char * output, const char * input, long length);
+LacewingFunction          void  lw_md5_hex                  (char * output, const char * input, long length);
 LacewingFunction          void  lw_sha1                     (char * output, const char * input, long length);
-LacewingFunction          void  lw_sha1_base64              (char * output, const char * input, long length);
+LacewingFunction          void  lw_sha1_hex                 (char * output, const char * input, long length);
 
 /* Address */
 
@@ -409,19 +409,7 @@ LacewingFunction          void  lw_sha1_base64              (char * output, cons
 #ifdef __cplusplus
 }
 
-#include <sstream>
-
 #define LacewingStream(C, F)                                \
-        std::ostringstream * S;                             \
-        template<class T> inline C & operator << (T V)      \
-        {   (*(S ? S : (S = new std::ostringstream))) << V; \
-            const std::string &Text = (*S).str();           \
-            if(Text.length())                               \
-            {   F(Text.c_str(), Text.length());             \
-                (*S).str("");                               \
-            }                                               \
-            return *this;                                   \
-        }                                                   \
         inline C & operator << (lw_i64 V)                   \
         {   char Buffer[64];                                \
             Int64ToString(V, Buffer);                       \
@@ -436,8 +424,7 @@ LacewingFunction          void  lw_sha1_base64              (char * output, cons
         {   F (V, -1);                                      \
             return *this;                                   \
         }                                                   \
-
-
+ 
 namespace Lacewing
 {
 
@@ -457,9 +444,9 @@ LacewingFunction         void  NewTempFile             (char * Buffer, int Lengt
 LacewingFunction          int  CountProcessors         ();
 LacewingFunction   const char* GuessMimeType           (const char * Filename);
 LacewingFunction         void  MD5                     (char * Output, const char * Input, int Length = -1);
-LacewingFunction         void  MD5_Base64              (char * Output, const char * Input, int Length = -1);
+LacewingFunction         void  MD5_Hex                 (char * Output, const char * Input, int Length = -1);
 LacewingFunction         void  SHA1                    (char * Output, const char * Input, int Length = -1);
-LacewingFunction         void  SHA1_Base64             (char * Output, const char * Input, int Length = -1);
+LacewingFunction         void  SHA1_Hex                (char * Output, const char * Input, int Length = -1);
 
 struct Error
 {
@@ -696,7 +683,7 @@ struct Filter
     LacewingFunction void Local (const char *);
     
     LacewingFunction void Remote (const char *);
-    LacewingFunction void Remote (Address &);
+    LacewingFunction void Remote (const Address &);
     LacewingFunction Address &Remote () const;
 
     LacewingFunction void Reuse(bool Enabled);
@@ -777,22 +764,12 @@ struct Server
         LacewingStream (Client, Send);
 
         LacewingFunction void Disconnect();
+
+        LacewingFunction Client * Next ();
     };
 
     LacewingFunction int ClientCount();
-
-    LacewingFunction void * ClientLoop(void * ID = 0);
-    LacewingFunction Client &ClientLoopIndex(void * ID);
-    LacewingFunction void EndClientLoop(void * ID);
-
-    /*  for(void * ID = Server.ClientLoop(); ID; ID = Server.ClientLoop(ID))
-        {
-            Lacewing::Server::Client &Client = Server.ClientLoopIndex(ID);
-            
-            // If leaving the client loop before the end
-            Server.EndClientLoop(ID);
-        }
-    */
+    LacewingFunction Client * FirstClient ();
 
     typedef void (LacewingHandler * HandlerConnect)     (Lacewing::Server &Server, Lacewing::Server::Client &Client);
     typedef void (LacewingHandler * HandlerDisconnect)  (Lacewing::Server &Server, Lacewing::Server::Client &Client);
@@ -996,20 +973,12 @@ public:
 
         short PeerCount;
         const char * Name;
+
+        LacewingFunction ChannelListing * Next ();
     };
 
-    LacewingFunction void * ChannelListLoop(void * ID = 0);
-    LacewingFunction ChannelListing * ChannelListLoopIndex(void * ID);
-    LacewingFunction void EndChannelListLoop(void * ID);
-
-    /*  for(void * ID = Client.ChannelListLoop(); ID; ID = Client.ChannelListLoop(ID))
-        {
-            Lacewing::RelayClient::ChannelListing &Listing = Client.ChannelListLoopIndex(ID);            
-
-            // If leaving the channel list loop before the end
-            Channel.EndChannelListLoop();
-        }
-    */
+    LacewingFunction int ChannelListingCount ();
+    LacewingFunction ChannelListing * FirstChannelListing ();
 
     LacewingFunction void Join(const char * Channel, bool Hidden = false, bool AutoClose = false);
 
@@ -1037,44 +1006,23 @@ public:
             LacewingFunction void Blast(int Subchannel, const char * Data, int Size = -1, int Type = 0);
 
             LacewingFunction const char * Name();
+
+            LacewingFunction Peer * Next ();
         };
 
-
         LacewingFunction int PeerCount();
-
-        LacewingFunction void * PeerLoop(void * ID = 0);
-        LacewingFunction Peer &PeerLoopIndex(void * ID);
-        LacewingFunction void EndPeerLoop(void * ID);
-
-        /*  for(void * ID = Channel.PeerLoop(); ID; ID = Channel.PeerLoop(ID))
-            {
-                Lacewing::RelayClient::Channel::Peer &Peer = Channel.PeerLoopIndex(ID);
-                
-                // If leaving the peer loop before the end
-                Channel.EndPeerLoop(ID);
-            }
-        */
+        LacewingFunction Peer * FirstPeer ();
 
         LacewingFunction void Leave();
+
+        LacewingFunction Channel * Next ();
     };
 
     LacewingFunction Channel * FindChannel(const char * Name);
     LacewingFunction Channel * FindChannel(unsigned int ID);
 
     LacewingFunction int ChannelCount();
-
-    LacewingFunction void * ChannelLoop(void * ID = 0);
-    LacewingFunction Channel &ChannelLoopIndex(void * ID);
-    LacewingFunction void EndChannelLoop(void * ID);
-
-    /*  for(int ID = Client.ChannelLoop(); ID; ID = Client.ChannelLoop(ID))
-        {
-            Lacewing::RelayClient::Channel &Channel = Client.ChannelLoopIndex(ID);            
-        
-            // If leaving the client loop before the end
-            Client.EndChannelLoop(ID);
-        }
-    */
+    LacewingFunction Channel * FirstChannel ();
 
     typedef void (LacewingHandler * HandlerConnect)                  (Lacewing::RelayClient &Client, const char * WelcomeMessage);
     typedef void (LacewingHandler * HandlerConnectionDenied)         (Lacewing::RelayClient &Client, const char * DenyReason);
@@ -1220,30 +1168,11 @@ struct RelayServer
         LacewingFunction Channel &ChannelLoopIndex(void * ID);
         LacewingFunction void EndChannelLoop(void * ID);
 
-        /*  for(void * ID = Client.ChannelLoop(); ID; ID = Client.ChannelLoop(ID))
-            {
-                Lacewing::RelayServer::Channel &Channel = Client.ChannelLoopIndex(ID);
-                
-                // If leaving the channel loop before the end
-                Server.EndChannelLoop(ID);
-            }
-        */
+        Client * Next ();
     };
 
-    LacewingFunction int ClientCount();
-
-    LacewingFunction void * ClientLoop(void * ID = 0);
-    LacewingFunction Client &ClientLoopIndex(void * ID);
-    LacewingFunction void EndClientLoop(void * ID);
-
-    /*  for(void * ID = Server.ClientLoop(); ID; ID = Server.ClientLoop(ID))
-        {
-            Lacewing::RelayServer::Client &Client = Server.ClientLoopIndex(ID);
-            
-            // If leaving the client loop before the end
-            Server.EndClientLoop(ID);
-        }
-    */
+    LacewingFunction int ClientCount ();
+    LacewingFunction Client * FirstClient ();
 
     typedef bool (LacewingHandler * HandlerConnect)     (Lacewing::RelayServer &Server, Lacewing::RelayServer::Client &Client);
     typedef void (LacewingHandler * HandlerDisconnect)  (Lacewing::RelayServer &Server, Lacewing::RelayServer::Client &Client);

@@ -67,7 +67,7 @@ Lacewing::Filter::~Filter()
     delete ((FilterInternal *) InternalTag);
 }
 
-void Lacewing::Filter::Remote(Lacewing::Address &Address)
+void Lacewing::Filter::Remote(const Lacewing::Address &Address)
 {
     while(!Address.Ready())
         LacewingYield();
