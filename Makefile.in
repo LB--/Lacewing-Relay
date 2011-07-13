@@ -5,7 +5,7 @@ LDFLAGS = @LDFLAGS@
 
 ###########
 
-lacewing: Global.o Sync.o SpinSync.o Filter.o Address.o Error.o RelayServer.o \
+liblacewing.so: Global.o Sync.o SpinSync.o Filter.o Address.o Error.o RelayServer.o \
             Webserver.o Webserver.Incoming.o Webserver.Outgoing.o Webserver.Sessions.o \
             Webserver.Multipart.o Webserver.MimeTypes.o Event.o EventPump.o \
             Server.o Timer.o UDP.o Client.o Pump.o addr_flat.o eventpump_flat.o \
@@ -14,6 +14,7 @@ lacewing: Global.o Sync.o SpinSync.o Filter.o Address.o Error.o RelayServer.o \
 
 relink:
 	g++ $(CXXFLAGS) -shared -o liblacewing.so ./*.o -lpthread -lssl -lrt
+	ar rcs liblacewing.a ./*.o && strip --strip-unneeded liblacewing.a
 	
 Global.o:
 	$(CC) $(CXXFLAGS) -c -o Global.o src/Global.cc
@@ -85,11 +86,12 @@ ssync_flat.o:
 all: liblacewing.so
 
 clean:
-	rm -f liblacewing.so *.o
+	rm -f liblacewing.so liblacewing.a *.o
 
-install: liblacewing.so
+install: liblacewing.so liblacewing.a
 	install -m 0755 liblacewing.so $(PREFIX)/lib
 	install -m 0644 ./include/Lacewing.h $(PREFIX)/include/Lacewing.h
+	install -m 0755 liblacewing.a $(PREFIX)/lib
 
 .PHONY: all clean install
 
