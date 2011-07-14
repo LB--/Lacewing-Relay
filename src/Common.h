@@ -387,7 +387,7 @@ inline int LacewingFormat(char *& Output, const char * Format, va_list args)
             #ifdef COXSDK
                 OutputDebugString (data);
             #else
-                printf ("[Lacewing] %s", data);
+                printf ("[Lacewing] %s\n", data);
             #endif
         }
 
