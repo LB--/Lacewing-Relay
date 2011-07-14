@@ -159,7 +159,7 @@ void * Lacewing::EventPump::AddRead(int FD, void * Tag)
 
         if(epoll_ctl(Internal.Queue, EPOLL_CTL_ADD, FD, &Event) == -1)
         {
-            DebugOut("EventPump: Failed to add FD: " << strerror(errno));
+            DebugOut("EventPump: Failed to add FD: %s", strerror(errno));
             return 0;
         }
             
@@ -172,7 +172,7 @@ void * Lacewing::EventPump::AddRead(int FD, void * Tag)
         
         if(kevent(Internal.Queue, &Change, 1, 0, 0, 0) == -1)
         {
-            DebugOut("EventPump: Failed to add FD: " << strerror(errno));
+            DebugOut("EventPump: Failed to add FD: %s", strerror(errno));
             return 0;
         }
         
@@ -195,7 +195,7 @@ void * Lacewing::EventPump::AddReadWrite(int FD, void * Tag)
 
         if(epoll_ctl(Internal.Queue, EPOLL_CTL_ADD, FD, &Event) == -1)
         {
-            DebugOut("EventPump: Failed to add FD: " << strerror(errno));
+            DebugOut("EventPump: Failed to add FD: %s", strerror(errno));
             return 0;
         }
             
@@ -209,7 +209,7 @@ void * Lacewing::EventPump::AddReadWrite(int FD, void * Tag)
         
         if(kevent(Internal.Queue, &Change, 1, 0, 0, 0) == -1)
         {
-            DebugOut("EventPump: Failed to add FD: " << strerror(errno));
+            DebugOut("EventPump: Failed to add FD: %s", strerror(errno));
             return 0;
         }
 
@@ -217,7 +217,7 @@ void * Lacewing::EventPump::AddReadWrite(int FD, void * Tag)
         
         if(kevent(Internal.Queue, &Change, 1, 0, 0, 0) == -1)
         {
-            DebugOut("EventPump: Failed to add FD: " << strerror(errno));
+            DebugOut("EventPump: Failed to add FD: %s", strerror(errno));
             return 0;
         }
 

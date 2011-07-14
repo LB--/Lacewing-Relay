@@ -459,9 +459,7 @@ void Lacewing::Server::Host(Lacewing::Filter &Filter, bool)
     Address.sin_family = AF_INET;
     Address.sin_port = htons(Filter.LocalPort() ? Filter.LocalPort() : 0);
     Address.sin_addr.s_addr = Filter.LocalIP() ? Filter.LocalIP() : htonl(INADDR_ANY);
-
-    DebugOut("Hosting on " << Filter.LocalPort() << " for address " << Filter.LocalIP());
-
+    
     if(bind(Internal.Socket, (sockaddr *) &Address, sizeof(Address)) == -1)
     {
         Lacewing::Error Error;
@@ -597,7 +595,7 @@ bool Lacewing::Server::LoadCertificateFile(const char * Filename, const char * P
 
     if(SSL_CTX_use_certificate_chain_file(Internal.Context, Filename) != 1)
     {
-        DebugOut("Failed to load certificate chain file: " << ERR_error_string(ERR_get_error(), 0));
+        DebugOut("Failed to load certificate chain file: %s", ERR_error_string(ERR_get_error(), 0));
 
         Internal.Context = 0;
         return false;
@@ -605,7 +603,7 @@ bool Lacewing::Server::LoadCertificateFile(const char * Filename, const char * P
 
     if(SSL_CTX_use_PrivateKey_file(Internal.Context, Filename, SSL_FILETYPE_PEM) != 1)
     {
-        DebugOut("Failed to load private key file: " << ERR_error_string(ERR_get_error(), 0));
+        DebugOut("Failed to load private key file: %s", ERR_error_string(ERR_get_error(), 0));
 
         Internal.Context = 0;
         return false;
@@ -745,7 +743,7 @@ bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, lw_i
 
     if(File == -1)
     {
-        DebugOut("Failed to open " << Filename);
+        DebugOut("Failed to open %s", Filename);
 
         Public.Flush();
         return true;
@@ -757,7 +755,7 @@ bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, lw_i
         
         if(fstat(File, &FileStat) == -1)
         {
-            DebugOut("Failed to stat " << Filename);
+            DebugOut("Failed to stat %s", Filename);
 
             close(File);
             Public.Flush();
@@ -802,18 +800,14 @@ bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, lw_i
         if((!LacewingSendFile(File, Socket, _Offset, _Size)) || _Size == 0)
         {
             /* Failed or whole file sent immediately */
-
-            DebugOut("SendFile() completed immediately or failed for " << Filename << ": " << strerror(errno));
-
+            
             close(File);        
             Public.Flush();
 
             return true;
         }
 
-        DebugOut("SendFile still has " << _Size << " bytes left of " << Size << ", will complete later for " << Filename);
         Transfer = new RawFileTransfer(File, Socket, _Offset, _Size);
-
         return false;
     }
     

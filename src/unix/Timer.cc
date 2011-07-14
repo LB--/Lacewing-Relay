@@ -120,7 +120,7 @@ void Lacewing::Timer::Start(int Interval)
             
             if(kevent(EventPump.Queue, &Change, 1, 0, 0, 0) == -1)
             {
-                DebugOut("Timer: Failed to add timer to kqueue: " << strerror(errno));
+                DebugOut("Timer: Failed to add timer to kqueue: %s", strerror(errno));
                 return;
             }
         }
