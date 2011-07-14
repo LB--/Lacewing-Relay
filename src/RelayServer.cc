@@ -133,6 +133,8 @@ struct RelayServerInternal
         
         RelayServerInternal &Server;
 
+        List <RelayServerInternal::Channel *>::Element * Element;
+
         Channel(RelayServerInternal &_Server) : Server(_Server)
         {
             Public.InternalTag    = this;
@@ -156,11 +158,9 @@ struct RelayServerInternal
         bool AutoClose;
     
         Client * ChannelMaster;
+        Client * ReadPeer(MessageReader &Reader);
         
         void RemoveClient(Client &);
-
-        Client * ReadPeer(MessageReader &Reader);
-
         void Close();
     };
     
@@ -808,9 +808,10 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                         break;
                     }
 
-                    Server.Channels.Push (Channel);
-                    Channels.Push (Channel);
+                    Channel->Element = Server.Channels.Push (Channel);
+
                     Channel->Clients.Push (this);
+                    Channels.Push (Channel);
 
                     Builder.AddHeader        (0, 0);  /* Response */
                     Builder.Add <unsigned char> (2);  /* JoinChannel */
@@ -1172,19 +1173,17 @@ Lacewing::RelayServer::Client * Lacewing::RelayServer::Client::Next ()
     return NextSocket ? (Lacewing::RelayServer::Client *) NextSocket->Tag : 0;
 }
 
+Lacewing::RelayServer::Channel * Lacewing::RelayServer::Channel::Next ()
+{
+    return ((RelayServerInternal::Channel *) InternalTag)->Element->Next ?
+        &(** ((RelayServerInternal::Channel *) InternalTag)->Element->Next)->Public : 0;
+}
 
-
-
-/*
-Looper(A, RelayServer, Channel, RelayServerInternal, Channels, ((void) 0), 0,
-        List <RelayServerInternal::Channel *>::Element *, Lacewing::RelayServer::Channel &, ->Public);
-
-Looper(B, RelayServer::Client, Channel, RelayServerInternal::Client, Channels, ((void) 0), 0,
-        List <RelayServerInternal::Channel *>::Element *, Lacewing::RelayServer::Channel &, ->Public);
-
-Looper(A, RelayServer::Channel, Client, RelayServerInternal::Channel, Clients, ((void) 0), 0,
-        List <RelayServerInternal::Client *>::Element *, Lacewing::RelayServer::Client &, ->Public);
-*/
+Lacewing::RelayServer::Channel * Lacewing::RelayServer::FirstChannel ()
+{
+    return ((RelayServerInternal *) InternalTag)->Channels.First ?
+            &(** ((RelayServerInternal *) InternalTag)->Channels.First)->Public : 0;
+}
 
 AutoHandlerFunctions(Lacewing::RelayServer, RelayServerInternal, Connect)
 AutoHandlerFunctions(Lacewing::RelayServer, RelayServerInternal, Disconnect)

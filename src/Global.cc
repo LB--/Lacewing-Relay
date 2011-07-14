@@ -54,9 +54,9 @@ const char * Lacewing::Version()
         #endif
 
         #ifdef COXSDK
-            Version = "Build #18 Alpha 4";
+            Version = "Build #18";
         #else
-            Version = "0.1.0";
+            Version = "0.2.0";
         #endif
 
         sprintf(VersionString, "Lacewing %s (%s/%s)", Version, Platform, sizeof(void *) == 8 ? "x64" : "x86");

@@ -253,27 +253,28 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFlat (lw_server);
   LacewingFlat (lw_server_client);
 
-  LacewingFunction    lw_server* lw_server_new                      (lw_eventpump *);
-  LacewingFunction         void  lw_server_delete                   (lw_server *);
-  LacewingFunction         void  lw_server_host                     (lw_server *, long port);
-  LacewingFunction         void  lw_server_host_ex                  (lw_server *, long port, lw_bool client_speaks_first);
-  LacewingFunction         void  lw_server_host_filter              (lw_server *, lw_filter * filter);
-  LacewingFunction         void  lw_server_host_filter_ex           (lw_server *, lw_filter * filter, lw_bool client_speaks_first);
-  LacewingFunction         void  lw_server_unhost                   (lw_server *);
-  LacewingFunction      lw_bool  lw_server_hosting                  (lw_server *);
-  LacewingFunction         long  lw_server_port                     (lw_server *);
-  LacewingFunction      lw_bool  lw_server_load_cert_file           (lw_server *, const char * filename, const char * passphrase);
-  LacewingFunction      lw_bool  lw_server_load_sys_cert            (lw_server *, const char * store_name, const char * common_name, const char * location);
-  LacewingFunction      lw_bool  lw_server_cert_loaded              (lw_server *);
-  LacewingFunction       lw_i64  lw_server_bytes_sent               (lw_server *);
-  LacewingFunction       lw_i64  lw_server_bytes_received           (lw_server *);
-  LacewingFunction         void  lw_server_disable_nagling          (lw_server *);
-  LacewingFunction      lw_addr* lw_server_client_address           (lw_server_client *);
-  LacewingFunction         void  lw_server_client_send              (lw_server_client *, const char * data, long size);
-  LacewingFunction         void  lw_server_client_send_writable     (lw_server_client *, char * data, long size);
-  LacewingFunction         void  lw_server_client_start_buffering   (lw_server_client *);
-  LacewingFunction         void  lw_server_client_flush             (lw_server_client *);
-  LacewingFunction         void  lw_server_client_disconnect        (lw_server_client *);
+  LacewingFunction        lw_server* lw_server_new                      (lw_eventpump *);
+  LacewingFunction             void  lw_server_delete                   (lw_server *);
+  LacewingFunction             void  lw_server_host                     (lw_server *, long port);
+  LacewingFunction             void  lw_server_host_ex                  (lw_server *, long port, lw_bool client_speaks_first);
+  LacewingFunction             void  lw_server_host_filter              (lw_server *, lw_filter * filter);
+  LacewingFunction             void  lw_server_host_filter_ex           (lw_server *, lw_filter * filter, lw_bool client_speaks_first);
+  LacewingFunction             void  lw_server_unhost                   (lw_server *);
+  LacewingFunction          lw_bool  lw_server_hosting                  (lw_server *);
+  LacewingFunction             long  lw_server_port                     (lw_server *);
+  LacewingFunction          lw_bool  lw_server_load_cert_file           (lw_server *, const char * filename, const char * passphrase);
+  LacewingFunction          lw_bool  lw_server_load_sys_cert            (lw_server *, const char * store_name, const char * common_name, const char * location);
+  LacewingFunction          lw_bool  lw_server_cert_loaded              (lw_server *);
+  LacewingFunction           lw_i64  lw_server_bytes_sent               (lw_server *);
+  LacewingFunction           lw_i64  lw_server_bytes_received           (lw_server *);
+  LacewingFunction             void  lw_server_disable_nagling          (lw_server *);
+  LacewingFunction          lw_addr* lw_server_client_address           (lw_server_client *);
+  LacewingFunction             void  lw_server_client_send              (lw_server_client *, const char * data, long size);
+  LacewingFunction             void  lw_server_client_send_writable     (lw_server_client *, char * data, long size);
+  LacewingFunction             void  lw_server_client_start_buffering   (lw_server_client *);
+  LacewingFunction             void  lw_server_client_flush             (lw_server_client *);
+  LacewingFunction             void  lw_server_client_disconnect        (lw_server_client *);
+  LacewingFunction lw_server_client* lw_server_client_next              (lw_server_client *);
 
   typedef void (LacewingHandler * lw_server_handler_connect) (lw_server *, lw_server_client *);
   LacewingFunction void lw_server_onconnect (lw_server *, lw_server_handler_connect);
@@ -1110,7 +1111,7 @@ struct RelayServer
 
         LacewingFunction Client * ChannelMaster();
 
-        LacewingFunction const char *   Name ();
+        LacewingFunction const char * Name ();
         LacewingFunction void Name (const char *);
 
         LacewingFunction int ClientCount();
@@ -1131,23 +1132,13 @@ struct RelayServer
         LacewingFunction bool Hidden();
         LacewingFunction bool AutoCloseEnabled();
         LacewingFunction void Close();
+
+        LacewingFunction Channel * Next ();
     };
 
     LacewingFunction int ChannelCount();
-
-    LacewingFunction void * ChannelLoop(void * ID = 0);
-    LacewingFunction Channel &ChannelLoopIndex(void * ID);
-    LacewingFunction void EndChannelLoop(void * ID);
-
-    /*  for(void * ID = Server.ChannelLoop(); ID; ID = Server.ChannelLoop(ID))
-        {
-            Lacewing::RelayServer::Channel &Channel = Server.ChannelLoopIndex(ID);
-            
-            // If leaving the channel loop before the end
-            Server.EndChannelLoop(ID);
-        }
-    */
-
+    LacewingFunction Channel * FirstChannel ();
+    
     struct Client
     {
         void * InternalTag, * Tag;
@@ -1165,11 +1156,7 @@ struct RelayServer
         LacewingFunction void Name (const char *);
 
         LacewingFunction int ChannelCount();
-
-        LacewingFunction void * ChannelLoop(void * ID = 0);
-        LacewingFunction Channel &ChannelLoopIndex(void * ID);
-        LacewingFunction void EndChannelLoop(void * ID);
-
+        
         Client * Next ();
     };
 

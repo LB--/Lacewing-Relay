@@ -91,6 +91,9 @@ void lw_server_client_flush (lw_server_client * client)
 void lw_server_client_disconnect (lw_server_client * client)
     { ((Lacewing::Server::Client *) client)->Disconnect();
     }
+lw_server_client * lw_server_client_next (lw_server_client * client)
+    { return (lw_server_client *) ((Lacewing::Server::Client *) client)->Next();
+    }
 
 AutoHandlerFlat(Lacewing::Server, lw_server, Connect, connect)
 AutoHandlerFlat(Lacewing::Server, lw_server, Disconnect, disconnect)
