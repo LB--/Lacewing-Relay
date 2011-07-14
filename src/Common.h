@@ -395,7 +395,7 @@ inline int LacewingFormat(char *& Output, const char * Format, va_list args)
     }
 
 #else
-    #define DebugOut(X)
+    #define DebugOut(X, ...)
 #endif
 
 inline void LacewingSyncIncrement(volatile long * Target)
