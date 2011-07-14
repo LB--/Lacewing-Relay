@@ -64,8 +64,18 @@ template <class T> struct List
         E->Prev  = Last;
         
         ++ Size;
+        
+        if (Last)
+        {
+            Last->Next = E;
+            Last = E;
+        }
+        else
+        {
+            First = Last = E;
+        }
 
-        return (!Last) ? (First = Last = E) : (Last = E);
+        return E;
     }
 
     inline Element * InsertBefore (Element * Before, T What)
@@ -99,18 +109,18 @@ template <class T> struct List
 
     inline void Erase (Element * E)
     {
-        if (E->Next)
-            E->Next->Prev = E->Prev;
-
-        if (E->Prev)
-            E->Prev->Next = E->Next;
-
         if (E == First)
             First = E->Next;
 
         if (E == Last)
             Last = E->Prev;
 
+        if (E->Next)
+            E->Next->Prev = E->Prev;
+
+        if (E->Prev)
+            E->Prev->Next = E->Next;
+    
         delete E;
 
         -- Size;

@@ -24,6 +24,12 @@ Android NDK (libssl.so/libcrypto.so are required - see docs/android_build.txt):
     ndk-build
 
     
+Changes in 0.2.1 (2011-07-15)
+=============================
+
+- Fixed crash in the List utility class introduced by 0.2.0
+
+
 Changes in 0.2.0 (2011-07-14)
 =============================
 
