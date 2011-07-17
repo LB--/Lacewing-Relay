@@ -88,7 +88,7 @@ Lacewing::Error * Lacewing::EventPump::StartEventLoop()
 
     for(;;)
     {
-        bool Continue = false;
+        bool Continue = true;
 
         #ifdef LacewingUseEPoll
         
