@@ -99,6 +99,8 @@ Lacewing::Timer::Timer(Lacewing::Pump &Pump)
 
 Lacewing::Timer::~Timer()
 {
+    Stop ();
+
     delete ((TimerInternal *) InternalTag);
 }
 
