@@ -54,7 +54,7 @@
 				GeneratePreprocessedFile="0"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				PrecompiledHeaderFile="../build/Lacewing.pch"
 				AssemblerListingLocation="../build/"
 				ObjectFile="../build/"
@@ -560,37 +560,45 @@
 				Name="webserver"
 				>
 				<File
+					RelativePath="..\src\webserver\Common.h"
+					>
+				</File>
+				<File
+					RelativePath="..\src\webserver\Map.h"
+					>
+				</File>
+				<File
+					RelativePath="..\src\webserver\MimeTypes.cc"
+					>
+				</File>
+				<File
+					RelativePath="..\src\webserver\Request.cc"
+					>
+				</File>
+				<File
+					RelativePath="..\src\webserver\Sessions.cc"
+					>
+				</File>
+				<File
 					RelativePath="..\src\webserver\Webserver.cc"
 					>
 				</File>
-				<File
-					RelativePath="..\src\webserver\Webserver.Common.h"
+				<Filter
+					Name="http"
 					>
-				</File>
-				<File
-					RelativePath="..\src\webserver\Webserver.Incoming.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\webserver\Webserver.Map.h"
-					>
-				</File>
-				<File
-					RelativePath="..\src\webserver\Webserver.MimeTypes.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\webserver\Webserver.Multipart.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\webserver\Webserver.Outgoing.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\webserver\Webserver.Sessions.cc"
-					>
-				</File>
+					<File
+						RelativePath="..\src\webserver\http\HTTP.cc"
+						>
+					</File>
+					<File
+						RelativePath="..\src\webserver\http\HTTP.h"
+						>
+					</File>
+					<File
+						RelativePath="..\src\webserver\http\Multipart.cc"
+						>
+					</File>
+				</Filter>
 			</Filter>
 			<Filter
 				Name="windows"

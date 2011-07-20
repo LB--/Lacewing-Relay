@@ -26,18 +26,36 @@
  * SUCH DAMAGE.
  */
 
-#include "Webserver.Common.h"
+#include "../Common.h"
 
-WebserverClient::Incoming::Incoming(WebserverClient &_Client) : Client(_Client)
+HTTPClient::HTTPClient (WebserverInternal &_Server, Lacewing::Server::Client &_Socket, bool Secure)
+    : Request (_Server, *this), WebserverClient (_Server, _Socket, Secure)
 {
-    BodyProcessor = 0;
-
-    Reset();
+    Multipart = 0;
+    Reset ();
 }
 
-void WebserverClient::Incoming::Process(char * Buffer, int Size)
+HTTPClient::~HTTPClient ()
 {
-    if(Client.RequestUnfinished)
+    delete Multipart;
+}
+
+/* Called upon initialisation, and at the end of each request to prepare for a new one */
+
+void HTTPClient::Reset()
+{
+    Request.Clean ();
+    
+    State = 0;
+    BodyRemaining = 0;
+
+    delete Multipart;
+    Multipart = 0;
+}
+
+void HTTPClient::Process (char * Buffer, int Size)
+{
+    if(!Request.Responded)
     {
         /* The application hasn't yet called Finish() for the last request, so this data
            can't be processed.  Buffer it to process when Finish() is called. */
@@ -97,7 +115,7 @@ void WebserverClient::Incoming::Process(char * Buffer, int Size)
             
         if(State == -1)
         {
-            Client.Socket.Disconnect();
+            Socket.Disconnect();
             return;
         }
 
@@ -110,28 +128,23 @@ void WebserverClient::Incoming::Process(char * Buffer, int Size)
 
     /* State >= 2 is the request body */
 
-    if(BodyProcessor)
+    if(Multipart)
     {
         /* TODO : Is the ExtraBytes stuff even necessary?  Post requests
            can't be pipelined. */
 
-        int ExtraBytes = BodyProcessor->Process(Buffer, Size);
+        Multipart->Process(Buffer, Size);
      
-        if(BodyProcessor->State == BodyProcBase::Done)
-        {       
-            Client.RequestUnfinished = true;
-            Client.Output.RunHandler();
-
-          /*  if(ExtraBytes > 0)
-                Process(Buffer + (Size - ExtraBytes), ExtraBytes); */
-
+        if(Multipart->State == MultipartProcessor::Done)
+        {
+            Multipart->CallRequestHandler ();
             return;
         }
 
-        if(BodyProcessor->State == BodyProcBase::Error)
+        if(Multipart->State == MultipartProcessor::Error)
         {       
-            DebugOut("BodyProcessor reported error - killing client");
-            Client.Request.Disconnect();
+            DebugOut("Multipart reported error - killing client");
+            Request.Public.Disconnect();
 
             return;
         }
@@ -141,7 +154,7 @@ void WebserverClient::Incoming::Process(char * Buffer, int Size)
 
     /* No body processor = standard form post data */
 
-    int ToRead = BodyRemaining < Size ? BodyRemaining : Size;
+    int ToRead = (int) (BodyRemaining < Size ? BodyRemaining : Size);
     this->Buffer.Add(Buffer, ToRead);
 
     BodyRemaining -= ToRead;
@@ -149,8 +162,6 @@ void WebserverClient::Incoming::Process(char * Buffer, int Size)
     
     if(BodyRemaining == 0)
     {
-        Lacewing::Webserver::Request &Request = Client.Request;
-
         this->Buffer.Add<char>(0);
         char * PostData = this->Buffer.Buffer;
 
@@ -183,7 +194,7 @@ void WebserverClient::Incoming::Process(char * Buffer, int Size)
                     free(ValueDecoded);
                 }
                 else
-                    PostItems.SetAndGC(NameDecoded, ValueDecoded);
+                    Request.PostItems.SetAndGC(NameDecoded, ValueDecoded);
 
                 if(!Next)
                     break;
@@ -193,9 +204,8 @@ void WebserverClient::Incoming::Process(char * Buffer, int Size)
         }
 
         this->Buffer.Reset();
-
-        Client.RequestUnfinished = true;
-        Client.Output.RunHandler();
+        
+        Request.RunStandardHandler();
 
         /* Now we wait for Finish() to call Respond().  It may have done so already, or the application
            may call Finish() later. */
@@ -207,10 +217,10 @@ void WebserverClient::Incoming::Process(char * Buffer, int Size)
         Process(Buffer, Size);
 }
 
-void WebserverClient::Incoming::ProcessLine(char * Line)
+void HTTPClient::ProcessLine(char * Line)
 {
     do
-    {   if(!*Method)
+    {   if(!*Request.Method)
         {
             ProcessFirstLine(Line);
             break;
@@ -224,36 +234,29 @@ void WebserverClient::Incoming::ProcessLine(char * Line)
 
         /* Blank line marks end of headers */
 
-        if(!strcmp(Method, "GET") || !strcmp(Method, "HEAD") ||
-                (BodyRemaining = _atoi64(Client.Request.Header("Content-Length"))) <= 0)
+        if(!strcmp (Request.Method, "GET") || !strcmp (Request.Method, "HEAD") ||
+                (BodyRemaining = _atoi64(Request.InHeaders.Get ("Content-Length"))) <= 0)
         {
             /* No body - this is a complete request done */
         
-            Client.RequestUnfinished = true;
-            Client.Output.RunHandler();
-
+            Request.RunStandardHandler();
             break;
         }
 
 
         /* The request has a body.  BodyRemaining has been set, and definitely isn't 0. */
 
-        const char * ContentType = Client.Request.Header("Content-Type");
+        const char * ContentType = Request.InHeaders.Get ("Content-Type");
 
         if(BeginsWith(ContentType, "application/x-www-form-urlencoded"))
         {
-            /* Support for standard form data (application/x-www-form-urlencoded) is tangled into the webserver code */
-
             State = 2;
             break;
         }
 
-
-        /* Other types of body get handled by the body processors (currently only multipart) */
-
         if(BeginsWith(ContentType, "multipart"))
         {
-            BodyProcessor = new Multipart(Client, ContentType);
+            Multipart = new MultipartProcessor (*this, ContentType);
             
             State = 3;
             break;
@@ -268,11 +271,11 @@ void WebserverClient::Incoming::ProcessLine(char * Line)
     if(State == -1)
     {
         /* Parsing error */
-        Client.Socket.Disconnect();
+        Request.Public.Disconnect();
     }
 }
 
-void WebserverClient::Incoming::ProcessFirstLine(char * Line)
+void HTTPClient::ProcessFirstLine(char * Line)
 {
     /* Method (eg GET, POST, HEAD) */
 
@@ -286,13 +289,7 @@ void WebserverClient::Incoming::ProcessFirstLine(char * Line)
 
         *(Line ++) = 0;
 
-        if(strlen(Method) > (sizeof(this->Method) - 1))
-        {
-            State = -1;
-            return;
-        }
-
-        strcpy(this->Method, Method);
+        strncpy(Request.Method, Method, sizeof(Request.Method));
     }
 
     /* URL */
@@ -307,71 +304,10 @@ void WebserverClient::Incoming::ProcessFirstLine(char * Line)
 
         *(Line ++) = 0;
 
-        if(*URL == '/')
-            ++ URL;
-
-        /* Strip the GET data from the URL and add it to GetItems, decoded */
-
-        char * GetData = strchr(URL, '?');
-
-        if(GetData)
-        {
-            *(GetData ++) = 0;
-
-            for(;;)
-            {
-                char * Name = GetData;
-                char * Value = strchr(Name, '=');
-
-                if(!Value)
-                    break;
-
-                *(Value ++) = 0;
-
-                char * Next = strchr(Value, '&');
-                
-                if(Next)
-                    *(Next ++) = 0;
-
-                char * NameDecoded = (char *) malloc(strlen(Name) + 1);
-                char * ValueDecoded = (char *) malloc(strlen(Value) + 1);
-
-                if(!URLDecode(Name, NameDecoded, strlen(Name) + 1) || !URLDecode(Value, ValueDecoded, strlen(Value) + 1))
-                {
-                    free(NameDecoded);
-                    free(ValueDecoded);
-                }
-                else
-                    GetItems.SetAndGC(NameDecoded, ValueDecoded);
-
-                if(!Next)
-                    break;
-
-                GetData = Next;
-            }
-        }
-
-        /* Make an URL decoded copy of the URL with the GET data stripped */
-        
-        if(!URLDecode(URL, this->URL, sizeof(this->URL)))
+        if (!Request.ProcessURL (URL))
         {
             State = -1;
             return;
-        }
-
-        /* Check for directory traversal in the URL, and disconnect the client if it's found.
-           Also replace any backward slashes with forward slashes.  */
-
-        for(char * i = this->URL; *i; ++ i)
-        {
-            if(i[0] == '.' && i[1] == '.')
-            {
-                State = -1;
-                return;
-            }
-
-            if(*i == '\\')
-                *i = '/';
         }
     }
 
@@ -383,46 +319,10 @@ void WebserverClient::Incoming::ProcessFirstLine(char * Line)
         return;
     }
 
-    strcpy(this->Version, Line);
+    strcpy (Request.Version, Line);
 }
 
-void WebserverClient::Incoming::ProcessCookie(char * Cookie)
-{
-    for(;;)
-    {
-        char * Name = Cookie;
-
-        if(!(Cookie = strchr(Cookie, '=')))
-        {
-            State = -1;
-            return;
-        }
-
-        *(Cookie ++) = 0;
-
-        char * Next = strchr(Cookie, ';');
-
-        if(Next)
-            *(Next ++) = 0;
-
-        while(*Name == ' ')
-            ++ Name;
-
-        while(*Name && Name[strlen(Name - 1)] == ' ')
-            Name[strlen(Name - 1)] = 0;
-
-        /* The copy in Input doesn't get modified, so the response generator
-           can determine which cookies have been changed. */
-
-        Client.Cookies.Set      (Name, Cookie);
-        Client.Input.Cookies.Set(Name, Cookie);
-        
-        if(!(Cookie = Next))
-            break;
-    }
-}
-
-void WebserverClient::Incoming::ProcessHeader(char * Line)
+void HTTPClient::ProcessHeader(char * Line)
 {
     char * Name = Line;
 
@@ -437,57 +337,83 @@ void WebserverClient::Incoming::ProcessHeader(char * Line)
     while(*Line == ' ')
         ++ Line;
 
-    do
-    {
-        if(!stricmp(Name, "Cookie"))
-        {
-            /* Cookies are stored separately */
-
-            ProcessCookie(Line);
-            break;
-        }
-
-        if(!stricmp(Name, "Host"))
-        {
-            /* The hostname gets stored separately with the port removed for
-               the Request.Hostname() function (the raw header is still saved) */
-
-            strncpy(Hostname, Line, sizeof(Hostname));
-
-            for(char * i = Hostname; *i; ++ i)
-            {
-                if(*i == ':')
-                {
-                    *i = 0;
-                    break;
-                }
-            }
-        }   
-
-        /* Store the header */
-
-        Headers.Set(Name, Line);
-
-    } while(0);
+    Request.ProcessHeader (Name, Line);
 }
 
-
-/* Called upon initialisation, and at the end of each request to prepare for a new one */
-
-void WebserverClient::Incoming::Reset()
+void HTTPClient::Respond(RequestInternal &) /* request parameter ignored - HTTP only ever has one request object per client */
 {
-    State = 0;
-    *Method = 0;
+    Socket.StartBuffering ();
 
-    Headers   .Clear();
-    GetItems  .Clear();
-    PostItems .Clear();
-    Cookies   .Clear();
+    Socket << Request.Version << " " << Request.Status;
+    
+    for(Map::Item * Current = Request.OutHeaders.First; Current; Current = Current->Next)
+        Socket << "\r\n" << Current->Key << ": " << Current->Value;
 
-    BodyRemaining = 0;
+    for(Map::Item * Current = Request.OutCookies.First; Current; Current = Current->Next)
+        if(strcmp(Current->Value, Request.InCookies.Get(Current->Key)))
+            Socket << "\r\nSet-Cookie: " << Current->Key << "=" << Current->Value;
+    
+    Socket << "\r\nContent-Length: " << (Request.TotalFileSize + Request.TotalNonFileSize);
+    Socket << "\r\n\r\n";
 
-    delete BodyProcessor;
-    BodyProcessor = 0;
+    bool Flushed = false;
 
+    if ((!Socket.CheapBuffering()) && Request.TotalNonFileSize > (1024 * 8))
+    {
+        Socket.Flush ();
+        Flushed = true;
+    }
+
+    for (int Offset = 0 ;;)
+    {
+        RequestInternal::File * File = Request.FirstFile;
+
+        if (File)
+        {
+            Socket.SendWritable (Request.Response.Buffer + Offset, File->Offset - Offset);
+            
+            File->Send (Socket, -1, Flushed);
+
+            Offset = File->Offset;
+            Request.FirstFile = File->Next;
+
+            delete File;
+                        
+            if (Request.FirstFile)
+                continue;
+        }
+
+        Socket.SendWritable (Request.Response.Buffer + Offset, Request.Response.Size - Offset);
+        break;
+    }
+
+    Request.Response.Reset ();
+
+    if (!Flushed)
+        Socket.Flush ();
+
+    Reset ();
+
+    /* Close the connection if this is HTTP/1.0 without a Connection: Keep-Alive header */
+
+    if((!stricmp(Request.Version, "HTTP/1.0")) && stricmp(Request.InHeaders.Get("Connection"), "Keep-Alive"))
+        Request.Public.Disconnect();
+}
+
+void HTTPClient::Dead ()
+{
+    if (Request.Responded)
+    {
+        /* The request isn't unfinished - don't call the disconnect handler */
+        return;
+    }
+
+    if (Server.HandlerDisconnect)
+        Server.HandlerDisconnect (Server.Webserver, Request.Public);
+}
+
+bool HTTPClient::IsSPDY ()
+{
+    return false;
 }
 

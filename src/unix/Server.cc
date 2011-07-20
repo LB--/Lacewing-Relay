@@ -819,6 +819,11 @@ void Lacewing::Server::Client::SendFile(const char * Filename, lw_i64 Offset, lw
     ((ServerClientInternal *) InternalTag)->SendFile(true, Filename, Offset, Size);
 }
 
+bool Lacewing::Server::Client::CheapBuffering()
+{
+    return true;
+}
+
 void Lacewing::Server::Client::StartBuffering()
 {
     ServerClientInternal &Internal = *(ServerClientInternal *) InternalTag;

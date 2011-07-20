@@ -19,17 +19,19 @@ AC_ARG_ENABLE([i486],
     [enable_i486=no]
 )
 
-CXXFLAGS="$CXXFLAGS -DLacewingLibrary -DHAVE_CONFIG_H -fno-exceptions -fno-rtti -fvisibility=hidden -fPIC"
+CFLAGS="$CFLAGS -DLacewingLibrary -DHAVE_CONFIG_H -fvisibility=hidden -fPIC"
 
 if test "x$enable_debug" = xyes; then
-    CXXFLAGS="$CXXFLAGS -DPOSIX_SOURCE -DDEBUG -DLacewingDebug -g -O0"
+    CFLAGS="$CFLAGS -DPOSIX_SOURCE -DDEBUG -DLacewingDebug -g -O0"
 else
-    CXXFLAGS="$CXXFLAGS -DPOSIX_SOURCE -O2"
+    CFLAGS="$CFLAGS -DPOSIX_SOURCE -O2"
 fi
 
 if test "x$enable_i486" = xyes; then
-    CXXFLAGS="$CXXFLAGS -march=i486"
+    CFLAGS="$CFLAGS -march=i486"
 fi
+
+CXXFLAGS="$CFLAGS -fno-exceptions -fno-rtti"
 
 AC_CHECK_HEADERS([malloc.h sys/epoll.h sys/prctl.h sys/sendfile.h \
             netdb.h CoreServices/CoreServices.h openssl/md5.h sys/timerfd.h])

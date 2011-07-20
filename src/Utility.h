@@ -82,6 +82,10 @@ template <class T> struct List
     {
         Element * E = new Element;
 
+        if (Before->Prev)
+            Before->Prev->Next = E;
+
+        E->Prev = Before->Prev;
         Before->Prev = E;
 
         E->Value = What;
@@ -89,6 +93,8 @@ template <class T> struct List
 
         if (Before == First)
             First = E;
+
+        ++ Size;
 
         return E;
     }

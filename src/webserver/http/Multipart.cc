@@ -26,9 +26,10 @@
  * SUCH DAMAGE.
  */
 
-#include "Webserver.Common.h"
+#include "../Common.h"
 
-Multipart::Multipart(WebserverClient &_Client, const char * ContentType) : Client(_Client)
+HTTPClient::MultipartProcessor::MultipartProcessor
+    (HTTPClient &_Client, const char * ContentType) : Client(_Client)
 {
     State = Continue;
 
@@ -64,7 +65,7 @@ Multipart::Multipart(WebserverClient &_Client, const char * ContentType) : Clien
     CurrentUpload = 0;
 }
 
-Multipart::~Multipart()
+HTTPClient::MultipartProcessor::~MultipartProcessor()
 {
     for (int i = 0; i < Uploads.Size; ++ i)
         delete Uploads [i];
@@ -72,7 +73,7 @@ Multipart::~Multipart()
     Uploads.Clear ();
 }
 
-size_t Multipart::Process(char * Data, size_t Size)
+int HTTPClient::MultipartProcessor::Process(char * Data, size_t Size)
 {
     if(InFile && Child)
     {
@@ -151,7 +152,7 @@ size_t Multipart::Process(char * Data, size_t Size)
                     /* Manual save */
 
                     if(Client.Server.HandlerUploadDone)
-                        Client.Server.HandlerUploadDone(Client.Server.Webserver, Client.Request, CurrentUpload->Upload);
+                        Client.Server.HandlerUploadDone(Client.Server.Webserver, Client.Request.Public, CurrentUpload->Upload);
                 }
                 else
                 {
@@ -169,7 +170,7 @@ size_t Multipart::Process(char * Data, size_t Size)
             {
                 Buffer.Add <char> (0);
 
-                Client.Input.PostItems.Set(Disposition.Get("name"), Buffer.Buffer);
+                Client.Request.PostItems.Set(Disposition.Get("name"), Buffer.Buffer);
                 Buffer.Reset();
             }
 
@@ -193,7 +194,7 @@ size_t Multipart::Process(char * Data, size_t Size)
     return 0;
 }
 
-void Multipart::ProcessHeader()
+void HTTPClient::MultipartProcessor::ProcessHeader()
 {
     if(!*Header)
     {
@@ -207,9 +208,8 @@ void Multipart::ProcessHeader()
 
         if(*Disposition.Get("filename"))
         {
-            CurrentUpload = new UploadInternal;
-
-            CurrentUpload->Parent   = this;
+            CurrentUpload = new HTTPUpload;
+            
             CurrentUpload->Filename = CurrentUpload->Copier.Set("filename", Disposition.Get("filename"));
         
 
@@ -219,7 +219,7 @@ void Multipart::ProcessHeader()
                                                     Parent ? Parent->Disposition.Get("name") : Disposition.Get("name"));
         
             if(Client.Server.HandlerUploadStart)
-                Client.Server.HandlerUploadStart(Client.Server.Webserver, Client.Request, CurrentUpload->Upload);
+                Client.Server.HandlerUploadStart(Client.Server.Webserver, Client.Request.Public, CurrentUpload->Upload);
 
             return;
         }
@@ -284,19 +284,19 @@ void Multipart::ProcessHeader()
         {
             if(Parent)
             {
-                /* A child multipart can't have children */
+                /* A child processor can't have children */
 
                 State = Error;
                 return;
             }
 
-            Child = new Multipart(Client, Header);
+            Child = new MultipartProcessor (Client, Header);
             Child->Parent = this;
         }
     }
 }
 
-void Multipart::ProcessDispositionPair(char * Pair)
+void HTTPClient::MultipartProcessor::ProcessDispositionPair(char * Pair)
 {
     char * Name = Pair;
 
@@ -332,7 +332,7 @@ void Multipart::ProcessDispositionPair(char * Pair)
     Disposition.Set(Name, Pair);
 }
 
-void Multipart::ToFile(const char * Data, size_t Size)
+void HTTPClient::MultipartProcessor::ToFile(const char * Data, size_t Size)
 {
     LacewingAssert(Size >= 0);
 
@@ -346,7 +346,8 @@ void Multipart::ToFile(const char * Data, size_t Size)
             /* Manual save */
 
             if(Client.Server.HandlerUploadChunk)
-                Client.Server.HandlerUploadChunk(Client.Server.Webserver, Client.Request, CurrentUpload->Upload, Data, Size);
+                Client.Server.HandlerUploadChunk(Client.Server.Webserver,
+                        Client.Request.Public, CurrentUpload->Upload, Data, Size);
 
             return;
         }
@@ -365,46 +366,19 @@ void Multipart::ToFile(const char * Data, size_t Size)
     Buffer.Add(Data, Size);
 }
 
-void Multipart::CallRequestHandler()
+void HTTPClient::MultipartProcessor::CallRequestHandler()
 {
-    LacewingAssert(Client.RequestUnfinished);
+    Client.Request.BeforeHandler ();
 
     if(Client.Server.HandlerUploadPost)
-        Client.Server.HandlerUploadPost(Client.Server.Webserver, Client.Request, Uploads.Items, Uploads.Size);
+        Client.Server.HandlerUploadPost (Client.Server.Webserver, Client.Request.Public,
+                                                Uploads.Items, Uploads.Size);
+
+    Client.Request.AfterHandler ();
 }
 
-const char * Lacewing::Webserver::Upload::Filename()
+const char * HTTPClient::HTTPUpload::Header (const char * Name)
 {
-    return ((UploadInternal *) InternalTag)->Filename;
+    return Headers.Get (Name);
 }
-
-const char * Lacewing::Webserver::Upload::FormElementName()
-{
-    return ((UploadInternal *) InternalTag)->FormElement;
-}
-
-const char * Lacewing::Webserver::Upload::Header(const char * Name)
-{
-    return ((UploadInternal *) InternalTag)->Parent->Headers.Get(Name);
-}
-
-void Lacewing::Webserver::Upload::SetAutoSave()
-{
-    UploadInternal &Internal = *((UploadInternal *) InternalTag);
-
-    if(*Internal.AutoSaveFilename)
-        return;
-
-    char Filename[MAX_PATH];
-    NewTempFile(Filename, sizeof(Filename));
-
-    Internal.AutoSaveFilename = Internal.Copier.Set("AutoSaveFilename", Filename);
-    Internal.AutoSaveFile     = fopen(Filename, "wb");
-}
-
-const char * Lacewing::Webserver::Upload::GetAutoSaveFilename()
-{
-    return ((UploadInternal *) InternalTag)->AutoSaveFilename;
-}
-
 

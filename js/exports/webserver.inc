@@ -373,6 +373,16 @@ Export(lwjs_ws_req_set_mime_type)
         Return();
     }
     #endif
+Export(lwjs_ws_req_set_mime_type_ex)
+    #ifdef ExportBodies
+    {
+        BeginExport();
+        Read_String(MimeType);
+        Read_String(Charset);
+        Request.SetMimeType(MimeType, Charset);
+        Return();
+    }
+    #endif
 Export(lwjs_ws_req_guess_mime_type)
     #ifdef ExportBodies
     {

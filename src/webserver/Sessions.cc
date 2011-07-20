@@ -26,13 +26,13 @@
  * SUCH DAMAGE.
  */
 
-#include "Webserver.Common.h"
+#include "Common.h"
 
 const char * const SessionCookie = "LacewingSession";
 
 void Lacewing::Webserver::Request::Session(const char * Key, const char * Value)
 {
-    WebserverClient &Internal = *((WebserverClient *) InternalTag);
+    RequestInternal &Internal = *((RequestInternal *) InternalTag);
 
     WebserverInternal::Session * Session = Internal.Server.FindSession (Cookie (SessionCookie));
 
@@ -41,7 +41,7 @@ void Lacewing::Webserver::Request::Session(const char * Key, const char * Value)
         char SessionID [128];
 
         sprintf(SessionID, "Session-%s-%d%d%d",
-            Internal.Socket.GetAddress().ToString(), (int) time(0),
+            Internal.Client.Socket.GetAddress().ToString(), (int) time(0),
                 rand(), (int) (lw_iptr) this);
 
         Lacewing::MD5 (SessionID, SessionID);
@@ -76,7 +76,7 @@ void Lacewing::Webserver::Request::Session(const char * Key, const char * Value)
 
 const char * Lacewing::Webserver::Request::Session(const char * Key)
 {
-    WebserverInternal::Session * Session = ((WebserverClient *) InternalTag)->Server
+    WebserverInternal::Session * Session = ((RequestInternal *) InternalTag)->Server
                                                     .FindSession (Cookie (SessionCookie));
     if (!Session)
         return "";
@@ -86,7 +86,7 @@ const char * Lacewing::Webserver::Request::Session(const char * Key)
 
 void Lacewing::Webserver::CloseSession (const char * ID)
 {
-    WebserverClient &Internal = *((WebserverClient *) InternalTag);
+    RequestInternal &Internal = *((RequestInternal *) InternalTag);
 
     WebserverInternal::Session * Session = Internal.Server.FindSession (ID);
 
@@ -109,7 +109,7 @@ void Lacewing::Webserver::CloseSession (const char * ID)
 
 void Lacewing::Webserver::Request::CloseSession()
 {
-    ((WebserverClient *) InternalTag)->Server.Webserver.CloseSession(Session ());
+    ((RequestInternal *) InternalTag)->Server.Webserver.CloseSession(Session ());
 }
 
 const char * Lacewing::Webserver::Request::Session()
@@ -117,4 +117,44 @@ const char * Lacewing::Webserver::Request::Session()
     return Cookie (SessionCookie);
 }
 
+WebserverInternal::Session * WebserverInternal::FindSession (const char * SessionID_Hex)
+{
+    if (strlen (SessionID_Hex) != 32)
+        return 0;
 
+    union
+    {
+        char SessionID_Bytes [16];
+        
+        struct
+        {
+            lw_i64 Part1;
+            lw_i64 Part2;
+
+        } SessionID;
+    };
+
+    char hex [3];
+    hex [2] = 0;
+
+    for (int i = 0, c = 0; i < 16; ++ i, c += 2)
+    {
+        hex [0] = SessionID_Hex [c];
+        hex [1] = SessionID_Hex [c + 1];
+
+        SessionID_Bytes [i] = (char) strtol (hex, 0, 16);
+    }
+
+    WebserverInternal::Session * Session;
+
+    for (Session = FirstSession; Session; Session = Session->Next)
+    {
+        if (Session->ID_Part1 == SessionID.Part1 &&
+                Session->ID_Part2 == SessionID.Part2)
+        {
+            break;
+        }
+    }
+
+    return Session;
+}

@@ -27,23 +27,13 @@
  */
 
 #include "../Common.h"
-#include "Webserver.Map.h"
+#include "Map.h"
 
-struct BodyProcBase
-{
-    enum { Error, Continue, Done } State;
-
-    virtual size_t Process(char *, size_t) = 0;
-    virtual void CallRequestHandler     () = 0;
-};
-
-struct Multipart;
+class HTTPClient;
 
 struct UploadInternal
 {
     Lacewing::Webserver::Upload Upload;
-
-    Multipart * Parent;
 
     const char * FormElement;
     const char * Filename;
@@ -51,7 +41,7 @@ struct UploadInternal
     const char * AutoSaveFilename;
     FILE * AutoSaveFile;
 
-    Map Copier;
+    Map Headers, Copier;
 
     inline UploadInternal()
     {
@@ -62,45 +52,12 @@ struct UploadInternal
         AutoSaveFile     = 0;
     }
 
-    inline ~UploadInternal()
+    inline ~ UploadInternal()
     {
         DebugOut("Free upload!");
-
     }
-};
 
-class WebserverClient;
-
-struct Multipart : public BodyProcBase
-{
-    WebserverClient &Client;
-
-    char Boundary         [512];
-    char FinalBoundary    [512];
-    char CRLFThenBoundary [512];
-
-    bool   InHeaders, InFile;
-    char * Header;
-    void   ProcessHeader();
-
-    Multipart * Child, * Parent;
-
-     Multipart(WebserverClient &, const char * ContentType);
-    ~Multipart();
-
-    size_t Process(char *, size_t);
-    void   CallRequestHandler   ();
-
-    void ProcessDispositionPair(char * Pair);
-    void ToFile(const char *, size_t);
-
-    Map Disposition;
-    Map Headers;
-
-    Array <Lacewing::Webserver::Upload *> Uploads;
-    UploadInternal * CurrentUpload;
-
-    MessageBuilder Buffer;
+    virtual const char * Header (const char * Name) = 0;
 };
 
 class WebserverInternal
@@ -114,11 +71,7 @@ public:
     const static size_t SendBufferBacklog = 32;         /* 256 KB allocated initially and when the server runs out */
 
     Lacewing::Server * Socket, * SecureSocket;
-
-    Backlog<Lacewing::Server::Client, WebserverClient>
-        ClientBacklog;
-
-    Lacewing::Sync Sync_SendBuffers;
+    
     List <char *> SendBuffers;
 
     char * BorrowSendBuffer();
@@ -135,47 +88,7 @@ public:
 
     } * FirstSession;
 
-    inline Session * FindSession (const char * SessionID_Hex)
-    {
-        if (strlen (SessionID_Hex) != 32)
-            return 0;
-
-        union
-        {
-            char SessionID_Bytes [16];
-            
-            struct
-            {
-                lw_i64 Part1;
-                lw_i64 Part2;
-
-            } SessionID;
-        };
-
-        char hex [3];
-        hex [2] = 0;
-
-        for (int i = 0, c = 0; i < 16; ++ i, c += 2)
-        {
-            hex [0] = SessionID_Hex [c];
-            hex [1] = SessionID_Hex [c + 1];
-
-            SessionID_Bytes [i] = (char) strtol (hex, 0, 16);
-        }
-
-        Session * S;
-
-        for (S = FirstSession; S; S = S->Next)
-        {
-            if (S->ID_Part1 == SessionID.Part1 &&
-                    S->ID_Part2 == SessionID.Part2)
-            {
-                break;
-            }
-        }
-
-        return S;
-    }
+    Session * FindSession (const char * SessionID_Hex);
 
     bool AutoFinish;
 
@@ -220,12 +133,11 @@ public:
     Lacewing::Webserver::HandlerGet          HandlerGet;
     Lacewing::Webserver::HandlerPost         HandlerPost;
     Lacewing::Webserver::HandlerHead         HandlerHead;
-    Lacewing::Webserver::HandlerConnect      HandlerConnect;
-    Lacewing::Webserver::HandlerDisconnect   HandlerDisconnect;
     Lacewing::Webserver::HandlerUploadStart  HandlerUploadStart;
     Lacewing::Webserver::HandlerUploadChunk  HandlerUploadChunk;
     Lacewing::Webserver::HandlerUploadDone   HandlerUploadDone;
     Lacewing::Webserver::HandlerUploadPost   HandlerUploadPost;
+    Lacewing::Webserver::HandlerDisconnect   HandlerDisconnect;
 
     inline WebserverInternal(Lacewing::Webserver &_Webserver, PumpInternal &_EventPump)
             : Webserver(_Webserver), EventPump(_EventPump)
@@ -236,118 +148,99 @@ public:
         HandlerGet          = 0;
         HandlerPost         = 0;
         HandlerHead         = 0;
-        HandlerConnect      = 0;
-        HandlerDisconnect   = 0;
         HandlerUploadStart  = 0;
         HandlerUploadChunk  = 0;
         HandlerUploadDone   = 0;
         HandlerUploadPost   = 0;
+        HandlerDisconnect   = 0;
 
         AutoFinish = true;
         FirstSession = 0;
     }
 };
 
+class WebserverClient;
+
+struct RequestInternal
+{
+    Lacewing::Webserver::Request Public; 
+
+    void * Tag;
+
+    WebserverInternal &Server;
+    WebserverClient   &Client;
+
+    RequestInternal (WebserverInternal &_Server, WebserverClient &_Client);
+    ~ RequestInternal ();
+
+    void Clean ();
+    
+
+    /* Input */
+
+    char Method     [8];
+    char Version    [16];
+    char URL        [4096];
+    char Hostname   [128];
+    
+    Map InHeaders, InCookies, GetItems, PostItems;
+    
+    void ProcessHeader (char * Name, char * Value);
+    bool ProcessURL (char * URL);
+
+
+    /* Output */
+
+    char Status [64];
+
+    Map OutHeaders, OutCookies;
+    
+    struct File
+    {
+        char Filename [MAX_PATH];
+        unsigned int Offset;
+
+        File * Next;
+
+        void Send (Lacewing::Server::Client &Socket, int MaxOutput, bool &Flushed);
+        
+        lw_i64 FileOffset, FileSize;
+    };
+
+    MessageBuilder Response;
+
+    File * FirstFile;
+    lw_i64 TotalFileSize, TotalNonFileSize;
+
+    void BeforeHandler ();
+    void AfterHandler ();
+
+    void RunStandardHandler ();    
+
+    void AddFileSend (const char * Filename, lw_i64 FileOffset, lw_i64 FileSize);
+
+    bool Responded;
+    void Respond ();
+};
+
 class WebserverClient
 {
 public:
 
-    Lacewing::Webserver::Request Request;    
+    bool Secure;
+
     Lacewing::Server::Client &Socket;
-
-    struct Outgoing;
-
-    class Incoming
-    {
-    protected:
-
-        MessageBuilder Buffer;
-
-        lw_i64 BodyRemaining;
-
-        /* ProcessLine will call either ProcessFirstLine or ProcessHeader, and update State */
-
-        void ProcessLine      (char * Line);
-
-        void ProcessFirstLine (char * Line);
-        void ProcessHeader    (char * Line);
-
-        void ProcessCookie    (char * Cookie);
-
-    public:
-
-        int State;
-
-        char Method     [8];
-        char Version    [16];
-        char URL        [4096];
-        char Hostname   [128];
-
-        Map Headers, GetItems, PostItems, Cookies;
-
-        WebserverClient &Client;
-        Incoming(WebserverClient &);
-
-        void Process(char * Buffer, int Size);
-        void Reset();
-
-        BodyProcBase * BodyProcessor;
-
-        friend struct WebserverClient::Outgoing;
-
-    } Input;
-
-    struct Outgoing
-    {
-        struct File
-        {
-            char Filename[MAX_PATH];
-            int  Position, Offset;
-
-            File * Next;
-
-            void Send(Lacewing::Server::Client &Socket);
-        };
-
-        WebserverInternal   &Server;
-        WebserverClient     &Client;
-
-        /* For before the response body */
-
-        char ResponseCode[64];
-        char Charset[8];
-        char MimeType[64];
-
-        Map Headers, Cookies;
-
-
-        /* For the response body */
-
-        List <char *> SendBuffers;
-        size_t LastSendBufferSize;
-
-        File * FirstFile;
-        lw_i64 TotalFileSize;
-
-
-        Outgoing(WebserverInternal &, WebserverClient &);
-
-        void RunHandler ();
-        void Respond    ();
-
-        void AddFileSend(const char * Filename, int FilenameLength, lw_i64 Size);
-        void AddSend(const char * Buffer, size_t Size);
-        void Reset();
-
-    } Output;
-
     WebserverInternal &Server;
 
-    WebserverClient(Lacewing::Server::Client &_Socket);
+    WebserverClient (WebserverInternal &, Lacewing::Server::Client &, bool Secure);
     
-    bool ConnectHandlerCalled, RequestUnfinished;
-    Map  Cookies;
+    virtual void Process (char * Buffer, int Size) = 0;
+    virtual void Respond (RequestInternal &Request) = 0;
+    virtual void Dead () = 0;
     
-    bool Secure;
+    virtual bool IsSPDY () = 0;
 };
+
+#include "http/HTTP.h"
+
 

@@ -103,17 +103,17 @@ void lw_ws_req_disconnect (lw_ws_req * request)
 void lw_ws_req_set_redirect (lw_ws_req * request, const char * url)
     { ((Lacewing::Webserver::Request *) request)->SetRedirect(url);
     }
-void lw_ws_req_set_response_type (lw_ws_req * request, long status_code, const char * message)
-    { ((Lacewing::Webserver::Request *) request)->SetResponseType(status_code, message);
+void lw_ws_req_set_status (lw_ws_req * request, long code, const char * message)
+    { ((Lacewing::Webserver::Request *) request)->Status(code, message);
     }
 void lw_ws_req_set_mime_type (lw_ws_req * request, const char * mime_type)
     { ((Lacewing::Webserver::Request *) request)->SetMimeType(mime_type);
     }
+void lw_ws_req_set_mime_type_ex (lw_ws_req * request, const char * mime_type, const char * charset)
+    { ((Lacewing::Webserver::Request *) request)->SetMimeType(mime_type, charset);
+    }
 void lw_ws_req_guess_mime_type (lw_ws_req * request, const char * filename)
     { ((Lacewing::Webserver::Request *) request)->GuessMimeType(filename);
-    }
-void lw_ws_req_set_charset (lw_ws_req * request, const char * charset)
-    { ((Lacewing::Webserver::Request *) request)->SetCharset(charset);
     }
 void lw_ws_req_send_text (lw_ws_req * request, const char * data)
     { ((Lacewing::Webserver::Request *) request)->Send(data);
@@ -129,6 +129,9 @@ void lw_ws_req_send_const (lw_ws_req * request, const char * data, long size)
     }
 void lw_ws_req_sendfile (lw_ws_req * request, const char * filename)
     { ((Lacewing::Webserver::Request *) request)->SendFile(filename);
+    }
+void lw_ws_req_sendfile_ex (lw_ws_req * request, const char * filename, lw_i64 offset, lw_i64 size)
+    { ((Lacewing::Webserver::Request *) request)->SendFile(filename, offset, size);
     }
 void lw_ws_req_reset (lw_ws_req * request)
     { ((Lacewing::Webserver::Request *) request)->Reset();
@@ -210,8 +213,6 @@ AutoHandlerFlat(Lacewing::Webserver, lw_ws, Get, get)
 AutoHandlerFlat(Lacewing::Webserver, lw_ws, Post, post)
 AutoHandlerFlat(Lacewing::Webserver, lw_ws, Head, head)
 AutoHandlerFlat(Lacewing::Webserver, lw_ws, Error, error)
-AutoHandlerFlat(Lacewing::Webserver, lw_ws, Connect, connect)
-AutoHandlerFlat(Lacewing::Webserver, lw_ws, Disconnect, disconnect)
 AutoHandlerFlat(Lacewing::Webserver, lw_ws, UploadStart, upload_start)
 AutoHandlerFlat(Lacewing::Webserver, lw_ws, UploadChunk, upload_chunk)
 AutoHandlerFlat(Lacewing::Webserver, lw_ws, UploadDone, upload_done)

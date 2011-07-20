@@ -288,8 +288,13 @@
         {   exports.lwjs_ws_req_set_response_type(this._lw_ref, 1 * code, '' + (message ? message : ''));
             return this;
         },
-        mimeType: function(type)
-        {   exports.lwjs_ws_req_set_mime_type(this._lw_ref, '' + type);
+        mimeType: function(type, charset)
+        {
+            if (charset)
+                exports.lwjs_ws_req_set_mime_type_ex(this._lw_ref, '' + type, '' + charset);
+            else
+                exports.lwjs_ws_req_set_mime_type(this._lw_ref, '' + type);
+                
             return this;
         },
         guessMimeType: function(type)

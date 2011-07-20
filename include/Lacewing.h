@@ -271,6 +271,7 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFunction          lw_addr* lw_server_client_address           (lw_server_client *);
   LacewingFunction             void  lw_server_client_send              (lw_server_client *, const char * data, long size);
   LacewingFunction             void  lw_server_client_send_writable     (lw_server_client *, char * data, long size);
+  LacewingFunction          lw_bool  lw_server_client_cheap_buffering   (lw_server_client *);
   LacewingFunction             void  lw_server_client_start_buffering   (lw_server_client *);
   LacewingFunction             void  lw_server_client_flush             (lw_server_client *);
   LacewingFunction             void  lw_server_client_disconnect        (lw_server_client *);
@@ -340,15 +341,16 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFunction     const char* lw_ws_req_hostname           (lw_ws_req *);
   LacewingFunction           void  lw_ws_req_disconnect         (lw_ws_req *); 
   LacewingFunction           void  lw_ws_req_set_redirect       (lw_ws_req *, const char * url);
-  LacewingFunction           void  lw_ws_req_set_response_type  (lw_ws_req *, long status_code, const char * message);
+  LacewingFunction           void  lw_ws_req_set_status         (lw_ws_req *, long code, const char * message);
   LacewingFunction           void  lw_ws_req_set_mime_type      (lw_ws_req *, const char * mime_type);
+  LacewingFunction           void  lw_ws_req_set_mime_type_ex   (lw_ws_req *, const char * mime_type, const char * charset);
   LacewingFunction           void  lw_ws_req_guess_mime_type    (lw_ws_req *, const char * filename);
-  LacewingFunction           void  lw_ws_req_set_charset        (lw_ws_req *, const char * charset);
   LacewingFunction           void  lw_ws_req_send_text          (lw_ws_req *, const char * data);
   LacewingFunction           void  lw_ws_req_send_text_const    (lw_ws_req *, const char * data);
   LacewingFunction           void  lw_ws_req_send               (lw_ws_req *, const char * data, long size);
   LacewingFunction           void  lw_ws_req_send_const         (lw_ws_req *, const char * data, long size);
   LacewingFunction           void  lw_ws_req_sendfile           (lw_ws_req *, const char * filename);
+  LacewingFunction           void  lw_ws_req_sendfile_ex        (lw_ws_req *, const char * filename, lw_i64 offset, lw_i64 size);
   LacewingFunction           void  lw_ws_req_sendf              (lw_ws_req *, const char * format, ...);
   LacewingFunction           void  lw_ws_req_reset              (lw_ws_req *);
   LacewingFunction           void  lw_ws_req_finish             (lw_ws_req *);
@@ -758,11 +760,12 @@ struct Server
         LacewingFunction Lacewing::Address &GetAddress();
 
         LacewingFunction void Send          (const char * Data, int Size = -1);
-        LacewingFunction void SendFile      (const char * Filename, lw_i64 Offset = 0, lw_i64 Size = 0);
+        LacewingFunction void SendFile      (const char * Filename, lw_i64 Offset = 0, lw_i64 Size = -1);
         LacewingFunction void SendWritable  (char * Data, int Size = -1);
 
-        LacewingFunction void StartBuffering();
-        LacewingFunction void Flush();
+        LacewingFunction bool CheapBuffering ();
+        LacewingFunction void StartBuffering ();
+        LacewingFunction void Flush ();
 
         LacewingStream (Client, Send);
 
@@ -849,22 +852,21 @@ struct Webserver
 
         LacewingFunction Lacewing::Address &GetAddress();
 
-        LacewingFunction bool Secure();
+        LacewingFunction bool Secure ();
+
         LacewingFunction const char * URL();
         LacewingFunction const char * Hostname();
         
         LacewingFunction void Disconnect();
 
-        LacewingFunction void SetRedirect(const char * URL);
-        LacewingFunction void SetResponseType(int StatusCode, const char * Message);
+        LacewingFunction void SetRedirect (const char * URL);
+        LacewingFunction void Status (int Code, const char * Message);
 
-        LacewingFunction void SetMimeType(const char * MimeType);
+        LacewingFunction void SetMimeType(const char * MimeType, const char * Charset = "UTF-8");
         LacewingFunction void GuessMimeType(const char * Filename);
 
-        LacewingFunction void SetCharset(const char * Charset);
-
         LacewingFunction void Send          (const char * Data, int Size = -1);
-        LacewingFunction bool SendFile      (const char * Filename);
+        LacewingFunction void SendFile      (const char * Filename, lw_i64 Offset = 0, lw_i64 Size = -1);
         LacewingFunction void SendConstant  (const char * Data, int Size = -1);
 
         LacewingStream(Request, Send);
@@ -916,9 +918,8 @@ struct Webserver
     typedef void (LacewingHandler * HandlerGet)                    (Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request);
     typedef void (LacewingHandler * HandlerPost)                   (Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request);
     typedef void (LacewingHandler * HandlerHead)                   (Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request);  
-    typedef void (LacewingHandler * HandlerError)                  (Lacewing::Webserver &Webserver, Lacewing::Error &);
-    typedef void (LacewingHandler * HandlerConnect)                (Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request); 
     typedef void (LacewingHandler * HandlerDisconnect)             (Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request);
+    typedef void (LacewingHandler * HandlerError)                  (Lacewing::Webserver &Webserver, Lacewing::Error &);
 
     typedef void (LacewingHandler * HandlerUploadStart)            (Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request,
                                                                     Lacewing::Webserver::Upload &Upload);
@@ -939,9 +940,8 @@ struct Webserver
     LacewingFunction void onUploadPost       (HandlerUploadPost);
     LacewingFunction void onPost             (HandlerPost);
     LacewingFunction void onHead             (HandlerHead);
+    LacewingFunction void onDisconnect       (HandlerDisconnect);
     LacewingFunction void onError            (HandlerError);
-    LacewingFunction void onConnect          (HandlerConnect);
-    LacewingFunction void onDisconnect       (HandlerConnect);
 };
     
 struct RelayClient

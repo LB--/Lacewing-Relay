@@ -1,97 +1,117 @@
 
 PREFIX = @prefix@
+
+CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 LDFLAGS = @LDFLAGS@
 
+COMMONDEPS = src/Common.h src/Backlog.h src/FrameBuilder.h src/FrameReader.h \
+				src/IDPool.h src/MessageBuilder.h src/MessageReader.h \
+				src/QueuedSend.h src/ReceiveBuffer.h src/ThreadTracker.h \
+				src/TimeHelper.h src/Utility.h src/unix/EventPump.h \
+				src/unix/Pump.h src/unix/SendFile.h src/webserver/Common.h \
+                src/webserver/Map.h src/webserver/http/HTTP.h
+
 ###########
 
-liblacewing.so: Global.o Sync.o SpinSync.o Filter.o Address.o Error.o RelayServer.o \
-            Webserver.o Webserver.Incoming.o Webserver.Outgoing.o Webserver.Sessions.o \
-            Webserver.Multipart.o Webserver.MimeTypes.o Event.o EventPump.o \
-            Server.o Timer.o UDP.o Client.o Pump.o addr_flat.o eventpump_flat.o \
-            global_flat.o server_flat.o timer_flat.o webserver_flat.o filter_flat.o \
-            udp_flat.o client_flat.o error_flat.o sync_flat.o ssync_flat.o relink
+liblacewing.so: build/Global.o build/Sync.o build/SpinSync.o build/Filter.o build/Address.o \
+				build/Error.o build/RelayServer.o build/Webserver.o build/HTTP.o \
+				build/MimeTypes.o build/Request.o build/Sessions.o build/Event.o build/EventPump.o \
+				build/Server.o build/Timer.o build/UDP.o build/Client.o build/Pump.o build/addr_flat.o \
+				build/eventpump_flat.o build/global_flat.o build/server_flat.o build/timer_flat.o \
+				build/webserver_flat.o build/filter_flat.o build/udp_flat.o build/client_flat.o \
+				build/error_flat.o build/sync_flat.o build/ssync_flat.o
 
 relink:
-	g++ $(CXXFLAGS) -shared -o liblacewing.so ./*.o -lpthread -lssl -lrt
-	ar rcs liblacewing.a ./*.o && strip --strip-unneeded liblacewing.a
-	
-Global.o:
-	$(CC) $(CXXFLAGS) -c -o Global.o src/Global.cc
-Sync.o:
-	$(CC) $(CXXFLAGS) -c -o Sync.o src/Sync.cc
-SpinSync.o:
-	$(CC) $(CXXFLAGS) -c -o SpinSync.o src/SpinSync.cc
-Filter.o:
-	$(CC) $(CXXFLAGS) -c -o Filter.o src/Filter.cc
-Address.o:
-	$(CC) $(CXXFLAGS) -c -o Address.o src/Address.cc
-Error.o:
-	$(CC) $(CXXFLAGS) -c -o Error.o src/Error.cc
-RelayServer.o:
-	$(CC) $(CXXFLAGS) -c -o RelayServer.o src/RelayServer.cc
-Webserver.o:
-	$(CC) $(CXXFLAGS) -c -o Webserver.o src/webserver/Webserver.cc
-Webserver.Incoming.o:
-	$(CC) $(CXXFLAGS) -c -o Webserver.Incoming.o src/webserver/Webserver.Incoming.cc
-Webserver.Outgoing.o:
-	$(CC) $(CXXFLAGS) -c -o Webserver.Outgoing.o src/webserver/Webserver.Outgoing.cc
-Webserver.Sessions.o:
-	$(CC) $(CXXFLAGS) -c -o Webserver.Sessions.o src/webserver/Webserver.Sessions.cc
-Webserver.Multipart.o:
-	$(CC) $(CXXFLAGS) -c -o Webserver.Multipart.o src/webserver/Webserver.Multipart.cc
-Webserver.MimeTypes.o:
-	$(CC) $(CXXFLAGS) -c -o Webserver.MimeTypes.o src/webserver/Webserver.MimeTypes.cc
-Event.o:
-	$(CC) $(CXXFLAGS) -c -o Event.o src/unix/Event.cc
-EventPump.o:
-	$(CC) $(CXXFLAGS) -c -o EventPump.o src/unix/EventPump.cc
-Server.o:
-	$(CC) $(CXXFLAGS) -c -o Server.o src/unix/Server.cc
-Timer.o:
-	$(CC) $(CXXFLAGS) -c -o Timer.o src/unix/Timer.cc
-UDP.o:
-	$(CC) $(CXXFLAGS) -c -o UDP.o src/unix/UDP.cc
-Client.o:
-	$(CC) $(CXXFLAGS) -c -o Client.o src/unix/Client.cc
-Pump.o:
-	$(CC) $(CXXFLAGS) -c -o Pump.o src/unix/Pump.cc
-addr_flat.o:
-	$(CC) $(CXXFLAGS) -c -o addr_flat.o src/c/addr_flat.cc
-eventpump_flat.o:
-	$(CC) $(CXXFLAGS) -c -o eventpump_flat.o src/c/eventpump_flat.cc
-global_flat.o:
-	$(CC) $(CXXFLAGS) -c -o global_flat.o src/c/global_flat.cc
-server_flat.o:
-	$(CC) $(CXXFLAGS) -c -o server_flat.o src/c/server_flat.cc
-timer_flat.o:
-	$(CC) $(CXXFLAGS) -c -o timer_flat.o src/c/timer_flat.cc
-webserver_flat.o:
-	$(CC) $(CXXFLAGS) -c -o webserver_flat.o src/c/webserver_flat.cc
-filter_flat.o:
-	$(CC) $(CXXFLAGS) -c -o filter_flat.o src/c/filter_flat.cc
-udp_flat.o:
-	$(CC) $(CXXFLAGS) -c -o udp_flat.o src/c/udp_flat.cc
-client_flat.o:
-	$(CC) $(CXXFLAGS) -c -o client_flat.o src/c/client_flat.cc
-error_flat.o:
-	$(CC) $(CXXFLAGS) -c -o error_flat.o src/c/error_flat.cc
-sync_flat.o:
-	$(CC) $(CXXFLAGS) -c -o sync_flat.o src/c/sync_flat.cc
-ssync_flat.o:
-	$(CC) $(CXXFLAGS) -c -o ssync_flat.o src/c/ssync_flat.cc
+	@echo Linking shared library...
+	@g++ $(CXXFLAGS) -shared -o liblacewing.so ./build/*.o -lpthread -lssl -lrt
+	@echo Linking static library...
+	@ar rcs liblacewing.a ./build/*.o && strip --strip-unneeded liblacewing.a
+
+build/Global.o: src/Global.cc $(COMMONDEPS) 
+	$(CC) $(CXXFLAGS) -c -o $@ src/Global.cc
+build/Sync.o: src/Sync.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/Sync.cc
+build/SpinSync.o: src/SpinSync.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/SpinSync.cc
+build/Filter.o: src/Filter.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/Filter.cc
+build/Address.o: src/Address.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/Address.cc
+build/Error.o: src/Error.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/Error.cc
+build/RelayServer.o: src/RelayServer.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/RelayServer.cc
+build/Webserver.o: src/webserver/Webserver.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/webserver/Webserver.cc
+build/Request.o: src/webserver/Request.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/webserver/Request.cc
+build/Sessions.o: src/webserver/Sessions.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/webserver/Sessions.cc
+build/MimeTypes.o: src/webserver/MimeTypes.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/webserver/MimeTypes.cc
+build/HTTP.o: src/webserver/http/HTTP.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/webserver/http/HTTP.cc
+build/Multipart.o: src/webserver/http/Multipart.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/webserver/http/Multipart.cc
+build/Event.o: src/unix/Event.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/unix/Event.cc
+build/EventPump.o: src/unix/EventPump.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/unix/EventPump.cc
+build/Server.o: src/unix/Server.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/unix/Server.cc
+build/Timer.o: src/unix/Timer.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/unix/Timer.cc
+build/UDP.o: src/unix/UDP.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/unix/UDP.cc
+build/Client.o: src/unix/Client.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/unix/Client.cc
+build/Pump.o: src/unix/Pump.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/unix/Pump.cc
+build/addr_flat.o: src/c/addr_flat.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/c/addr_flat.cc
+build/eventpump_flat.o: src/c/eventpump_flat.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/c/eventpump_flat.cc
+build/global_flat.o: src/c/global_flat.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/c/global_flat.cc
+build/server_flat.o: src/c/server_flat.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/c/server_flat.cc
+build/timer_flat.o: src/c/timer_flat.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/c/timer_flat.cc
+build/webserver_flat.o: src/c/webserver_flat.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/c/webserver_flat.cc
+build/filter_flat.o: src/c/filter_flat.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/c/filter_flat.cc
+build/udp_flat.o: src/c/udp_flat.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/c/udp_flat.cc
+build/client_flat.o: src/c/client_flat.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/c/client_flat.cc
+build/error_flat.o: src/c/error_flat.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/c/error_flat.cc
+build/sync_flat.o: src/c/sync_flat.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/c/sync_flat.cc
+build/ssync_flat.o: src/c/ssync_flat.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/c/ssync_flat.cc
 
 ############
     
-all: liblacewing.so
+all: liblacewing.so liblacewing.a
 
 clean:
-	rm -f liblacewing.so liblacewing.a *.o
+	rm -f liblacewing.so liblacewing.a ./build/*.o
 
 install: liblacewing.so liblacewing.a
-	install -m 0755 liblacewing.so $(PREFIX)/lib
-	install -m 0644 ./include/Lacewing.h $(PREFIX)/include/Lacewing.h
-	install -m 0755 liblacewing.a $(PREFIX)/lib
+	@echo -----
+	@echo Installing shared library: $(PREFIX)/lib/liblacewing.so
+	@install -m 0755 liblacewing.so $(PREFIX)/lib
+	@echo Installing static library: $(PREFIX)/lib/liblacewing.a
+	@install -m 0755 liblacewing.a $(PREFIX)/lib
+	@echo Installing header file: $(PREFIX)/include/Lacewing.h
+	@install -m 0644 ./include/Lacewing.h $(PREFIX)/include/Lacewing.h
+	@echo -----
+	@echo Compiler flags: -I$(PREFIX)/include
+	@echo Linker flags: -L$(PREFIX)/lib -llacewing
+	@echo ------
 
-.PHONY: all clean install
+.PHONY: all clean install relink
 

@@ -95,9 +95,15 @@ struct ManualFileSendInformation
     size_t BufferSize;
 
     __int64 Offset;
+    __int64 Size;
 
     ManualFileSendInformation(ServerClientInternal &_Client) : Client(_Client)
     {
+    }
+
+    inline int NextRead ()
+    {
+        return Size < BufferSize ? (int) Size : BufferSize;
     }
 };
 
@@ -654,6 +660,7 @@ void ManualFileSendReadCompletion(ServerClientInternal &Client, ServerOverlapped
     /* Move forward in the file */
 
     Send.Offset += BytesTransferred;
+    Send.Size -= BytesTransferred;
 
     memset(&Overlapped.Overlapped, 0, sizeof(OVERLAPPED));
 
@@ -665,9 +672,19 @@ void ManualFileSendReadCompletion(ServerClientInternal &Client, ServerOverlapped
         Overlapped.Overlapped.OffsetHigh = Offset.HighPart;
     }
 
+    int NextRead = Send.NextRead ();
+
+    if (!NextRead)
+    {
+        /* End of the desired send size */
+    
+        Send.Client.EndFileSend(Overlapped, Send);
+        return;
+    }
+
     /* Read the next file chunk */
 
-    if(!ReadFile(Send.File, Send.Buffer, Send.BufferSize, 0, (OVERLAPPED *) &Overlapped))
+    if(!ReadFile(Send.File, Send.Buffer, NextRead, 0, (OVERLAPPED *) &Overlapped))
     {
         int Error = GetLastError();
 
@@ -938,6 +955,9 @@ void Lacewing::Server::Client::Send(const char * Data, int Size)
 
 bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, __int64 Offset, __int64 Size)
 {   
+    if (Size == 0)
+        return false;
+
     Lacewing::Sync::Lock Lock(Sync_SendingFile);
     
     if(AllowQueue)
@@ -955,15 +975,20 @@ bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, __in
     if(File == INVALID_HANDLE_VALUE)
         return false;
 
-    LARGE_INTEGER FileSize;
-
-    if(!GetFileSizeEx(File, &FileSize))
+    if (Size == -1)
     {
-        CloseHandle(File);
-        return false;
+        LARGE_INTEGER FileSize;
+
+        if(!GetFileSizeEx(File, &FileSize))
+        {
+            CloseHandle(File);
+            return false;
+        }
+
+        Size = FileSize.QuadPart;
     }
 
-    if((!Secure) && FileSize.QuadPart < ((((__int64) 1024) * 1024 * 1024 * 2) - 16))
+    if((!Secure) && Size < ((((__int64) 1024) * 1024 * 1024 * 2) - 16))
     {
         /* Not secure, and the file is smaller than 2 GB - we can use TransmitFile */
 
@@ -1040,8 +1065,9 @@ bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, __in
     Overlapped.Type = OverlappedType::ManualFileSendRead;
     Overlapped.Tag = &Send;
     
-    Send.File = File;
+    Send.File   = File;
     Send.Offset = Offset;
+    Send.Size   = Size;
 
     Send.BufferSize = 1024 * 256;
 
@@ -1050,7 +1076,7 @@ bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, __in
 
     Send.Buffer = new char[Send.BufferSize];
 
-    if(!ReadFile(File, Send.Buffer, Send.BufferSize, 0, (OVERLAPPED *) &Overlapped))
+    if(!ReadFile (File, Send.Buffer, Send.NextRead (), 0, (OVERLAPPED *) &Overlapped))
     {
         int Error = GetLastError();
         
@@ -1067,6 +1093,13 @@ bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, __in
 void Lacewing::Server::Client::SendFile(const char * Filename, __int64 Offset, __int64 Size)
 {
     ((ServerClientInternal *) InternalTag)->SendFile(true, Filename, Offset, Size);
+}
+
+bool Lacewing::Server::Client::CheapBuffering()
+{
+    /* No TCP_CORK or TCP_NOPUSH on Windows */
+
+    return false;
 }
 
 void Lacewing::Server::Client::StartBuffering()

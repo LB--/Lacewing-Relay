@@ -36,11 +36,12 @@ protected:
     char * Buffer;
     
     unsigned int Size;
-    unsigned int Offset;
 
     List <char *> ToFree;
 
 public:
+
+    unsigned int Offset;
 
     bool Failed;
 
@@ -108,6 +109,15 @@ public:
         return Output;
     }
 
+    inline int BytesLeft ()
+    {
+        return Size - Offset;
+    }
+
+    inline char * Cursor ()
+    {
+        return Buffer + Offset;
+    }
 
     inline char * GetRemaining(bool AllowEmpty = true)
     {
@@ -134,6 +144,32 @@ public:
         Offset += Size;
     }
 
+    inline short Network16Bit ()
+    {
+        return ntohs (Get <short> ());
+    }
+    
+    inline int Network24Bit ()
+    {
+        if (!Check (3))
+            return 0;
+        
+        return Read24Bit (Buffer + Offset);
+    }
+
+    inline int Network32Bit ()
+    {
+        return ntohl (Get <int> ());
+    }
+    
+    inline int NetworkX31Bit ()
+    {
+        int value = Get <int> ();
+   
+        *(char *) &value &= 0x7F;
+        
+        return ntohl (value);
+    }
 };
 
 #endif

@@ -26,25 +26,15 @@
  * SUCH DAMAGE.
  */
 
-#include "Webserver.Common.h"
+#include "Common.h"
 
-/* Internal */
-
-WebserverClient::WebserverClient(Lacewing::Server::Client &_Socket)
-    : Socket(_Socket), Server(*(WebserverInternal *) _Socket.Tag), Input(*this),
-        Output(*(WebserverInternal *) _Socket.Tag, *this)
+WebserverClient::WebserverClient(WebserverInternal &_Server, Lacewing::Server::Client &_Socket, bool _Secure)
+    : Server (_Server), Socket (_Socket), Secure (_Secure)
 {
-    Request.InternalTag   = this;
-    Request.Tag           = 0;
-
-    ConnectHandlerCalled  = false;
-    RequestUnfinished     = false;
 }
 
 char * WebserverInternal::BorrowSendBuffer()
 {
-    Lacewing::Sync::Lock Lock(Sync_SendBuffers);
-
     if(!SendBuffers.First)
         for(int i = WebserverInternal::SendBufferBacklog; i; -- i)
             SendBuffers.Push (new char [WebserverInternal::SendBufferSize]);
@@ -54,38 +44,31 @@ char * WebserverInternal::BorrowSendBuffer()
 
 void WebserverInternal::ReturnSendBuffer(char * SendBuffer)
 {
-    Lacewing::Sync::Lock Lock(Sync_SendBuffers);
     SendBuffers.Push (SendBuffer);
 }
 
 void WebserverInternal::SocketConnect(Lacewing::Server &Server, Lacewing::Server::Client &Client)
 {
-    Client.Tag = Server.Tag;
-    Client.Tag = &((WebserverInternal *) Server.Tag)->ClientBacklog.Borrow(Client);
-
-    ((WebserverClient *) Client.Tag)->Secure =
-        (&Server == ((WebserverInternal *) Server.Tag)->SecureSocket);
 }
 
 void WebserverInternal::SocketDisconnect(Lacewing::Server &Server, Lacewing::Server::Client &Client)
 {
-    WebserverInternal &Webserver = *(WebserverInternal *) Server.Tag;
-    WebserverClient &WebClient = *(WebserverClient *) Client.Tag;
+    if (!Client.Tag)
+        return;
+    
+    ((WebserverClient *) Client.Tag)->Dead ();
 
-    if(WebClient.ConnectHandlerCalled)
-    {
-        if(Webserver.HandlerDisconnect)
-            Webserver.HandlerDisconnect(Webserver.Webserver, WebClient.Request);
-    }
-
-    Webserver.ClientBacklog.Return (WebClient);
+    delete ((WebserverClient *) Client.Tag);
 }
 
 void WebserverInternal::SocketReceive(Lacewing::Server &Server, Lacewing::Server::Client &Client, char * Buffer, int Size)
 {
-    WebserverClient &WebClient = *(WebserverClient *) Client.Tag;
+    WebserverInternal &Webserver = *(WebserverInternal *) Server.Tag;
 
-    WebClient.Input.Process(Buffer, Size);
+    if (!Client.Tag)
+        Client.Tag = new HTTPClient (Webserver, Client, &Server == Webserver.SecureSocket);
+    
+    ((WebserverClient *) Client.Tag)->Process(Buffer, Size);
 }
 
 void WebserverInternal::SocketError(Lacewing::Server &Server, Lacewing::Error &Error)
@@ -98,13 +81,10 @@ void WebserverInternal::SocketError(Lacewing::Server &Server, Lacewing::Error &E
         Webserver.HandlerError(Webserver.Webserver, Error);
 }
 
-
-/* Public - constructor/destructor */
-
 Lacewing::Webserver::Webserver(Lacewing::Pump &EventPump)
 {
     LacewingInitialise();
-
+    
     InternalTag = new WebserverInternal(*this, *(PumpInternal *) EventPump.InternalTag);
     Tag         = 0;
 }
@@ -116,10 +96,6 @@ Lacewing::Webserver::~Webserver()
 
     delete ((WebserverInternal *) InternalTag);
 }
-
-
-
-/* Public - hosting/unhosting */
 
 void Lacewing::Webserver::Host(int Port)
 {
@@ -234,9 +210,6 @@ lw_i64 Lacewing::Webserver::BytesReceived()
         + (Internal.SecureSocket ? Internal.SecureSocket->BytesReceived() : 0);
 }
 
-
-/* Public - certificate management */
-
 bool Lacewing::Webserver::LoadCertificateFile(const char * Filename, const char * CommonName)
 {
     WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
@@ -261,213 +234,52 @@ bool Lacewing::Webserver::CertificateLoaded()
     return Internal.SecureSocket->CertificateLoaded();
 }
 
-
-/* Public - Request */
-
 void Lacewing::Webserver::EnableManualRequestFinish()
 {
     ((WebserverInternal *) InternalTag)->AutoFinish = false;
 }
 
-Lacewing::Address &Lacewing::Webserver::Request::GetAddress()
+const char * Lacewing::Webserver::Upload::Filename()
 {
-    return ((WebserverClient *) InternalTag)->Socket.GetAddress();
+    return ((UploadInternal *) InternalTag)->Filename;
 }
 
-void Lacewing::Webserver::Request::Disconnect()
+const char * Lacewing::Webserver::Upload::FormElementName()
 {
-    ((WebserverClient *) InternalTag)->Socket.Disconnect();
+    return ((UploadInternal *) InternalTag)->FormElement;
 }
 
-void Lacewing::Webserver::Request::Send(const char * Data, int Size)
+const char * Lacewing::Webserver::Upload::Header(const char * Name)
 {
-    ((WebserverClient *) InternalTag)->Output.AddSend(Data, Size);
+    return ((UploadInternal *) InternalTag)->Header (Name);
 }
 
-void Lacewing::Webserver::Request::SendConstant(const char * Data, int Size)
+void Lacewing::Webserver::Upload::SetAutoSave()
 {
-    if(Size == -1)
-        Size = strlen(Data);
+    UploadInternal &Internal = *((UploadInternal *) InternalTag);
 
-    char SendDesc[sizeof(void *) * 3];
-
-    *(unsigned char *)(SendDesc)     = 0xFF;
-    *(const char **)  (SendDesc + 1) = Data;
-
-    *(unsigned int *)  
-        (SendDesc + 1 + sizeof(unsigned char *)) = Size;
-
-    ((WebserverClient *) InternalTag)->Output.AddFileSend(SendDesc, sizeof(SendDesc), Size);
-}
-
-bool Lacewing::Webserver::Request::SendFile(const char * Filename)
-{
-    lw_i64 ThisFileSize = Lacewing::FileSize(Filename);
-
-    if(!ThisFileSize)
-        return false;
-
-    ((WebserverClient *) InternalTag)->Output.AddFileSend(Filename, strlen(Filename) + 1, ThisFileSize);
-
-    return true;
-}
-
-void Lacewing::Webserver::Request::Reset()
-{
-    WebserverClient::Outgoing &Output = ((WebserverClient *) InternalTag)->Output;
-
-    for(List <char *>::Element * E = Output.SendBuffers.First; E; E = E->Next)
-        Output.Server.ReturnSendBuffer(** E);
-    
-    Output.LastSendBufferSize = 0;
-    
-    WebserverClient::Outgoing::File * File = Output.FirstFile;
-
-    while(File)
-    {
-        delete File;
-        File = File->Next;
-    }
-
-    Output.FirstFile = 0;
-    Output.TotalFileSize = 0;
-}
-
-void Lacewing::Webserver::Request::GuessMimeType(const char * Filename)
-{
-    SetMimeType(Lacewing::GuessMimeType(Filename));
-}
-
-void Lacewing::Webserver::Request::SetMimeType(const char * MimeType)
-{
-    strcpy(((WebserverClient *) InternalTag)->Output.MimeType, MimeType);
-}
-
-void Lacewing::Webserver::Request::SetRedirect(const char * URL)
-{
-    SetResponseType(303, "See Other");
-    Header("Location", URL);
-}
-
-void Lacewing::Webserver::Request::DisableCache()
-{
-    Header("Cache-Control", "no-cache");
-}
-
-void Lacewing::Webserver::Request::SetCharset(const char * Charset)
-{
-    strcpy(((WebserverClient *) InternalTag)->Output.Charset, Charset);
-}
-
-void Lacewing::Webserver::Request::Header(const char * Name, const char * Value)
-{
-    ((WebserverClient *) InternalTag)->Output.Headers.Set(Name, Value);
-}
-
-void Lacewing::Webserver::Request::Cookie(const char * Name, const char * Value)
-{
-    ((WebserverClient *) InternalTag)->Cookies.Set(Name, Value);
-}
-
-void Lacewing::Webserver::Request::SetResponseType(int StatusCode, const char * Message)
-{
-    sprintf(((WebserverClient *) InternalTag)->Output.ResponseCode, "%d %s", StatusCode, Message);
-}
-
-void Lacewing::Webserver::Request::SetUnmodified()
-{
-    SetResponseType(304, "Not Modified");
-}
-
-void Lacewing::Webserver::Request::LastModified(lw_i64 Time)
-{
-    tm TM;
-
-    time_t TimeT = (time_t) Time;
-    gmtime_r(&TimeT, &TM);
-
-    char LastModified[128];
-    sprintf(LastModified, "%s, %02d %s %d %02d:%02d:%02d GMT", Weekdays[TM.tm_wday], TM.tm_mday,
-                            Months[TM.tm_mon], TM.tm_year + 1900, TM.tm_hour, TM.tm_min, TM.tm_sec);
-
-    Header("Last-Modified", LastModified);
-}
-
-void Lacewing::Webserver::Request::Finish(const char * Data, int Size)
-{
-    WebserverClient &Client = *((WebserverClient *) InternalTag);
-
-    if(!Client.RequestUnfinished)
-    {
-        DebugOut("Finish: Request not marked as unfinished");
+    if(*Internal.AutoSaveFilename)
         return;
-    }
 
-    if(Data && *Data)
-        SendConstant(Data, Size == -1 ? strlen(Data) : Size);
+    char Filename[MAX_PATH];
+    NewTempFile(Filename, sizeof(Filename));
 
-    ((WebserverClient *) InternalTag)->Output.Respond();
-    
-    Client.RequestUnfinished = false;
-
-    /* TODO process what's been buffered */
+    Internal.AutoSaveFilename = Internal.Copier.Set("AutoSaveFilename", Filename);
+    Internal.AutoSaveFile     = fopen(Filename, "wb");
 }
 
-const char * Lacewing::Webserver::Request::Header(const char * Name)
+const char * Lacewing::Webserver::Upload::GetAutoSaveFilename()
 {
-    return ((WebserverClient *) InternalTag)->Input.Headers.Get(Name);
+    return ((UploadInternal *) InternalTag)->AutoSaveFilename;
 }
-
-const char * Lacewing::Webserver::Request::Cookie(const char * Name)
-{
-    return ((WebserverClient *) InternalTag)->Cookies.Get(Name);
-}
-
-const char * Lacewing::Webserver::Request::GET(const char * Name)
-{
-    return ((WebserverClient *) InternalTag)->Input.GetItems.Get(Name);
-}
-
-const char * Lacewing::Webserver::Request::POST(const char * Name)
-{
-    return ((WebserverClient *) InternalTag)->Input.PostItems.Get(Name);
-}
-
-lw_i64 Lacewing::Webserver::Request::LastModified()
-{
-    const char * LastModified = Header("If-Modified-Since");
-
-    if(*LastModified)
-        return ParseTimeString(LastModified);
-
-    return 0;
-}
-
-bool Lacewing::Webserver::Request::Secure()
-{
-    return ((WebserverClient *) InternalTag)->Secure;
-}
-
-const char * Lacewing::Webserver::Request::Hostname()
-{
-    return ((WebserverClient *) InternalTag)->Input.Hostname;
-}
-
-const char * Lacewing::Webserver::Request::URL()
-{
-    return ((WebserverClient *) InternalTag)->Input.URL;
-}
-
 
 AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, Get)
 AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, Post)
 AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, Head)
 AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, Error)
-AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, Connect)
-AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, Disconnect)
 AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, UploadStart)
 AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, UploadChunk)
 AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, UploadDone)
 AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, UploadPost)
-
+AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, Disconnect)
 

@@ -102,6 +102,10 @@ void LacewingInitialise();
 
 #include "../include/Lacewing.h"
 
+#ifdef LacewingSPDY
+    #include "../deps/zlib/zlib.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -458,6 +462,11 @@ inline void LacewingSyncExchange(volatile long * Target, long NewValue)
     #endif
 }
 
+inline int Read24Bit (const char * b)
+{
+    return 65536 * b[0] + 256 * b[1] + b[2];
+}
+
 #include "Utility.h"
 #include "TimeHelper.h"
 #include "ThreadTracker.h"
@@ -491,18 +500,6 @@ inline void GetSockaddr(Lacewing::Address &Address, sockaddr_in &out)
     out.sin_addr.s_addr = Address.IP();
 }
 
-inline void Lowercase(char * s)
-{
-    for(; *s; ++ s)
-        *s = (char) tolower(*s);
-}
-
-inline void Uppercase(char * s)
-{
-    for(; *s; ++ s)
-        *s = (char) toupper(*s);
-}
-
 inline bool URLDecode(char * URL, char * New, unsigned int OutLength)
 {
     char * out = New;
@@ -532,34 +529,6 @@ inline bool URLDecode(char * URL, char * New, unsigned int OutLength)
 
     *out = 0;
     return true;
-}
-
-inline const char * GetPathFileExtension(const char * Filename)
-{
-    const char * it = Filename + strlen(Filename);
-
-    while(*it != '.')
-    {
-        if(it == Filename)
-            return "";
-
-        -- it;
-    }
-
-    return ++ it;
-}
-
-inline const char * GetPathFileName(const char * Filename)
-{
-    const char * it = Filename + strlen(Filename);
-
-    while(*it != '\\' && *it != '/' && it != Filename)
-        -- it;
-
-    if(it != Filename && it[1])
-        ++ it;
-
-    return it;
 }
 
 inline bool BeginsWith(const char * String, const char * Substring)

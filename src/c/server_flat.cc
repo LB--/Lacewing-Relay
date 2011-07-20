@@ -82,6 +82,9 @@ void lw_server_client_send (lw_server_client * client, const char * data, long s
 void lw_server_client_send_writable (lw_server_client * client, char * data, long size)
     { ((Lacewing::Server::Client *) client)->SendWritable(data, size);
     }
+lw_bool lw_server_client_cheap_buffering (lw_server_client * client)
+    { return ((Lacewing::Server::Client *) client)->CheapBuffering();
+    }
 void lw_server_client_start_buffering (lw_server_client * client)
     { ((Lacewing::Server::Client *) client)->StartBuffering();
     }

@@ -84,6 +84,33 @@ public:
         Add((const char *) &Value, sizeof(T));
     }
 
+    inline void AddNetwork16Bit (short Value)
+    {
+        Value = htons (Value);
+        Add ((char *) &Value, sizeof(Value));
+    }
+
+    inline void AddNetwork24Bit (int Value)
+    {
+        Value = htonl (Value);
+        Add (((char *) &Value) + 1, 3);
+    }
+
+    inline void AddNetwork32Bit (int Value)
+    {
+        Value = htonl (Value);
+        Add ((char *) &Value, sizeof(Value));
+    }
+
+    inline void AddNetworkX31Bit (unsigned int Value)
+    {
+        Value = htonl (Value);
+
+        *(char *) &Value &= 0x7F; /* 0 first bit */
+        
+        Add ((char *) &Value, sizeof(Value));
+    }
+
     inline void Reset()
     {
         Size = 0;

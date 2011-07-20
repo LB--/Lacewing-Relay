@@ -15,11 +15,11 @@ LOCAL_SRC_FILES     := \
     ../src/Error.cc \
     ../src/RelayServer.cc \
     ../src/webserver/Webserver.cc \
-    ../src/webserver/Webserver.Incoming.cc \
-    ../src/webserver/Webserver.Outgoing.cc \
-    ../src/webserver/Webserver.Sessions.cc \
-    ../src/webserver/Webserver.Multipart.cc \
-    ../src/webserver/Webserver.MimeTypes.cc \
+    ../src/webserver/Sessions.cc \
+    ../src/webserver/Request.cc \
+    ../src/webserver/MimeTypes.cc \
+    ../src/webserver/http/HTTP.cc \
+    ../src/webserver/http/Multipart.cc \
     ../src/unix/Event.cc \
     ../src/unix/EventPump.cc \
     ../src/unix/Server.cc \
