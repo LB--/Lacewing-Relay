@@ -96,7 +96,7 @@ void RequestInternal::BeforeHandler ()
 
 void RequestInternal::AfterHandler ()
 {
-    /* Anything to be done straight immediately the handler has returned should be in this function */
+    /* Anything to be done immediately after the handler has returned should be in this function */
     
     if((!Responded) && Server.AutoFinish)
         Respond ();
@@ -147,7 +147,7 @@ void RequestInternal::RunStandardHandler ()
     AfterHandler ();
 }
 
-void RequestInternal::ProcessHeader (char * Name, char * Value)
+void RequestInternal::ProcessHeader (const char * Name, char * Value)
 {
     if(!stricmp(Name, "Cookie"))
     {
@@ -170,7 +170,7 @@ void RequestInternal::ProcessHeader (char * Name, char * Value)
                 ++ CookieName;
 
             while(*CookieName && Name[strlen(CookieName - 1)] == ' ')
-                Name[strlen(CookieName - 1)] = 0;
+                CookieName [strlen(CookieName - 1)] = 0;
 
             /* The copy in InCookies doesn't get modified, so the response generator
                can determine which cookies have been changed. */

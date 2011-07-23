@@ -965,8 +965,10 @@ public:
 
     LacewingFunction int ID ();
 
-    LacewingFunction void         Name (const char * Name);
+    LacewingFunction void Name (const char * Name);
     LacewingFunction const char * Name ();
+
+    LacewingFunction const char * WelcomeMessage ();
 
     LacewingFunction void ListChannels();
 

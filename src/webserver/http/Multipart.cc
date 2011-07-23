@@ -68,7 +68,7 @@ HTTPClient::MultipartProcessor::MultipartProcessor
 HTTPClient::MultipartProcessor::~MultipartProcessor()
 {
     for (int i = 0; i < Uploads.Size; ++ i)
-        delete Uploads [i];
+        delete (UploadInternal *) Uploads [i]->InternalTag;
     
     Uploads.Clear ();
 }

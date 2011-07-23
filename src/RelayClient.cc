@@ -431,7 +431,7 @@ void Lacewing::RelayClient::SendServer(int Subchannel, const char * Data, int Si
         Size = strlen(Data);
 
     RelayClientInternal &Internal = *((RelayClientInternal *) InternalTag);
-    FrameBuilder   &Message  = Internal.Message;
+    FrameBuilder &Message = Internal.Message;
 
     Message.AddHeader(1, Variant); /* BinaryServerMessage */
     Message.Add <unsigned char>  (Subchannel);
@@ -446,7 +446,7 @@ void Lacewing::RelayClient::BlastServer(int Subchannel, const char * Data, int S
         Size = strlen(Data);
 
     RelayClientInternal &Internal = *((RelayClientInternal *) InternalTag);
-    FrameBuilder   &Message  = Internal.Message;
+    FrameBuilder &Message = Internal.Message;
 
     Message.AddHeader (1, Variant, 1, Internal.ID); /* BinaryServerMessage */
     Message.Add <unsigned char> (Subchannel);
@@ -460,9 +460,9 @@ void Lacewing::RelayClient::Channel::Send(int Subchannel, const char * Data, int
     if(Size == -1)
         Size = strlen(Data);
 
-    ChannelInternal &Channel   = *((ChannelInternal *) InternalTag);
-    RelayClientInternal  &Internal  = Channel.Client;
-    FrameBuilder    &Message   = Internal.Message;
+    ChannelInternal &Channel = *((ChannelInternal *) InternalTag);
+    RelayClientInternal &Internal = Channel.Client;
+    FrameBuilder &Message = Internal.Message;
 
     Message.AddHeader (2, Variant); /* BinaryChannelMessage */
     Message.Add <unsigned char>  (Subchannel);
@@ -477,9 +477,9 @@ void Lacewing::RelayClient::Channel::Blast(int Subchannel, const char * Data, in
     if(Size == -1)
         Size = strlen(Data);
 
-    ChannelInternal &Channel   = *((ChannelInternal *) InternalTag);
-    RelayClientInternal  &Internal  = Channel.Client;
-    FrameBuilder    &Message   = Internal.Message;
+    ChannelInternal &Channel = *((ChannelInternal *) InternalTag);
+    RelayClientInternal &Internal = Channel.Client;
+    FrameBuilder &Message = Internal.Message;
 
     Message.AddHeader(2, Variant, 1, Internal.ID); /* BinaryChannelMessage */
     Message.Add <unsigned char>  (Subchannel);
@@ -494,10 +494,10 @@ void Lacewing::RelayClient::Channel::Peer::Send(int Subchannel, const char * Dat
     if(Size == -1)
         Size = strlen(Data);
 
-    PeerInternal    &Peer      = *((PeerInternal *) InternalTag);
-    ChannelInternal &Channel   = Peer.Channel;
-    RelayClientInternal  &Internal  = Channel.Client;
-    FrameBuilder    &Message   = Internal.Message;
+    PeerInternal &Peer = *((PeerInternal *) InternalTag);
+    ChannelInternal &Channel = Peer.Channel;
+    RelayClientInternal &Internal = Channel.Client;
+    FrameBuilder &Message = Internal.Message;
 
     Message.AddHeader(3, Variant); /* BinaryPeerMessage */
     Message.Add <unsigned char>  (Subchannel);
@@ -513,10 +513,10 @@ void Lacewing::RelayClient::Channel::Peer::Blast(int Subchannel, const char * Da
     if(Size == -1)
         Size = strlen(Data);
 
-    PeerInternal    &Peer      = *((PeerInternal *) InternalTag);
-    ChannelInternal &Channel   = Peer.Channel;
-    RelayClientInternal  &Internal  = Channel.Client;
-    FrameBuilder    &Message   = Internal.Message;
+    PeerInternal &Peer = *((PeerInternal *) InternalTag);
+    ChannelInternal &Channel = Peer.Channel;
+    RelayClientInternal &Internal = Channel.Client;
+    FrameBuilder &Message = Internal.Message;
 
     Message.AddHeader(3, Variant, 1, Internal.ID); /* BinaryPeerMessage */
     Message.Add <unsigned char>  (Subchannel);
@@ -569,6 +569,11 @@ int Lacewing::RelayClient::ID()
 Lacewing::Address &Lacewing::RelayClient::ServerAddress()
 {
     return Socket.ServerAddress();
+}
+
+const char * Lacewing::RelayClient::WelcomeMessage()
+{
+    return ((RelayClientInternal *) InternalTag)->WelcomeMessage;
 }
 
 void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int Size, bool Blasted)
@@ -968,6 +973,12 @@ bool Lacewing::RelayClient::Channel::IsChannelMaster()
     return Internal.IsChannelMaster;
 }
 
+Lacewing::RelayClient::Channel * Lacewing::RelayClient::FirstChannel ()
+{
+    return ((RelayClientInternal *) InternalTag)->Channels.First ? 
+        &(** ((RelayClientInternal *) InternalTag)->Channels.First)->Public : 0;
+}
+
 Lacewing::RelayClient::Channel * Lacewing::RelayClient::Channel::Next ()
 {
     return ((ChannelInternal *) InternalTag)->Element->Next ?
@@ -991,11 +1002,19 @@ int Lacewing::RelayClient::ChannelListingCount ()
     return ((RelayClientInternal *) InternalTag)->ChannelList.Size;
 }
 
+Lacewing::RelayClient::ChannelListing * Lacewing::RelayClient::FirstChannelListing ()
+{
+    return ((RelayClientInternal *) InternalTag)->ChannelList.First ?
+        ** ((RelayClientInternal *) InternalTag)->ChannelList.First : 0;
+}
+
 Lacewing::RelayClient::ChannelListing * Lacewing::RelayClient::ChannelListing::Next ()
 {
     return ((List <Lacewing::RelayClient::ChannelListing *>::Element *) InternalTag)->Next ?
         ** ((List <Lacewing::RelayClient::ChannelListing *>::Element *) InternalTag)->Next : 0; 
 }
+
+
 
 AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, Connect)
 AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, ConnectionDenied)

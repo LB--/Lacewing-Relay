@@ -48,9 +48,6 @@ void HTTPClient::Reset()
     
     State = 0;
     BodyRemaining = 0;
-
-    delete Multipart;
-    Multipart = 0;
 }
 
 void HTTPClient::Process (char * Buffer, int Size)
@@ -130,14 +127,15 @@ void HTTPClient::Process (char * Buffer, int Size)
 
     if(Multipart)
     {
-        /* TODO : Is the ExtraBytes stuff even necessary?  Post requests
-           can't be pipelined. */
-
         Multipart->Process(Buffer, Size);
      
         if(Multipart->State == MultipartProcessor::Done)
         {
             Multipart->CallRequestHandler ();
+            
+            delete Multipart;
+            Multipart = 0;
+
             return;
         }
 
@@ -152,7 +150,7 @@ void HTTPClient::Process (char * Buffer, int Size)
         return;
     }
 
-    /* No body processor = standard form post data */
+    /* No multipart = standard form post data */
 
     int ToRead = (int) (BodyRemaining < Size ? BodyRemaining : Size);
     this->Buffer.Add(Buffer, ToRead);

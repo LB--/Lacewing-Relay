@@ -185,7 +185,7 @@ struct RequestInternal
     
     Map InHeaders, InCookies, GetItems, PostItems;
     
-    void ProcessHeader (char * Name, char * Value);
+    void ProcessHeader (const char * Name, char * Value);
     bool ProcessURL (char * URL);
 
 
