@@ -12,19 +12,23 @@ COMMONDEPS = src/Common.h src/Backlog.h src/FrameBuilder.h src/FrameReader.h \
 				src/unix/Pump.h src/unix/SendFile.h src/webserver/Common.h \
                 src/webserver/Map.h src/webserver/http/HTTP.h
 
-###########
-
-liblacewing.so: build/Global.o build/Sync.o build/SpinSync.o build/Filter.o build/Address.o \
-				build/Error.o build/RelayServer.o build/Webserver.o build/HTTP.o \
-				build/MimeTypes.o build/Request.o build/Sessions.o build/Event.o build/EventPump.o \
+OBJECTS = build/Global.o build/Sync.o build/SpinSync.o build/Filter.o build/Address.o \
+				build/Error.o build/RelayServer.o build/RelayClient.o build/Webserver.o build/HTTP.o \
+				build/Multipart.o build/MimeTypes.o build/Request.o build/Sessions.o  build/Event.o build/EventPump.o \
 				build/Server.o build/Timer.o build/UDP.o build/Client.o build/Pump.o build/addr_flat.o \
 				build/eventpump_flat.o build/global_flat.o build/server_flat.o build/timer_flat.o \
 				build/webserver_flat.o build/filter_flat.o build/udp_flat.o build/client_flat.o \
 				build/error_flat.o build/sync_flat.o build/ssync_flat.o
 
-relink:
+###########
+
+all: liblacewing.so liblacewing.a
+
+liblacewing.so: $(OBJECTS)
 	@echo Linking shared library...
 	@g++ $(CXXFLAGS) -shared -o liblacewing.so ./build/*.o -lpthread -lssl -lrt
+
+liblacewing.a: $(OBJECTS)
 	@echo Linking static library...
 	@ar rcs liblacewing.a ./build/*.o && strip --strip-unneeded liblacewing.a
 
@@ -42,6 +46,8 @@ build/Error.o: src/Error.cc $(COMMONDEPS)
 	$(CC) $(CXXFLAGS) -c -o $@ src/Error.cc
 build/RelayServer.o: src/RelayServer.cc $(COMMONDEPS)
 	$(CC) $(CXXFLAGS) -c -o $@ src/RelayServer.cc
+build/RelayClient.o: src/RelayClient.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/RelayClient.cc
 build/Webserver.o: src/webserver/Webserver.cc $(COMMONDEPS)
 	$(CC) $(CXXFLAGS) -c -o $@ src/webserver/Webserver.cc
 build/Request.o: src/webserver/Request.cc $(COMMONDEPS)
@@ -95,8 +101,6 @@ build/ssync_flat.o: src/c/ssync_flat.cc $(COMMONDEPS)
 
 ############
     
-all: liblacewing.so liblacewing.a
-
 clean:
 	rm -f liblacewing.so liblacewing.a ./build/*.o
 
@@ -113,5 +117,5 @@ install: liblacewing.so liblacewing.a
 	@echo Linker flags: -L$(PREFIX)/lib -llacewing
 	@echo ------
 
-.PHONY: all clean install relink
+.PHONY: all clean install
 

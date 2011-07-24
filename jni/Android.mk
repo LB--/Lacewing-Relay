@@ -14,6 +14,7 @@ LOCAL_SRC_FILES     := \
     ../src/Address.cc \
     ../src/Error.cc \
     ../src/RelayServer.cc \
+    ../src/RelayClient.cc \
     ../src/webserver/Webserver.cc \
     ../src/webserver/Sessions.cc \
     ../src/webserver/Request.cc \
