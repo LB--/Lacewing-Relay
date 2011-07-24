@@ -169,7 +169,7 @@ void RequestInternal::ProcessHeader (const char * Name, char * Value)
             while(*CookieName == ' ')
                 ++ CookieName;
 
-            while(*CookieName && Name[strlen(CookieName - 1)] == ' ')
+            while(*CookieName && CookieName[strlen(CookieName - 1)] == ' ')
                 CookieName [strlen(CookieName - 1)] = 0;
 
             /* The copy in InCookies doesn't get modified, so the response generator
