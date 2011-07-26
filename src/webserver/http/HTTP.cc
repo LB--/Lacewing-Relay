@@ -424,9 +424,9 @@ bool HTTPClient::IsSPDY ()
 
 void HTTPClient::Tick ()
 {
-    if (Request.Responded && (time(0) - LastActivityTime) > Server.Timeout)
+    if (Request.Responded && (time(0) - LastActivityTime) > Timeout)
     {
-        DebugOut ("Dropping HTTP connection due to inactivity");
+        DebugOut ("Dropping HTTP connection due to inactivity (%s/%d)", Socket.GetAddress().ToString(), &Socket.GetAddress());
         Socket.Disconnect ();
     }
 }

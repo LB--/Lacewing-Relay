@@ -41,7 +41,11 @@ namespace QueuedSendType
         /* Writing will be attempted again after the next SSL_read has been performed.
            Always gets pushed to the front of the queue.  Only one can exist in the queue. */
            
-          SSLWriteWhenReadable
+          SSLWriteWhenReadable,
+
+        /* Added to the queue to disconnect after sending all pending data */
+
+          Disconnect
     };
 }
 

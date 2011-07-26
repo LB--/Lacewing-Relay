@@ -563,3 +563,13 @@ const char * Lacewing::Webserver::Request::URL()
     return ((RequestInternal *) InternalTag)->URL;
 }
 
+int Lacewing::Webserver::Request::IdleTimeout ()
+{
+    return ((RequestInternal *) InternalTag)->Client.Timeout;
+}
+
+void Lacewing::Webserver::Request::IdleTimeout (int Seconds)
+{
+    ((RequestInternal *) InternalTag)->Client.Timeout = Seconds;
+}
+

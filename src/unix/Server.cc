@@ -102,37 +102,53 @@ struct ServerClientInternal
                 }
             }
             
-            First = QueuedSends.First;
-            
-            if(First && First->Type == QueuedSendType::File)
+            if(First = QueuedSends.First)
             {
-                bool SentImmediately = SendFile(false, First->Filename, First->FileOffset, First->FileSize);
-                
-                QueuedSends.First = First->Next;
-                delete First;
-
-                if(!QueuedSends.First)
-                    QueuedSends.Last = 0;
-                    
-                if(!SentImmediately)
+                if (First->Type == QueuedSendType::Disconnect)
                 {
-                    /* The new SendFile() didn't complete immediately, and is now in the queue.
-                       Relying on the completion of that to send the rest of the queued files/data. */
-                    
+                    Terminate ();
                     break;
                 }
-            }
-            else
-            {
-                /* Nothing left */
+                else if (First->Type == QueuedSendType::File)
+                {
+                    bool SentImmediately = SendFile(false, First->Filename, First->FileOffset, First->FileSize);
+                    
+                    QueuedSends.First = First->Next;
+                    delete First;
 
-                Public.Flush();
-                break;
+                    if(!QueuedSends.First)
+                        QueuedSends.Last = 0;
+                        
+                    if(!SentImmediately)
+                    {
+                        /* The new SendFile() didn't complete immediately, and is now in the queue.
+                           Relying on the completion of that to send the rest of the queued files/data. */
+                        
+                        break;
+                    }
+                }
+
+                continue;
             }
+
+            /* Nothing left */
+
+            Public.Flush();
+            break;
         }
     }
     
     FileTransfer * Transfer;
+
+    void Terminate ()
+    {
+        DebugOut ("Terminate %d", &Public);
+
+        if (Context)
+            SSL_shutdown (Context);
+        else
+            close (Socket);
+    }
 };
 
 struct ServerInternal
@@ -292,7 +308,9 @@ void ClientSocketReadReady (ServerClientInternal &Client)
 
             if(Received == 0)
             {
+                close (Client.Socket);
                 Disconnected = true;
+
                 break;
             }
             
@@ -319,7 +337,9 @@ void ClientSocketReadReady (ServerClientInternal &Client)
 
                 /* Unknown error */
                 
+                close (Client.Socket);
                 Disconnected = true;
+
                 break;
             }
         }
@@ -589,7 +609,9 @@ bool Lacewing::Server::LoadCertificateFile(const char * Filename, const char * P
              | SSL_MODE_RELEASE_BUFFERS
         #endif
     );
-    
+
+    SSL_CTX_set_quiet_shutdown (Internal.Context, 1);
+
     SSL_CTX_set_default_passwd_cb(Internal.Context, PasswordCallback);
     SSL_CTX_set_default_passwd_cb_userdata(Internal.Context, &Internal);
 
@@ -856,9 +878,15 @@ void Lacewing::Server::Client::Disconnect()
 
     ServerClientInternal &Internal = *((ServerClientInternal *) InternalTag);
 
-    int Socket = Internal.Socket;
-    Internal.Socket = 0;
-    close(Socket);
+    if (Internal.QueuedSends.First || Internal.Transfer)
+    {
+        Internal.QueuedSends.Add (new QueuedSend (QueuedSendType::Disconnect));
+        return;
+    }
+    else
+    {
+        Internal.Terminate ();
+    }
 }
 
 Lacewing::Address &Lacewing::Server::Client::GetAddress()

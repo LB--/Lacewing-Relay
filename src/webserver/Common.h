@@ -260,6 +260,8 @@ public:
     Lacewing::Server::Client &Socket;
     WebserverInternal &Server;
 
+    int Timeout;
+
     WebserverClient (WebserverInternal &, Lacewing::Server::Client &, bool Secure);
     
     virtual void Tick () = 0;

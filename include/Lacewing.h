@@ -336,6 +336,8 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFunction         lw_i64  lw_ws_bytes_received         (lw_ws *);
   LacewingFunction           void  lw_ws_close_session          (lw_ws *, const char * id);
   LacewingFunction           void  lw_ws_enable_manual_finish   (lw_ws *);
+  LacewingFunction           long  lw_ws_idle_timeout           (lw_ws *);
+  LacewingFunction           void  lw_ws_set_idle_timeout       (lw_ws *, long seconds);  
   LacewingFunction        lw_addr* lw_ws_req_addr               (lw_ws_req *);
   LacewingFunction        lw_bool  lw_ws_req_secure             (lw_ws_req *);
   LacewingFunction     const char* lw_ws_req_url                (lw_ws_req *);
@@ -369,6 +371,8 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFunction     const char* lw_ws_req_GET                (lw_ws_req *, const char * name);
   LacewingFunction     const char* lw_ws_req_POST               (lw_ws_req *, const char * name);
   LacewingFunction           void  lw_ws_req_disable_cache      (lw_ws_req *);
+  LacewingFunction           long  lw_ws_req_idle_timeout       (lw_ws_req *);
+  LacewingFunction           void  lw_ws_req_set_idle_timeout   (lw_ws_req *, long seconds);  
 /*LacewingFunction           void  lw_ws_req_enable_dl_resuming (lw_ws_req *);
   LacewingFunction         lw_i64  lw_ws_req_reqrange_begin     (lw_ws_req *);
   LacewingFunction         lw_i64  lw_ws_req_reqrange_end       (lw_ws_req *);
@@ -847,7 +851,9 @@ struct Webserver
     LacewingFunction lw_i64 BytesReceived();
 
     LacewingFunction void EnableManualRequestFinish ();
-    LacewingFunction void SetIdleTimeout (int Seconds);
+
+    LacewingFunction int  IdleTimeout ();
+    LacewingFunction void IdleTimeout (int Seconds);
 
     struct Request
     {
@@ -876,6 +882,9 @@ struct Webserver
 
         LacewingFunction void Reset();
         LacewingFunction void Finish(const char * Data = 0, int Size = -1);
+
+        LacewingFunction int  IdleTimeout ();
+        LacewingFunction void IdleTimeout (int Seconds);
 
         LacewingFunction lw_i64 LastModified  ();
         LacewingFunction void   LastModified  (lw_i64 Time);

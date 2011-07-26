@@ -85,6 +85,12 @@ void lw_ws_close_session (lw_ws * webserver, const char * id)
 void lw_ws_enable_manual_finish (lw_ws * webserver)
     { ((Lacewing::Webserver *) webserver)->EnableManualRequestFinish();
     }
+long lw_ws_idle_timeout (lw_ws * webserver)
+    { ((Lacewing::Webserver *) webserver)->IdleTimeout();
+    }
+void lw_ws_set_idle_timeout (lw_ws * webserver, long timeout)
+    { ((Lacewing::Webserver *) webserver)->IdleTimeout(timeout);
+    }
 lw_addr* lw_ws_req_addr (lw_ws_req * request)
     { return (lw_addr *) &((Lacewing::Webserver::Request *) request)->GetAddress();
     }
@@ -180,6 +186,12 @@ const char* lw_ws_req_POST (lw_ws_req * request, const char * name)
     }
 void lw_ws_req_disable_cache (lw_ws_req * request)
     { ((Lacewing::Webserver::Request *) request)->DisableCache();
+    }
+long lw_ws_req_idle_timeout (lw_ws_req * request)
+    { ((Lacewing::Webserver::Request *) request)->IdleTimeout();
+    }
+void lw_ws_req_set_idle_timeout (lw_ws_req * request, long timeout)
+    { ((Lacewing::Webserver::Request *) request)->IdleTimeout(timeout);
     }
 /*void lw_ws_req_enable_dl_resuming (lw_ws_req * request)
     { ((Lacewing::Webserver::Request *) request)->EnableDownloadResuming();

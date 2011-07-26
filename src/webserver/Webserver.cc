@@ -29,7 +29,7 @@
 #include "Common.h"
 
 WebserverClient::WebserverClient(WebserverInternal &_Server, Lacewing::Server::Client &_Socket, bool _Secure)
-    : Server (_Server), Socket (_Socket), Secure (_Secure)
+    : Server (_Server), Socket (_Socket), Secure (_Secure), Timeout (_Server.Timeout)
 {
 }
 
@@ -271,7 +271,7 @@ void Lacewing::Webserver::EnableManualRequestFinish()
     ((WebserverInternal *) InternalTag)->AutoFinish = false;
 }
 
-void Lacewing::Webserver::SetIdleTimeout (int Seconds)
+void Lacewing::Webserver::IdleTimeout (int Seconds)
 {
     WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
 
@@ -282,6 +282,11 @@ void Lacewing::Webserver::SetIdleTimeout (int Seconds)
         Internal.StopTimer ();
         Internal.StartTimer ();
     }
+}
+
+int Lacewing::Webserver::IdleTimeout ()
+{
+    return ((WebserverInternal *) InternalTag)->Timeout;
 }
 
 const char * Lacewing::Webserver::Upload::Filename()
