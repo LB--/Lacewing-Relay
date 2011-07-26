@@ -136,10 +136,14 @@ public:
 
     inline void StartTimer ()
     {
-        if (Timer.Started())
-            return;
+        #ifdef LacewingTimeoutExperiment
 
-        Timer.Start (Timeout * 1000);
+            if (Timer.Started())
+                return;
+
+            Timer.Start (Timeout * 1000);
+        
+        #endif
     }
 
     inline void StopTimer ()
