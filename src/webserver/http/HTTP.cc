@@ -390,12 +390,12 @@ void HTTPClient::Respond(RequestInternal &) /* request parameter ignored - HTTP 
     if (!Flushed)
         Socket.Flush ();
 
-    Reset ();
-
     /* Close the connection if this is HTTP/1.0 without a Connection: Keep-Alive header */
 
     if((!stricmp(Request.Version, "HTTP/1.0")) && stricmp(Request.InHeaders.Get("Connection"), "Keep-Alive"))
         Request.Public.Disconnect();
+    
+    Reset ();
 }
 
 void HTTPClient::Dead ()
