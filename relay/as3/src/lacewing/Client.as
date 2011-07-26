@@ -78,6 +78,10 @@ package lacewing
         {
         }
         
+        public function onServerChannelMessage(channel:Channel, subchannel:int, message:flash.utils.ByteArray, variant:int):void
+        {
+        }
+        
         public function onJoinChannel(channel:Channel):void
         {
         }
@@ -705,13 +709,24 @@ package lacewing
                     break;
                 }
                     
-                case 4: /* ObjectServerMessage */
-                case 5: /* ObjectChannelMessage */
-                case 6: /* ObjectPeerMessage */
+                case 4: /* BinaryServerChannelMessage */
+                {
+                    subchannel = bytes.readUnsignedByte();        
+                    channel    = getChannel(bytes);
+                    
+                    onServerChannelMessage(channel, subchannel, bytes, variant);
+                    
+                    break;
+                }
+                
+                case 5: /* ObjectServerMessage */
+                case 6: /* ObjectChannelMessage */
+                case 7: /* ObjectPeerMessage */
+                case 8: /* ObjectServerChannelMessage */
                     
                     break;
                 
-                case 7: /* Peer */
+                case 9: /* Peer */
                 {
                     channel = getChannel(bytes);
                     peerID  = bytes.readUnsignedShort();
@@ -778,10 +793,10 @@ package lacewing
                     break;
                 }
                 
-                case 8: /* UDPWelcome */
+                case 10: /* UDPWelcome */
                     break;
                 
-                case 9: /* Ping */
+                case 11: /* Ping */
                     
                     addHeader(9, 0); /* Pong */
                     send ();

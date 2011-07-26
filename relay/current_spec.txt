@@ -342,51 +342,59 @@ Table of Contents :-
         1 - BinaryServerMessage
                 [byte subchannel, binary message]
                 
-            This is sent to relay a message from the server.
-            As this is a binary message, it will not be sent to web clients.
+            Message originating from the server, sent to a client.  May be sent
+            at any time, even before the client has set a name or joined a
+            channel.
+            
+            As this message is a binary message, it will not be sent to or
+            received by web clients.
             
         2 - BinaryChannelMessage
                 [byte subchannel, short channel, short peer, binary message]
                 
-            This is sent to relay a message sent by a peer (another client on
-            the same channel).
+            Relays a BinaryChannelMessage (see the client -> server version)
 
         3 - BinaryPeerMessage
                 [byte subchannel, short channel, short peer, binary message]
                 
-            This is sent to send a message to an individual peer.
+            Relays a BinaryPeerMessage (see the client -> server version)
             
-            The 'channel' parameter must be a valid channel identifier, assigned
-            by the JoinChannel response.  The 'peer' parameter must be a valid
-            peer identifier, assigned by either the JoinChannel response or the
-            Peer message.
+        4 - BinaryServerChannelMessage
+                [byte subchannel, short channel, binary message]
+                
+            Message originating from the server, related to a particular
+            channel.  May or may not be sent to every client on the channel.
             
-            As this message is a binary message, it will not be sent or received
-            by HTTP clients.
+            The 'channel' parameter must be a valid channel identifier, sent
+            to the client previously by the JoinChannel response.
             
-        4 - ObjectServerMessage
+        5 - ObjectServerMessage
                 [byte subchannel, json message]
-                
-            This is sent to send a message to the server.  It may be sent at any
-            time, even before setting a name or joining a channel.
+
+            Message originating from the server, sent to a client.  May be sent
+            at any time, even before the client has set a name or joined a
+            channel.
             
-        5 - ObjectChannelMessage
+        6 - ObjectChannelMessage
                 [byte subchannel, short channel, short peer, json message]
                 
-            This is sent to send a message to the channel.  The 'channel'
-            parameter must be a valid channel identifier, assigned by the
-            JoinChannel response.
+            Relays an ObjectChannelMessage (see the client -> server version)
             
-        6 - ObjectPeerMessage
+        7 - ObjectPeerMessage
                 [byte subchannel, short channel, short peer, json message]
                 
-            This is sent to send a message to an individual peer.  The 'channel'
-            parameter must be a valid channel identifier, assigned by the
-            JoinChannel response.  The 'peer' parameter must be a valid peer
-            identifier, assigned by either the JoinChannel response or the
-            Peer message.
-        
-        7 - Peer
+            Relays an ObjectPeerMessage (see the client -> server version)
+            
+        8 - ObjectServerChannelMessage
+                [byte subchannel, short channel, json message]
+                
+            Message originating from the server, related to a particular
+            channel.  May or may not be sent to every client on the channel.
+            
+            The 'channel' parameter must be a valid channel identifier, sent
+            to the client previously by the JoinChannel response.
+            
+        9 - Peer
                 [short channel, short peer, byte flags, string name] 
         
             This may be sent for a number of reasons:
@@ -402,14 +410,14 @@ Table of Contents :-
             The only flag in this protocol revision is flag 1, which means the
             peer in question is the channel master.
             
-        8 - UDPWelcome
+        10 - UDPWelcome
                 
             This is sent over TCP in response to successfully receiving the
             UDPHello message over UDP, to confirm that UDP is ready to use.
             
             For more information on UDP, see section 4.2.
             
-        9 - Ping
+        11 - Ping
         
             Sent by the server to ensure a client is still alive.  The client
             should respond with a Pong message.
