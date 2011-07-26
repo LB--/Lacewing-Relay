@@ -75,7 +75,7 @@ bool Lacewing::Pump::Ready (void * Tag, bool CanRead, bool CanWrite)
 
     if(CanWrite)
     {
-        if(!Event->Removing)
+        if(Event->WriteCallback && !Event->Removing)
             ((void (*) (void *)) Event->WriteCallback) (Event->Tag);
     }
     
