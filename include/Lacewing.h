@@ -147,6 +147,7 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFunction       lw_timer* lw_timer_new                  ();
   LacewingFunction           void  lw_timer_delete               (lw_timer *);
   LacewingFunction           void  lw_timer_start                (lw_timer *, long milliseconds);
+  LacewingFunction        lw_bool  lw_timer_started              (lw_timer *);
   LacewingFunction           void  lw_timer_stop                 (lw_timer *);
   LacewingFunction           void  lw_timer_force_tick           (lw_timer *);
 
@@ -560,8 +561,9 @@ struct Timer
     LacewingFunction  Timer (Pump &);
     LacewingFunction ~Timer ();
 
-    LacewingFunction void Start (int Milliseconds);
-    LacewingFunction void Stop  ();
+    LacewingFunction void Start    (int Milliseconds);
+    LacewingFunction void Stop     ();
+    LacewingFunction bool Started  ();
     
     LacewingFunction void ForceTick ();
     
@@ -845,6 +847,7 @@ struct Webserver
     LacewingFunction lw_i64 BytesReceived();
 
     LacewingFunction void EnableManualRequestFinish ();
+    LacewingFunction void SetIdleTimeout (int Seconds);
 
     struct Request
     {
@@ -1044,6 +1047,10 @@ public:
         (Lacewing::RelayClient &Client, Lacewing::RelayClient::Channel &Channel, Lacewing::RelayClient::Channel::Peer &Peer,
             bool Blasted, int Subchannel, char * Data, int Size, int Variant);
 
+    typedef void (LacewingHandler * HandlerServerChannelMessage)
+        (Lacewing::RelayClient &Client, Lacewing::RelayClient::Channel &Channel, bool Blasted,
+            int Subchannel, char * Data, int Size, int Variant);
+
     typedef void (LacewingHandler * HandlerError)                    (Lacewing::RelayClient &Client, Lacewing::Error &);
     typedef void (LacewingHandler * HandlerJoin)                     (Lacewing::RelayClient &Client, Lacewing::RelayClient::Channel &Target);
     typedef void (LacewingHandler * HandlerJoinDenied)               (Lacewing::RelayClient &Client, const char * ChannelName, const char * DenyReason);
@@ -1057,30 +1064,30 @@ public:
     typedef void (LacewingHandler * HandlerPeerChangeName)           (Lacewing::RelayClient &Client, Lacewing::RelayClient::Channel &Channel,Lacewing::RelayClient::Channel::Peer &Peer,const char * OldName);
     typedef void (LacewingHandler * HandlerChannelListReceived)      (Lacewing::RelayClient &Client);
 
-    LacewingFunction void onConnect           (HandlerConnect);
-    LacewingFunction void onConnectionDenied  (HandlerConnectionDenied);
-    LacewingFunction void onDisconnect        (HandlerDisconnect);
-    LacewingFunction void onServerMessage     (HandlerServerMessage);
-    LacewingFunction void onChannelMessage    (HandlerChannelMessage);
-    LacewingFunction void onPeerMessage       (HandlerPeerMessage);
-    LacewingFunction void onError             (HandlerError);
-    LacewingFunction void onJoin              (HandlerJoin);
-    LacewingFunction void onJoinDenied        (HandlerJoinDenied);
-    LacewingFunction void onLeave             (HandlerLeave);
-    LacewingFunction void onLeaveDenied       (HandlerLeaveDenied);    
-    LacewingFunction void onNameSet           (HandlerNameSet);
-    LacewingFunction void onNameChanged       (HandlerNameChanged);
-    LacewingFunction void onNameDenied        (HandlerNameDenied);
-    LacewingFunction void onPeerConnect       (HandlerPeerConnect);
-    LacewingFunction void onPeerDisconnect    (HandlerPeerDisconnect);
-    LacewingFunction void onPeerChangeName         (HandlerPeerChangeName);
-    LacewingFunction void onChannelListReceived    (HandlerChannelListReceived);
+    LacewingFunction void onConnect               (HandlerConnect);
+    LacewingFunction void onConnectionDenied      (HandlerConnectionDenied);
+    LacewingFunction void onDisconnect            (HandlerDisconnect);
+    LacewingFunction void onServerMessage         (HandlerServerMessage);
+    LacewingFunction void onChannelMessage        (HandlerChannelMessage);
+    LacewingFunction void onPeerMessage           (HandlerPeerMessage);
+    LacewingFunction void onServerChannelMessage  (HandlerServerChannelMessage);
+    LacewingFunction void onError                 (HandlerError);
+    LacewingFunction void onJoin                  (HandlerJoin);
+    LacewingFunction void onJoinDenied            (HandlerJoinDenied);
+    LacewingFunction void onLeave                 (HandlerLeave);
+    LacewingFunction void onLeaveDenied           (HandlerLeaveDenied);    
+    LacewingFunction void onNameSet               (HandlerNameSet);
+    LacewingFunction void onNameChanged           (HandlerNameChanged);
+    LacewingFunction void onNameDenied            (HandlerNameDenied);
+    LacewingFunction void onPeerConnect           (HandlerPeerConnect);
+    LacewingFunction void onPeerDisconnect        (HandlerPeerDisconnect);
+    LacewingFunction void onPeerChangeName        (HandlerPeerChangeName);
+    LacewingFunction void onChannelListReceived   (HandlerChannelListReceived);
 
 private:
 
     Lacewing::Client Socket;
     Lacewing::UDP    UDP;
-
 };
 
 struct RelayServer
@@ -1116,26 +1123,24 @@ struct RelayServer
         LacewingFunction const char * Name ();
         LacewingFunction void Name (const char *);
 
-        LacewingFunction int ClientCount();
-
-        LacewingFunction void * ClientLoop(void * ID = 0);
-        LacewingFunction Client &ClientLoopIndex(void * ID);
-        LacewingFunction void EndClientLoop(void * ID);
-
-        /*  for(void * ID = Channel.ClientLoop(); ID; ID = Channel.ClientLoop(ID))
-            {
-                Lacewing::RelayServer::Client &Client = Channel.ClientLoopIndex(ID);
-                        
-                // If leaving the client loop before the end
-                Channel.EndClientLoop(ID);
-            }
-        */
-
         LacewingFunction bool Hidden();
         LacewingFunction bool AutoCloseEnabled();
         LacewingFunction void Close();
+        
+        LacewingFunction void Send (int Subchannel, const char * Data, int Size = -1, int Variant = 0);
+        LacewingFunction void Blast (int Subchannel, const char * Data, int Size = -1, int Variant = 0);
 
-        LacewingFunction Channel * Next ();
+        LacewingFunction int ClientCount ();
+
+        struct ClientIterator
+        {
+            void * InternalTag;
+        
+            LacewingFunction ClientIterator (Channel &);
+            LacewingFunction Client * Next ();
+        };
+        
+        Channel * Next ();
     };
 
     LacewingFunction int ChannelCount();
@@ -1156,8 +1161,16 @@ struct RelayServer
 
         LacewingFunction const char * Name ();
         LacewingFunction void Name (const char *);
-
+        
         LacewingFunction int ChannelCount();
+        
+        struct ChannelIterator
+        {
+            void * InternalTag;
+
+            LacewingFunction ChannelIterator (Client &);
+            LacewingFunction Channel * Next ();
+        };
         
         Client * Next ();
     };

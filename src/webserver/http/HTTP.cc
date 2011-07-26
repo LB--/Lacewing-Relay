@@ -61,6 +61,11 @@ void HTTPClient::Process (char * Buffer, int Size)
         return;
     }
 
+    /* TODO: A naughty client could keep the connection open by sending 1 byte every 5 seconds */
+
+    LastActivityTime = time (0);
+
+
     /* State 0 : Line content
        State 1 : Got CR, need LF
        State 2 : Message body */
@@ -340,6 +345,8 @@ void HTTPClient::ProcessHeader(char * Line)
 
 void HTTPClient::Respond(RequestInternal &) /* request parameter ignored - HTTP only ever has one request object per client */
 {
+    LastActivityTime = time (0);
+    
     Socket.StartBuffering ();
 
     Socket << Request.Version << " " << Request.Status;
@@ -413,5 +420,14 @@ void HTTPClient::Dead ()
 bool HTTPClient::IsSPDY ()
 {
     return false;
+}
+
+void HTTPClient::Tick ()
+{
+    if (Request.Responded && (time(0) - LastActivityTime) > Server.Timeout)
+    {
+        DebugOut ("Dropping HTTP connection due to inactivity");
+        Socket.Disconnect ();
+    }
 }
 

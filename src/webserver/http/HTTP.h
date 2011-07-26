@@ -34,6 +34,8 @@ class HTTPClient : public WebserverClient
     lw_i64 BodyRemaining;
     int State;
     
+    time_t LastActivityTime;
+
     void ProcessLine      (char * Line);
     void ProcessFirstLine (char * Line);
     void ProcessHeader    (char * Line);
@@ -49,6 +51,8 @@ public:
     void Process (char * Buffer, int Size);
     void Respond (RequestInternal &);
     void Dead ();
+
+    void Tick ();
 
     bool IsSPDY ();
 

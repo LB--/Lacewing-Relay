@@ -181,7 +181,7 @@ struct RelayServerInternal
         Lacewing::Server &Socket = Server.Socket;
         List <RelayServerInternal::Client *> ToDisconnect;
 
-        Builder.AddHeader(9, 0); /* Ping */
+        Builder.AddHeader(11, 0); /* Ping */
         
         for (Lacewing::Server::Client * ClientSocket = Socket.FirstClient (); ClientSocket; ClientSocket = ClientSocket->Next ())
         {
@@ -461,7 +461,7 @@ void RelayServerInternal::Channel::RemoveClient(RelayServerInternal::Client &Cli
 
     /* Notify all the other peers that this client has left the channel */
 
-    Builder.AddHeader (7, 0); /* Peer */
+    Builder.AddHeader (9, 0); /* Peer */
     
     Builder.Add <unsigned short> (ID);
     Builder.Add <unsigned short> (Client.ID);
@@ -637,7 +637,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                     {
                         RelayServerInternal::Channel * Channel = ** E;
 
-                        Builder.AddHeader (7, 0); /* Peer */
+                        Builder.AddHeader (9, 0); /* Peer */
                         
                         Builder.Add <unsigned short> (Channel->ID);
                         Builder.Add <unsigned short> (ID);
@@ -756,7 +756,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                         Builder.Send(Socket);
 
 
-                        Builder.AddHeader (7, 0); /* Peer */
+                        Builder.AddHeader (9, 0); /* Peer */
                         
                         Builder.Add <unsigned short> (Channel->ID);
                         Builder.Add <unsigned short> (ID);
@@ -1027,8 +1027,8 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
 
             if(!SentUDPWelcome)
             {
-                Builder.AddHeader (8, 0); /* UDPWelcome */
-                Builder.Send    (Socket);
+                Builder.AddHeader (10, 0); /* UDPWelcome */
+                Builder.Send     (Socket);
 
                 SentUDPWelcome = true;
             }
@@ -1080,6 +1080,46 @@ void Lacewing::RelayServer::Client::Blast(int Subchannel, const char * Message, 
     Builder.Add (Message, Size);
 
     Builder.Send (Internal.Server.Server.UDP, Internal.UDPAddress);
+}
+
+void Lacewing::RelayServer::Channel::Send(int Subchannel, const char * Message, int Size, int Variant)
+{
+    RelayServerInternal::Channel &Internal = *(RelayServerInternal::Channel *) InternalTag;
+    FrameBuilder &Builder = Internal.Server.Builder;
+
+    Builder.AddHeader (4, Variant); /* BinaryServerChannelMessage */
+    
+    Builder.Add <unsigned char> (Subchannel);
+    Builder.Add <unsigned short> (Internal.ID);
+    Builder.Add (Message, Size);
+
+    for (List <RelayServerInternal::Client *>::Element *
+                E = Internal.Clients.First; E; E = E->Next)
+    {
+        Builder.Send ((** E)->Socket, false);
+    }
+
+    Builder.FrameReset ();
+}
+
+void Lacewing::RelayServer::Channel::Blast(int Subchannel, const char * Message, int Size, int Variant)
+{
+    RelayServerInternal::Channel &Internal = *(RelayServerInternal::Channel *) InternalTag;
+    FrameBuilder &Builder = Internal.Server.Builder;
+
+    Builder.AddHeader (4, Variant, true); /* BinaryServerChannelMessage */
+    
+    Builder.Add <unsigned char> (Subchannel);
+    Builder.Add <unsigned short> (Internal.ID);
+    Builder.Add (Message, Size);
+
+    for (List <RelayServerInternal::Client *>::Element *
+                E = Internal.Clients.First; E; E = E->Next)
+    {
+        Builder.Send (Internal.Server.Server.UDP, (** E)->UDPAddress, false);
+    }
+
+    Builder.FrameReset ();
 }
 
 int Lacewing::RelayServer::Client::ID()
@@ -1183,6 +1223,42 @@ Lacewing::RelayServer::Channel * Lacewing::RelayServer::FirstChannel ()
 {
     return ((RelayServerInternal *) InternalTag)->Channels.First ?
             &(** ((RelayServerInternal *) InternalTag)->Channels.First)->Public : 0;
+}
+
+Lacewing::RelayServer::Channel::ClientIterator::ClientIterator
+    (Lacewing::RelayServer::Channel &Channel)
+{
+    InternalTag = ((RelayServerInternal::Channel *) Channel.InternalTag)->Clients.First;
+}
+
+Lacewing::RelayServer::Client * Lacewing::RelayServer::Channel::ClientIterator::Next ()
+{
+    List <Lacewing::RelayServer::Client *>::Element * E =
+        (List <Lacewing::RelayServer::Client *>::Element *) InternalTag;
+
+    if (!E)
+        return 0;
+
+    InternalTag = E->Next;
+    return ** E;
+}
+
+Lacewing::RelayServer::Client::ChannelIterator::ChannelIterator
+    (Lacewing::RelayServer::Client &Client)
+{
+    InternalTag = ((RelayServerInternal::Client *) Client.InternalTag)->Channels.First;
+}
+
+Lacewing::RelayServer::Channel * Lacewing::RelayServer::Client::ChannelIterator::Next ()
+{
+    List <Lacewing::RelayServer::Channel *>::Element * E =
+        (List <Lacewing::RelayServer::Channel *>::Element *) InternalTag;
+
+    if (!E)
+        return 0;
+
+    InternalTag = E->Next;
+    return ** E;
 }
 
 AutoHandlerFunctions(Lacewing::RelayServer, RelayServerInternal, Connect)

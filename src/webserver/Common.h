@@ -71,7 +71,8 @@ public:
     const static size_t SendBufferBacklog = 32;         /* 256 KB allocated initially and when the server runs out */
 
     Lacewing::Server * Socket, * SecureSocket;
-    
+    Lacewing::Timer Timer;
+
     List <char *> SendBuffers;
 
     char * BorrowSendBuffer();
@@ -110,6 +111,8 @@ public:
             Socket->onReceive    (SocketReceive);
             Socket->onError      (SocketError);
         }
+
+        StartTimer ();
     }
 
     inline void PrepareSecureSocket()
@@ -125,6 +128,23 @@ public:
             SecureSocket->onReceive    (SocketReceive);
             SecureSocket->onError      (SocketError);
         }
+        
+        StartTimer ();
+    }
+
+    int Timeout;
+
+    inline void StartTimer ()
+    {
+        if (Timer.Started())
+            return;
+
+        Timer.Start (Timeout * 1000);
+    }
+
+    inline void StopTimer ()
+    {
+        Timer.Stop ();
     }
 
     Lacewing::Webserver &Webserver;
@@ -140,7 +160,7 @@ public:
     Lacewing::Webserver::HandlerDisconnect   HandlerDisconnect;
 
     inline WebserverInternal(Lacewing::Webserver &_Webserver, PumpInternal &_EventPump)
-            : Webserver(_Webserver), EventPump(_EventPump)
+            : Webserver(_Webserver), EventPump(_EventPump), Timer (_EventPump.Pump)
     {
         Socket = SecureSocket = 0;
 
@@ -156,7 +176,15 @@ public:
 
         AutoFinish = true;
         FirstSession = 0;
+
+        Timeout = 5;
+
+        Timer.Tag = this;
+        Timer.onTick (TimerTickStatic);
     }
+
+    static void TimerTickStatic (Lacewing::Timer &);
+    void TimerTick ();
 };
 
 class WebserverClient;
@@ -234,6 +262,8 @@ public:
 
     WebserverClient (WebserverInternal &, Lacewing::Server::Client &, bool Secure);
     
+    virtual void Tick () = 0;
+
     virtual void Process (char * Buffer, int Size) = 0;
     virtual void Respond (RequestInternal &Request) = 0;
     virtual void Dead () = 0;

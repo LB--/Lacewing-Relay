@@ -273,10 +273,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\Looper.h"
-				>
-			</File>
-			<File
 				RelativePath="..\src\MessageBuilder.h"
 				>
 			</File>

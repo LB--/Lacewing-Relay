@@ -39,6 +39,8 @@ struct TimerInternal
 
     Lacewing::Timer::HandlerTick HandlerTick;
 
+    bool Started;
+
     #ifdef LacewingUseTimerFD
         int FD;
     #else
@@ -51,6 +53,7 @@ struct TimerInternal
                     : Timer(_Timer), EventPump(_EventPump)
     {
         HandlerTick = 0;
+        Started = false;
         
         #ifdef LacewingUseTimerFD
             FD = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
@@ -109,6 +112,8 @@ void Lacewing::Timer::Start(int Interval)
     Stop();
 
     TimerInternal &Internal = *((TimerInternal *) InternalTag);
+    
+    Internal.Started = true;
 
     #ifdef LacewingUseKQueue
     
@@ -178,6 +183,8 @@ void Lacewing::Timer::Stop()
             timerfd_settime(Internal.FD, 0, &spec, 0);
         #endif
     #endif
+
+    Internal.Started = false;
 }
 
 void Lacewing::Timer::ForceTick()
@@ -186,6 +193,11 @@ void Lacewing::Timer::ForceTick()
     
     if(Internal.HandlerTick)
         Internal.HandlerTick(*this);
+}
+
+bool Lacewing::Timer::Started ()
+{
+    return ((TimerInternal *) InternalTag)->Started;
 }
 
 AutoHandlerFunctions(Lacewing::Timer, TimerInternal, Tick)

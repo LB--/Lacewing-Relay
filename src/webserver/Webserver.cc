@@ -67,7 +67,7 @@ void WebserverInternal::SocketReceive(Lacewing::Server &Server, Lacewing::Server
 
     if (!Client.Tag)
         Client.Tag = new HTTPClient (Webserver, Client, &Server == Webserver.SecureSocket);
-    
+
     ((WebserverClient *) Client.Tag)->Process(Buffer, Size);
 }
 
@@ -79,6 +79,38 @@ void WebserverInternal::SocketError(Lacewing::Server &Server, Lacewing::Error &E
 
     if(Webserver.HandlerError)
         Webserver.HandlerError(Webserver.Webserver, Error);
+}
+
+void WebserverInternal::TimerTickStatic (Lacewing::Timer &Timer)
+{
+    ((WebserverInternal *) Timer.Tag)->TimerTick ();
+}
+
+void WebserverInternal::TimerTick ()
+{
+    if (Socket)
+    {
+        for (Lacewing::Server::Client * Client =
+                Socket->FirstClient (); Client; Client = Client->Next())
+        {
+            if (!Client->Tag)
+                continue;
+
+            ((WebserverClient *) Client->Tag)->Tick ();
+        }
+    }
+
+    if (SecureSocket)
+    {
+        for (Lacewing::Server::Client * Client =
+                SecureSocket->FirstClient (); Client; Client = Client->Next())
+        {
+            if (!Client->Tag)
+                continue;
+
+            ((WebserverClient *) Client->Tag)->Tick ();
+        }
+    }
 }
 
 Lacewing::Webserver::Webserver(Lacewing::Pump &EventPump)
@@ -237,6 +269,19 @@ bool Lacewing::Webserver::CertificateLoaded()
 void Lacewing::Webserver::EnableManualRequestFinish()
 {
     ((WebserverInternal *) InternalTag)->AutoFinish = false;
+}
+
+void Lacewing::Webserver::SetIdleTimeout (int Seconds)
+{
+    WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
+
+    Internal.Timeout = Seconds;
+
+    if (Internal.Timer.Started())
+    {
+        Internal.StopTimer ();
+        Internal.StartTimer ();
+    }
 }
 
 const char * Lacewing::Webserver::Upload::Filename()

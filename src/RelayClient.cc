@@ -43,47 +43,49 @@ struct RelayClientInternal
 
     Lacewing::Timer         Timer;
 
-    Lacewing::RelayClient::HandlerConnect              HandlerConnect;
-    Lacewing::RelayClient::HandlerConnectionDenied     HandlerConnectionDenied;
-    Lacewing::RelayClient::HandlerDisconnect           HandlerDisconnect;
-    Lacewing::RelayClient::HandlerServerMessage        HandlerServerMessage;
-    Lacewing::RelayClient::HandlerChannelMessage       HandlerChannelMessage;
-    Lacewing::RelayClient::HandlerPeerMessage          HandlerPeerMessage;
-    Lacewing::RelayClient::HandlerError                HandlerError;
-    Lacewing::RelayClient::HandlerJoin                 HandlerJoin;
-    Lacewing::RelayClient::HandlerJoinDenied           HandlerJoinDenied;
-    Lacewing::RelayClient::HandlerLeave                HandlerLeave;
-    Lacewing::RelayClient::HandlerLeaveDenied          HandlerLeaveDenied;
-    Lacewing::RelayClient::HandlerNameSet              HandlerNameSet;
-    Lacewing::RelayClient::HandlerNameChanged          HandlerNameChanged;
-    Lacewing::RelayClient::HandlerNameDenied           HandlerNameDenied;
-    Lacewing::RelayClient::HandlerPeerConnect          HandlerPeerConnect;
-    Lacewing::RelayClient::HandlerPeerDisconnect       HandlerPeerDisconnect;
-    Lacewing::RelayClient::HandlerPeerChangeName       HandlerPeerChangeName;
-    Lacewing::RelayClient::HandlerChannelListReceived  HandlerChannelListReceived;
+    Lacewing::RelayClient::HandlerConnect               HandlerConnect;
+    Lacewing::RelayClient::HandlerConnectionDenied      HandlerConnectionDenied;
+    Lacewing::RelayClient::HandlerDisconnect            HandlerDisconnect;
+    Lacewing::RelayClient::HandlerServerMessage         HandlerServerMessage;
+    Lacewing::RelayClient::HandlerChannelMessage        HandlerChannelMessage;
+    Lacewing::RelayClient::HandlerPeerMessage           HandlerPeerMessage;
+    Lacewing::RelayClient::HandlerServerChannelMessage  HandlerServerChannelMessage;
+    Lacewing::RelayClient::HandlerError                 HandlerError;
+    Lacewing::RelayClient::HandlerJoin                  HandlerJoin;
+    Lacewing::RelayClient::HandlerJoinDenied            HandlerJoinDenied;
+    Lacewing::RelayClient::HandlerLeave                 HandlerLeave;
+    Lacewing::RelayClient::HandlerLeaveDenied           HandlerLeaveDenied;
+    Lacewing::RelayClient::HandlerNameSet               HandlerNameSet;
+    Lacewing::RelayClient::HandlerNameChanged           HandlerNameChanged;
+    Lacewing::RelayClient::HandlerNameDenied            HandlerNameDenied;
+    Lacewing::RelayClient::HandlerPeerConnect           HandlerPeerConnect;
+    Lacewing::RelayClient::HandlerPeerDisconnect        HandlerPeerDisconnect;
+    Lacewing::RelayClient::HandlerPeerChangeName        HandlerPeerChangeName;
+    Lacewing::RelayClient::HandlerChannelListReceived   HandlerChannelListReceived;
 
     RelayClientInternal(Lacewing::RelayClient &_Client, Lacewing::Client &_Socket,
                 Lacewing::UDP &_UDP, Lacewing::Pump &_EventPump) : Client(_Client),
                     Socket(_Socket), UDP(_UDP), Message (true), Timer(_EventPump)
     {
-        HandlerConnect              = 0;
-        HandlerConnectionDenied     = 0;
-        HandlerDisconnect           = 0; 
-        HandlerServerMessage        = 0;
-        HandlerChannelMessage       = 0;
-        HandlerPeerMessage          = 0;
-        HandlerError                = 0;
-        HandlerJoin                 = 0;
-        HandlerJoinDenied           = 0;
-        HandlerLeave                = 0;
-        HandlerLeaveDenied          = 0;
-        HandlerNameSet              = 0;
-        HandlerNameChanged          = 0;
-        HandlerNameDenied           = 0;
-        HandlerPeerConnect          = 0;
-        HandlerPeerDisconnect       = 0;
-        HandlerPeerChangeName       = 0;
-        HandlerChannelListReceived  = 0;
+        HandlerConnect               = 0;
+        HandlerConnectionDenied      = 0;
+        HandlerDisconnect            = 0; 
+        HandlerServerMessage         = 0;
+        HandlerChannelMessage        = 0;
+        HandlerPeerMessage           = 0;
+        HandlerServerChannelMessage  = 0;
+        HandlerError                 = 0;
+        HandlerJoin                  = 0;
+        HandlerJoinDenied            = 0;
+        HandlerLeave                 = 0;
+        HandlerLeaveDenied           = 0;
+        HandlerNameSet               = 0;
+        HandlerNameChanged           = 0;
+        HandlerNameDenied            = 0;
+        HandlerPeerConnect           = 0;
+        HandlerPeerDisconnect        = 0;
+        HandlerPeerChangeName        = 0;
+        HandlerChannelListReceived   = 0;
 
         Reader.MessageHandler = MessageHandler;
         Reader.Tag = this;
@@ -841,13 +843,34 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
             break;
         }
 
-        case 4: /* ObjectServerMessage */
-        case 5: /* ObjectChannelMessage */
-        case 6: /* ObjectPeerMessage */
+        case 4: /* BinaryServerChannelMessage */
+        {
+            int Subchannel            = Reader.Get <unsigned char> ();
+            ChannelInternal * Channel = ReadChannel          (Reader);
+
+            char * Message;
+            unsigned int Size;
+
+            Reader.GetRemaining(Message, Size);
+
+            if(Reader.Failed)
+                break;
+
+            if(HandlerServerChannelMessage)
+                HandlerServerChannelMessage (Client, Channel->Public, Blasted,
+                                Subchannel, Message, Size, Variant);
+
+            break;
+        }
+
+        case 5: /* ObjectServerMessage */
+        case 6: /* ObjectChannelMessage */
+        case 7: /* ObjectPeerMessage */
+        case 8: /* ObjectServerChannelMessage */
             
             break;
 
-        case 7: /* Peer */
+        case 9: /* Peer */
         {
             ChannelInternal * Channel = ReadChannel (Reader);
             
@@ -915,7 +938,7 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
             break;
         }
 
-        case 8: /* UDPWelcome */
+        case 10: /* UDPWelcome */
             
             Timer.Stop();
             UDPAcknowledged = true;
@@ -925,7 +948,7 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
 
             break;
 
-        case 9: /* Ping */
+        case 11: /* Ping */
 
             this->Message.AddHeader(9, 0); /* Pong */
             this->Message.Send(Socket);
@@ -1022,6 +1045,7 @@ AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, Disconnect)
 AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, ServerMessage)
 AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, ChannelMessage)
 AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, PeerMessage)
+AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, ServerChannelMessage)
 AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, Error)
 AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, Join)
 AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, JoinDenied)

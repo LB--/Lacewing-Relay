@@ -40,6 +40,8 @@ struct TimerInternal
     HANDLE TimerHandle;
     HANDLE ShutdownEvent;
 
+    bool Started;
+
     Lacewing::Timer::HandlerTick HandlerTick;
 
     TimerInternal(Lacewing::Timer &_Timer, EventPumpInternal &_EventPump)
@@ -49,6 +51,8 @@ struct TimerInternal
         TimerHandle   = CreateWaitableTimer (0, FALSE, 0);
 
         HandlerTick = 0;
+
+        Started = false;
     }
 };
 
@@ -106,6 +110,8 @@ void Lacewing::Timer::Start(int Interval)
     {
         LacewingAssert(false);
     }
+
+    Internal.Started = true;
 }
 
 void Lacewing::Timer::Stop()
@@ -113,6 +119,12 @@ void Lacewing::Timer::Stop()
     TimerInternal &Internal = *((TimerInternal *) InternalTag);
 
     CancelWaitableTimer(Internal.TimerHandle);
+    Internal.Started = false;
+}
+
+bool Lacewing::Timer::Started ()
+{
+    return ((TimerInternal *) InternalTag)->Started;
 }
 
 void Lacewing::Timer::ForceTick()
