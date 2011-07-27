@@ -178,7 +178,7 @@ void RequestInternal::ProcessHeader (const char * Name, char * Value)
             InCookies.Set (CookieName, CookieValue);
             OutCookies.Set (CookieName, CookieValue);
             
-            if(!(CookieValue = Next))
+            if(!(Value = Next))
                 break;
         }
 

@@ -86,7 +86,7 @@ void lw_ws_enable_manual_finish (lw_ws * webserver)
     { ((Lacewing::Webserver *) webserver)->EnableManualRequestFinish();
     }
 long lw_ws_idle_timeout (lw_ws * webserver)
-    { ((Lacewing::Webserver *) webserver)->IdleTimeout();
+    { return ((Lacewing::Webserver *) webserver)->IdleTimeout();
     }
 void lw_ws_set_idle_timeout (lw_ws * webserver, long timeout)
     { ((Lacewing::Webserver *) webserver)->IdleTimeout(timeout);
@@ -188,7 +188,7 @@ void lw_ws_req_disable_cache (lw_ws_req * request)
     { ((Lacewing::Webserver::Request *) request)->DisableCache();
     }
 long lw_ws_req_idle_timeout (lw_ws_req * request)
-    { ((Lacewing::Webserver::Request *) request)->IdleTimeout();
+    { return ((Lacewing::Webserver::Request *) request)->IdleTimeout();
     }
 void lw_ws_req_set_idle_timeout (lw_ws_req * request, long timeout)
     { ((Lacewing::Webserver::Request *) request)->IdleTimeout(timeout);
