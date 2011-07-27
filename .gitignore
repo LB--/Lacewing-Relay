@@ -1,13 +1,8 @@
-*.svn
 bin/*
 build/*
-ignores
-liblacewing.la
-config.h
 *.ncb
 *.user
 *.suo
-Debug
 *.pdb
 *.ilk
 *.dll
@@ -17,7 +12,4 @@ Debug
 *.lo
 *.pc
 *.cache
-stamp-h1
-libtool
 *.obj
-
