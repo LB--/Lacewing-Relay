@@ -26,7 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#include "Common.h"
+#include "../Common.h"
 
 #include "FrameReader.h"
 #include "FrameBuilder.h"
@@ -35,8 +35,6 @@ struct ChannelInternal;
 
 struct RelayClientInternal
 {
-    ThreadTracker           Threads;
-
     Lacewing::RelayClient   &Client;
     Lacewing::Client        &Socket;
     Lacewing::UDP           &UDP;
@@ -246,7 +244,7 @@ void HandlerConnect(Lacewing::Client &Socket)
     Message.AddHeader(0, 0); /* Request */
 
     Message.Add <unsigned char> (0); /* Connect */
-    Message.Add ("revision 2", -1);
+    Message.Add ("revision 3", -1);
 
     Message.Send(Internal.Socket);
 }

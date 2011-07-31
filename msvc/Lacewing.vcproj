@@ -253,19 +253,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\FrameBuilder.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\FrameReader.h"
-				>
-			</File>
-			<File
 				RelativePath="..\src\Global.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\src\IDPool.h"
 				>
 			</File>
 			<File
@@ -289,14 +277,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\RelayClient.cc"
-				>
-			</File>
-			<File
-				RelativePath="..\src\RelayServer.cc"
-				>
-			</File>
-			<File
 				RelativePath="..\src\SpinSync.cc"
 				>
 			</File>
@@ -305,7 +285,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\ThreadTracker.h"
+				RelativePath="..\src\Thread.cc"
 				>
 			</File>
 			<File
@@ -353,6 +333,10 @@
 				</File>
 				<File
 					RelativePath="..\src\c\sync_flat.cc"
+					>
+				</File>
+				<File
+					RelativePath="..\src\c\thread_flat.cc"
 					>
 				</File>
 				<File
@@ -625,6 +609,30 @@
 				</File>
 				<File
 					RelativePath="..\src\windows\UDP.cc"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="relay"
+				>
+				<File
+					RelativePath="..\src\relay\FrameBuilder.h"
+					>
+				</File>
+				<File
+					RelativePath="..\src\relay\FrameReader.h"
+					>
+				</File>
+				<File
+					RelativePath="..\src\relay\IDPool.h"
+					>
+				</File>
+				<File
+					RelativePath="..\src\relay\RelayClient.cc"
+					>
+				</File>
+				<File
+					RelativePath="..\src\relay\RelayServer.cc"
 					>
 				</File>
 			</Filter>

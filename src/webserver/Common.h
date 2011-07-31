@@ -64,8 +64,7 @@ class WebserverInternal
 {
 public:
 
-    ThreadTracker  Threads;
-    PumpInternal   &EventPump;
+    PumpInternal &EventPump;
 
     const static size_t SendBufferSize    = 1024 * 32;  /* Maximum of 32 KB wasted per SendFile/SendConstant */
     const static size_t SendBufferBacklog = 32;         /* 256 KB allocated initially and when the server runs out */

@@ -89,10 +89,6 @@ extern "C"
     typedef struct { void * reserved; void * tag; } c;
 
 LacewingFunction    const char* lw_version                  ();
-LacewingFunction       lw_bool  lw_start_thread             (void * function, void * param);
-LacewingFunction          void  lw_set_current_thread_name  (const char * name);
-LacewingFunction          void  lw_pause                    (long milliseconds);
-LacewingFunction          void  lw_yield                    ();
 LacewingFunction        lw_i64  lw_current_thread_id        ();
 LacewingFunction        lw_i64  lw_file_last_modified       (const char * filename);
 LacewingFunction       lw_bool  lw_file_exists              (const char * filename);
@@ -101,12 +97,21 @@ LacewingFunction       lw_bool  lw_path_exists              (const char * filena
 LacewingFunction          void  lw_int64_to_string          (lw_i64, char *);
 LacewingFunction          void  lw_temp_path                (char * buffer, long length);
 LacewingFunction          void  lw_new_temp_file            (char * buffer, long length);
-LacewingFunction          long  lw_count_processors         ();
 LacewingFunction    const char* lw_guess_mime_type          (const char * filename);
 LacewingFunction          void  lw_md5                      (char * output, const char * input, long length);
 LacewingFunction          void  lw_md5_hex                  (char * output, const char * input, long length);
 LacewingFunction          void  lw_sha1                     (char * output, const char * input, long length);
 LacewingFunction          void  lw_sha1_hex                 (char * output, const char * input, long length);
+
+/* Thread */
+
+  LacewingFlat (lw_thread);
+
+  LacewingFunction      lw_thread* lw_thread_new      (const char * name, void * function);
+  LacewingFunction           void  lw_thread_delete   (lw_thread *);
+  LacewingFunction           void  lw_thread_start    (lw_thread *, void * parameter);
+  LacewingFunction        lw_bool  lw_thread_started  (lw_thread *);
+  LacewingFunction           long  lw_thread_join     (lw_thread *);
 
 /* Address */
 
@@ -439,10 +444,6 @@ namespace Lacewing
 {
 
 LacewingFunction   const char* Version                 ();
-LacewingFunction         bool  StartThread             (void * Function, void * Parameter = 0);
-LacewingFunction         void  SetCurrentThreadName    (const char * Name);
-LacewingFunction         void  Pause                   (int Milliseconds);
-LacewingFunction         void  Yield                   ();
 LacewingFunction       lw_i64  CurrentThreadID         ();
 LacewingFunction       lw_i64  LastModified            (const char * Filename);
 LacewingFunction         bool  FileExists              (const char * Filename);
@@ -451,7 +452,6 @@ LacewingFunction         bool  PathExists              (const char * Filename);
 LacewingFunction         void  Int64ToString           (lw_i64, char *);
 LacewingFunction         void  TempPath                (char * Buffer, int Length);
 LacewingFunction         void  NewTempFile             (char * Buffer, int Length);
-LacewingFunction          int  CountProcessors         ();
 LacewingFunction   const char* GuessMimeType           (const char * Filename);
 LacewingFunction         void  MD5                     (char * Output, const char * Input, int Length = -1);
 LacewingFunction         void  MD5_Hex                 (char * Output, const char * Input, int Length = -1);
@@ -557,6 +557,19 @@ struct Error
     typedef EventPump Pump;
 
 #endif
+
+struct Thread
+{
+    void * InternalTag, * Tag;
+
+    LacewingFunction   Thread (const char * Name, void * Function);
+    LacewingFunction ~ Thread ();
+
+    LacewingFunction void Start (void * Parameter);
+    LacewingFunction bool Started ();
+
+    LacewingFunction int Join ();
+};
 
 struct Timer
 {
@@ -1213,15 +1226,15 @@ struct RelayServer
     typedef bool (LacewingHandler * HandlerSetName)
         (Lacewing::RelayServer &Server, Lacewing::RelayServer::Client &Client, const char * Name);
 
-    LacewingFunction void onConnect   (HandlerConnect);
-    LacewingFunction void onDisconnect(HandlerDisconnect);
-    LacewingFunction void onError     (HandlerError);
+    LacewingFunction void onConnect        (HandlerConnect);
+    LacewingFunction void onDisconnect     (HandlerDisconnect);
+    LacewingFunction void onError          (HandlerError);
     LacewingFunction void onServerMessage  (HandlerServerMessage);
     LacewingFunction void onChannelMessage (HandlerChannelMessage);
     LacewingFunction void onPeerMessage    (HandlerPeerMessage);
     LacewingFunction void onJoinChannel    (HandlerJoinChannel);
     LacewingFunction void onLeaveChannel   (HandlerLeaveChannel);
-    LacewingFunction void onSetName   (HandlerSetName);
+    LacewingFunction void onSetName        (HandlerSetName);
 };
 
 struct FlashPlayerPolicy

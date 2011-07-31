@@ -92,16 +92,6 @@ void LacewingInitialise()
     Initialised = true;
 }
 
-void Lacewing::Pause(int Milliseconds)
-{
-    Sleep(Milliseconds);
-}
-
-void Lacewing::Yield()
-{
-    LacewingYield();
-}
-
 bool Lacewing::FileExists(const char * Filename)
 {
     #ifdef LacewingWindows
@@ -195,29 +185,6 @@ lw_i64 Lacewing::LastModified(const char * Filename)
     #endif
 }
 
-bool Lacewing::StartThread(void * Function, void * Parameter)
-{
-    #ifdef LacewingWindows
-
-        HANDLE Thread = (HANDLE) _beginthreadex(0, 0, (unsigned (__stdcall *) (void *)) Function, Parameter, 0, 0);
-        CloseHandle(Thread);
-
-        return Thread != INVALID_HANDLE_VALUE;
-
-    #else
-    
-        pthread_t Thread = 0;
-
-        if(pthread_create(&Thread, 0, (void * (*) (void *)) Function, Parameter))
-            return false;
-        
-        return true;
-
-    #endif
-
-    return false;
-}
-
 /* TODO : Returning pthread_self as a lw_i64 is a hack, because pthread_t is opaque
           We should assign our own thread IDs (which should be 32-bit anyway) */
     
@@ -234,71 +201,6 @@ lw_i64 Lacewing::CurrentThreadID()
     #endif
 
     return -1;
-}
-
-void Lacewing::SetCurrentThreadName(const char * Name)
-{
-    #ifdef LacewingWindows
-        
-        struct
-        {
-              DWORD dwType;
-              LPCSTR szName;
-              DWORD dwThreadID;
-              DWORD dwFlags;
-
-        } ThreadNameInfo;
-
-        ThreadNameInfo.dwType      = 0x1000;
-        ThreadNameInfo.szName      =   Name;
-        ThreadNameInfo.dwThreadID  =     -1;
-        ThreadNameInfo.dwFlags     =      0;
-
-        __try
-        {
-            RaiseException(0x406D1388, 0, sizeof(ThreadNameInfo) / sizeof(ULONG), (ULONG *) &ThreadNameInfo);
-        }
-        __except (EXCEPTION_CONTINUE_EXECUTION)
-        {
-        }
-
-    #else
-
-        #if HAVE_DECL_PR_SET_NAME != 0
-            prctl(PR_SET_NAME, (unsigned long) Name, 0, 0, 0);
-        #endif
-        
-    #endif
-}
-
-int Lacewing::CountProcessors()
-{
-
-#ifdef LacewingWindows
-
-    static int ProcessorCount = 0;
-
-    if(!ProcessorCount)
-    {
-        SYSTEM_INFO SystemInformation;
-        GetSystemInfo(&SystemInformation);
-        ProcessorCount = SystemInformation.dwNumberOfProcessors;
-    }
-
-    return ProcessorCount;
-
-#else
-
-    #ifdef HAVE_CORESERVICES_CORESERVICES_H
-        return MPProcessors();
-    #endif
-    
-    /* TODO : Unix, and not Darwin */
-    
-    return 2;
-
-#endif
-
 }
 
 void Lacewing::Int64ToString(lw_i64 Value, char * Output)

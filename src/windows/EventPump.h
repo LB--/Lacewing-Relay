@@ -33,16 +33,21 @@
 #define SigEndWatcherThread    (void *) 1
 #define SigExitEventLoop       (void *) 2
 
+struct EventPumpInternal;
+
+void Watcher (EventPumpInternal &);
+
 struct EventPumpInternal
 {  
     Lacewing::EventPump &Pump;
-    ThreadTracker Threads;
+    Lacewing::Thread WatcherThread;
 
     HANDLE CompletionPort;
 
     bool InUse;
 
-    EventPumpInternal(Lacewing::EventPump &_Pump) : Pump(_Pump)
+    EventPumpInternal(Lacewing::EventPump &_Pump)
+        : Pump(_Pump), WatcherThread ("Watcher", (void *) Watcher)
     {
         CompletionPort     = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 3, 0);
         HandlerTickNeeded  = 0;

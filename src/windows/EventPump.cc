@@ -38,12 +38,12 @@ Lacewing::EventPump::~EventPump()
 {
     EventPumpInternal &Internal = *((EventPumpInternal *) InternalTag);
 
-    if(Internal.Threads.Living())
+    if(Internal.WatcherThread.Started())
     {
-        Post(SigEndWatcherThread, 0);
+        Post (SigEndWatcherThread, 0);
 
-        Internal.WatcherResumeEvent.Signal();
-        Internal.Threads.WaitUntilDead();
+        Internal.WatcherResumeEvent.Signal ();
+        Internal.WatcherThread.Join ();
     }
 
     delete ((EventPumpInternal *) InternalTag);
@@ -163,7 +163,7 @@ void Lacewing::EventPump::PostEventLoopExit ()
     Post (SigExitEventLoop, 0);
 }
 
-LacewingThread(TickNeededWatcher, EventPumpInternal, Internal)
+void Watcher (EventPumpInternal &Internal)
 {
     for(;;)
     {
@@ -196,7 +196,7 @@ Lacewing::Error * Lacewing::EventPump::StartSleepyTicking(void (LacewingHandler 
     EventPumpInternal &Internal = *((EventPumpInternal *) InternalTag);
 
     Internal.HandlerTickNeeded = onTickNeeded;    
-    Internal.Threads.Start(TickNeededWatcher, &Internal);
+    Internal.WatcherThread.Start(&Internal);
 
     return 0;
 }

@@ -30,12 +30,14 @@
 #include "EventPump.h"
 
 struct TimerInternal;
-void TimerTick(TimerInternal &Internal);
+
+void LegacyTimer (TimerInternal &Internal);
+void TimerTick (TimerInternal &Internal);
 
 struct TimerInternal
 {
-    Lacewing::Timer   &Timer;
-    PumpInternal  &EventPump;
+    Lacewing::Timer &Timer;
+    PumpInternal &EventPump;
 
     Lacewing::Timer::HandlerTick HandlerTick;
 
@@ -44,13 +46,14 @@ struct TimerInternal
     #ifdef LacewingUseTimerFD
         int FD;
     #else
-        ThreadTracker Threads;
+        Lacewing::Thread LegacyTimerThread;
         Lacewing::Event StopEvent;
         int Interval;
     #endif
 
     TimerInternal(Lacewing::Timer &_Timer, PumpInternal &_EventPump)
-                    : Timer(_Timer), EventPump(_EventPump)
+                    : Timer(_Timer), EventPump(_EventPump),
+                      LegacyTimerThread ("LegacyTimer", (void *) LegacyTimer)
     {
         HandlerTick = 0;
         Started = false;
@@ -77,7 +80,7 @@ void TimerTick(TimerInternal &Internal)
 
 #ifndef LacewingUseTimerFD
 
-    LacewingThread(LegacyTimer, TimerInternal, Internal)
+    void LegacyTimer (TimerInternal &Internal)
     {
         for(;;)
         {
@@ -134,7 +137,7 @@ void Lacewing::Timer::Start(int Interval)
         else
         {
             Internal.Interval = Interval;
-            Internal.Threads.Start ((void *) LegacyTimer, &Internal);
+            Internal.LegacyTimerThread.Start (&Internal);
         }
 
     #else
@@ -152,7 +155,7 @@ void Lacewing::Timer::Start(int Interval)
         #else
 
             Internal.Interval = Interval;
-            Internal.Threads.Start ((void *) LegacyTimer, &Internal);
+            Internal.LegacyTimerThread.Start (&Internal);
 
         #endif
     #endif
@@ -166,9 +169,9 @@ void Lacewing::Timer::Stop()
 
     #ifndef LacewingUseTimerFD
 
-        Internal.StopEvent.Signal();
-        Internal.Threads.WaitUntilDead();
-        Internal.StopEvent.Unsignal();
+        Internal.StopEvent.Signal ();
+        Internal.LegacyTimerThread.Join ();
+        Internal.StopEvent.Unsignal ();
 
     #endif
 

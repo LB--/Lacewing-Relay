@@ -301,10 +301,6 @@
         {   exports.lwjs_ws_req_set_mime_type(this._lw_ref, '' + type);
             return this;
         },
-        charset: function(charset)
-        {   exports.lwjs_ws_req_set_charset(this._lw_ref, '' + charset);
-            return this;
-        },
         setUnmodified: function()
         {   exports.lwjs_ws_req_set_unmodified(this._lw_ref);
             return this;

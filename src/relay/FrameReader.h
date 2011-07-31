@@ -54,6 +54,8 @@ public:
 
     inline void Process(char * Data, unsigned int Size)
     {
+        DebugOut ("FrameReader: Process %d bytes", Size);
+
         while(State < 3 && Size -- > 0)
         {
             unsigned char Byte = *(Data ++);

@@ -392,15 +392,6 @@ Export(lwjs_ws_req_guess_mime_type)
         Return();
     }
     #endif
-Export(lwjs_ws_req_set_charset)
-    #ifdef ExportBodies
-    {
-        BeginExport();
-        Read_String(Charset);
-        Request.SetCharset(Charset);
-        Return();
-    }
-    #endif
 Export(lwjs_ws_req_send_text)
     #ifdef ExportBodies
     {

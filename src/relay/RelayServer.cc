@@ -26,7 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#include "Common.h"
+#include "../Common.h"
 
 #include "FrameReader.h"
 #include "FrameBuilder.h"
@@ -39,8 +39,6 @@ void ServerTimerTick      (Lacewing::Timer &Timer);
 
 struct RelayServerInternal
 {
-    ThreadTracker Threads;
-
     Lacewing::RelayServer &Server;
     Lacewing::Timer Timer;
 
@@ -521,7 +519,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                         break;
                     }
 
-                    if(strcmp(Version, "revision 2"))
+                    if(strcmp(Version, "revision 3"))
                     {
                         Builder.AddHeader        (0, 0);  /* Response */
                         Builder.Add <unsigned char> (0);  /* Connect */
@@ -653,7 +651,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                             Builder.Send((** E2)->Socket, false);
                         }
 
-                        Builder.Reset ();
+                        Builder.FrameReset ();
                     }
 
                     break;

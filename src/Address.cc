@@ -40,9 +40,13 @@ lw_iptr Ports [] =
     0
 };
 
+struct AddressInternal;
+
+void Resolver (AddressInternal &);
+
 struct AddressInternal
 {
-    ThreadTracker Threads;
+    Lacewing::Thread ResolverThread;
 
     char * Hostname;
     int Port;
@@ -53,16 +57,16 @@ struct AddressInternal
         unsigned char Bytes[4];
     };
 
-    AddressInternal(int Port)
+    AddressInternal (int _Port)
+        : Port (_Port), ResolverThread ("Resolver", (void *) Resolver)
     {
-        this->Port = Port;
         *StringIP = 0;
         IP = 0;
     }
 
     ~AddressInternal()
     {
-        Threads.WaitUntilDead();
+        ResolverThread.Join();
     }
 
     char StringIP[32];
@@ -80,15 +84,15 @@ struct AddressInternal
 
 };
 
-LacewingThread(Resolver, AddressInternal, Internal)
+void Resolver (AddressInternal &Internal)
 {
     hostent * Host;
 
     if(!(Host = gethostbyname(Internal.Hostname)))
     {
         Internal.IP = 0;
-        
         free(Internal.Hostname);
+
         return;
     }
 
@@ -158,9 +162,12 @@ Lacewing::Address::Address(const char * Hostname, int Port, bool Blocking)
         Internal.IP = 0;
 
         if(Blocking)
-            TResolver(*(AddressInternal *) InternalTag);
-        else
-            ((AddressInternal *) InternalTag)->Threads.Start((void *) Resolver, InternalTag);
+        {
+            Resolver (Internal);
+            return;
+        }
+
+        Internal.ResolverThread.Start (&Internal);
     }
 }
 
@@ -228,7 +235,7 @@ void Lacewing::Address::Port(int Port)
 
 bool Lacewing::Address::Ready() const
 {
-    return !((AddressInternal *) InternalTag)->Threads.Living();
+    return !((AddressInternal *) InternalTag)->ResolverThread.Started ();
 }
 
 unsigned int Lacewing::Address::IP() const

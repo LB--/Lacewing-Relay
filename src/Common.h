@@ -30,9 +30,7 @@
 
 #ifdef _MSC_VER
 
-    #ifndef LacewingUnixDevelDummy
-        #define LacewingWindows
-    #endif
+    #define LacewingWindows
 
     #ifdef _WIN64
         #define Lacewing64
@@ -50,9 +48,12 @@
         #define _CRT_NONSTDC_NO_WARNINGS
     #endif
 
+    #pragma warning (disable : 4355) /* 'this' : used in base member initializer list */
+
 #else
 
-    #ifdef LacewingAndroid
+    #ifdef ANDROID
+        #define LacewingAndroid
         #include "../jni/config.h"
     #else
         #ifdef HAVE_CONFIG_H
@@ -185,7 +186,7 @@ void LacewingInitialise();
     }
 
     #define LacewingYield()             Sleep(0)
-    #define LacewingSocketError(E)      WSA##E
+
     #define lw_vsnprintf                _vsnprintf
     #define lw_snprintf                 _snprintf
 
@@ -216,8 +217,9 @@ void LacewingInitialise();
     #include <sched.h>
     #include <ctype.h>
     
-    #ifdef ANDROID
+    #ifdef LacewingAndroid
         #include <time64.h>
+        #include <android/log.h>
     #endif
     
     #ifdef HAVE_SYS_TIMERFD_H
@@ -256,16 +258,12 @@ void LacewingInitialise();
         #endif
 
     #else
-
         #ifdef HAVE_KQUEUE
-        
             #define LacewingUseKQueue
             #include <sys/event.h>
-
         #else
-            #error Either EPoll or KQueue are required
+            #error Either EPoll or KQueue required to build Lacewing
         #endif
-        
     #endif
 
     #include <string.h>
@@ -295,31 +293,16 @@ void LacewingInitialise();
         #pragma error "OpenSSL not found. Install OpenSSL and run ./configure again."
     #endif
 
-    inline void Sleep(int Milliseconds)
-    {
-        sleep(Milliseconds == -1 ? -1 : Milliseconds / 1000);
-    }
-
     #define SOCKET int
     #define LacewingCloseSocket(S) close(S)
     #define LacewingGetSocketError() errno
     #define LacewingGetLastError() errno
 
-    #define __int8  int8_t
-    #define __int16 int16_t
-    #define __int32 int32_t
-
     #define _atoi64 atoll
 
     typedef long LONG;
 
-    inline void SetEnvironmentVariable(const char * Name, const char * Value)
-    {
-        setenv(Name, Value, 1);
-    }
-
     #define LacewingYield()             sched_yield()
-    #define LacewingSocketError(E)      E
 
     #define lw_vsnprintf                vsnprintf
     #define lw_snprintf                 snprintf
@@ -388,10 +371,15 @@ inline int LacewingFormat(char *& Output, const char * Format, va_list args)
         {
             Lacewing::Sync::Lock Lock (Sync_DebugOutput);
 
-            #ifdef COXSDK
-                OutputDebugString (data);
+            #ifdef LacewingAndroid
+                __android_log_write (ANDROID_LOG_INFO, "Lacewing", data);
             #else
-                printf ("[Lacewing] %s\n", data);
+                #ifdef COXSDK
+                    OutputDebugString (data);
+                    OutputDebugString ("\n");
+                #else
+                    printf ("[Lacewing] %s\n", data);
+                #endif
             #endif
         }
 
@@ -469,7 +457,6 @@ inline int Read24Bit (const char * b)
 
 #include "Utility.h"
 #include "TimeHelper.h"
-#include "ThreadTracker.h"
 #include "ReceiveBuffer.h"
 #include "MessageBuilder.h"
 #include "MessageReader.h"

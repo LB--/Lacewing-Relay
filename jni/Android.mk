@@ -13,8 +13,9 @@ LOCAL_SRC_FILES     := \
     ../src/Filter.cc \
     ../src/Address.cc \
     ../src/Error.cc \
-    ../src/RelayServer.cc \
-    ../src/RelayClient.cc \
+    ../src/Thread.cc \
+    ../src/relay/RelayServer.cc \
+    ../src/relay/RelayClient.cc \
     ../src/webserver/Webserver.cc \
     ../src/webserver/Sessions.cc \
     ../src/webserver/Request.cc \
@@ -39,9 +40,10 @@ LOCAL_SRC_FILES     := \
     ../src/c/client_flat.cc \
     ../src/c/error_flat.cc \
     ../src/c/sync_flat.cc \
-    ../src/c/ssync_flat.cc
+    ../src/c/ssync_flat.cc \
+    ../src/c/thread_flat.cc
 
-LOCAL_CFLAGS := -DLacewingAndroid -DLacewingLibrary -fno-exceptions -fno-rtti -fvisibility=hidden
+LOCAL_CFLAGS := -DLacewingLibrary -fno-exceptions -fno-rtti -fvisibility=hidden
 
 include $(BUILD_SHARED_LIBRARY)
 

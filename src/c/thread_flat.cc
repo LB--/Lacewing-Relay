@@ -28,42 +28,19 @@
 
 #include "../Common.h"
 
-const char * lw_version ()
-    { return Lacewing::Version();
+lw_thread * lw_thread_new (const char * name, void * function)
+    { return (lw_thread *) new Lacewing::Thread (name, function);
     }
-lw_i64 lw_current_thread_id ()
-    { return Lacewing::CurrentThreadID();
+void lw_thread_delete (lw_thread * thread)
+    { delete (Lacewing::Thread *) thread;
     }
-lw_i64 lw_file_last_modified (const char * filename)
-    { return Lacewing::LastModified(filename);
+void lw_thread_start (lw_thread * thread, void * parameter)
+    { ((Lacewing::Thread *) thread)->Start (parameter);
     }
-lw_bool lw_file_exists (const char * filename)
-    { return Lacewing::FileExists(filename);
+lw_bool lw_thread_started (lw_thread * thread)
+    { return ((Lacewing::Thread *) thread)->Started ();
     }
-lw_bool lw_path_exists (const char * filename)
-    { return Lacewing::PathExists(filename);
+long lw_thread_join (lw_thread * thread)
+    { return ((Lacewing::Thread *) thread)->Join ();
     }
-lw_i64 lw_file_size (const char * filename)
-    { return Lacewing::FileSize(filename);
-    }
-void lw_int64_to_string (lw_i64 int64, char * buffer)
-    { Lacewing::Int64ToString(int64, buffer);
-    }
-void lw_temp_path (char * buffer, long length)
-    { Lacewing::TempPath(buffer, length);
-    }
-void lw_new_temp_file (char * buffer, long length)
-    { Lacewing::NewTempFile(buffer, length);
-    }
-void lw_md5 (char * output, const char * input, long length)
-    { Lacewing::MD5 (output, input, length);
-    }
-void lw_md5_hex (char * output, const char * input, long length)
-    { Lacewing::MD5_Hex (output, input, length);
-    }
-void lw_sha1 (char * output, const char * input, long length)
-    { Lacewing::SHA1 (output, input, length);
-    }
-void lw_sha1_hex (char * output, const char * input, long length)
-    { Lacewing::SHA1_Hex (output, input, length);
-    }
+

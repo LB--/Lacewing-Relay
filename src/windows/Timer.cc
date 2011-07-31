@@ -30,13 +30,15 @@
 
 struct TimerInternal;
 
+void TimerThread (TimerInternal &Internal);
+
 struct TimerInternal
 {
-    ThreadTracker Threads;
-
     EventPumpInternal &EventPump;
     Lacewing::Timer   &Timer;
- 
+    
+    Lacewing::Thread TimerThread;
+
     HANDLE TimerHandle;
     HANDLE ShutdownEvent;
 
@@ -45,7 +47,8 @@ struct TimerInternal
     Lacewing::Timer::HandlerTick HandlerTick;
 
     TimerInternal(Lacewing::Timer &_Timer, EventPumpInternal &_EventPump)
-                    : Timer(_Timer), EventPump(_EventPump)
+                : Timer(_Timer), EventPump(_EventPump),
+                    TimerThread ("Timer", ::TimerThread)
     {
         ShutdownEvent = CreateEvent         (0, TRUE, FALSE, 0);
         TimerHandle   = CreateWaitableTimer (0, FALSE, 0);
@@ -62,7 +65,7 @@ void TimerCompletion(TimerInternal &Internal)
         Internal.HandlerTick(Internal.Timer);
 }
 
-LacewingThread(TimerThread, TimerInternal, Internal)
+void TimerThread (TimerInternal &Internal)
 {
     HANDLE Events[2] = { Internal.TimerHandle, Internal.ShutdownEvent };
 
@@ -71,7 +74,10 @@ LacewingThread(TimerThread, TimerInternal, Internal)
         int Result = WaitForMultipleObjects(2, Events, FALSE, INFINITE);
 
         if(Result != WAIT_OBJECT_0)
+        {
+            DebugOut ("Got result %d", Result);
             break;
+        }
 
         Internal.EventPump.Pump.Post((void *) TimerCompletion, &Internal);
     }
@@ -84,15 +90,15 @@ Lacewing::Timer::Timer(Lacewing::EventPump &EventPump)
 
     EventPump.InUse (true);
 
-    ((TimerInternal *) InternalTag)->Threads.Start(TimerThread, InternalTag);
+    ((TimerInternal *) InternalTag)->TimerThread.Start(InternalTag);
 }
 
 Lacewing::Timer::~Timer()
 {
     TimerInternal &Internal = *((TimerInternal *) InternalTag);
      
-    SetEvent(Internal.ShutdownEvent);
-    Internal.Threads.WaitUntilDead();
+    SetEvent (Internal.ShutdownEvent);
+    Internal.TimerThread.Join ();
 
     delete &Internal;
 }
