@@ -25,7 +25,7 @@ class BaseProtocol(protocol.Protocol):
     (has keys for both the ID and name).
     @type channels: MultikeyDict
     """
-    revision = 'revision 2'
+    revision = 'revision 3'
 
     name = None
     id = None
@@ -43,7 +43,7 @@ class BaseProtocol(protocol.Protocol):
         self.channels = MultikeyDict()
 
     def dataReceived(self, data):
-        packetBuffer = ''.join([self._packetBuffer, data])
+        packetBuffer = self._packetBuffer + data
         newPacket = self._receivePacket()
         try:
             while 1:

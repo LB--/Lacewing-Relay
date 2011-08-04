@@ -129,6 +129,7 @@ class ClientProtocol(BaseProtocol):
         hello = client.Request()
         hello.request = CONNECT
         hello.version = self.revision
+        self.transport.write('\x00')
         self.sendLoader(hello)
 
     def loaderReceived(self, loader, isDatagram = False):
@@ -188,10 +189,15 @@ class ClientProtocol(BaseProtocol):
                           server.ObjectServerMessage.id):
             self.messageReceived(loader)
 
-        elif packetId in (server.BinaryChannelMessage.id, 
-                          server.ObjectChannelMessage.id):
+        elif packetId in (server.BinaryChannelMessage.id,
+                          server.BinaryServerChannelMessage.id,
+                          server.ObjectChannelMessage.id,
+                          server.ObjectServerChannelMessage.id):
             channel, = self.channels[loader.channel]
-            sender, = channel.connections[loader.peer]
+            try:
+                sender, = channel.connections[loader.peer]
+            except AttributeError:
+                sender = None
             self.channelMessageReceived(channel, sender, loader)
         
         elif packetId == server.Ping.id:

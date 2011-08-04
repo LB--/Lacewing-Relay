@@ -88,13 +88,13 @@ class ServerChannel(object):
         
         return len(self.connections) > 0
 
-    def sendMessage(self, fromConnection, message, subchannel = 0, 
+    def sendMessage(self, message, subchannel = 0, fromConnection = None,
                     asObject = False, typeName = None, **settings):
         """
         Send a channel message from the given protocol instance.
 
         @param fromConnection: The client that the message is sent
-        from.
+        from (or None if the message is from the server).
         @param message: The message to send.
         @type message: str/number/ByteReader
         @param subchannel: The subchannel to send the message on.
@@ -106,13 +106,20 @@ class ServerChannel(object):
         if typeName is None:
             typeName = detectType(message)
         if asObject:
-            newMessage = server.ObjectChannelMessage()
+            if fromConnection is None:
+                newMessage = server.ObjectServerChannelMessage()
+            else:
+                newMessage = server.ObjectChannelMessage()
         else:
-            newMessage = server.BinaryChannelMessage()
+            if fromConnection is None:
+                newMessage = server.BinaryServerChannelMessage()
+            else:
+                newMessage = server.BinaryChannelMessage()
         newMessage.channel = self.id
         newMessage.value = message
         newMessage.subchannel = subchannel
-        newMessage.peer = fromConnection.id
+        if fromConnection is not None:
+            newMessage.peer = fromConnection.id
         newMessage.setDataType(typeName)
         self.sendLoader(newMessage, [fromConnection], **settings)
 
@@ -171,6 +178,8 @@ class ServerProtocol(BaseProtocol):
 
     datagramPort = None
     _receivePacket = ClientPacket
+    
+    _firstByte = True
 
     def connectionMade(self):
         """
@@ -225,6 +234,16 @@ class ServerProtocol(BaseProtocol):
         if self.isAccepted:
             factory.userPool.putBack(self.id)
             del self.factory.connections[self]
+    
+    def dataReceived(self, data):
+        if self.firstByte:
+            if data[0] != '\x00':
+                # we don't support the HTTP relay
+                self.disconnect()
+                return
+            data = data[1:]
+            self.firstByte = False
+        BaseProtocol.dataReceived(self, data)
 
     def loaderReceived(self, loader, isDatagram = False):
         packetId = loader.id
@@ -361,7 +380,7 @@ class ServerProtocol(BaseProtocol):
 
             if self.acceptChannelMessage(channel, loader) == False:
                 return
-            channel.sendMessage(self, loader.value, loader.subchannel, 
+            channel.sendMessage(loader.value, loader.subchannel, self,
                 typeName = loader.getDataType(), asObject = loader.isObject,
                 asDatagram = loader.settings.get('datagram', False))
             self.channelMessageReceived(channel, loader)
@@ -466,7 +485,7 @@ class ServerProtocol(BaseProtocol):
         newResponse.playerId = self.id
         self.sendLoader(newResponse)
 
-    def sendMessage(self, message, subchannel, typeName = None, 
+    def sendMessage(self, message, subchannel, channel = None, typeName = None, 
                     asObject = False, asDatagram = False):
         """
         Send a direct message to the client.
@@ -480,11 +499,19 @@ class ServerProtocol(BaseProtocol):
         if typeName is None:
             typeName = detectType(message)
         if asObject:
-            newMessage = server.ObjectServerMessage()
+            if channel is None:
+                newMessage = server.ObjectServerMessage()
+            else:
+                newMessage = server.ObjectServerChannelMessage()
         else:
-            newMessage = server.BinaryServerMessage()
+            if channel is None:
+                newMessage = server.BinaryServerMessage()
+            else:
+                newMessage = server.BinaryServerChannelMessage()
         newMessage.value = message
         newMessage.subchannel = subchannel
+        if channel is not None:
+            newMessage.channel = channel.id
         newMessage.setDataType(typeName)
         self.sendLoader(newMessage, asDatagram)
 

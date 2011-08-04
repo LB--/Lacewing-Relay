@@ -55,7 +55,7 @@ import json
 class _ObjectMessageMixin(_DataTypeMixin):
     isObject = True
     def readMessage(self, data):
-        self.value = json.loads(data)
+        self.value = json.loads(str(data))
         
     def generateMessage(self):
         return json.dumps(self.value)
