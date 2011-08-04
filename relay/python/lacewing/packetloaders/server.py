@@ -20,6 +20,7 @@ PEER_DATA = Struct('<HBB')
 CHANNEL_LIST_DATA = Struct('<HB')
 CHANNEL_MESSAGE_DATA = Struct('<BH')
 PEER_MESSAGE_DATA = Struct('<BHH')
+SERVER_CHANNEL_MESSAGE_DATA = Struct('<BH')
 NEW_PEER_DATA = Struct('<HHB')
 PEER_LEAVE_DATA = Struct('<HH')
 
@@ -140,6 +141,18 @@ class _PeerMessage(_BaseLoader):
         return PEER_MESSAGE_DATA.pack(self.subchannel, 
             self.channel, self.peer) + self.generateMessage()
 
+class _ServerChannelMessage(_BaseLoader):
+    subchannel = None
+    channel = None
+    def read(self, data):
+        (self.subchannel, 
+            self.channel) = SERVER_CHANNEL_MESSAGE_DATA.unpack_from(data)
+        self.readMessage(buffer(data, SERVER_CHANNEL_MESSAGE_DATA.size))
+    
+    def generate(self):
+        return SERVER_CHANNEL_MESSAGE_DATA.pack(self.subchannel, 
+            self.channel) + self.generateMessage()
+
 class BinaryServerMessage(_BinaryMessageMixin, _ServerMessage):
     pass
 
@@ -149,6 +162,9 @@ class BinaryChannelMessage(_BinaryMessageMixin, _PeerMessage):
 class BinaryPeerMessage(_BinaryMessageMixin, _PeerMessage):
     pass
 
+class BinaryServerChannelMessage(_BinaryMessageMixin, _ServerChannelMessage):
+    pass
+
 class ObjectServerMessage(_ObjectMessageMixin, _ServerMessage):
     pass
 
@@ -156,6 +172,9 @@ class ObjectChannelMessage(_ObjectMessageMixin, _PeerMessage):
     pass
 
 class ObjectPeerMessage(_ObjectMessageMixin, _PeerMessage):
+    pass
+
+class ObjectServerChannelMessage(_ObjectMessageMixin, _ServerChannelMessage):
     pass
 
 class Peer(_BaseLoader):

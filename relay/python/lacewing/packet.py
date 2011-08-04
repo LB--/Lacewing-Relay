@@ -19,9 +19,11 @@ SC_PACKET_TABLE = [
     server.BinaryServerMessage,
     server.BinaryChannelMessage,
     server.BinaryPeerMessage,
+    server.BinaryServerChannelMessage,
     server.ObjectServerMessage,
     server.ObjectChannelMessage,
     server.ObjectPeerMessage,
+    server.ObjectServerChannelMessage,
     server.Peer,
     server.UDPWelcome,
     server.Ping
