@@ -1,6 +1,3 @@
-# Copyright (c) 2011 Mathias Kaerlev.
-# See LICENSE for details.
-
 """
 Server with basic logging (with UDP)
 """
@@ -27,7 +24,6 @@ def getProtocolType(settings):
 class MyServer(ServerProtocol):
     def connectionAccepted(self, welcome):
         self.log('Client connection accepted.')
-        self.log('Client is of implementation %s.' % welcome.getClientType())
 
     def messageReceived(self, message):
         protocolType = getProtocolType(message.settings)
