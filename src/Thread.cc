@@ -90,7 +90,7 @@ int ThreadWrapper (ThreadInternal &Internal)
 
     #else
         #if HAVE_DECL_PR_SET_NAME != 0
-            prctl(PR_SET_NAME, (unsigned long) Internal.Name, 0, 0, 0);
+            prctl(PR_SET_NAME, (unsigned long) (const char *) Internal.Name, 0, 0, 0);
         #endif
     #endif
     
