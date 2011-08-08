@@ -236,13 +236,13 @@ class ServerProtocol(BaseProtocol):
             del self.factory.connections[self]
     
     def dataReceived(self, data):
-        if self.firstByte:
+        if self._firstByte:
             if data[0] != '\x00':
                 # we don't support the HTTP relay
                 self.disconnect()
                 return
             data = data[1:]
-            self.firstByte = False
+            self._firstByte = False
         BaseProtocol.dataReceived(self, data)
 
     def loaderReceived(self, loader, isDatagram = False):
