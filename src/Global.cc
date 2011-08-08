@@ -354,7 +354,7 @@ void Lacewing::SHA1_Hex (char * Output, const char * Input, int Length)
 
     char Hex [48];
     
-    for(int i = 0; i < 16; ++ i)
+    for(int i = 0; i < 20; ++ i)
         sprintf(Hex + (i * 2), "%02x", ((unsigned char *) Output) [i]);
 
     strcpy(Output, Hex);
