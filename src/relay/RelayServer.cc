@@ -32,6 +32,8 @@
 #include "FrameBuilder.h"
 #include "IDPool.h"
 
+#include "../webserver/Common.h"
+
 struct RelayServerInternal;
 
 void ServerMessageHandler (void * Tag, unsigned char Type, char * Message, int Size);
@@ -68,7 +70,7 @@ struct RelayServerInternal
         WelcomeMessage = Lacewing::Version();
     
         Timer.Tag = this;
-        Timer.onTick(ServerTimerTick);
+        Timer.onTick (ServerTimerTick);
     }
 
     IDPool ClientIDs;
@@ -81,8 +83,8 @@ struct RelayServerInternal
         Lacewing::RelayServer::Client Public;
 
         Lacewing::Server::Client &Socket;
-        RelayServerInternal                 &Server;
-
+        RelayServerInternal &Server;
+        
         Client(Lacewing::Server::Client &_Socket)
                 : Server(*(RelayServerInternal *) Socket.Tag), Socket(_Socket),
                     UDPAddress(Socket.GetAddress())
@@ -98,6 +100,7 @@ struct RelayServerInternal
             SentUDPWelcome = false;
             Handshook      = false;
             Ponged         = true;
+            GotFirstByte   = false;
         }
 
         ~Client()
@@ -119,6 +122,7 @@ struct RelayServerInternal
     
         bool SentUDPWelcome;
         bool Handshook;
+        bool GotFirstByte;
         bool Ponged;
 
         Lacewing::Address UDPAddress;
@@ -243,14 +247,14 @@ RelayServerInternal::Client * RelayServerInternal::Channel::ReadPeer(MessageRead
 void HandlerConnect(Lacewing::Server &Server, Lacewing::Server::Client &ClientSocket)
 {
     RelayServerInternal &Internal = *(RelayServerInternal *) Server.Tag;
-
+     
     ClientSocket.Tag = &Internal;
-    ClientSocket.Tag = &Internal.ClientBacklog.Borrow(ClientSocket);
+    ClientSocket.Tag = &Internal.ClientBacklog.Borrow (ClientSocket);   
 }
 
 void HandlerDisconnect(Lacewing::Server &Server, Lacewing::Server::Client &ClientSocket)
 {
-    RelayServerInternal &Internal        = *(RelayServerInternal *) Server.Tag;
+    RelayServerInternal &Internal = *(RelayServerInternal *) Server.Tag;
     RelayServerInternal::Client &Client  = *(RelayServerInternal::Client *) ClientSocket.Tag;
 
     for(List <RelayServerInternal::Channel *>::Element * E = Client.Channels.First; E; E = E->Next)
@@ -267,9 +271,19 @@ void HandlerDisconnect(Lacewing::Server &Server, Lacewing::Server::Client &Clien
 void HandlerReceive(Lacewing::Server &Server, Lacewing::Server::Client &ClientSocket, char * Data, int Size)
 {
     RelayServerInternal &Internal = *(RelayServerInternal *) Server.Tag;
-    RelayServerInternal::Client &Client   = *(RelayServerInternal::Client *) ClientSocket.Tag;
+    RelayServerInternal::Client &Client = *(RelayServerInternal::Client *) ClientSocket.Tag;
+    
+    if (!Client.GotFirstByte)
+    {
+        Client.GotFirstByte = true;
 
-    Client.Reader.Process(Data, Size);
+        ++ Data;
+
+        if (!-- Size)
+            return;
+    }
+
+    Client.Reader.Process (Data, Size);
 }
 
 void HandlerError(Lacewing::Server &Server, Lacewing::Error &Error)

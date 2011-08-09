@@ -334,10 +334,12 @@ package lacewing
         
         private function onSocketConnect(event:Event):void
         {
+            socket.writeByte (0); /* Opening byte */
+            
             addHeader(0, 0);      /* Request */
             message.writeByte(0); /* Connect */
             
-            addString("revision 2");
+            addString("revision 3");
             send();
         }
         

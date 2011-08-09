@@ -236,7 +236,10 @@ ChannelInternal * RelayClientInternal::ReadChannel(MessageReader &Reader)
 void HandlerConnect(Lacewing::Client &Socket)
 {
     RelayClientInternal &Internal = *(RelayClientInternal *) Socket.Tag;
-    
+
+    /* Opening 0 byte */
+    Socket.Send ("", 1);
+
     Internal.UDP.Host(Socket.ServerAddress());
 
     FrameBuilder &Message = Internal.Message;

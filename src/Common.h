@@ -26,6 +26,9 @@
  * SUCH DAMAGE.
  */
 
+#ifndef LacewingCommon
+#define LacewingCommon
+
 #define LacewingInternal
 
 #ifdef _MSC_VER
@@ -547,4 +550,6 @@ inline void Trim(char * Input, char *& Output)
     while(isspace(*End))
         *(End --) = 0;
 }
+
+#endif
 
