@@ -149,7 +149,7 @@ void RequestInternal::RunStandardHandler ()
 
 void RequestInternal::ProcessHeader (const char * Name, char * Value)
 {
-    if(!stricmp(Name, "Cookie"))
+    if(!strcasecmp(Name, "Cookie"))
     {
         for(;;)
         {
@@ -185,7 +185,7 @@ void RequestInternal::ProcessHeader (const char * Name, char * Value)
         return;
     }
 
-    if(!stricmp(Name, "Host"))
+    if(!strcasecmp(Name, "Host"))
     {
         /* The hostname gets stored separately with the port removed for
            the Request.Hostname() function (the raw header is still saved) */

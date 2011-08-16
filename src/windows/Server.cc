@@ -1170,49 +1170,49 @@ bool Lacewing::Server::LoadSystemCertificate(const char * StoreName, const char 
 
     do
     {
-        if(!stricmp(Location, "CurrentService"))
+        if(!strcasecmp(Location, "CurrentService"))
         {
             LocationID = CERT_SYSTEM_STORE_CURRENT_SERVICE;
             break;
         }
 
-        if(!stricmp(Location, "CurrentUser"))
+        if(!strcasecmp(Location, "CurrentUser"))
         {
             LocationID = CERT_SYSTEM_STORE_CURRENT_USER;
             break;
         }
 
-        if(!stricmp(Location, "CurrentUserGroupPolicy"))
+        if(!strcasecmp(Location, "CurrentUserGroupPolicy"))
         {
             LocationID = CERT_SYSTEM_STORE_CURRENT_USER_GROUP_POLICY;
             break;
         }
 
-        if(!stricmp(Location, "LocalMachine"))
+        if(!strcasecmp(Location, "LocalMachine"))
         {
             LocationID = CERT_SYSTEM_STORE_LOCAL_MACHINE;
             break;
         }
 
-        if(!stricmp(Location, "LocalMachineEnterprise"))
+        if(!strcasecmp(Location, "LocalMachineEnterprise"))
         {
             LocationID = CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE;
             break;
         }
 
-        if(!stricmp(Location, "LocalMachineGroupPolicy"))
+        if(!strcasecmp(Location, "LocalMachineGroupPolicy"))
         {
             LocationID = CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY;
             break;
         }
 
-        if(!stricmp(Location, "Services"))
+        if(!strcasecmp(Location, "Services"))
         {
             LocationID = CERT_SYSTEM_STORE_SERVICES;
             break;
         }
 
-        if(!stricmp(Location, "Users"))
+        if(!strcasecmp(Location, "Users"))
         {
             LocationID = CERT_SYSTEM_STORE_USERS;
             break;

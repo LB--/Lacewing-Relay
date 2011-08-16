@@ -316,7 +316,7 @@ void HTTPClient::ProcessFirstLine(char * Line)
 
     /* HTTP version */
 
-    if(stricmp(Line, "HTTP/1.1") && stricmp(Line, "HTTP/1.0"))
+    if(strcasecmp(Line, "HTTP/1.1") && strcasecmp(Line, "HTTP/1.0"))
     {
         State = -1;
         return;
@@ -399,7 +399,7 @@ void HTTPClient::Respond(RequestInternal &) /* request parameter ignored - HTTP 
 
     /* Close the connection if this is HTTP/1.0 without a Connection: Keep-Alive header */
 
-    if((!stricmp(Request.Version, "HTTP/1.0")) && stricmp(Request.InHeaders.Get("Connection"), "Keep-Alive"))
+    if((!strcasecmp(Request.Version, "HTTP/1.0")) && strcasecmp(Request.InHeaders.Get("Connection"), "Keep-Alive"))
         Request.Public.Disconnect();
     
     Reset ();

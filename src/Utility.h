@@ -251,7 +251,7 @@ struct String
     
     inline int Compare (String &B)
     {
-        return stricmp ((const char *) *this, (const char *) B);
+        return strcasecmp ((const char *) *this, (const char *) B);
     }
 };
 

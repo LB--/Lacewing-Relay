@@ -51,7 +51,7 @@ public:
     inline const char * Get(const char * Key)
     {
         for(Item * Current = First; Current; Current = Current->Next)
-            if(!stricmp(Current->Key, Key))
+            if(!strcasecmp(Current->Key, Key))
                 return Current->Value;
         
         return "";
@@ -61,7 +61,7 @@ public:
     {
         for(Item * Current = First; Current; Current = Current->Next)
         {
-            if(!stricmp(Current->Key, Key))
+            if(!strcasecmp(Current->Key, Key))
             {
                 free(Current->Value);
                 Current->Value = strdup(Value);
@@ -85,7 +85,7 @@ public:
     {
         for(Item * Current = First; Current; Current = Current->Next)
         {
-            if(!stricmp(Current->Key, Key))
+            if(!strcasecmp(Current->Key, Key))
             {
                 free(Current->Value);
                 Current->Value = Value;

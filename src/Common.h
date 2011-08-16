@@ -146,6 +146,8 @@ void LacewingInitialise();
     #undef SendMessage
     #undef Yield
 
+    #define strcasecmp stricmp
+
     #ifndef SO_CONNECT_TIME
         #define SO_CONNECT_TIME 0x700C
     #endif
@@ -270,8 +272,6 @@ void LacewingInitialise();
     #endif
 
     #include <string.h>
-
-    #define stricmp strcasecmp
 
     #include <limits.h>
     #define MAX_PATH PATH_MAX

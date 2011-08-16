@@ -250,7 +250,7 @@ const char * Lacewing::GuessMimeType (const char * Filename)
         }
 
         for(const char * const * Iterator = MimeTypes; *Iterator; Iterator += 2)
-            if(!stricmp(*Iterator, FilenameCopy))
+            if(!strcasecmp(*Iterator, FilenameCopy))
                 return *++ Iterator;
     }
 

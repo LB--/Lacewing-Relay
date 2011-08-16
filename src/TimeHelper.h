@@ -40,7 +40,7 @@ const char * const Months [] =
 inline int LookupDayOfWeek(const char * String)
 {
     for(int i = 0; i < 7; ++i)
-        if(!stricmp(Weekdays[i], String))
+        if(!strcasecmp(Weekdays[i], String))
             return i;
 
     return -1;
@@ -49,7 +49,7 @@ inline int LookupDayOfWeek(const char * String)
 inline int LookupMonth(const char * String)
 {
     for(int i = 0; i < 12; ++i)
-        if(!stricmp(Months[i], String))
+        if(!strcasecmp(Months[i], String))
             return i;
 
     return -1;

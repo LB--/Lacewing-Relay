@@ -590,7 +590,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                         for(List <RelayServerInternal::Client *>::Element * E2 = Channel->Clients.First;
                                 E2; E2 = E2->Next)
                         {
-                            if(!stricmp((** E2)->Name, Name))
+                            if(!strcasecmp((** E2)->Name, Name))
                             {
                                 Taken = true;
                                 break;
@@ -687,7 +687,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                     for(List <RelayServerInternal::Channel *>::Element * E = Server.Channels.First;
                             E; E = E->Next)
                     {
-                        if(!stricmp((** E)->Name, Name))
+                        if(!strcasecmp((** E)->Name, Name))
                         {
                             Channel = ** E;
                             break;
@@ -705,7 +705,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                         {
                             RelayServerInternal::Client * Client = ** E;
 
-                            if(!stricmp (Client->Name, Name))
+                            if(!strcasecmp (Client->Name, Name))
                             {
                                 NameTaken = true;
                                 break;

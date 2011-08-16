@@ -244,7 +244,7 @@ void HTTPClient::MultipartProcessor::ProcessHeader()
 
     Headers.Set(Name, Header);
 
-    if(!stricmp(Name, "Content-Disposition"))
+    if(!strcasecmp(Name, "Content-Disposition"))
     {
         char * i;
 
@@ -278,7 +278,7 @@ void HTTPClient::MultipartProcessor::ProcessHeader()
         }
     }
 
-    if(!stricmp(Name, "Content-Type"))
+    if(!strcasecmp(Name, "Content-Type"))
     {
         if(BeginsWith(Header, "multipart"))
         {
@@ -317,7 +317,7 @@ void HTTPClient::MultipartProcessor::ProcessDispositionPair(char * Pair)
     if(Pair[strlen(Pair) - 1] == '"')
         Pair[strlen(Pair) - 1] = 0;
 
-    if((!stricmp(Name, "filename")) && strchr(Pair, '\\'))
+    if((!strcasecmp(Name, "filename")) && strchr(Pair, '\\'))
     {
         /* Old versions of IE send the absolute path (!) */
 
