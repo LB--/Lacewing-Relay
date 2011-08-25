@@ -218,42 +218,22 @@ const char * Lacewing::GuessMimeType (const char * Filename)
 {
     if(*Filename)
     {
-        const char * Start = Filename;
+        const char * Extension = strrchr (Filename, '.');
 
-        Filename += strlen(Filename);
-        -- Filename;
+        if (!Extension)
+            Extension = Filename;
+        else
+            ++ Extension;
 
-        while(*Filename != '.' && Filename != Start)
-            -- Filename;
-
-        if(Filename != Start)
-            ++ Filename;
-
-        char * FilenameCopy = (char *) alloca(strlen(Filename) + 1);
-        memcpy(FilenameCopy, Filename, strlen(Filename) + 1);
-
-        const char * IteratorA = Filename;
-        char * IteratorB = FilenameCopy;
-
-        for(;;)
-        {
-            if(!*IteratorA)
-            {
-                *IteratorB = 0;
-                break;
-            }
-
-            *IteratorB = (char) tolower(*IteratorA);
-
-            ++ IteratorA;    
-            ++ IteratorB;
-        }
+        DebugOut ("Guess mime type for %s", Extension);
 
         for(const char * const * Iterator = MimeTypes; *Iterator; Iterator += 2)
-            if(!strcasecmp(*Iterator, FilenameCopy))
+            if(!strcasecmp (*Iterator, Extension))
                 return *++ Iterator;
     }
 
     return "application/octet-stream";
 }
+
+
 
