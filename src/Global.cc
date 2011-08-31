@@ -39,7 +39,7 @@
 const char * Lacewing::Version()
 {
     static bool GotVersion = false;
-    static char VersionString[64];
+    static char VersionString [64];
 
     if(!GotVersion)
     {
@@ -49,17 +49,17 @@ const char * Lacewing::Version()
             Platform = "Windows";
         #else
             utsname name;
-            uname(&name);
+            uname (&name);
             Platform = name.sysname;
         #endif
 
         #ifdef COXSDK
-            Version = "Build #18";
+            Version = "Build #19";
         #else
             Version = "0.2.1";
         #endif
-
-        sprintf(VersionString, "Lacewing %s (%s/%s)", Version, Platform, sizeof(void *) == 8 ? "x64" : "x86");
+        
+        sprintf (VersionString, "Lacewing %s (%s/%s)", Version, Platform, sizeof(void *) == 8 ? "x64" : "x86");
         GotVersion = true;
     }
 

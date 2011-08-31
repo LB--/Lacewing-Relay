@@ -1,5 +1,8 @@
-Lacewing is a framework for writing cross-platform, networked applications in C,
+liblacewing is a library for writing cross-platform, networked applications in C,
 C++ and Javascript.
+
+http://github.com/udp/lacewing/
+http://lacewing-project.org
 
 
 Installing
@@ -24,6 +27,30 @@ Android NDK (libssl.so/libcrypto.so are required - see docs/android_build.txt):
     ndk-build
 
     
+Changes in 0.2.2 (2011-08-31)
+=============================
+
+- Lacewing::Timer now ends the timer thread properly in the destructor.  In previous
+  versions it was necessary to call Stop() explicitly to avoid a crash.
+  
+- Two issues with the EventPump class fixed:
+
+    * StartEventLoop() could return prematurely in some cases (Unix only)
+    * Possible segmentation fault when a null WriteCallback was specified
+
+- Added the RelayClient and RelayServer source files to the Makefile and Android.mk
+
+- SHA1_Hex no longer cuts off the last four bytes
+
+- Updated relay protocol specification and implementation classes (now revision 3)
+
+- Fixed issue with the GuessMimeType function returning application/octet-stream even
+  for known file extensions
+
+- Refactored the internals of Lacewing::Webserver for future SPDY support.  The HTTP
+  specific code is now separate from the webserver itself.
+
+
 Changes in 0.2.1 (2011-07-15)
 =============================
 
