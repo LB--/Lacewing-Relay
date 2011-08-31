@@ -16,7 +16,7 @@ from lacewing.server import ServerProtocol, ServerDatagram, ServerFactory
 # most in here is self-explanatory
 
 def getProtocolType(settings):
-    if settings['Datagram']:
+    if settings.get('datagram', False):
         return 'UDP'
     else:
         return 'TCP'
