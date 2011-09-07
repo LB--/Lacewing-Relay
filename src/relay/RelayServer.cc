@@ -258,10 +258,8 @@ void HandlerDisconnect(Lacewing::Server &Server, Lacewing::Server::Client &Clien
     RelayServerInternal::Client &Client  = *(RelayServerInternal::Client *) ClientSocket.Tag;
 
     for(List <RelayServerInternal::Channel *>::Element * E = Client.Channels.First; E; E = E->Next)
-    {
-        (** E)->RemoveClient(Client);
-    }
-
+        (** E)->RemoveClient (Client);
+    
     if(Client.Handshook && Internal.HandlerDisconnect)
         Internal.HandlerDisconnect(Internal.Server, Client.Public);
 
@@ -687,7 +685,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                     for(List <RelayServerInternal::Channel *>::Element * E = Server.Channels.First;
                             E; E = E->Next)
                     {
-                        if(!strcasecmp((** E)->Name, Name))
+                        if(!strcasecmp ((** E)->Name, Name))
                         {
                             Channel = ** E;
                             break;
@@ -953,7 +951,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                 break;
             }
 
-            Builder.AddHeader (2, 0, Blasted); /* BinaryChannelMessage */
+            Builder.AddHeader (2, Variant, Blasted); /* BinaryChannelMessage */
             
             Builder.Add <unsigned char>  (Subchannel);
             Builder.Add <unsigned short> (Channel->ID);
@@ -1002,7 +1000,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                 break;
             }
 
-            Builder.AddHeader (3, 0, Blasted); /* BinaryPeerMessage */
+            Builder.AddHeader (3, Variant, Blasted); /* BinaryPeerMessage */
             
             Builder.Add <unsigned char>  (Subchannel);
             Builder.Add <unsigned short> (Channel->ID);

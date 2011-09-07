@@ -129,8 +129,6 @@ struct ServerClientInternal
     bool Connecting;
     bool Disconnecting;
 
-    volatile long Receiving;
-
     WSABUF Buffer;
 
     Lacewing::Address * Address;
@@ -289,7 +287,6 @@ ServerClientInternal::ServerClientInternal(ServerInternal &_Server)
         ::DisableNagling(Socket);
 
     Address   = 0;
-    Receiving = 0;
     Element   = 0;
 
     Disconnecting   = false;
@@ -398,9 +395,6 @@ void Disconnecter(ServerClientInternal &Client)
     LacewingCloseSocket(Client.Socket);
     Client.Socket = SOCKET_ERROR;
 
-    while(InterlockedCompareExchange(&Client.Receiving, -1, 0) != 0)
-        LacewingYield();
-
     Internal.Clients.Erase (Client.Element);
     
     if(Internal.HandlerDisconnect)
@@ -430,7 +424,7 @@ void Lacewing::Server::Client::Disconnect()
     if(Client.Connecting)
         return;
 
-    Internal.EventPump.Pump.Post(Disconnecter, &Client);
+    Internal.EventPump.Pump.Post (Disconnecter, &Client);
 }
 
 void ClientSocketCompletion(ServerClientInternal &Client, ServerOverlapped &Overlapped, unsigned int BytesTransferred, int Error)
@@ -461,26 +455,17 @@ void ClientSocketCompletion(ServerClientInternal &Client, ServerOverlapped &Over
 
     if(Overlapped.Type == OverlappedType::Receive)
     {
+        DebugOut ("Receive completion for %d (bytes: %d, error: %d, disconnecting: %d)", &Client, BytesTransferred, Error, Client.Disconnecting);
+
         if(Client.Disconnecting)
             return;
 
-        if(Error)
+        if(Error || !BytesTransferred)
         {
-            return;
-        }
+            DebugOut ("Calling public Disconnect ()");
 
-        if(InterlockedCompareExchange(&Client.Receiving, 1, 0) != 0)
-        {
-            /* Anything other than 0 and the client must be disconnecting, since
-               only one thread can be receiving at a time */
-
-            return;
-        }
-
-        if(!BytesTransferred)
-        {
             Client.Public.Disconnect();
-            goto EndReceive;
+            return;
         }
 
         Internal.BytesReceived += BytesTransferred;
@@ -537,8 +522,6 @@ void ClientSocketCompletion(ServerClientInternal &Client, ServerOverlapped &Over
 
     NextReceive:
 
-        InterlockedExchange(&Client.Receiving, 0);
-
         if(Client.Disconnecting)
         {
             /* Probably set by the receive handler.  No point in posting another receive now. */
@@ -547,11 +530,6 @@ void ClientSocketCompletion(ServerClientInternal &Client, ServerOverlapped &Over
         }
 
         Client.PostReceive();
-        return;
-        
-    EndReceive:
-
-        InterlockedExchange(&Client.Receiving, 0);
         return;
     }
 }

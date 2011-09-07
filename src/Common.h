@@ -358,7 +358,7 @@ inline int LacewingFormat(char *& Output, const char * Format, va_list args)
 }
 
 
-#ifdef LacewingDebug
+#if defined(LacewingDebug) || defined(LacewingForceDebugOutput)
 
     extern Lacewing::Sync Sync_DebugOutput;
 
@@ -372,7 +372,7 @@ inline int LacewingFormat(char *& Output, const char * Format, va_list args)
         
         if(size > 0)
         {
-            Lacewing::Sync::Lock Lock (Sync_DebugOutput);
+        //    Lacewing::Sync::Lock Lock (Sync_DebugOutput);
 
             #ifdef LacewingAndroid
                 __android_log_write (ANDROID_LOG_INFO, "Lacewing", data);

@@ -196,8 +196,9 @@ struct String
  
     inline String (int _MaxLength = 512) : MaxLength (_MaxLength)
     {
-        Buffer = (char *) malloc (AllocatedFor = (MaxLength
-                        <= MaxPrealloc ? MaxLength : MaxPrealloc));
+        *(Buffer = (char *) malloc (AllocatedFor = (MaxLength
+                        <= MaxPrealloc ? MaxLength : MaxPrealloc))) = 0;
+
         Length = 0;
     }
 
@@ -205,6 +206,14 @@ struct String
     {
         AllocatedFor = Length = strlen (Source);
         Buffer = strdup (Source);
+    }
+
+    inline String (const String &Source)
+    {
+        AllocatedFor = Length = strlen (Source.Buffer);
+        Buffer = strdup (Source.Buffer);
+
+        MaxLength = Source.MaxLength;
     }
 
     inline ~ String ()
@@ -234,6 +243,14 @@ struct String
     inline String &operator = (const char * S)
     {
         memcpy (Buffer, S, Length = (Prepare (strlen (S) + 1) - 1));
+        Buffer [Length] = 0;
+
+        return *this;
+    }
+
+    inline String &operator = (const String &S)
+    {
+        memcpy (Buffer, S.Buffer, Length = (Prepare (strlen (S.Buffer) + 1) - 1));
         Buffer [Length] = 0;
 
         return *this;

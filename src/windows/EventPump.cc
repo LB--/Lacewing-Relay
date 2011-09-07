@@ -152,8 +152,9 @@ void Lacewing::EventPump::Post(void * Function, void * Parameter)
 
     EventPumpInternal::Event &Event = Internal.EventBacklog.Borrow(Internal);
 
-    Event.Callback = Function;
-    Event.Tag      = Parameter;
+    Event.Callback  = Function;
+    Event.Tag       = Parameter;
+    Event.Removing  = false;
 
     PostQueuedCompletionStatus(Internal.CompletionPort, 0, (ULONG_PTR) &Event, (OVERLAPPED *) 1);
 }

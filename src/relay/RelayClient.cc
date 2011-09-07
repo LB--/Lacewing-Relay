@@ -124,7 +124,7 @@ struct RelayClientInternal
     int ID;
     String WelcomeMessage;
 
-    bool UDPAcknowledged;
+    bool Connected;
 };
 
 struct PeerInternal
@@ -215,7 +215,7 @@ void RelayClientInternal::Clear()
     Name = "";
     ID   = -1;
 
-    UDPAcknowledged = false;
+    Connected = false;
 }
 
 ChannelInternal * RelayClientInternal::ReadChannel(MessageReader &Reader)
@@ -257,6 +257,8 @@ void HandlerDisconnect(Lacewing::Client &Socket)
     RelayClientInternal &Internal = *(RelayClientInternal *) Socket.Tag;
 
     Internal.Timer.Stop();
+
+    Internal.Connected = false;
 
     if(Internal.HandlerDisconnect)
         Internal.HandlerDisconnect(Internal.Client);
@@ -346,12 +348,12 @@ void Lacewing::RelayClient::Disconnect()
 
 bool Lacewing::RelayClient::Connected()
 {
-    return Socket.Connected();
+    return ((RelayClientInternal *) InternalTag)->Connected;
 }
 
 bool Lacewing::RelayClient::Connecting()
 {
-    return Socket.Connecting();
+    return (!Connected ()) && (Socket.Connected () || Socket.Connecting ());
 }
 
 const char * Lacewing::RelayClient::Name()
@@ -927,7 +929,7 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
             {
                 /* Peer is changing their name */
 
-                String OldName = Peer->Name;
+                String OldName (Peer->Name);
                 Peer->Name = Name;
 
                 if(HandlerPeerChangeName)
@@ -942,7 +944,7 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
         case 10: /* UDPWelcome */
             
             Timer.Stop();
-            UDPAcknowledged = true;
+            Connected = true;
 
             if(HandlerConnect)
                 HandlerConnect(Client, WelcomeMessage);

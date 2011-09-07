@@ -28,7 +28,7 @@
 
 #include "Common.h"
 
-#ifdef LacewingDebug
+#if defined(LacewingDebug) || defined(LacewingForceDebugOutput)
     Lacewing::Sync Sync_DebugOutput;
 #endif
 

@@ -362,7 +362,7 @@ package lacewing
         
         private function onSocketError(event:IOErrorEvent):void
         {
-            /* TODO */
+            onError (new Error (event.toString ()));
         }
         
         private function process(bytes:flash.utils.ByteArray):void
@@ -535,6 +535,7 @@ package lacewing
             var oldName:String;
             var channelName:String;
             var peerName:String;
+            var i:int;
             
             switch(messageTypeID)
             {
@@ -600,17 +601,22 @@ package lacewing
                                 
                                 for(;;)
                                 {
-                                    if(bytes.position >= readEnd)
+                                    try
+                                    {
+                                        peer = new Peer(this);
+                                    
+                                        peer.id              = bytes.readUnsignedShort();
+                                        peer.isChannelMaster = (bytes.readByte() & 1) != 0;
+                                        peer.name            = getSizedString(bytes);
+                                        peer.channel         = channel;
+                                        
+                                        peer.channel = channel;
+                                    }
+                                    catch (e:Error)
+                                    {
                                         break;
+                                    }
                                     
-                                    peer = new Peer(this);
-                                
-                                    peer.id              = bytes.readUnsignedShort();
-                                    peer.isChannelMaster = (bytes.readByte() & 1) != 0;
-                                    peer.name            = getSizedString(bytes);
-                                    peer.channel         = channel;
-                                    
-                                    peer.channel = channel;
                                     channel.peers.push(peer);
                                 }
                                 
@@ -631,14 +637,7 @@ package lacewing
                             
                             if(succeeded)
                             {
-                                for(var i:int = 0; i < channels.length; ++ i)
-                                {
-                                    if(channels[i] == channel)
-                                    {
-                                        channels.splice(i, 1);
-                                        break;
-                                    }
-                                }
+                                channels.splice (channels.indexOf (channel), 1);
                                 
                                 onLeaveChannel(channel);
                             }
@@ -658,7 +657,7 @@ package lacewing
                                 listing = new ChannelListing();
                                 
                                 try
-                                {   listing.peerCount = bytes.readUnsignedByte();
+                                {   listing.peerCount = bytes.readUnsignedShort();
                                     listing.name = getSizedString(bytes);
                                 }
                                 catch(e:Error)
@@ -746,16 +745,9 @@ package lacewing
                     {
                         /* No flags/name - the peer must have left the channel */
                         
-                        for(i = 0; i < channel.peers.length; ++ i)
-                        {
-                            if(channel.peers[i] == peer)
-                            {
-                                channel.peers.splice(i, 1);
-                                break;
-                            }
-                        }
-                        
+                        channel.peers.splice (channel.peers.indexOf (peer), 1);
                         onPeerDisconnect(channel, peer);
+                        
                         break;
                     }
                     

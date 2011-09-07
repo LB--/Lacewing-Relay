@@ -40,8 +40,6 @@ protected:
 
         int Type = *(unsigned int *) Buffer;
         int MessageSize = Size - 8;
-        
-        DebugOut ("Preparing to send type %d, size %d", Type, MessageSize);
 
         int HeaderSize;
 

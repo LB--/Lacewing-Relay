@@ -13,3 +13,4 @@ build/*
 *.pc
 *.cache
 *.obj
+*.swc
