@@ -1215,7 +1215,7 @@ struct RelayServer
     typedef bool (LacewingHandler * HandlerPeerMessage)
         (Lacewing::RelayServer &Server, Lacewing::RelayServer::Client &Client, Lacewing::RelayServer::Channel &Channel,
             Lacewing::RelayServer::Client &TargetClient,bool Blasted,
-            int Subchannel,char * Packet, int Size, int Variant);
+            int Subchannel, char * Packet, int Size, int Variant);
 
     typedef bool (LacewingHandler * HandlerJoinChannel)
         (Lacewing::RelayServer &Server, Lacewing::RelayServer::Client &Client, Lacewing::RelayServer::Channel &Channel);

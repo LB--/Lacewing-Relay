@@ -665,7 +665,7 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
 
                 case 2: /* JoinChannel */
                 {
-                    unsigned char Flags       = Reader.Get <unsigned char> ();
+                    unsigned char Flags       = Succeeded ? Reader.Get <unsigned char> () : 0;
                     unsigned char NameLength  = Reader.Get <unsigned char> ();
                     char *        Name        = Reader.Get (NameLength);
 

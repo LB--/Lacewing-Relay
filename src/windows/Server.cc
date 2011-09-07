@@ -455,15 +455,11 @@ void ClientSocketCompletion(ServerClientInternal &Client, ServerOverlapped &Over
 
     if(Overlapped.Type == OverlappedType::Receive)
     {
-        DebugOut ("Receive completion for %d (bytes: %d, error: %d, disconnecting: %d)", &Client, BytesTransferred, Error, Client.Disconnecting);
-
         if(Client.Disconnecting)
             return;
 
         if(Error || !BytesTransferred)
         {
-            DebugOut ("Calling public Disconnect ()");
-
             Client.Public.Disconnect();
             return;
         }

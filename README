@@ -26,6 +26,16 @@ Android NDK (libssl.so/libcrypto.so are required - see docs/android_build.txt):
     cd jni
     ndk-build
 
+
+Changes in 0.2.3 (2011-09-07)
+=============================
+
+- Fixed an issue with Lacewing::EventPump on Windows, which would cause functions queued with
+  Post() not to execute in some cases.  This lead to to a significant issue with client disconnects
+  not being detected properly in Lacewing::Server.
+  
+- Miscellaneous relay protocol fixes
+
     
 Changes in 0.2.2 (2011-08-31)
 =============================
