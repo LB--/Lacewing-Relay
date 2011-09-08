@@ -1162,7 +1162,7 @@ struct RelayServer
             LacewingFunction Client * Next ();
         };
         
-        Channel * Next ();
+        LacewingFunction Channel * Next ();
     };
 
     LacewingFunction int ChannelCount();
@@ -1194,7 +1194,7 @@ struct RelayServer
             LacewingFunction Channel * Next ();
         };
         
-        Client * Next ();
+        LacewingFunction Client * Next ();
     };
 
     LacewingFunction int ClientCount ();
