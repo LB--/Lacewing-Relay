@@ -1209,6 +1209,11 @@ int Lacewing::RelayServer::Client::ChannelCount()
     return ((RelayServerInternal::Client *) InternalTag)->Channels.Size;
 }
 
+int Lacewing::RelayServer::ClientCount()
+{
+    return Socket.ClientCount ();
+}
+
 Lacewing::RelayServer::Client * Lacewing::RelayServer::FirstClient ()
 {
     return Socket.FirstClient () ?
