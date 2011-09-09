@@ -615,8 +615,6 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                         break;
                     }
 
-                    this->Name = Name;
-
                     if(Server.HandlerSetName && !Server.HandlerSetName(Server.Server, Public, Name))
                     {
                         Builder.AddHeader        (0, 0);  /* Response */
@@ -632,6 +630,8 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
 
                         break;
                     }
+
+                    this->Name = Name;
 
                     Builder.AddHeader        (0, 0);  /* Response */
                     Builder.Add <unsigned char> (1);  /* SetName */
