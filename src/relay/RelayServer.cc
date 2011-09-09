@@ -115,6 +115,7 @@ struct RelayServerInternal
         List <Channel *> Channels;
 
         String Name;
+        bool NameAltered;
 
         unsigned short ID;
     
@@ -615,6 +616,12 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                         break;
                     }
 
+                    /* The .Name() setter will also set NameAltered to true.  This means that if the
+                       handler sets the name explicitly, the default behaviour of setting the name to
+                       the requested one will be skipped. */
+
+                    NameAltered = false;
+
                     if(Server.HandlerSetName && !Server.HandlerSetName(Server.Server, Public, Name))
                     {
                         Builder.AddHeader        (0, 0);  /* Response */
@@ -631,7 +638,8 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                         break;
                     }
 
-                    this->Name = Name;
+                    if (!NameAltered)
+                        this->Name = Name;
 
                     Builder.AddHeader        (0, 0);  /* Response */
                     Builder.Add <unsigned char> (1);  /* SetName */
@@ -735,7 +743,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                             Builder.Add <unsigned char> (Channel->Name.Length);
                             Builder.Add (Channel->Name);
 
-                            Builder.Add ("Join refused by server");
+                            Builder.Add ("Join refused by server", -1);
 
                             Builder.Send(Socket);
                             
@@ -810,7 +818,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                         Builder.Add <unsigned char> (Channel->Name.Length);
                         Builder.Add (Channel->Name);
 
-                        Builder.Add ("Join refused by server");
+                        Builder.Add ("Join refused by server", -1);
 
                         Builder.Send(Socket);
                         
@@ -852,7 +860,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                         Builder.Add <unsigned char>  (0);  /* Failed */
                         Builder.Add <unsigned short> (Channel->ID);
 
-                        Builder.Add ("Leave refused by server");
+                        Builder.Add ("Leave refused by server", -1);
 
                         Builder.Send(Socket);
 
@@ -1191,7 +1199,10 @@ const char * Lacewing::RelayServer::Client::Name()
 
 void Lacewing::RelayServer::Client::Name(const char * Name)
 {
-    ((RelayServerInternal::Client *) InternalTag)->Name = Name;
+    RelayServerInternal::Client &Internal = *(RelayServerInternal::Client *) InternalTag;
+
+    Internal.Name = Name;
+    Internal.NameAltered = true;
 }
 
 int Lacewing::RelayServer::ChannelCount()
