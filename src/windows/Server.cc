@@ -418,6 +418,8 @@ void Lacewing::Server::Client::Disconnect()
 
     Client.Disconnecting = true;
 
+    shutdown (Client.Socket, SD_RECEIVE);
+    
     /* Don't post anything if the connect is still being processed - the thread that called
        the connect handler will go on to handle the disconnect if Disconnecting = true */
 

@@ -710,8 +710,8 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                                 E; E = E->Next)
                         {
                             RelayServerInternal::Client * Client = ** E;
-
-                            if(!strcasecmp (Client->Name, Name))
+    
+                            if(!strcasecmp (Client->Name, this->Name))
                             {
                                 NameTaken = true;
                                 break;
@@ -942,7 +942,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
 
         case 2: /* BinaryChannelMessage */
         {
-            unsigned char Subchannel          = Reader.Get <unsigned char> ();
+            unsigned char Subchannel = Reader.Get <unsigned char> ();
             RelayServerInternal::Channel * Channel = ReadChannel (Reader);
             
             char * Message;
@@ -972,7 +972,11 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                     continue;
 
                 if(Blasted)
+                {
+                DebugOut ("Relaying blasted message on sch %d variant %d size %d", Subchannel, Variant, Size);
+
                     Builder.Send(Server.Server.UDP, (** E)->UDPAddress, false);
+                }
                 else
                     Builder.Send((** E)->Socket, false);
             }
@@ -1070,7 +1074,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
 
     if(Reader.Failed)
     {
-        Socket.Disconnect();
+        /* Socket.Disconnect(); */
     }
 }
 

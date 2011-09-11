@@ -140,15 +140,7 @@ struct ServerClientInternal
     
     FileTransfer * Transfer;
 
-    void Terminate ()
-    {
-        DebugOut ("Terminate %d", &Public);
-
-        if (Context)
-            SSL_shutdown (Context);
-        else
-            close (Socket);
-    }
+    void Terminate ();
 };
 
 struct ServerInternal
@@ -203,6 +195,23 @@ struct ServerInternal
     ReceiveBuffer Buffer;
 };
     
+void ServerClientInternal::Terminate ()
+{
+    DebugOut ("Terminate %d", &Public);
+
+    shutdown (Socket, SHUT_RDWR);
+    close (Socket);
+
+    Server.EventPump.Remove (GoneKey);
+    Socket = -1;
+    
+    if(Server.HandlerDisconnect)
+        Server.HandlerDisconnect(Server.Server, Public);
+
+    Server.Clients.Erase (Element);
+    Server.ClientStructureBacklog.Return (*this);
+}
+
 Lacewing::Server::Server(Lacewing::Pump &Pump)
 {
     LacewingInitialise();
@@ -353,16 +362,7 @@ void ClientSocketReadReady (ServerClientInternal &Client)
     
     if (Disconnected)
     {
-        Internal.EventPump.Remove (Client.GoneKey);
-        
-        Client.Socket = -1;
-        
-        if(Internal.HandlerDisconnect)
-            Internal.HandlerDisconnect(Internal.Server, Client.Public);
-
-        Internal.Clients.Erase (Client.Element);
-
-        Internal.ClientStructureBacklog.Return(Client);
+        Client.Terminate ();
     }
 }
 
@@ -885,7 +885,10 @@ void Lacewing::Server::Client::Disconnect()
     }
     else
     {
-        Internal.Terminate ();
+        if (Internal.Context)
+            SSL_shutdown (Internal.Context);
+        else
+            shutdown (Internal.Socket, SHUT_RD);
     }
 }
 
