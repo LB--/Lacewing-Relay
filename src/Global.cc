@@ -54,7 +54,7 @@ const char * Lacewing::Version()
         #endif
 
         #ifdef COXSDK
-            Version = "Build #19";
+            Version = "Build #20";
         #else
             Version = "0.2.3";
         #endif

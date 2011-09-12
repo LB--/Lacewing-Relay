@@ -97,7 +97,6 @@ struct RelayServerInternal
 
             ID = Server.ClientIDs.Borrow();
 
-            SentUDPWelcome = false;
             Handshook      = false;
             Ponged         = true;
             GotFirstByte   = false;
@@ -121,7 +120,6 @@ struct RelayServerInternal
     
         Channel * ReadChannel(MessageReader &Reader);
     
-        bool SentUDPWelcome;
         bool Handshook;
         bool GotFirstByte;
         bool Ponged;
@@ -972,11 +970,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                     continue;
 
                 if(Blasted)
-                {
-                DebugOut ("Relaying blasted message on sch %d variant %d size %d", Subchannel, Variant, Size);
-
                     Builder.Send(Server.Server.UDP, (** E)->UDPAddress, false);
-                }
                 else
                     Builder.Send((** E)->Socket, false);
             }
@@ -1020,7 +1014,7 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
             Builder.Add (Message, Size);
 
             if(Blasted)
-                Builder.Send(Server.Server.UDP, Peer->UDPAddress, false);
+                Builder.Send(Server.Server.UDP, Peer->UDPAddress);
             else
                 Builder.Send(Peer->Socket);
 
@@ -1047,13 +1041,8 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                 break;
             }
 
-            if(!SentUDPWelcome)
-            {
-                Builder.AddHeader (10, 0); /* UDPWelcome */
-                Builder.Send     (Socket);
-
-                SentUDPWelcome = true;
-            }
+            Builder.AddHeader (10, 0); /* UDPWelcome */
+            Builder.Send      (Server.Server.UDP, UDPAddress);
 
             break;
             

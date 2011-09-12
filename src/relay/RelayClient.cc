@@ -943,6 +943,9 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
 
         case 10: /* UDPWelcome */
             
+            if (!Blasted)
+                break;
+
             Timer.Stop();
             Connected = true;
 
