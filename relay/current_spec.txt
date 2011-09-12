@@ -202,7 +202,7 @@ Table of Contents :-
                 
             If the client wishes to use UDP, they should start sending this
             every few seconds over UDP from as soon as they receive the Connect
-            response, until they receive the UDPWelcome message over TCP.
+            response, until they receive the UDPWelcome message.
             
             For more information on UDP, see section 4.2.
            
@@ -415,8 +415,8 @@ Table of Contents :-
             
         10 - UDPWelcome
                 
-            This is sent over TCP in response to successfully receiving the
-            UDPHello message over UDP, to confirm that UDP is ready to use.
+            This is sent over UDP in response to successfully receiving the UDPHello message, to
+            confirm that UDP is ready to use.
             
             For more information on UDP, see section 4.2.
             
@@ -528,6 +528,7 @@ Table of Contents :-
         Also note the Connect (server to client), UDPHello (client to server)
         and UDPWelcome (server to client) messages.  This exchange is necessary
         before UDP messages may be sent and received.
+        
         
         
         
