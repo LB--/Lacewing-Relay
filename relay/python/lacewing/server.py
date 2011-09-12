@@ -239,7 +239,7 @@ class ServerProtocol(BaseProtocol):
         if self._firstByte:
             if data[0] != '\x00':
                 # we don't support the HTTP relay
-                self.disconnect()
+                self.transport.loseConnection()
                 return
             data = data[1:]
             self._firstByte = False

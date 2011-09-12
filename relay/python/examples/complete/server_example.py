@@ -60,9 +60,9 @@ class MyServer(ServerProtocol):
         if self.loggedIn:
             self.log('Connection disconnected.')
     
-    def disconnect(self, reason):
+    def disconnect(self, reason = None, *arg, **kw):
         print self.log('Kicked: %s' % reason)          
-        ServerProtocol.disconnect(self, reason)
+        ServerProtocol.disconnect(self, reason, *arg, **kw)
             
     def log(self, message):
         """
