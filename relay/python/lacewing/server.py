@@ -426,10 +426,8 @@ class ServerProtocol(BaseProtocol):
             self.masterActionExecuted(channel, peer, action)
 
         elif packetId == client.UDPHello.id and isDatagram: # enable UDP
-            if self.udpEnabled:
-                return
             self.udpEnabled = True
-            self.sendLoader(server.UDPWelcome())
+            self.sendLoader(server.UDPWelcome(), True)
 
         elif packetId == client.Pong.id: # ping response
             if self._pingTime is None:
