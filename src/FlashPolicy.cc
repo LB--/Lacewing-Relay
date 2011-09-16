@@ -46,16 +46,6 @@ struct FlashPlayerPolicyInternal
     }
 };
 
-bool SocketConnect(Lacewing::Server &Socket, Lacewing::Server::Client &Client)
-{
-
-    return true;
-}
-
-void SocketDisconnect(Lacewing::Server &Socket, Lacewing::Server::Client &Client)
-{
-}
-
 void SocketReceive(Lacewing::Server &Socket, Lacewing::Server::Client &Client, char * Buffer, int Size)
 {
     FlashPlayerPolicyInternal &Internal = *(FlashPlayerPolicyInternal *) Socket.Tag;
@@ -105,28 +95,15 @@ void Lacewing::FlashPlayerPolicy::Host(const char * Filename, int Port)
     Host(Filename, Filter);
 }
 
-void Lacewing::FlashPlayerPolicy::Host(const char * Filename, Lacewing::Filter &_Filter)
+void Lacewing::FlashPlayerPolicy::Host(const char * Filename, Lacewing::Filter &Filter)
 {
     Unhost();
-
-    Lacewing::Filter Filter;
 
     if(!Filter.LocalPort())
         Filter.LocalPort(843);
     
     FlashPlayerPolicyInternal &Internal = *(FlashPlayerPolicyInternal *) InternalTag;
     
-    if(!Lacewing::FileExists(Filename))
-    {
-        Lacewing::Error Error;
-        Error.Add("File not found: %s", Filename);
-        
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
-
-        return;
-    }
-
     {   FILE * File = fopen(Filename, "r");
 
         if(!File)
@@ -145,27 +122,33 @@ void Lacewing::FlashPlayerPolicy::Host(const char * Filename, Lacewing::Filter &
         fseek(File, 0, SEEK_END);
 
         Internal.Size = ftell(File);
-        Internal.Buffer = (char *) malloc(((FlashPlayerPolicyInternal *)InternalTag)->Size);
+        Internal.Buffer = (char *) malloc(Internal.Size);
         
         fseek(File, 0, SEEK_SET);
 
-        if (fread(Internal.Buffer, 1, Internal.Size, File) != Internal.Size
-                && ferror (File))
+        int bytes = fread (Internal.Buffer, 1, Internal.Size, File);
+        
+        if (bytes != Internal.Size)
         {
-            Lacewing::Error Error;
-            
-            Error.Add (LacewingGetLastError());
-            Error.Add ("Error reading file: %s", Filename);
+            Internal.Size = bytes;
 
-            if(Internal.HandlerError)
-                Internal.HandlerError(*this, Error);
+            if (ferror (File))
+            {
+                Lacewing::Error Error;
+                
+                Error.Add (LacewingGetLastError());
+                Error.Add ("Error reading file: %s", Filename);
 
-            free(Internal.Buffer);
-            Internal.Buffer = 0;
-    
-            fclose(File);
-            
-            return;
+                if(Internal.HandlerError)
+                    Internal.HandlerError(*this, Error);
+
+                free (Internal.Buffer);
+                Internal.Buffer = 0;
+        
+                fclose (File);
+                
+                return;
+            }
         }
 
         fclose(File);
