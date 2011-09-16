@@ -149,19 +149,20 @@ void Lacewing::FlashPlayerPolicy::Host(const char * Filename, Lacewing::Filter &
         
         fseek(File, 0, SEEK_SET);
 
-        if(fread(Internal.Buffer, 1, Internal.Size, File) != Internal.Size)
+        if (fread(Internal.Buffer, 1, Internal.Size, File) != Internal.Size
+                && ferror (File))
         {
             Lacewing::Error Error;
             
             Error.Add (LacewingGetLastError());
-            Error.Add ("Error opening file: %s", Filename);
+            Error.Add ("Error reading file: %s", Filename);
 
             if(Internal.HandlerError)
                 Internal.HandlerError(*this, Error);
 
             free(Internal.Buffer);
             Internal.Buffer = 0;
-
+    
             fclose(File);
             
             return;
