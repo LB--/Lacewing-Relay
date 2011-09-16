@@ -510,11 +510,8 @@ void Lacewing::Webserver::Request::LastModified(lw_i64 Time)
     Header("Last-Modified", LastModified);
 }
 
-void Lacewing::Webserver::Request::Finish(const char * Data, int Size)
+void Lacewing::Webserver::Request::Finish()
 {
-    if(Data && *Data)
-        SendConstant(Data, Size == -1 ? strlen(Data) : Size);
-
     ((RequestInternal *) InternalTag)->Respond ();
 }
 

@@ -892,8 +892,8 @@ struct Webserver
 
         LacewingStream(Request, Send);
 
-        LacewingFunction void Reset();
-        LacewingFunction void Finish(const char * Data = 0, int Size = -1);
+        LacewingFunction void Reset ();
+        LacewingFunction void Finish ();
 
         LacewingFunction int  IdleTimeout ();
         LacewingFunction void IdleTimeout (int Seconds);
