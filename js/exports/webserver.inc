@@ -80,19 +80,6 @@
         CALLBACK_DO (Callback, 2, args);
     }
 
-    void webserver_onConnect(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
-    {
-		CALLBACK_INIT ();
-		
-        CALLBACK_TYPE Callback = ((CallbackInfo *) Webserver.Tag)->Callback;
-        CALLBACK_ARG_TYPE args [2];
-        
-        args[0] = CALLBACK_ARG_STRING("connect");
-        args[1] = CALLBACK_ARG_REF (Request);
-        
-        CALLBACK_DO (Callback, 2, args);
-    }
-
     void webserver_onDisconnect(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
     {
 		CALLBACK_INIT ();
@@ -148,7 +135,6 @@ Export(lwjs_ws_new)
         Webserver.onPost (webserver_onPost);
         Webserver.onHead (webserver_onHead);
         Webserver.onError (webserver_onError);
-        Webserver.onConnect (webserver_onConnect);
         Webserver.onDisconnect (webserver_onDisconnect);
         Webserver.onUploadStart (webserver_onUploadStart);
         Webserver.onUploadChunk (webserver_onUploadChunk);
@@ -354,13 +340,13 @@ Export(lwjs_ws_req_set_redirect)
         Return();
     }
     #endif
-Export(lwjs_ws_req_set_response_type)
+Export(lwjs_ws_req_status)
     #ifdef ExportBodies
     {
         BeginExport();
         Read_Int(Code);
         Read_String(Message);
-        Request.SetResponseType(Code, Message);
+        Request.Status(Code, Message);
         Return();
     }
     #endif
