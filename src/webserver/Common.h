@@ -228,7 +228,7 @@ struct RequestInternal
     
     struct File
     {
-        char Filename [MAX_PATH];
+        char Filename [lw_max_path];
         unsigned int Offset;
 
         File * Next;

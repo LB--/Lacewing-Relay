@@ -70,8 +70,8 @@ Export(lwjs_temp_path)
     {
         BeginExportGlobal();
 
-        char Path[2048];
-        Lacewing::TempPath(Path, sizeof(Path));
+        char Path [512];
+        Lacewing::TempPath(Path);
         Return_String(Path);
     }
     #endif
@@ -80,8 +80,8 @@ Export(lwjs_new_temp_file)
     {
         BeginExportGlobal();
 
-        char Path[2048];
-        Lacewing::NewTempFile(Path, sizeof(Path));
+        char Path [512];
+        Lacewing::NewTempFile(Path);
         Return_String(Path);
     }
     #endif

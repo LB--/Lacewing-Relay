@@ -115,6 +115,8 @@ void LacewingInitialise();
 #include <stdarg.h>
 #include <new>
 
+const int lw_max_path = 512;
+
 #ifdef LacewingWindows
 
     #ifndef WINVER
@@ -272,10 +274,8 @@ void LacewingInitialise();
     #endif
 
     #include <string.h>
-
     #include <limits.h>
-    #define MAX_PATH PATH_MAX
-
+    
     #ifdef HAVE_SYS_PRCTL_H
         #include <sys/prctl.h>
     #endif

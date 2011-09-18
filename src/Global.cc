@@ -54,12 +54,12 @@ const char * Lacewing::Version()
         #endif
 
         #ifdef COXSDK
-            Version = "Build #20";
+            Version = "#20";
         #else
             Version = "0.2.3";
         #endif
         
-        sprintf (VersionString, "Lacewing %s (%s/%s)", Version, Platform, sizeof(void *) == 8 ? "x64" : "x86");
+        sprintf (VersionString, "liblacewing %s (%s/%s)", Version, Platform, sizeof(void *) == 8 ? "x64" : "x86");
         GotVersion = true;
     }
 
@@ -208,11 +208,11 @@ void Lacewing::Int64ToString(lw_i64 Value, char * Output)
     sprintf(Output, I64Format, Value);
 }
 
-void Lacewing::TempPath(char * Buffer, int Length)
+void Lacewing::TempPath(char * Buffer)
 {
     #ifdef LacewingWindows
 
-        GetTempPathA(Length, Buffer);
+        GetTempPathA (lw_max_path, Buffer);
 
         for(char * i = Buffer; *i; ++ i)
             if(*i == '\\')
@@ -240,7 +240,7 @@ void Lacewing::TempPath(char * Buffer, int Length)
     #endif
 }
 
-void Lacewing::NewTempFile(char * Buffer, int Length)
+void Lacewing::NewTempFile(char * Buffer)
 {
     FILE * File;
 
@@ -252,8 +252,8 @@ void Lacewing::NewTempFile(char * Buffer, int Length)
 
         Lacewing::MD5_Hex (TempName, TempName, sizeof(TempName));
 
-        char Path[MAX_PATH];
-        TempPath(Path, sizeof(Path));
+        char Path [lw_max_path];
+        TempPath (Path);
 
         if(Path[strlen(Path) - 1] != '/')
         {
@@ -261,7 +261,7 @@ void Lacewing::NewTempFile(char * Buffer, int Length)
             Path[strlen(Path)]     = '/';
         }
 
-        lw_snprintf(Buffer, Length, "%slw-temp-%s", Path, TempName);
+        lw_snprintf(Buffer, lw_max_path, "%slw-temp-%s", Path, TempName);
     }
     while(Lacewing::FileExists(Buffer) || !(File = fopen(Buffer, "wb")));
 

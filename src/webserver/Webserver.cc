@@ -311,8 +311,8 @@ void Lacewing::Webserver::Upload::SetAutoSave()
     if(*Internal.AutoSaveFilename)
         return;
 
-    char Filename[MAX_PATH];
-    NewTempFile(Filename, sizeof(Filename));
+    char Filename [lw_max_path];
+    NewTempFile (Filename);
 
     Internal.AutoSaveFilename = Internal.Copier.Set("AutoSaveFilename", Filename);
     Internal.AutoSaveFile     = fopen(Filename, "wb");

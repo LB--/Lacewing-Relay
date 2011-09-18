@@ -49,11 +49,11 @@ lw_i64 lw_file_size (const char * filename)
 void lw_int64_to_string (lw_i64 int64, char * buffer)
     { Lacewing::Int64ToString(int64, buffer);
     }
-void lw_temp_path (char * buffer, long length)
-    { Lacewing::TempPath(buffer, length);
+void lw_temp_path (char * buffer)
+    { Lacewing::TempPath(buffer);
     }
-void lw_new_temp_file (char * buffer, long length)
-    { Lacewing::NewTempFile(buffer, length);
+void lw_new_temp_file (char * buffer)
+    { Lacewing::NewTempFile(buffer);
     }
 void lw_md5 (char * output, const char * input, long length)
     { Lacewing::MD5 (output, input, length);
