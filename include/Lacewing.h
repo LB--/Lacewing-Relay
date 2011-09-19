@@ -139,7 +139,7 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFunction           void  lw_eventpump_delete               (lw_eventpump *);
   LacewingFunction           void  lw_eventpump_tick                 (lw_eventpump *);
   LacewingFunction           void  lw_eventpump_start_event_loop     (lw_eventpump *);
-  LacewingFunction           void  lw_eventpump_start_sleepy_ticking (lw_eventpump *, void (LacewingHandler * on_tick_needed) (lw_eventpump));
+  LacewingFunction           void  lw_eventpump_start_sleepy_ticking (lw_eventpump *, void (LacewingHandler * on_tick_needed) (lw_eventpump *));
   LacewingFunction           void  lw_eventpump_post_eventloop_exit  (lw_eventpump *);
   LacewingFunction        lw_bool  lw_eventpump_in_use               (lw_eventpump *);
   LacewingFunction           void  lw_eventpump_set_in_use           (lw_eventpump *, lw_bool);
