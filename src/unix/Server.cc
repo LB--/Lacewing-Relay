@@ -663,7 +663,7 @@ bool ServerClientInternal::Send(QueuedSend * Queued, const char * Buffer, int Si
 
     if(!Context)
     {
-        int Sent = send(Socket, Buffer, Size, 0);
+        int Sent = send (Socket, Buffer, Size, MSG_NOSIGNAL);
 
         if(Sent == Size)
         {
