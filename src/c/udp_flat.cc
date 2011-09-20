@@ -43,6 +43,9 @@ void lw_udp_host_filter (lw_udp * udp, lw_filter * filter)
 void lw_udp_host_addr (lw_udp * udp, lw_addr * addr)
     { ((Lacewing::UDP *) udp)->Host(*(Lacewing::Address *) addr);
     }
+lw_bool lw_udp_hosting (lw_udp * udp)
+    { return ((Lacewing::UDP *) udp)->Hosting ();
+    }
 void lw_udp_unhost (lw_udp * udp)
     { ((Lacewing::UDP *) udp)->Unhost();
     }

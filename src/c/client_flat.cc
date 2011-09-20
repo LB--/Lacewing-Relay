@@ -71,6 +71,20 @@ void lw_client_flush (lw_client * client)
     { ((Lacewing::Client *) client)->Flush();
     }
 
+void lw_client_sendf (lw_client * client, const char * format, ...)
+{
+    va_list args;
+    va_start (args, format);
+    
+    char * data;
+    int size = LacewingFormat (data, format, args);
+    
+    if(size > 0)
+        ((Lacewing::Client *) client)->Send(data, size);
+
+    va_end (args);
+}
+
 AutoHandlerFlat(Lacewing::Client, lw_client, Connect, connect)
 AutoHandlerFlat(Lacewing::Client, lw_client, Disconnect, disconnect)
 AutoHandlerFlat(Lacewing::Client, lw_client, Receive, receive)

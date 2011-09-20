@@ -196,7 +196,7 @@ void Lacewing::UDP::Host(Lacewing::Filter &Filter)
 
     UDPInternal &Internal = *((UDPInternal *) InternalTag);
 
-    if(Internal.Socket != SOCKET_ERROR)
+    if(Hosting ())
     {
         Lacewing::Error Error;
         Error.Add("Already hosting");
@@ -207,7 +207,7 @@ void Lacewing::UDP::Host(Lacewing::Filter &Filter)
         return;    
     }
 
-    Internal.Socket   = WSASocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP, 0, 0, WSA_FLAG_OVERLAPPED);
+    Internal.Socket = WSASocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP, 0, 0, WSA_FLAG_OVERLAPPED);
     Internal.RemoteIP = Filter.Remote().IP();
 
     Internal.EventPump.Add((HANDLE) Internal.Socket, &Internal, UDPSocketCompletion);
@@ -221,10 +221,13 @@ void Lacewing::UDP::Host(Lacewing::Filter &Filter)
 
     if(bind(Internal.Socket, (sockaddr *) &SocketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
     {
+        closesocket (Internal.Socket);
+        Internal.Socket = SOCKET_ERROR;
+
         Lacewing::Error Error;
         
-        Error.Add(WSAGetLastError());
-        Error.Add("Error binding port");
+        Error.Add (WSAGetLastError());
+        Error.Add ("Error binding port");
 
         if(Internal.HandlerError)
             Internal.HandlerError(*this, Error);
@@ -237,6 +240,11 @@ void Lacewing::UDP::Host(Lacewing::Filter &Filter)
 
     Internal.Port = ntohs(SocketAddress.sin_port);
     Internal.PostReceives();
+}
+
+bool Lacewing::UDP::Hosting ()
+{
+    return ((UDPInternal *) InternalTag)->Socket != SOCKET_ERROR;
 }
 
 void Lacewing::UDP::Unhost()

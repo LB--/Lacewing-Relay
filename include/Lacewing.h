@@ -237,6 +237,7 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFunction        lw_addr* lw_client_server_addr        (lw_client *);
   LacewingFunction           void  lw_client_send               (lw_client *, const char * data, long size);
   LacewingFunction           void  lw_client_send_text          (lw_client *, const char * text);
+  LacewingFunction           void  lw_client_sendf              (lw_client *, const char * format, ...);
   LacewingFunction           void  lw_client_disable_nagling    (lw_client *);
   LacewingFunction        lw_bool  lw_client_cheap_buffering    (lw_client *);
   LacewingFunction           void  lw_client_start_buffering    (lw_client *);
@@ -277,6 +278,8 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFunction          lw_addr* lw_server_client_address           (lw_server_client *);
   LacewingFunction             void  lw_server_client_send              (lw_server_client *, const char * data, long size);
   LacewingFunction             void  lw_server_client_send_writable     (lw_server_client *, char * data, long size);
+  LacewingFunction             void  lw_server_client_send_text         (lw_server_client *, const char * text);
+  LacewingFunction             void  lw_server_client_sendf             (lw_server_client *, const char * format, ...);
   LacewingFunction          lw_bool  lw_server_client_cheap_buffering   (lw_server_client *);
   LacewingFunction             void  lw_server_client_start_buffering   (lw_server_client *);
   LacewingFunction             void  lw_server_client_flush             (lw_server_client *);
@@ -304,6 +307,7 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFunction           void  lw_udp_host                  (lw_udp *, long port);
   LacewingFunction           void  lw_udp_host_filter           (lw_udp *, lw_filter *);
   LacewingFunction           void  lw_udp_host_addr             (lw_udp *, lw_addr *);
+  LacewingFunction        lw_bool  lw_udp_hosting               (lw_udp *);
   LacewingFunction           void  lw_udp_unhost                (lw_udp *);
   LacewingFunction           long  lw_udp_port                  (lw_udp *);
   LacewingFunction         lw_i64  lw_udp_bytes_sent            (lw_udp *);
@@ -820,9 +824,10 @@ struct UDP
     LacewingFunction void Host (Lacewing::Filter &Filter);
     LacewingFunction void Host (Address &); /* Use Port() afterwards to get the port number */
 
-    LacewingFunction void Unhost();
+    LacewingFunction bool Hosting ();
+    LacewingFunction void Unhost ();
 
-    LacewingFunction int Port();
+    LacewingFunction int Port ();
 
     LacewingFunction lw_i64 BytesSent();
     LacewingFunction lw_i64 BytesReceived();

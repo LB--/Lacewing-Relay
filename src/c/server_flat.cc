@@ -79,6 +79,9 @@ lw_addr * lw_server_client_address (lw_server_client * client)
 void lw_server_client_send (lw_server_client * client, const char * data, long size)
     { ((Lacewing::Server::Client *) client)->Send(data, size);
     }
+void lw_server_client_send_text (lw_server_client * client, const char * text)
+    { ((Lacewing::Server::Client *) client)->Send(text);
+    }
 void lw_server_client_send_writable (lw_server_client * client, char * data, long size)
     { ((Lacewing::Server::Client *) client)->SendWritable(data, size);
     }
@@ -97,6 +100,20 @@ void lw_server_client_disconnect (lw_server_client * client)
 lw_server_client * lw_server_client_next (lw_server_client * client)
     { return (lw_server_client *) ((Lacewing::Server::Client *) client)->Next();
     }
+
+void lw_server_client_sendf (lw_server_client * client, const char * format, ...)
+{
+    va_list args;
+    va_start (args, format);
+    
+    char * data;
+    int size = LacewingFormat (data, format, args);
+    
+    if(size > 0)
+        ((Lacewing::Server::Client *) client)->SendWritable (data, size);
+
+    va_end (args);
+}
 
 AutoHandlerFlat(Lacewing::Server, lw_server, Connect, connect)
 AutoHandlerFlat(Lacewing::Server, lw_server, Disconnect, disconnect)

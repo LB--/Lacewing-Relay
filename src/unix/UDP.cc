@@ -132,6 +132,9 @@ void Lacewing::UDP::Host(Lacewing::Filter &Filter)
 
     if(bind(Internal.Socket, (sockaddr *) &SocketAddress, sizeof(sockaddr_in)) == -1)
     {
+        close (Internal.Socket);
+        Internal.Socket = -1;
+
         Lacewing::Error Error;
         
         Error.Add(errno);
@@ -147,6 +150,11 @@ void Lacewing::UDP::Host(Lacewing::Filter &Filter)
     getsockname(Internal.Socket, (sockaddr *) &SocketAddress, &AddressLength);
 
     Internal.Port = ntohs(SocketAddress.sin_port);
+}
+
+bool Lacewing::UDP::Hosting ()
+{
+    return Internal.Socket != -1;
 }
 
 int Lacewing::UDP::Port()
