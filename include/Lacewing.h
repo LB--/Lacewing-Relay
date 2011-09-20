@@ -128,8 +128,6 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFunction           long  lw_addr_ip        (lw_addr *);
   LacewingFunction  unsigned char  lw_addr_ip_byte   (lw_addr *, long index);
   LacewingFunction     const char* lw_addr_tostring  (lw_addr *);
-  LacewingFunction           void* lw_addr_tag       (lw_addr *);
-  LacewingFunction           void  lw_addr_set_tag   (lw_addr *, void * tag);
 
 /* EventPump */
 
