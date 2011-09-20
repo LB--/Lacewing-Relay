@@ -238,6 +238,7 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFunction           void  lw_client_send               (lw_client *, const char * data, long size);
   LacewingFunction           void  lw_client_send_text          (lw_client *, const char * text);
   LacewingFunction           void  lw_client_disable_nagling    (lw_client *);
+  LacewingFunction        lw_bool  lw_client_cheap_buffering    (lw_client *);
   LacewingFunction           void  lw_client_start_buffering    (lw_client *);
   LacewingFunction           void  lw_client_flush              (lw_client *);
   
@@ -734,8 +735,10 @@ struct Client
     LacewingStream             (Client, Send);
 
     LacewingFunction void DisableNagling();
+    
+    LacewingFunction bool CheapBuffering ();
     LacewingFunction void StartBuffering();
-    LacewingFunction void Flush();
+    LacewingFunction void Flush();    
 
     typedef void (LacewingHandler * HandlerConnect)         (Lacewing::Client &Client);
     typedef void (LacewingHandler * HandlerDisconnect)      (Lacewing::Client &Client);

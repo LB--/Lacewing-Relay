@@ -61,6 +61,9 @@ void lw_client_send_text (lw_client * client, const char * text)
 void lw_client_disable_nagling (lw_client * client)
     { ((Lacewing::Client *) client)->DisableNagling();
     }
+lw_bool lw_client_cheap_buffering (lw_client * client)
+    { return ((Lacewing::Client *) client)->CheapBuffering();
+    }
 void lw_client_start_buffering (lw_client * client)
     { ((Lacewing::Client *) client)->StartBuffering();
     }

@@ -318,6 +318,13 @@ void Lacewing::Client::DisableNagling()
         ::DisableNagling(Internal.Socket);
 }
 
+bool Lacewing::Client::CheapBuffering ()
+{
+    /* TODO : Userland buffering support for Unix client? */
+
+    return true;
+}
+
 void Lacewing::Client::StartBuffering()
 {
     if(!Connected())

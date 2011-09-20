@@ -343,6 +343,11 @@ void Lacewing::Client::DisableNagling()
         ::DisableNagling(Internal.Socket);
 }
 
+bool Lacewing::Client::CheapBuffering ()
+{
+    return false;
+}
+
 void Lacewing::Client::StartBuffering()
 {
     ClientInternal &Internal = *(ClientInternal *) InternalTag;
