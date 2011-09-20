@@ -314,7 +314,7 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFunction         lw_i64  lw_udp_bytes_received        (lw_udp *);
   LacewingFunction           void  lw_udp_send                  (lw_udp *, lw_addr *, const char * data, long size);
 
-  typedef void (LacewingHandler * lw_udp_handler_receive) (lw_udp *, char * data, long size);
+  typedef void (LacewingHandler * lw_udp_handler_receive) (lw_udp *, lw_addr *, char * data, long size);
   LacewingFunction void lw_udp_onreceive (lw_udp *, lw_udp_handler_receive);
 
   typedef void (LacewingHandler * lw_udp_handler_error) (lw_udp *, lw_error *);
