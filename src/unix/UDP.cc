@@ -154,7 +154,7 @@ void Lacewing::UDP::Host(Lacewing::Filter &Filter)
 
 bool Lacewing::UDP::Hosting ()
 {
-    return Internal.Socket != -1;
+    return ((UDPInternal *) InternalTag)->Socket != -1;
 }
 
 int Lacewing::UDP::Port()
