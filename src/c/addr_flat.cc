@@ -31,8 +31,8 @@
 lw_addr * lw_addr_new ()
     { return (lw_addr *) new Lacewing::Address();
     }
-lw_addr * lw_addr_new_ip (unsigned int ip, long port)
-    { return (lw_addr *) new Lacewing::Address(ip, port);
+lw_addr * lw_addr_new_ip (long ip, long port)
+    { return (lw_addr *) new Lacewing::Address ((unsigned int) ip, port);
     }
 lw_addr * lw_addr_new_name (const char * hostname, long port, lw_bool blocking)
     { return (lw_addr *) new Lacewing::Address(hostname, port, blocking ? 1 : 0);

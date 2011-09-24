@@ -118,7 +118,7 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFlat (lw_addr);
 
   LacewingFunction        lw_addr* lw_addr_new       ();
-  LacewingFunction        lw_addr* lw_addr_new_ip    (unsigned int ip, long port);
+  LacewingFunction        lw_addr* lw_addr_new_ip    (long ip, long port);
   LacewingFunction        lw_addr* lw_addr_new_name  (const char * hostname, long port, lw_bool blocking);
   LacewingFunction        lw_addr* lw_addr_copy      (lw_addr *);
   LacewingFunction           void  lw_addr_delete    (lw_addr *);
