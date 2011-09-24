@@ -71,6 +71,8 @@ struct RelayServerInternal
     
         Timer.Tag = this;
         Timer.onTick (ServerTimerTick);
+
+        ChannelListingEnabled = true;
     }
 
     IDPool ClientIDs;
@@ -176,6 +178,8 @@ struct RelayServerInternal
     String WelcomeMessage;
 
     List <Channel *> Channels;
+
+    bool ChannelListingEnabled;
 
     void TimerTick()
     {
@@ -890,6 +894,19 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
 
                 case 4: /* ChannelList */
 
+                    if (!Server.ChannelListingEnabled)
+                    {
+                        Builder.AddHeader        (0, 0);  /* Response */
+                        Builder.Add <unsigned char> (4);  /* ChannelList */
+                        Builder.Add <unsigned char> (0);  /* Failed */
+                        
+                        Builder.Add ("Channel listing is not enabled on this server");
+
+                        Builder.Send (Socket);
+
+                        break;
+                    }
+
                     Builder.AddHeader        (0, 0);  /* Response */
                     Builder.Add <unsigned char> (4);  /* ChannelList */
                     Builder.Add <unsigned char> (1);  /* Success */
@@ -1161,6 +1178,11 @@ bool Lacewing::RelayServer::Channel::AutoCloseEnabled()
 void Lacewing::RelayServer::SetWelcomeMessage(const char * Message)
 {
     ((RelayServerInternal *) InternalTag)->WelcomeMessage = Message;
+}
+
+void Lacewing::RelayServer::SetChannelListing (bool Enabled)
+{
+    ((RelayServerInternal *) InternalTag)->ChannelListingEnabled = Enabled;
 }
 
 Lacewing::RelayServer::Client * Lacewing::RelayServer::Channel::ChannelMaster()
