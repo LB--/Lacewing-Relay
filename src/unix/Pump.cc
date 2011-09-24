@@ -53,6 +53,12 @@ bool Lacewing::Pump::Ready (void * Tag, bool CanRead, bool CanWrite)
 
             while(Internal.PostQueue.Size)
             {
+                /* Each post = one byte written to the pipe */
+
+                {   char b;
+                    read (Internal.PostFD_Read, &b, 1);
+                }
+
                 Event = Internal.PostQueue.PopFront ();
                 
                 if(Event->ReadCallback == SigExitEventLoop)
@@ -108,10 +114,10 @@ void Lacewing::Pump::Post (void * Function, void * Parameter)
     Event.Removing      = false;
 
     {   Lacewing::Sync::Lock Lock(Internal.Sync_PostQueue);
+   
         Internal.PostQueue.Push (&Event);
+        write(Internal.PostFD_Write, "", 1);
     }
-
-    write(Internal.PostFD_Write, "", 1);
 }
 
 void * PumpInternal::AddRead (int FD, void * Tag, void * Callback)
