@@ -1,6 +1,7 @@
 
-/*
- * Copyright (c) 2011 James McLaughlin.  All rights reserved.
+/* vim: set et ts=4 sw=4 ft=cpp:
+ *
+ * Copyright (C) 2011 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
- 
-/* Some simple utility classes to remove the dependency on STL */
 
 template <class T> struct List
 {   
