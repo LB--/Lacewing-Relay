@@ -46,12 +46,13 @@ struct TimerInternal
 
     #ifdef LacewingUseTimerFD
         int FD;
-    #else
-        Lacewing::Thread LegacyTimerThread;
-        Lacewing::Event StopEvent;
-        int Interval;
     #endif
 
+    Lacewing::Event StopEvent;
+    int Interval;
+
+    Lacewing::Thread LegacyTimerThread;
+    
     TimerInternal(Lacewing::Timer &_Timer, PumpInternal &_EventPump)
                     : Timer(_Timer), EventPump(_EventPump),
                       LegacyTimerThread ("LegacyTimer", (void *) LegacyTimer)
@@ -79,22 +80,18 @@ void TimerTick(TimerInternal &Internal)
         Internal.HandlerTick(Internal.Timer);
 }
 
-#ifndef LacewingUseTimerFD
-
-    void LegacyTimer (TimerInternal &Internal)
+void LegacyTimer (TimerInternal &Internal)
+{
+    for(;;)
     {
-        for(;;)
-        {
-            Internal.StopEvent.Wait(Internal.Interval);
+        Internal.StopEvent.Wait(Internal.Interval);
 
-            if(Internal.StopEvent.Signalled())
-                break;
-            
-            Internal.EventPump.Pump.Post((void *) TimerTick, &Internal);
-        }
+        if(Internal.StopEvent.Signalled())
+            break;
+        
+        Internal.EventPump.Pump.Post((void *) TimerTick, &Internal);
     }
-
-#endif
+}
 
 Lacewing::Timer::Timer(Lacewing::Pump &Pump)
 {
