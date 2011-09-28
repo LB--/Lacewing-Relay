@@ -1243,25 +1243,23 @@ struct RelayServer
     LacewingFunction void onSetName        (HandlerSetName);
 };
 
-struct FlashPlayerPolicy
+struct FlashPolicy
 {
     void * InternalTag, * Tag;
 
-    Server Socket;
+    LacewingFunction  FlashPolicy (Pump &);
+    LacewingFunction ~FlashPolicy ();
 
-    LacewingFunction  FlashPlayerPolicy(Pump &);
-    LacewingFunction ~FlashPlayerPolicy();
+    LacewingFunction void Host (const char * Filename, int Port = 843);
+    LacewingFunction void Host (const char * Filename, Lacewing::Filter &Filter);
+    LacewingFunction void Unhost ();
 
-    LacewingFunction void Host(const char * Filename, int Port = 843);
-    LacewingFunction void Host(const char * Filename, Lacewing::Filter &Filter);
-    LacewingFunction void Unhost();
+    LacewingFunction bool Hosting ();
 
-    LacewingFunction bool Hosting();
+    typedef void (LacewingHandler * HandlerError)
+        (Lacewing::FlashPolicy &FlashPolicy, Lacewing::Error &);
 
-
-    typedef void (LacewingHandler * HandlerError)         (Lacewing::FlashPlayerPolicy &FlashPlayerPolicy, Lacewing::Error &);
-
-    LacewingFunction void onError    (HandlerError);
+    LacewingFunction void onError (HandlerError);
 };
 
 }

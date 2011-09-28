@@ -23,6 +23,7 @@ def build(bld):
                     src/Address.cc \
                     src/Error.cc \
                     src/Thread.cc \
+                    src/FlashPolicy.cc \
                     src/relay/RelayServer.cc \
                     src/relay/RelayClient.cc \
                     src/webserver/Webserver.cc \

@@ -29,19 +29,21 @@
 
 #include "Common.h"
 
-struct FlashPlayerPolicyInternal
+struct FlashPolicyInternal
 {
     char * Buffer;
     size_t Size;
 
-    Lacewing::FlashPlayerPolicy &Public;
-    Lacewing::Server &Socket;
+    Lacewing::FlashPolicy &Public;
+    Lacewing::Server Socket;
 
-    Lacewing::FlashPlayerPolicy::HandlerError HandlerError;
+    Lacewing::FlashPolicy::HandlerError HandlerError;
 
-    FlashPlayerPolicyInternal(Lacewing::FlashPlayerPolicy &_Public, Lacewing::Server &_Socket)
-            : Public(_Public), Socket(_Socket)
+    FlashPolicyInternal(Lacewing::FlashPolicy &_Public, Lacewing::Pump &_Pump)
+            : Public(_Public), Socket(_Pump)
     {
+        Socket.Tag = this;
+
         Buffer        = 0;
         HandlerError  = 0;
     }
@@ -49,7 +51,7 @@ struct FlashPlayerPolicyInternal
 
 void SocketReceive(Lacewing::Server &Socket, Lacewing::Server::Client &Client, char * Buffer, int Size)
 {
-    FlashPlayerPolicyInternal &Internal = *(FlashPlayerPolicyInternal *) Socket.Tag;
+    FlashPolicyInternal &Internal = *(FlashPolicyInternal *) Socket.Tag;
 
     for(int i = 0; i < Size; ++i)
     {
@@ -65,7 +67,7 @@ void SocketReceive(Lacewing::Server &Socket, Lacewing::Server::Client &Client, c
 
 void SocketError(Lacewing::Server &Socket, Lacewing::Error &Error)
 {
-    FlashPlayerPolicyInternal &Internal = *(FlashPlayerPolicyInternal *) Socket.Tag;
+    FlashPolicyInternal &Internal = *(FlashPolicyInternal *) Socket.Tag;
 
     Error.Add("Socket error");
     
@@ -73,22 +75,23 @@ void SocketError(Lacewing::Server &Socket, Lacewing::Error &Error)
         Internal.HandlerError(Internal.Public, Error);
 }
 
-Lacewing::FlashPlayerPolicy::FlashPlayerPolicy(EventPump &EventPump) : Socket(EventPump)
+Lacewing::FlashPolicy::FlashPolicy(Lacewing::Pump &Pump)
 {
-    Socket.Tag = InternalTag = new FlashPlayerPolicyInternal(*this, Socket);
+    FlashPolicyInternal &Internal = *(FlashPolicyInternal *)
+            (InternalTag = new FlashPolicyInternal(*this, Pump));
 
-    Socket.onError   (SocketError);
-    Socket.onReceive (SocketReceive);
+    Internal.Socket.onError   (SocketError);
+    Internal.Socket.onReceive (SocketReceive);
 }
 
-Lacewing::FlashPlayerPolicy::~FlashPlayerPolicy()
+Lacewing::FlashPolicy::~FlashPolicy()
 {
     Unhost();
     
-    delete ((FlashPlayerPolicyInternal *) InternalTag);
+    delete ((FlashPolicyInternal *) InternalTag);
 }
 
-void Lacewing::FlashPlayerPolicy::Host(const char * Filename, int Port)
+void Lacewing::FlashPolicy::Host(const char * Filename, int Port)
 {
     Lacewing::Filter Filter;
     Filter.LocalPort(Port);
@@ -96,14 +99,14 @@ void Lacewing::FlashPlayerPolicy::Host(const char * Filename, int Port)
     Host(Filename, Filter);
 }
 
-void Lacewing::FlashPlayerPolicy::Host(const char * Filename, Lacewing::Filter &Filter)
+void Lacewing::FlashPolicy::Host(const char * Filename, Lacewing::Filter &Filter)
 {
     Unhost();
 
     if(!Filter.LocalPort())
         Filter.LocalPort(843);
     
-    FlashPlayerPolicyInternal &Internal = *(FlashPlayerPolicyInternal *) InternalTag;
+    FlashPolicyInternal &Internal = *(FlashPolicyInternal *) InternalTag;
     
     {   FILE * File = fopen(Filename, "r");
 
@@ -155,21 +158,23 @@ void Lacewing::FlashPlayerPolicy::Host(const char * Filename, Lacewing::Filter &
         fclose(File);
     }
 
-    Socket.Host(Filter);
+    Internal.Socket.Host(Filter);
 }
 
-void Lacewing::FlashPlayerPolicy::Unhost()
+void Lacewing::FlashPolicy::Unhost()
 {
-    Socket.Unhost();
-    
-    FlashPlayerPolicyInternal &Internal = *(FlashPlayerPolicyInternal *) InternalTag;
-    free(Internal.Buffer);
+    FlashPolicyInternal &Internal = *(FlashPolicyInternal *) InternalTag;
+   
+    Internal.Socket.Unhost ();
+
+    free (Internal.Buffer);
+    Internal.Buffer = 0;
 }
 
-bool Lacewing::FlashPlayerPolicy::Hosting()
+bool Lacewing::FlashPolicy::Hosting()
 {
-    return Socket.Hosting();
+    return ((FlashPolicyInternal *) InternalTag)->Socket.Hosting();
 }
 
-AutoHandlerFunctions(Lacewing::FlashPlayerPolicy, FlashPlayerPolicyInternal, Error);
+AutoHandlerFunctions(Lacewing::FlashPolicy, FlashPolicyInternal, Error);
 
