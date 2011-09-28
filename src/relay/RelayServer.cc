@@ -119,6 +119,8 @@ struct RelayServerInternal
         String Name;
         bool NameAltered;
 
+        bool CheckName (const char * Name);
+
         unsigned short ID;
     
         Channel * ReadChannel(MessageReader &Reader);
@@ -489,6 +491,42 @@ void RelayServerInternal::Channel::RemoveClient(RelayServerInternal::Client &Cli
     Builder.FrameReset();
 }
 
+bool RelayServerInternal::Client::CheckName (const char * Name)
+{
+    for(List <RelayServerInternal::Channel *>::Element * E = Channels.First;
+            E; E = E->Next)
+    {
+        RelayServerInternal::Channel * Channel = ** E;
+
+        for(List <RelayServerInternal::Client *>::Element * E2 = Channel->Clients.First;
+                E2; E2 = E2->Next)
+        {
+            if ((** E2) == this)
+                continue;
+
+            if(!strcasecmp((** E2)->Name, Name))
+            {
+                FrameBuilder &Builder = Server.Builder;
+
+                Builder.AddHeader        (0, 0);  /* Response */
+                Builder.Add <unsigned char> (1);  /* SetName */
+                Builder.Add <unsigned char> (0);  /* Failed */
+
+                Builder.Add <unsigned char> (strlen(Name));
+                Builder.Add (Name, -1);
+
+                Builder.Add ("Name already taken", -1);
+
+                Builder.Send(Socket);
+
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Message, int Size, bool Blasted)
 {
     unsigned char MessageTypeID  = (Type >> 4);
@@ -582,42 +620,10 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                     if(Reader.Failed)
                         break;
 
-                    bool Taken = false;
-
-                    for(List <RelayServerInternal::Channel *>::Element * E = Channels.First;
-                            E; E = E->Next)
-                    {
-                        RelayServerInternal::Channel * Channel = ** E;
-
-                        for(List <RelayServerInternal::Client *>::Element * E2 = Channel->Clients.First;
-                                E2; E2 = E2->Next)
-                        {
-                            if(!strcasecmp((** E2)->Name, Name))
-                            {
-                                Taken = true;
-                                break;
-                            }
-                        }
-
-                        if(Taken)
-                            break;
-                    }
-
-                    if(Taken)
-                    {
-                        Builder.AddHeader        (0, 0);  /* Response */
-                        Builder.Add <unsigned char> (1);  /* SetName */
-                        Builder.Add <unsigned char> (0);  /* Failed */
-
-                        Builder.Add <unsigned char> (strlen(Name));
-                        Builder.Add (Name, -1);
-
-                        Builder.Add ("Name already taken", -1);
-
-                        Builder.Send(Socket);
-
+                    if (!CheckName (Name))
                         break;
-                    }
+
+                    String NameCopy = this->Name;
 
                     /* The .Name() setter will also set NameAltered to true.  This means that if the
                        handler sets the name explicitly, the default behaviour of setting the name to
@@ -642,7 +648,19 @@ void RelayServerInternal::Client::MessageHandler(unsigned char Type, char * Mess
                     }
 
                     if (!NameAltered)
+                    {
                         this->Name = Name;
+                    }
+                    else
+                    {
+                        /* Check the new name provided by the handler */
+
+                        if (!CheckName (this->Name))
+                        {
+                            this->Name = NameCopy;
+                            break;
+                        }
+                    }
 
                     Builder.AddHeader        (0, 0);  /* Response */
                     Builder.Add <unsigned char> (1);  /* SetName */
