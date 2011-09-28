@@ -69,7 +69,9 @@
     
 #endif
 
-#define lw_bool lw_iptr
+#define lw_bool   lw_iptr
+#define lw_true   1
+#define lw_false  0
 
 #ifndef LacewingFunction
 
