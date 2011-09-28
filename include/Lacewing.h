@@ -44,6 +44,7 @@
     #define lw_iptr  intptr_t
     #define lw_i32   int32_t
     #define lw_i16   int16_t
+    #define lw_i8    int8_t
 
     #ifndef LacewingHandler
         #define LacewingHandler
@@ -61,17 +62,14 @@
         #define lw_iptr __int32
     #endif
 
-    #define lw_i64 __int64
-    #define lw_i32 __int32
-    #define lw_i16 __int16
+    #define lw_i64  __int64
+    #define lw_i32  __int32
+    #define lw_i16  __int16
+    #define lw_i8   __int8
 
     #define LacewingHandler __cdecl
     
 #endif
-
-#define lw_bool   lw_iptr
-#define lw_true   1
-#define lw_false  0
 
 #ifndef LacewingFunction
 
@@ -82,6 +80,11 @@
     #endif
 
 #endif
+
+typedef lw_i8 lw_bool;
+
+const lw_bool lw_true  = (lw_bool) 1;
+const lw_bool lw_false = (lw_bool) 0;
 
 #ifdef __cplusplus
 extern "C"
