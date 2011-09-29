@@ -38,7 +38,12 @@ AC_CHECK_HEADERS([malloc.h sys/epoll.h sys/prctl.h sys/sendfile.h \
 
 AC_CHECK_FUNCS([timegm kqueue vasprintf])
 
+AC_CHECK_LIB([ssl], [SSL_library_init])
+AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([rt], [clock_gettime])
+
+AC_SEARCH_LIBS([MD5_Init], [ssl crypto])
+
 AC_CHECK_FUNCS([clock_gettime])
 
 AC_CHECK_DECLS([PR_SET_NAME], [], [], [AC_INCLUDES_DEFAULT

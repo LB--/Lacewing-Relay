@@ -4,6 +4,7 @@ PREFIX = @prefix@
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
 
 COMMONDEPS = src/Common.h src/Backlog.h src/MessageBuilder.h src/MessageReader.h \
 				src/QueuedSend.h src/ReceiveBuffer.h src/TimeHelper.h src/Utility.h \
@@ -24,7 +25,7 @@ all: liblacewing.so liblacewing.a
 
 liblacewing.so: $(OBJECTS)
 	@echo Linking shared library...
-	@g++ $(CXXFLAGS) -shared -o liblacewing.so ./build/*.o -lpthread -lssl -lrt
+	@g++ $(CXXFLAGS) -shared -o liblacewing.so ./build/*.o $(LIBS)
 
 liblacewing.a: $(OBJECTS)
 	@echo Linking static library...
