@@ -413,6 +413,11 @@ void ListenSocketReadReady(ServerInternal &Internal, bool)
         
         fcntl(Socket, F_SETFL, fcntl(Socket, F_GETFL, 0) | O_NONBLOCK);
         
+        DisableSigPipe (Socket);
+
+        if (!Internal.Nagle)
+            DisableNagling (Socket);
+
         ServerClientInternal &Client = Internal.ClientStructureBacklog.Borrow(Internal);
 
         Client.Socket = Socket;
@@ -464,6 +469,8 @@ void Lacewing::Server::Host(Lacewing::Filter &Filter, bool)
 
         return;
     }
+
+    DisableSigPipe (Internal.Socket);
 
     if((!CertificateLoaded()) && (!Internal.Nagle))
         ::DisableNagling(Internal.Socket);
@@ -664,7 +671,7 @@ bool ServerClientInternal::Send(QueuedSend * Queued, const char * Buffer, int Si
 
     if(!Context)
     {
-        int Sent = send (Socket, Buffer, Size, MSG_NOSIGNAL);
+        int Sent = send (Socket, Buffer, Size, LacewingNoSignal);
 
         if(Sent == Size)
         {

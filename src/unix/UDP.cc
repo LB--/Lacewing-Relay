@@ -119,6 +119,8 @@ void Lacewing::UDP::Host(Lacewing::Filter &Filter)
     Internal.Socket   = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     Internal.RemoteIP = Filter.Remote().IP();
 
+    DisableSigPipe (Internal.Socket);
+
     fcntl(Internal.Socket, F_SETFL, fcntl(Internal.Socket, F_GETFL, 0) | O_NONBLOCK);
 
     Internal.EventPump.AddRead(Internal.Socket, &Internal, (void *) UDPSocketCompletion);

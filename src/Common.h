@@ -310,7 +310,23 @@ const int lw_max_path = 512;
 
     #define lw_vsnprintf                vsnprintf
     #define lw_snprintf                 snprintf
-    
+
+    #if HAVE_DECL_MSG_NOSIGNAL
+        #define LacewingNoSignal MSG_NOSIGNAL
+    #else
+        #define LacewingNoSignal 0
+    #endif
+
+    inline void DisableSigPipe (SOCKET Socket)
+    {
+        #if HAVE_DECL_SO_NOSIGPIPE
+       
+            int Yes = 1;
+            setsockopt (Socket, SOL_SOCKET, SO_NOSIGNPIPE, (char *) &Yes, sizeof (Yes));
+        
+        #endif
+    }   
+
 #endif
 
 inline void DisableNagling (SOCKET Socket)

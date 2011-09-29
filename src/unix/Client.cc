@@ -137,7 +137,7 @@ void ClientInternal::WriteReady()
 
     if(Queued.Size > 0)
     {
-        int Sent = send (Socket, Queued.Buffer + QueuedOffset, Queued.Size - QueuedOffset, MSG_NOSIGNAL);
+        int Sent = send (Socket, Queued.Buffer + QueuedOffset, Queued.Size - QueuedOffset, LacewingNoSignal);
         
         if(Sent < (Queued.Size - QueuedOffset))
             QueuedOffset += Sent;
@@ -240,6 +240,8 @@ void Lacewing::Client::Connect(Lacewing::Address &Address)
         return;
     }
 
+    DisableSigPipe (Internal.Socket);
+
     if(!Internal.Nagle)
         ::DisableNagling(Internal.Socket);
 
@@ -298,7 +300,7 @@ void Lacewing::Client::Send(const char * Data, int Size)
         return;
     }
 
-    int Sent = send (Internal.Socket, Data, Size, MSG_NOSIGNAL);
+    int Sent = send (Internal.Socket, Data, Size, LacewingNoSignal);
 
     if(Sent < Size)
         Internal.Queued.Add(Data + Sent, Size - Sent);

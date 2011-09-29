@@ -44,8 +44,9 @@ AC_CHECK_FUNCS([clock_gettime])
 AC_CHECK_DECLS([PR_SET_NAME], [], [], [AC_INCLUDES_DEFAULT
 [#include <sys/prctl.h>]])
 
-AC_CHECK_DECLS([TCP_CORK, TCP_NOPUSH], [], [], [AC_INCLUDES_DEFAULT
-[#include <netinet/tcp.h>]])
+AC_CHECK_DECLS([TCP_CORK, TCP_NOPUSH, MSG_NOSIGNAL, SO_NOSIGPIPE], [], [], [AC_INCLUDES_DEFAULT
+[#include <sys/socket.h>
+ #include <netinet/tcp.h>]])
 
 AC_CHECK_DECLS([EPOLLRDHUP], [], [], [AC_INCLUDES_DEFAULT
 [#include <sys/epoll.h>]])
