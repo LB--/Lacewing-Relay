@@ -157,7 +157,9 @@ PumpInternal::PumpInternal (Lacewing::Pump &_Pump) : Pump(_Pump)
     PostFD_Read  = PostPipe[0];
     PostFD_Write = PostPipe[1];
     PostFD_Added = false;
-    
+   
+    fcntl (PostFD_Read, F_SETFL, fcntl (PostFD_Read, F_GETFL, 0) | O_NONBLOCK);
+
     InUse = false;
 }
 
