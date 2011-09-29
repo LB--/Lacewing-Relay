@@ -1059,9 +1059,6 @@ public:
         LacewingFunction Channel * Next ();
     };
 
-    LacewingFunction Channel * FindChannel(const char * Name);
-    LacewingFunction Channel * FindChannel(unsigned int ID);
-
     LacewingFunction int ChannelCount();
     LacewingFunction Channel * FirstChannel ();
 
