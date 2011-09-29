@@ -3634,7 +3634,7 @@ done
 
 
 for ac_header in malloc.h sys/epoll.h sys/prctl.h sys/sendfile.h \
-            netdb.h CoreServices/CoreServices.h openssl/md5.h sys/timerfd.h
+		              netdb.h openssl/md5.h sys/timerfd.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -3643,6 +3643,19 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
 
+fi
+
+done
+
+
+for ac_header in CoreServices/CoreServices.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "CoreServices/CoreServices.h" "ac_cv_header_CoreServices_CoreServices_h" "$ac_includes_default"
+if test "x$ac_cv_header_CoreServices_CoreServices_h" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_CORESERVICES_CORESERVICES_H 1
+_ACEOF
+ LIBS="$LIBS -framework CoreServices "
 fi
 
 done

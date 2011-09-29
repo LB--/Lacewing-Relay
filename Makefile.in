@@ -29,7 +29,7 @@ liblacewing.so: $(OBJECTS)
 
 liblacewing.a: $(OBJECTS)
 	@echo Linking static library...
-	@ar rcs liblacewing.a ./build/*.o && strip --strip-unneeded liblacewing.a
+	@ar rcs liblacewing.a ./build/*.o
 
 build/Global.o: src/Global.cc $(COMMONDEPS) 
 	$(CC) $(CXXFLAGS) -c -o $@ src/Global.cc

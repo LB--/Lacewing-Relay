@@ -34,7 +34,9 @@ fi
 CXXFLAGS="$CFLAGS -fno-exceptions -fno-rtti"
 
 AC_CHECK_HEADERS([malloc.h sys/epoll.h sys/prctl.h sys/sendfile.h \
-            netdb.h CoreServices/CoreServices.h openssl/md5.h sys/timerfd.h])
+		              netdb.h openssl/md5.h sys/timerfd.h])
+
+AC_CHECK_HEADERS([CoreServices/CoreServices.h], [[LIBS="$LIBS -framework CoreServices "]])
 
 AC_CHECK_FUNCS([timegm kqueue vasprintf])
 
