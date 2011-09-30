@@ -951,7 +951,7 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
             Connected = true;
 
             if(HandlerConnect)
-                HandlerConnect(Client, WelcomeMessage);
+                HandlerConnect(Client);
 
             break;
 

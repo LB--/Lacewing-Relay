@@ -1062,7 +1062,7 @@ public:
     LacewingFunction int ChannelCount();
     LacewingFunction Channel * FirstChannel ();
 
-    typedef void (LacewingHandler * HandlerConnect)                  (Lacewing::RelayClient &Client, const char * WelcomeMessage);
+    typedef void (LacewingHandler * HandlerConnect)                  (Lacewing::RelayClient &Client);
     typedef void (LacewingHandler * HandlerConnectionDenied)         (Lacewing::RelayClient &Client, const char * DenyReason);
     typedef void (LacewingHandler * HandlerDisconnect)               (Lacewing::RelayClient &Client);
     
