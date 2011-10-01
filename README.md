@@ -1,31 +1,23 @@
 liblacewing is a library for writing cross-platform, networked applications in C,
 C++ and Javascript.
 
-http://github.com/udp/lacewing/
+http://lacewing-project.org/
 
-http://lacewing-project.org
+http://github.com/udp/lacewing/
 
 
 Installing
 ==========
 
-On Windows, use the MSVC project file in the 'msvc' directory to build a DLL/LIB.
+On Windows, use the MSVC project file in the `msvc` directory to build a DLL/LIB.
 
 On Linux/BSD/OS X:
 
     ./configure
     make
     make install
-    
-Node.JS module:
 
-    node-waf configure build
-    node-waf install
-    
-Android NDK (libssl.so/libcrypto.so are required - see docs/android_build.txt):
-
-    cd jni
-    ndk-build
+For other platforms (such as the Android NDK) see the documentation.
 
 
 Changes in 0.2.3 (2011-09-07)
