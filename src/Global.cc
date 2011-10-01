@@ -55,9 +55,9 @@ const char * Lacewing::Version()
         #endif
 
         #ifdef COXSDK
-            Version = "#20";
+            Version = "#21";
         #else
-            Version = "0.2.3";
+            Version = "0.2.4";
         #endif
         
         sprintf (VersionString, "liblacewing %s (%s/%s)", Version, Platform, sizeof(void *) == 8 ? "x64" : "x86");

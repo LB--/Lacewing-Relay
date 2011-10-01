@@ -20,6 +20,36 @@ On Linux/BSD/OS X:
 For other platforms (such as the Android NDK) see the documentation.
 
 
+Changes in 0.2.4 (2011-10-01)
+=============================
+
+- Some functions were missing `LacewingFunction` in Lacewing.h, and thus were not correctly
+  exported from the shared object/DLL :-
+
+    * RelayServer::Channel::Next
+    * RelayServer::Client::Next
+    * RelayServer::ChannelCount
+    * RelayServer::SetChannelListing
+
+- The name of a client was set *before* calling the `onNameSet` handler in RelayServer
+
+- Client disconnect issues on BSD/OS X fixed in Server
+
+- `MSG_NOSIGNAL` or `SO_NOSIGPIPE` are now used everywhere, to prevent the generation of
+  unwanted SIGPIPE signals on Unix
+
+- Possible EventPump deadlock fixed (Unix)
+
+- New functions introduced:
+
+    * Client::CheapBuffering
+    * UDP::Hosting
+
+- FlashPlayerPolicy class renamed to FlashPolicy
+
+- Miscellaneous fixes in the C API 
+
+
 Changes in 0.2.3 (2011-09-07)
 =============================
 

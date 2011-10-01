@@ -1,5 +1,5 @@
 
-PREFIX = @prefix@
+PREFIX = $(DESTDIR)@prefix@
 
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
@@ -112,11 +112,11 @@ clean:
 install: liblacewing.so liblacewing.a
 	@echo -----
 	@echo Installing shared library: $(PREFIX)/lib/liblacewing.so
-	@install -m 0755 liblacewing.so $(PREFIX)/lib
+	@install -D -m 0755 liblacewing.so $(PREFIX)/lib/liblacewing.so
 	@echo Installing static library: $(PREFIX)/lib/liblacewing.a
-	@install -m 0755 liblacewing.a $(PREFIX)/lib
+	@install -D -m 0755 liblacewing.a $(PREFIX)/lib/liblacewing.a
 	@echo Installing header file: $(PREFIX)/include/Lacewing.h
-	@install -m 0644 ./include/Lacewing.h $(PREFIX)/include/Lacewing.h
+	@install -D -m 0644 ./include/Lacewing.h $(PREFIX)/include/Lacewing.h
 	@echo -----
 	@echo Compiler flags: -I$(PREFIX)/include
 	@echo Linker flags: -L$(PREFIX)/lib -llacewing
