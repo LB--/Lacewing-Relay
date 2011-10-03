@@ -19,6 +19,11 @@ On Linux/BSD/OS X:
 
 For other platforms (such as the Android NDK) see the documentation.
 
+Ubuntu users can also add the following to their software sources to get the `lacewing` and `lacewing-dev` packages:
+
+    deb http://ppa.launchpad.net/udp/ppa/ubuntu natty main 
+    deb-src http://ppa.launchpad.net/udp/ppa/ubuntu natty main 
+
 
 Changes in 0.2.4 (2011-10-01)
 =============================
