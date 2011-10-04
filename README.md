@@ -25,6 +25,15 @@ Ubuntu users can also add the following to their software sources to get the `la
     deb-src http://ppa.launchpad.net/udp/ppa/ubuntu natty main 
 
 
+Documentation
+=============
+
+The API documentation for liblacewing can be found [here](http://lacewing-project.org/docs).
+
+Issues with the documentation can be reported in the [gh-pages branch](https://github.com/udp/lacewing/tree/gh-pages)
+of the Lacewing GitHub repository.
+
+
 Changes in 0.2.4 (2011-10-01)
 =============================
 
