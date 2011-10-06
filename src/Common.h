@@ -322,7 +322,7 @@ const int lw_max_path = 512;
         #if HAVE_DECL_SO_NOSIGPIPE
        
             int Yes = 1;
-            setsockopt (Socket, SOL_SOCKET, SO_NOSIGNPIPE, (char *) &Yes, sizeof (Yes));
+            setsockopt (Socket, SOL_SOCKET, SO_NOSIGPIPE, (char *) &Yes, sizeof (Yes));
         
         #endif
     }   

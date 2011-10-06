@@ -10,9 +10,17 @@
    don't. */
 #undef HAVE_DECL_EPOLLRDHUP
 
+/* Define to 1 if you have the declaration of `MSG_NOSIGNAL', and to 0 if you
+   don't. */
+#undef HAVE_DECL_MSG_NOSIGNAL
+
 /* Define to 1 if you have the declaration of `PR_SET_NAME', and to 0 if you
    don't. */
 #undef HAVE_DECL_PR_SET_NAME
+
+/* Define to 1 if you have the declaration of `SO_NOSIGPIPE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_SO_NOSIGPIPE
 
 /* Define to 1 if you have the declaration of `SSL_MODE_RELEASE_BUFFERS', and
    to 0 if you don't. */
@@ -32,8 +40,14 @@
 /* Define to 1 if you have the `kqueue' function. */
 #undef HAVE_KQUEUE
 
+/* Define to 1 if you have the `pthread' library (-lpthread). */
+#undef HAVE_LIBPTHREAD
+
 /* Define to 1 if you have the `rt' library (-lrt). */
 #undef HAVE_LIBRT
+
+/* Define to 1 if you have the `ssl' library (-lssl). */
+#undef HAVE_LIBSSL
 
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
