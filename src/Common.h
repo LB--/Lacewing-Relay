@@ -294,7 +294,7 @@ const int lw_max_path = 512;
         #include <openssl/sha.h>
         #include <openssl/err.h>
     #else
-        #pragma error "OpenSSL not found. Install OpenSSL and run ./configure again."
+        #error "OpenSSL not found. Install OpenSSL and run ./configure again."
     #endif
 
     #define SOCKET int

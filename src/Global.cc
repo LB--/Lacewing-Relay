@@ -46,8 +46,10 @@ const char * Lacewing::Version()
     {
         const char * Version, * Platform;
 
-        #ifdef LacewingWindows
+        #if defined (LacewingWindows)
             Platform = "Windows";
+        #elif defined (LacewingAndroid)
+            Platform = "Android";
         #else
             utsname name;
             uname (&name);
