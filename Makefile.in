@@ -7,7 +7,7 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
 SO_NAME = liblacewing.so.0.2
-REAL_NAME = liblacewing.so.0.2.4
+REAL_NAME = liblacewing.so.0.2.5
 
 COMMONDEPS = src/Common.h src/Backlog.h src/MessageBuilder.h src/MessageReader.h \
 				src/QueuedSend.h src/ReceiveBuffer.h src/TimeHelper.h src/Utility.h \
@@ -118,9 +118,9 @@ install: liblacewing.so liblacewing.a
 	@install -d $(PREFIX)/lib
 	@install -m 0755 $(REAL_NAME) $(PREFIX)/lib/$(REAL_NAME)
 	@rm -f $(PREFIX)/lib/$(SO_NAME)
-	@ln -s $(PREFIX)/lib/$(REAL_NAME) $(PREFIX)/lib/$(SO_NAME)
+	@ln -s $(REAL_NAME) $(PREFIX)/lib/$(SO_NAME)
 	@rm -f $(PREFIX)/lib/liblacewing.so
-	@ln -s $(PREFIX)/lib/$(SO_NAME) $(PREFIX)/lib/liblacewing.so
+	@ln -s $(SO_NAME) $(PREFIX)/lib/liblacewing.so
 	@echo Installing static library: $(PREFIX)/lib/liblacewing.a
 	@install -m 0755 liblacewing.a $(PREFIX)/lib/liblacewing.a
 	@echo Installing header file: $(PREFIX)/include/Lacewing.h

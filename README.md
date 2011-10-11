@@ -34,8 +34,14 @@ Issues with the documentation can be reported in the [gh-pages branch](https://g
 of the Lacewing GitHub repository.
 
 
-Changes in 0.2.4 (2011-10-01)
-=============================
+Changes in 0.2.5 (2011-Oct-11)
+==============================
+
+- Resolve various issues with the build system
+
+
+Changes in 0.2.4 (2011-Oct-01)
+==============================
 
 - Some functions were missing `LacewingFunction` in Lacewing.h, and thus were not correctly
   exported from the shared object/DLL :-
@@ -64,8 +70,8 @@ Changes in 0.2.4 (2011-10-01)
 - Miscellaneous fixes in the C API 
 
 
-Changes in 0.2.3 (2011-09-07)
-=============================
+Changes in 0.2.3 (2011-Sep-07)
+==============================
 
 - Fixed an issue with Lacewing::EventPump on Windows, which would cause functions queued with
   Post() not to execute in some cases.  This lead to to a significant issue with client disconnects
@@ -74,8 +80,8 @@ Changes in 0.2.3 (2011-09-07)
 - Miscellaneous relay protocol fixes
 
     
-Changes in 0.2.2 (2011-08-31)
-=============================
+Changes in 0.2.2 (2011-Aug-31)
+==============================
 
 - Lacewing::Timer now ends the timer thread properly in the destructor.  In previous
   versions it was necessary to call Stop() explicitly to avoid a crash.
@@ -98,14 +104,14 @@ Changes in 0.2.2 (2011-08-31)
   specific code is now separate from the webserver itself.
 
 
-Changes in 0.2.1 (2011-07-15)
-=============================
+Changes in 0.2.1 (2011-Jul-15)
+==============================
 
 - Fixed crash in the List utility class introduced by 0.2.0
 
 
-Changes in 0.2.0 (2011-07-14)
-=============================
+Changes in 0.2.0 (2011-Jul-14)
+==============================
 
 - New Javascript liblacewing API for MozJS (SpiderMonkey/TraceMonkey) and V8.
   Currently only supports the webserver and utility classes.  It is also
