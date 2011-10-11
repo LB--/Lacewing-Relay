@@ -6,7 +6,8 @@ CXXFLAGS = @CXXFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
-SHARED = liblacewing.so.0
+SO_NAME = liblacewing.so.0.2
+REAL_NAME = liblacewing.so.0.2.4
 
 COMMONDEPS = src/Common.h src/Backlog.h src/MessageBuilder.h src/MessageReader.h \
 				src/QueuedSend.h src/ReceiveBuffer.h src/TimeHelper.h src/Utility.h \
@@ -27,7 +28,7 @@ all: liblacewing.so liblacewing.a
 
 liblacewing.so: $(OBJECTS)
 	@echo Linking shared library...
-	@g++ $(CXXFLAGS) -Wl,-soname,liblacewing.so -shared -o $(SHARED) ./build/*.o $(LIBS)
+	@g++ $(CXXFLAGS) -Wl,-soname,$(SO_NAME) -shared -o $(REAL_NAME) ./build/*.o $(LIBS)
 
 liblacewing.a: $(OBJECTS)
 	@echo Linking static library...
@@ -109,17 +110,22 @@ build/thread_flat.o: src/c/thread_flat.cc $(COMMONDEPS)
 ############
     
 clean:
-	rm -f liblacewing.so liblacewing.a ./build/*.o
+	rm -f liblacewing.so* liblacewing.a ./build/*.o
 
 install: liblacewing.so liblacewing.a
 	@echo -----
-	@echo Installing shared library: $(PREFIX)/lib/$(SHARED)
-	@install -D -m 0755 $(SHARED) $(PREFIX)/lib/$(SHARED)
-	@ldconfig -n $(PREFIX)/lib
+	@echo Installing shared library: $(PREFIX)/lib/liblacewing.so
+	@install -d $(PREFIX)/lib
+	@install -m 0755 $(REAL_NAME) $(PREFIX)/lib/$(REAL_NAME)
+	@rm -f $(PREFIX)/lib/$(SO_NAME)
+	@ln -s $(PREFIX)/lib/$(REAL_NAME) $(PREFIX)/lib/$(SO_NAME)
+	@rm -f $(PREFIX)/lib/liblacewing.so
+	@ln -s $(PREFIX)/lib/$(SO_NAME) $(PREFIX)/lib/liblacewing.so
 	@echo Installing static library: $(PREFIX)/lib/liblacewing.a
-	@install -D -m 0755 liblacewing.a $(PREFIX)/lib/liblacewing.a
+	@install -m 0755 liblacewing.a $(PREFIX)/lib/liblacewing.a
 	@echo Installing header file: $(PREFIX)/include/Lacewing.h
-	@install -D -m 0644 ./include/Lacewing.h $(PREFIX)/include/Lacewing.h
+	@install -d $(PREFIX)/include
+	@install -m 0644 ./include/Lacewing.h $(PREFIX)/include/Lacewing.h
 	@echo -----
 	@echo Compiler flags: -I$(PREFIX)/include
 	@echo Linker flags: -L$(PREFIX)/lib -llacewing
