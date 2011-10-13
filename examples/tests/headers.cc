@@ -7,8 +7,8 @@ void onGet(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request
     
     Request << "<p>Headers used in this request:</p><p>";
    
-    for (Lacewing::Webserver::Request::Header * Header = Request.FirstHeader ();
-                Header; Header = Header->Next ()
+    for (struct Lacewing::Webserver::Request::Header * Header
+                = Request.FirstHeader (); Header; Header = Header->Next ())
     {
         Request << Header->Name () << ": " << Header->Value () << "<br />";
     }
