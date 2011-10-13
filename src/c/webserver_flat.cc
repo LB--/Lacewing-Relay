@@ -179,7 +179,7 @@ void lw_ws_req_set_cookie (lw_ws_req * request, const char * name, const char * 
 void lw_ws_req_set_cookie_ex (lw_ws_req * request, const char * name, const char * value, const char * attributes)
     { ((Lacewing::Webserver::Request *) request)->Cookie(name, value, attributes);
     }
-const char* lw_ws_req_cookie (lw_ws_req * request, const char * name)
+const char* lw_ws_req_get_cookie (lw_ws_req * request, const char * name)
     { return ((Lacewing::Webserver::Request *) request)->Cookie(name);
     }
 const char* lw_ws_req_session_id (lw_ws_req * request)
@@ -191,6 +191,18 @@ void lw_ws_req_session_write (lw_ws_req * request, const char * name, const char
 const char* lw_ws_req_session_read (lw_ws_req * request, const char * name)
     { return ((Lacewing::Webserver::Request *) request)->Session(name);
     }
+lw_ws_req_ssnitem * lw_ws_req_first_session_item (lw_ws_req * request)
+    { return (lw_ws_req_ssnitem *) ((Lacewing::Webserver::Request *) request)->FirstSessionItem ();
+    }
+const char* lw_ws_req_ssnitem_name (lw_ws_req_ssnitem * item)
+    { return ((Lacewing::Webserver::Request::SessionItem *) item)->Name ();
+    }
+const char* lw_ws_req_ssnitem_value (lw_ws_req_ssnitem * item)
+    { return ((Lacewing::Webserver::Request::SessionItem *) item)->Value ();
+    }
+lw_ws_req_ssnitem * lw_ws_req_ssnitem_next (lw_ws_req_ssnitem * item)
+    { return (lw_ws_req_ssnitem *) ((Lacewing::Webserver::Request::SessionItem *) item)->Next ();
+    }
 void lw_ws_req_session_close (lw_ws_req * request)
     { ((Lacewing::Webserver::Request *) request)->CloseSession();
     }
@@ -199,6 +211,33 @@ const char* lw_ws_req_GET (lw_ws_req * request, const char * name)
     }
 const char* lw_ws_req_POST (lw_ws_req * request, const char * name)
     { return ((Lacewing::Webserver::Request *) request)->POST(name);
+    }
+lw_ws_req_param* lw_ws_req_first_GET (lw_ws_req * request)
+    { return (lw_ws_req_param *) ((Lacewing::Webserver::Request *) request)->GET ();
+    }
+lw_ws_req_param* lw_ws_req_first_POST (lw_ws_req * request)
+    { return (lw_ws_req_param *) ((Lacewing::Webserver::Request *) request)->POST ();
+    }
+const char* lw_ws_req_param_name (lw_ws_req_param * param)
+    { return ((Lacewing::Webserver::Request::Parameter *) param)->Name ();
+    }
+const char* lw_ws_req_param_value (lw_ws_req_param * param)
+    { return ((Lacewing::Webserver::Request::Parameter *) param)->Value ();
+    }
+lw_ws_req_param* lw_ws_req_param_next (lw_ws_req_param * param)
+    { return (lw_ws_req_param *) ((Lacewing::Webserver::Request::Parameter *) param)->Next ();
+    }
+lw_ws_req_cookie * lw_ws_req_first_cookie (lw_ws_req * request)
+    { return (lw_ws_req_cookie *) ((Lacewing::Webserver::Request *) request)->FirstCookie ();
+    }
+const char* lw_ws_req_cookie_name (lw_ws_req_cookie * cookie)
+    { return ((struct Lacewing::Webserver::Request::Cookie *) cookie)->Name ();
+    }
+const char* lw_ws_req_cookie_value (lw_ws_req_cookie * cookie)
+    { return ((struct Lacewing::Webserver::Request::Cookie *) cookie)->Value ();
+    }
+lw_ws_req_cookie * lw_ws_req_cookie_next (lw_ws_req_cookie * cookie)
+    { return (lw_ws_req_cookie *) ((struct Lacewing::Webserver::Request::Cookie *) cookie)->Next ();
     }
 void lw_ws_req_disable_cache (lw_ws_req * request)
     { ((Lacewing::Webserver::Request *) request)->DisableCache();

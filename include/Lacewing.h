@@ -329,73 +329,89 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFlat (lw_ws);
   LacewingFlat (lw_ws_req);
   LacewingFlat (lw_ws_req_hdr);
+  LacewingFlat (lw_ws_req_param);
+  LacewingFlat (lw_ws_req_cookie);
+  LacewingFlat (lw_ws_req_ssnitem);
   LacewingFlat (lw_ws_upload);
   LacewingFlat (lw_ws_upload_hdr);
 
-  LacewingFunction              long  lw_ws_port                   (lw_ws *);
-  LacewingFunction              long  lw_ws_port_secure            (lw_ws *);
-  LacewingFunction           lw_bool  lw_ws_load_cert_file         (lw_ws *, const char * filename, const char * passphrase);
-  LacewingFunction           lw_bool  lw_ws_load_sys_cert          (lw_ws *, const char * store_name, const char * common_name, const char * location);
-  LacewingFunction           lw_bool  lw_ws_cert_loaded            (lw_ws *);
-  LacewingFunction            lw_i64  lw_ws_bytes_sent             (lw_ws *);
-  LacewingFunction            lw_i64  lw_ws_bytes_received         (lw_ws *);
-  LacewingFunction              void  lw_ws_close_session          (lw_ws *, const char * id);
-  LacewingFunction              void  lw_ws_enable_manual_finish   (lw_ws *);
-  LacewingFunction              long  lw_ws_idle_timeout           (lw_ws *);
-  LacewingFunction              void  lw_ws_set_idle_timeout       (lw_ws *, long seconds);  
-  LacewingFunction           lw_addr* lw_ws_req_addr               (lw_ws_req *);
-  LacewingFunction           lw_bool  lw_ws_req_secure             (lw_ws_req *);
-  LacewingFunction        const char* lw_ws_req_url                (lw_ws_req *);
-  LacewingFunction        const char* lw_ws_req_hostname           (lw_ws_req *);
-  LacewingFunction              void  lw_ws_req_disconnect         (lw_ws_req *); 
-  LacewingFunction              void  lw_ws_req_set_redirect       (lw_ws_req *, const char * url);
-  LacewingFunction              void  lw_ws_req_set_status         (lw_ws_req *, long code, const char * message);
-  LacewingFunction              void  lw_ws_req_set_mime_type      (lw_ws_req *, const char * mime_type);
-  LacewingFunction              void  lw_ws_req_set_mime_type_ex   (lw_ws_req *, const char * mime_type, const char * charset);
-  LacewingFunction              void  lw_ws_req_guess_mime_type    (lw_ws_req *, const char * filename);
-  LacewingFunction              void  lw_ws_req_send_text          (lw_ws_req *, const char * data);
-  LacewingFunction              void  lw_ws_req_send_text_const    (lw_ws_req *, const char * data);
-  LacewingFunction              void  lw_ws_req_send               (lw_ws_req *, const char * data, long size);
-  LacewingFunction              void  lw_ws_req_send_const         (lw_ws_req *, const char * data, long size);
-  LacewingFunction              void  lw_ws_req_sendfile           (lw_ws_req *, const char * filename);
-  LacewingFunction              void  lw_ws_req_sendfile_ex        (lw_ws_req *, const char * filename, lw_i64 offset, lw_i64 size);
-  LacewingFunction              void  lw_ws_req_sendf              (lw_ws_req *, const char * format, ...);
-  LacewingFunction              void  lw_ws_req_reset              (lw_ws_req *);
-  LacewingFunction              void  lw_ws_req_finish             (lw_ws_req *);
-  LacewingFunction            lw_i64  lw_ws_req_last_modified      (lw_ws_req *);
-  LacewingFunction              void  lw_ws_req_set_last_modified  (lw_ws_req *, lw_i64);
-  LacewingFunction              void  lw_ws_req_set_unmodified     (lw_ws_req *);
-  LacewingFunction              void  lw_ws_req_set_header         (lw_ws_req *, const char * name, const char * value);
-  LacewingFunction        const char* lw_ws_req_header             (lw_ws_req *, const char * name);
-  LacewingFunction     lw_ws_req_hdr* lw_ws_req_first_header       (lw_ws_req *);
-  LacewingFunction        const char* lw_ws_req_hdr_name           (lw_ws_req_hdr *);
-  LacewingFunction        const char* lw_ws_req_hdr_value          (lw_ws_req_hdr *);
-  LacewingFunction     lw_ws_req_hdr* lw_ws_req_hdr_next           (lw_ws_req_hdr *);
-  LacewingFunction              void  lw_ws_req_set_cookie         (lw_ws_req *, const char * name, const char * value);
-  LacewingFunction              void  lw_ws_req_set_cookie_ex      (lw_ws_req *, const char * name, const char * value, const char * attributes);
-  LacewingFunction        const char* lw_ws_req_cookie             (lw_ws_req *, const char * name);
-  LacewingFunction        const char* lw_ws_req_session_id         (lw_ws_req *);
-  LacewingFunction              void  lw_ws_req_session_write      (lw_ws_req *, const char * name, const char * value);
-  LacewingFunction        const char* lw_ws_req_session_read       (lw_ws_req *, const char * name);
-  LacewingFunction              void  lw_ws_req_session_close      (lw_ws_req *);
-  LacewingFunction        const char* lw_ws_req_GET                (lw_ws_req *, const char * name);
-  LacewingFunction        const char* lw_ws_req_POST               (lw_ws_req *, const char * name);
-  LacewingFunction              void  lw_ws_req_disable_cache      (lw_ws_req *);
-  LacewingFunction              long  lw_ws_req_idle_timeout       (lw_ws_req *);
-  LacewingFunction              void  lw_ws_req_set_idle_timeout   (lw_ws_req *, long seconds);  
-/*LacewingFunction              void  lw_ws_req_enable_dl_resuming (lw_ws_req *);
-  LacewingFunction            lw_i64  lw_ws_req_reqrange_begin     (lw_ws_req *);
-  LacewingFunction            lw_i64  lw_ws_req_reqrange_end       (lw_ws_req *);
-  LacewingFunction              void  lw_ws_req_set_outgoing_range (lw_ws_req *, lw_i64 begin, lw_i64 end);*/
-  LacewingFunction        const char* lw_ws_upload_form_el_name    (lw_ws_upload *);
-  LacewingFunction        const char* lw_ws_upload_filename        (lw_ws_upload *);
-  LacewingFunction        const char* lw_ws_upload_header          (lw_ws_upload *, const char * name);
-  LacewingFunction              void  lw_ws_upload_set_autosave    (lw_ws_upload *);
-  LacewingFunction        const char* lw_ws_upload_autosave_fname  (lw_ws_upload *);
-  LacewingFunction  lw_ws_upload_hdr* lw_ws_upload_first_header    (lw_ws_upload *);
-  LacewingFunction        const char* lw_ws_upload_hdr_name        (lw_ws_upload_hdr *);
-  LacewingFunction        const char* lw_ws_upload_hdr_value       (lw_ws_upload_hdr *);
-  LacewingFunction  lw_ws_upload_hdr* lw_ws_upload_hdr_next        (lw_ws_upload_hdr *);
+  LacewingFunction               long  lw_ws_port                   (lw_ws *);
+  LacewingFunction               long  lw_ws_port_secure            (lw_ws *);
+  LacewingFunction            lw_bool  lw_ws_load_cert_file         (lw_ws *, const char * filename, const char * passphrase);
+  LacewingFunction            lw_bool  lw_ws_load_sys_cert          (lw_ws *, const char * store_name, const char * common_name, const char * location);
+  LacewingFunction            lw_bool  lw_ws_cert_loaded            (lw_ws *);
+  LacewingFunction             lw_i64  lw_ws_bytes_sent             (lw_ws *);
+  LacewingFunction             lw_i64  lw_ws_bytes_received         (lw_ws *);
+  LacewingFunction               void  lw_ws_close_session          (lw_ws *, const char * id);
+  LacewingFunction               void  lw_ws_enable_manual_finish   (lw_ws *);
+  LacewingFunction               long  lw_ws_idle_timeout           (lw_ws *);
+  LacewingFunction               void  lw_ws_set_idle_timeout       (lw_ws *, long seconds);  
+  LacewingFunction            lw_addr* lw_ws_req_addr               (lw_ws_req *);
+  LacewingFunction            lw_bool  lw_ws_req_secure             (lw_ws_req *);
+  LacewingFunction         const char* lw_ws_req_url                (lw_ws_req *);
+  LacewingFunction         const char* lw_ws_req_hostname           (lw_ws_req *);
+  LacewingFunction               void  lw_ws_req_disconnect         (lw_ws_req *); 
+  LacewingFunction               void  lw_ws_req_set_redirect       (lw_ws_req *, const char * url);
+  LacewingFunction               void  lw_ws_req_set_status         (lw_ws_req *, long code, const char * message);
+  LacewingFunction               void  lw_ws_req_set_mime_type      (lw_ws_req *, const char * mime_type);
+  LacewingFunction               void  lw_ws_req_set_mime_type_ex   (lw_ws_req *, const char * mime_type, const char * charset);
+  LacewingFunction               void  lw_ws_req_guess_mime_type    (lw_ws_req *, const char * filename);
+  LacewingFunction               void  lw_ws_req_send_text          (lw_ws_req *, const char * data);
+  LacewingFunction               void  lw_ws_req_send_text_const    (lw_ws_req *, const char * data);
+  LacewingFunction               void  lw_ws_req_send               (lw_ws_req *, const char * data, long size);
+  LacewingFunction               void  lw_ws_req_send_const         (lw_ws_req *, const char * data, long size);
+  LacewingFunction               void  lw_ws_req_sendfile           (lw_ws_req *, const char * filename);
+  LacewingFunction               void  lw_ws_req_sendfile_ex        (lw_ws_req *, const char * filename, lw_i64 offset, lw_i64 size);
+  LacewingFunction               void  lw_ws_req_sendf              (lw_ws_req *, const char * format, ...);
+  LacewingFunction               void  lw_ws_req_reset              (lw_ws_req *);
+  LacewingFunction               void  lw_ws_req_finish             (lw_ws_req *);
+  LacewingFunction             lw_i64  lw_ws_req_last_modified      (lw_ws_req *);
+  LacewingFunction               void  lw_ws_req_set_last_modified  (lw_ws_req *, lw_i64);
+  LacewingFunction               void  lw_ws_req_set_unmodified     (lw_ws_req *);
+  LacewingFunction               void  lw_ws_req_set_header         (lw_ws_req *, const char * name, const char * value);
+  LacewingFunction         const char* lw_ws_req_header             (lw_ws_req *, const char * name);
+  LacewingFunction      lw_ws_req_hdr* lw_ws_req_first_header       (lw_ws_req *);
+  LacewingFunction         const char* lw_ws_req_hdr_name           (lw_ws_req_hdr *);
+  LacewingFunction         const char* lw_ws_req_hdr_value          (lw_ws_req_hdr *);
+  LacewingFunction      lw_ws_req_hdr* lw_ws_req_hdr_next           (lw_ws_req_hdr *);
+  LacewingFunction    lw_ws_req_param* lw_ws_req_first_GET          (lw_ws_req *);
+  LacewingFunction    lw_ws_req_param* lw_ws_req_first_POST         (lw_ws_req *);
+  LacewingFunction         const char* lw_ws_req_param_name         (lw_ws_req_param *);
+  LacewingFunction         const char* lw_ws_req_param_value        (lw_ws_req_param *);
+  LacewingFunction    lw_ws_req_param* lw_ws_req_param_next         (lw_ws_req_param *);
+  LacewingFunction   lw_ws_req_cookie* lw_ws_req_first_cookie       (lw_ws_req *);
+  LacewingFunction         const char* lw_ws_req_cookie_name        (lw_ws_req_cookie *);
+  LacewingFunction         const char* lw_ws_req_cookie_value       (lw_ws_req_cookie *);
+  LacewingFunction   lw_ws_req_cookie* lw_ws_req_cookie_next        (lw_ws_req_cookie *);
+  LacewingFunction               void  lw_ws_req_set_cookie         (lw_ws_req *, const char * name, const char * value);
+  LacewingFunction               void  lw_ws_req_set_cookie_ex      (lw_ws_req *, const char * name, const char * value, const char * attributes);
+  LacewingFunction         const char* lw_ws_req_get_cookie         (lw_ws_req *, const char * name);
+  LacewingFunction         const char* lw_ws_req_session_id         (lw_ws_req *);
+  LacewingFunction               void  lw_ws_req_session_write      (lw_ws_req *, const char * name, const char * value);
+  LacewingFunction         const char* lw_ws_req_session_read       (lw_ws_req *, const char * name);
+  LacewingFunction               void  lw_ws_req_session_close      (lw_ws_req *);
+  LacewingFunction  lw_ws_req_ssnitem* lw_ws_req_first_session_item (lw_ws_req *);
+  LacewingFunction         const char* lw_ws_req_ssnitem_name       (lw_ws_req_ssnitem *);
+  LacewingFunction         const char* lw_ws_req_ssnitem_value      (lw_ws_req_ssnitem *);
+  LacewingFunction  lw_ws_req_ssnitem* lw_ws_req_ssnitem_next       (lw_ws_req_ssnitem *);
+  LacewingFunction         const char* lw_ws_req_GET                (lw_ws_req *, const char * name);
+  LacewingFunction         const char* lw_ws_req_POST               (lw_ws_req *, const char * name);
+  LacewingFunction               void  lw_ws_req_disable_cache      (lw_ws_req *);
+  LacewingFunction               long  lw_ws_req_idle_timeout       (lw_ws_req *);
+  LacewingFunction               void  lw_ws_req_set_idle_timeout   (lw_ws_req *, long seconds);  
+/*LacewingFunction               void  lw_ws_req_enable_dl_resuming (lw_ws_req *);
+  LacewingFunction             lw_i64  lw_ws_req_reqrange_begin     (lw_ws_req *);
+  LacewingFunction             lw_i64  lw_ws_req_reqrange_end       (lw_ws_req *);
+  LacewingFunction               void  lw_ws_req_set_outgoing_range (lw_ws_req *, lw_i64 begin, lw_i64 end);*/
+  LacewingFunction         const char* lw_ws_upload_form_el_name    (lw_ws_upload *);
+  LacewingFunction         const char* lw_ws_upload_filename        (lw_ws_upload *);
+  LacewingFunction         const char* lw_ws_upload_header          (lw_ws_upload *, const char * name);
+  LacewingFunction               void  lw_ws_upload_set_autosave    (lw_ws_upload *);
+  LacewingFunction         const char* lw_ws_upload_autosave_fname  (lw_ws_upload *);
+  LacewingFunction   lw_ws_upload_hdr* lw_ws_upload_first_header    (lw_ws_upload *);
+  LacewingFunction         const char* lw_ws_upload_hdr_name        (lw_ws_upload_hdr *);
+  LacewingFunction         const char* lw_ws_upload_hdr_value       (lw_ws_upload_hdr *);
+  LacewingFunction   lw_ws_upload_hdr* lw_ws_upload_hdr_next        (lw_ws_upload_hdr *);
 
   typedef void (LacewingHandler * lw_ws_handler_get) (lw_ws *, lw_ws_req *);
   LacewingFunction void lw_ws_onget (lw_ws *, lw_ws_handler_get);
@@ -914,9 +930,16 @@ struct Webserver
         LacewingFunction lw_i64 LastModified  ();
         LacewingFunction void   LastModified  (lw_i64 Time);
         LacewingFunction void   SetUnmodified ();
+    
+        LacewingFunction void DisableCache();
 
-        LacewingFunction const char * Header (const char * Name);
-        LacewingFunction void         Header (const char * Name, const char * Value);
+        LacewingFunction void   EnableDownloadResuming();
+        LacewingFunction lw_i64 RequestedRangeBegin();
+        LacewingFunction lw_i64 RequestedRangeEnd();
+        LacewingFunction void   SetOutgoingRange(lw_i64 Begin, lw_i64 End);
+        
+
+        /** Headers **/
 
         struct Header
         {
@@ -928,25 +951,61 @@ struct Webserver
 
         LacewingFunction struct Header * FirstHeader ();
 
+        LacewingFunction const char * Header (const char * Name);
+        LacewingFunction void Header (const char * Name, const char * Value);
+
+    
+        /** Cookies **/
+
+        struct Cookie
+        {
+            LacewingFunction const char * Name ();
+            LacewingFunction const char * Value ();
+
+            LacewingFunction Cookie * Next ();
+        };
+
+        LacewingFunction struct Cookie * FirstCookie ();
+
         LacewingFunction const char * Cookie (const char * Name);
         LacewingFunction void         Cookie (const char * Name, const char * Value);
         LacewingFunction void         Cookie (const char * Name, const char * Value, const char * Attributes);
+
+    
+        /** Sessions **/
+
+        struct SessionItem
+        {
+            LacewingFunction const char * Name ();
+            LacewingFunction const char * Value ();
+
+            LacewingFunction SessionItem * Next ();
+        };
+
+        LacewingFunction SessionItem * FirstSessionItem ();
 
         LacewingFunction const char * Session ();
         LacewingFunction const char * Session (const char * Key);
         LacewingFunction void         Session (const char * Key, const char * Value);
 
-        LacewingFunction void         CloseSession();
+        LacewingFunction void  CloseSession();
+
+            
+        /** GET/POST data **/
+
+        struct Parameter
+        {
+            LacewingFunction const char * Name ();
+            LacewingFunction const char * Value ();
+
+            LacewingFunction Parameter * Next ();
+        };
+
+        LacewingFunction Parameter * GET ();
+        LacewingFunction Parameter * POST ();
 
         LacewingFunction const char * GET  (const char * Name);
         LacewingFunction const char * POST (const char * Name);
-
-        LacewingFunction void DisableCache();
-
-        LacewingFunction void   EnableDownloadResuming();
-        LacewingFunction lw_i64 RequestedRangeBegin();
-        LacewingFunction lw_i64 RequestedRangeEnd();
-        LacewingFunction void   SetOutgoingRange(lw_i64 Begin, lw_i64 End);
     };
 
     LacewingFunction void CloseSession(const char * ID);

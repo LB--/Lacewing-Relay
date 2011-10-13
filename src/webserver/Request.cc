@@ -564,6 +564,27 @@ const char * Lacewing::Webserver::Request::Cookie(const char * Name)
     return ((RequestInternal *) InternalTag)->InCookies.Get(Name);
 }
 
+struct Lacewing::Webserver::Request::Cookie * Lacewing::Webserver::Request::FirstCookie ()
+{
+    return (struct Lacewing::Webserver::Request::Cookie *)
+                ((RequestInternal *) InternalTag)->InCookies.First;
+}
+
+struct Lacewing::Webserver::Request::Cookie * Lacewing::Webserver::Request::Cookie::Next ()
+{
+    return (struct Lacewing::Webserver::Request::Cookie *) ((Map::Item *) this)->Next;
+}
+
+const char * Lacewing::Webserver::Request::Cookie::Name ()
+{
+    return ((Map::Item *) this)->Key;
+}
+
+const char * Lacewing::Webserver::Request::Cookie::Value ()
+{
+    return ((Map::Item *) this)->Value;
+}
+
 const char * Lacewing::Webserver::Request::GET(const char * Name)
 {
     return ((RequestInternal *) InternalTag)->GetItems.Get(Name);
@@ -572,6 +593,34 @@ const char * Lacewing::Webserver::Request::GET(const char * Name)
 const char * Lacewing::Webserver::Request::POST(const char * Name)
 {
     return ((RequestInternal *) InternalTag)->PostItems.Get(Name);
+}
+
+Lacewing::Webserver::Request::Parameter * Lacewing::Webserver::Request::GET ()
+{
+    return (Lacewing::Webserver::Request::Parameter *)
+                ((RequestInternal *) InternalTag)->GetItems.First;
+}
+
+Lacewing::Webserver::Request::Parameter * Lacewing::Webserver::Request::POST ()
+{
+    return (Lacewing::Webserver::Request::Parameter *)
+                ((RequestInternal *) InternalTag)->PostItems.First;
+}
+
+Lacewing::Webserver::Request::Parameter *
+        Lacewing::Webserver::Request::Parameter::Next ()
+{
+    return (Lacewing::Webserver::Request::Parameter *) ((Map::Item *) this)->Next;
+}
+
+const char * Lacewing::Webserver::Request::Parameter::Name ()
+{
+    return ((Map::Item *) this)->Key;
+}
+
+const char * Lacewing::Webserver::Request::Parameter::Value ()
+{
+    return ((Map::Item *) this)->Value;
 }
 
 lw_i64 Lacewing::Webserver::Request::LastModified()

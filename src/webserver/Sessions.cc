@@ -159,3 +159,33 @@ WebserverInternal::Session * WebserverInternal::FindSession (const char * Sessio
 
     return Session;
 }
+
+
+Lacewing::Webserver::Request::SessionItem * Lacewing::Webserver::Request::FirstSessionItem ()
+{
+    RequestInternal &Internal = *(RequestInternal *) InternalTag;
+
+    WebserverInternal::Session * Session = Internal.Server.FindSession (Cookie (SessionCookie));
+
+    if (!Session)
+        return 0;
+
+    return (Lacewing::Webserver::Request::SessionItem *) Session->Data.First;
+}
+
+Lacewing::Webserver::Request::SessionItem *
+        Lacewing::Webserver::Request::SessionItem::Next ()
+{
+    return (Lacewing::Webserver::Request::SessionItem *) ((Map::Item *) this)->Next;
+}
+
+const char * Lacewing::Webserver::Request::SessionItem::Name ()
+{
+    return ((Map::Item *) this)->Key;
+}
+
+const char * Lacewing::Webserver::Request::SessionItem::Value ()
+{
+    return ((Map::Item *) this)->Value;
+}
+
