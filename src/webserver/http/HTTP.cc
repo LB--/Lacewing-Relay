@@ -198,7 +198,7 @@ void HTTPClient::Process (char * Buffer, int Size)
                     free(ValueDecoded);
                 }
                 else
-                    Request.PostItems.SetAndGC(NameDecoded, ValueDecoded);
+                    Request.PostItems.Set (NameDecoded, ValueDecoded, false);
 
                 if(!Next)
                     break;

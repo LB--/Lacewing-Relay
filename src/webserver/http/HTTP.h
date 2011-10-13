@@ -40,7 +40,6 @@ class HTTPClient : public WebserverClient
     void ProcessLine      (char * Line);
     void ProcessFirstLine (char * Line);
     void ProcessHeader    (char * Line);
-    void ProcessCookie    (char * Cookie);
 
     void Reset ();
     

@@ -376,6 +376,7 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFunction           void  lw_ws_req_set_header         (lw_ws_req *, const char * name, const char * value);
   LacewingFunction     const char* lw_ws_req_header             (lw_ws_req *, const char * name);
   LacewingFunction           void  lw_ws_req_set_cookie         (lw_ws_req *, const char * name, const char * value);
+  LacewingFunction           void  lw_ws_req_set_cookie_ex      (lw_ws_req *, const char * name, const char * value, const char * attributes);
   LacewingFunction     const char* lw_ws_req_cookie             (lw_ws_req *, const char * name);
   LacewingFunction     const char* lw_ws_req_session_id         (lw_ws_req *);
   LacewingFunction           void  lw_ws_req_session_write      (lw_ws_req *, const char * name, const char * value);
@@ -919,6 +920,7 @@ struct Webserver
 
         LacewingFunction const char * Cookie (const char * Name);
         LacewingFunction void         Cookie (const char * Name, const char * Value);
+        LacewingFunction void         Cookie (const char * Name, const char * Value, const char * Attributes);
 
         LacewingFunction const char * Session ();
         LacewingFunction const char * Session (const char * Key);

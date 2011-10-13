@@ -272,7 +272,7 @@ bool RequestInternal::ProcessURL (char * URL)
                 free(ValueDecoded);
             }
             else
-                GetItems.SetAndGC(NameDecoded, ValueDecoded);
+                GetItems.Set (NameDecoded, ValueDecoded, false);
 
             if(!Next)
                 break;
@@ -484,7 +484,24 @@ void Lacewing::Webserver::Request::Header(const char * Name, const char * Value)
 
 void Lacewing::Webserver::Request::Cookie(const char * Name, const char * Value)
 {
-    ((RequestInternal *) InternalTag)->OutCookies.Set(Name, Value);
+    Cookie (Name, Value, Secure () ? "Secure; HttpOnly" : "HttpOnly");
+}
+
+void Lacewing::Webserver::Request::Cookie(const char * Name, const char * Value, const char * Attributes)
+{
+    if (!*Attributes)
+    {
+        ((RequestInternal *) InternalTag)->OutCookies.Set (Name, Value);
+        return;
+    }
+
+    char * Buffer = (char *) malloc (strlen (Value) + strlen (Attributes) + 4);
+
+    strcpy (Buffer, Value);
+    strcat (Buffer, "; ");
+    strcat (Buffer, Attributes);
+
+    ((RequestInternal *) InternalTag)->OutCookies.Set (Name, Buffer, false);
 }
 
 void Lacewing::Webserver::Request::Status(int Code, const char * Message)

@@ -164,6 +164,9 @@ const char* lw_ws_req_header (lw_ws_req * request, const char * name)
 void lw_ws_req_set_cookie (lw_ws_req * request, const char * name, const char * value)
     { ((Lacewing::Webserver::Request *) request)->Cookie(name, value);
     }
+void lw_ws_req_set_cookie_ex (lw_ws_req * request, const char * name, const char * value, const char * attributes)
+    { ((Lacewing::Webserver::Request *) request)->Cookie(name, value, attributes);
+    }
 const char* lw_ws_req_cookie (lw_ws_req * request, const char * name)
     { return ((Lacewing::Webserver::Request *) request)->Cookie(name);
     }

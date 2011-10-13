@@ -49,7 +49,7 @@ public:
         Clear();
     }
 
-    inline const char * Get(const char * Key)
+    inline const char * Get (const char * Key)
     {
         for(Item * Current = First; Current; Current = Current->Next)
             if(!strcasecmp(Current->Key, Key))
@@ -58,14 +58,14 @@ public:
         return "";
     }
 
-    inline const char * Set(const char * Key, const char * Value)
+    inline const char * Set (const char * Key, const char * Value, bool Copy = true)
     {
         for(Item * Current = First; Current; Current = Current->Next)
         {
             if(!strcasecmp(Current->Key, Key))
             {
-                free(Current->Value);
-                Current->Value = strdup(Value);
+                free (Current->Value);
+                Current->Value = Copy ? strdup (Value) : (char *) Value;
 
                 return Current->Value;
             }
@@ -73,8 +73,8 @@ public:
         
         Item * New = new Item;
         
-        New->Key = strdup(Key);
-        New->Value = strdup(Value);
+        New->Key = Copy ? strdup (Key) : (char *) Key;
+        New->Value = Copy ? strdup (Value) : (char *) Value;
         New->Next = First;
 
         First = New;
@@ -82,35 +82,12 @@ public:
         return New->Value;
     }
 
-    inline void SetAndGC(char * Key, char * Value)
-    {
-        for(Item * Current = First; Current; Current = Current->Next)
-        {
-            if(!strcasecmp(Current->Key, Key))
-            {
-                free(Current->Value);
-                Current->Value = Value;
-
-                free(Key);
-                return;
-            }
-        }
-        
-        Item * New = new Item;
-        
-        New->Key = Key;
-        New->Value = Value;
-        New->Next = First;
-
-        First = New;
-    }
-
-    inline void Clear()
+    inline void Clear ()
     {
         while(First)
         {
-            free(First->Key);
-            free(First->Value);
+            free (First->Key);
+            free (First->Value);
 
             Item * Next = First->Next;
 
