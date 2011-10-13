@@ -538,6 +538,27 @@ const char * Lacewing::Webserver::Request::Header(const char * Name)
     return ((RequestInternal *) InternalTag)->InHeaders.Get(Name);
 }
 
+struct Lacewing::Webserver::Request::Header * Lacewing::Webserver::Request::FirstHeader ()
+{
+    return (struct Lacewing::Webserver::Request::Header *)
+                ((RequestInternal *) InternalTag)->InHeaders.First;
+}
+
+const char * Lacewing::Webserver::Request::Header::Name ()
+{
+    return ((Map::Item *) this)->Key;
+}
+
+const char * Lacewing::Webserver::Request::Header::Value ()
+{
+    return ((Map::Item *) this)->Value;
+}
+
+struct Lacewing::Webserver::Request::Header * Lacewing::Webserver::Request::Header::Next ()
+{
+    return (struct Lacewing::Webserver::Request::Header *) ((Map::Item *) this)->Next;
+}
+
 const char * Lacewing::Webserver::Request::Cookie(const char * Name)
 {
     return ((RequestInternal *) InternalTag)->InCookies.Get(Name);
@@ -587,4 +608,3 @@ void Lacewing::Webserver::Request::IdleTimeout (int Seconds)
 {
     ((RequestInternal *) InternalTag)->Client.Timeout = Seconds;
 }
-

@@ -58,7 +58,7 @@ public:
         return "";
     }
 
-    inline const char * Set (const char * Key, const char * Value, bool Copy = true)
+    inline Item * Set (const char * Key, const char * Value, bool Copy = true)
     {
         for(Item * Current = First; Current; Current = Current->Next)
         {
@@ -67,7 +67,7 @@ public:
                 free (Current->Value);
                 Current->Value = Copy ? strdup (Value) : (char *) Value;
 
-                return Current->Value;
+                return Current;
             }
         }
         
@@ -77,14 +77,12 @@ public:
         New->Value = Copy ? strdup (Value) : (char *) Value;
         New->Next = First;
 
-        First = New;
-
-        return New->Value;
+        return (First = New);
     }
 
     inline void Clear ()
     {
-        while(First)
+        while (First)
         {
             free (First->Key);
             free (First->Value);

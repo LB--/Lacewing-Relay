@@ -161,6 +161,18 @@ void lw_ws_req_set_header (lw_ws_req * request, const char * name, const char * 
 const char* lw_ws_req_header (lw_ws_req * request, const char * name)
     { return ((Lacewing::Webserver::Request *) request)->Header(name);
     }
+lw_ws_req_hdr* lw_ws_req_first_header (lw_ws_req * request)
+    { return (lw_ws_req_hdr *) ((Lacewing::Webserver::Request *) request)->FirstHeader ();
+    }
+lw_ws_req_hdr* lw_ws_req_hdr_next (lw_ws_req_hdr * header)
+    { return (lw_ws_req_hdr *) ((struct Lacewing::Webserver::Request::Header *) header)->Next ();
+    }
+const char* lw_ws_req_hdr_name (lw_ws_req_hdr * header)
+    { return ((struct Lacewing::Webserver::Request::Header *) header)->Name ();
+    }
+const char* lw_ws_req_hdr_value (lw_ws_req_hdr * header)
+    { return ((struct Lacewing::Webserver::Request::Header *) header)->Value ();
+    }
 void lw_ws_req_set_cookie (lw_ws_req * request, const char * name, const char * value)
     { ((Lacewing::Webserver::Request *) request)->Cookie(name, value);
     }
@@ -217,6 +229,18 @@ const char* lw_ws_upload_filename (lw_ws_upload * upload)
     }
 const char* lw_ws_upload_header (lw_ws_upload * upload, const char * name)
     { return ((Lacewing::Webserver::Upload *) upload)->Header(name);
+    }
+lw_ws_upload_hdr* lw_ws_upload_first_header (lw_ws_req * upload)
+    { return (lw_ws_upload_hdr *) ((Lacewing::Webserver::Upload *) upload)->FirstHeader ();
+    }
+lw_ws_upload_hdr* lw_ws_upload_hdr_next (lw_ws_upload_hdr * header)
+    { return (lw_ws_upload_hdr *) ((struct Lacewing::Webserver::Upload::Header *) header)->Next ();
+    }
+const char* lw_ws_upload_hdr_name (lw_ws_upload_hdr * header)
+    { return ((struct Lacewing::Webserver::Upload::Header *) header)->Name ();
+    }
+const char* lw_ws_upload_hdr_value (lw_ws_upload_hdr * header)
+    { return ((struct Lacewing::Webserver::Upload::Header *) header)->Value ();
     }
 void lw_ws_upload_set_autosave (lw_ws_upload * upload)
     { ((Lacewing::Webserver::Upload *) upload)->SetAutoSave();

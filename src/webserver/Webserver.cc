@@ -305,6 +305,27 @@ const char * Lacewing::Webserver::Upload::Header(const char * Name)
     return ((UploadInternal *) InternalTag)->Header (Name);
 }
 
+struct Lacewing::Webserver::Upload::Header * Lacewing::Webserver::Upload::FirstHeader ()
+{
+    return (struct Lacewing::Webserver::Upload::Header *)
+                ((UploadInternal *) InternalTag)->Headers.First;
+}
+
+const char * Lacewing::Webserver::Upload::Header::Name ()
+{
+    return ((Map::Item *) this)->Key;
+}
+
+const char * Lacewing::Webserver::Upload::Header::Value ()
+{
+    return ((Map::Item *) this)->Value;
+}
+
+struct Lacewing::Webserver::Upload::Header * Lacewing::Webserver::Upload::Header::Next ()
+{
+    return (struct Lacewing::Webserver::Upload::Header *) ((Map::Item *) this)->Next;
+}
+
 void Lacewing::Webserver::Upload::SetAutoSave()
 {
     UploadInternal &Internal = *((UploadInternal *) InternalTag);
@@ -315,7 +336,7 @@ void Lacewing::Webserver::Upload::SetAutoSave()
     char Filename [lw_max_path];
     NewTempFile (Filename);
 
-    Internal.AutoSaveFilename = Internal.Copier.Set("AutoSaveFilename", Filename);
+    Internal.AutoSaveFilename = Internal.Copier.Set("AutoSaveFilename", Filename)->Value;
     Internal.AutoSaveFile     = fopen(Filename, "wb");
 }
 

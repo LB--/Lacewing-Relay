@@ -211,13 +211,14 @@ void HTTPClient::MultipartProcessor::ProcessHeader()
         {
             CurrentUpload = new HTTPUpload;
             
-            CurrentUpload->Filename = CurrentUpload->Copier.Set("filename", Disposition.Get("filename"));
-        
+            CurrentUpload->Filename =
+                CurrentUpload->Copier.Set("filename", Disposition.Get("filename"))->Value;
+
 
             /* If this is a child multipart, the upload takes the form element name from the parent disposition */
 
             CurrentUpload->FormElement = CurrentUpload->Copier.Set("name",
-                                                    Parent ? Parent->Disposition.Get("name") : Disposition.Get("name"));
+                                                    Parent ? Parent->Disposition.Get("name") : Disposition.Get("name"))->Value;
         
             if(Client.Server.HandlerUploadStart)
                 Client.Server.HandlerUploadStart(Client.Server.Webserver, Client.Request.Public, CurrentUpload->Upload);
