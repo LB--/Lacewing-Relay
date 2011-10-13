@@ -356,9 +356,20 @@ void HTTPClient::Respond(RequestInternal &) /* request parameter ignored - HTTP 
         Socket << "\r\n" << Current->Key << ": " << Current->Value;
 
     for(Map::Item * Current = Request.OutCookies.First; Current; Current = Current->Next)
-        if(strcmp(Current->Value, Request.InCookies.Get(Current->Key)))
-            Socket << "\r\nSet-Cookie: " << Current->Key << "=" << Current->Value;
-    
+    {
+        const char * OldValue = Request.InCookies.Get(Current->Key);
+        
+        int ValueSize = (int) (strchr (Current->Value, ';') - Current->Value);
+
+        if (ValueSize < 0)
+            ValueSize = strlen (Current->Value);
+
+        if (ValueSize == strlen (OldValue) && memcmp (OldValue, Current->Value, ValueSize) == 0)
+            continue;
+
+        Socket << "\r\nSet-Cookie: " << Current->Key << "=" << Current->Value;
+    }
+
     Socket << "\r\nContent-Length: " << (Request.TotalFileSize + Request.TotalNonFileSize);
     Socket << "\r\n\r\n";
 
