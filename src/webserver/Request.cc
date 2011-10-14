@@ -501,7 +501,7 @@ void Lacewing::Webserver::Request::Cookie(const char * Name, const char * Value,
     strcat (Buffer, "; ");
     strcat (Buffer, Attributes);
 
-    ((RequestInternal *) InternalTag)->OutCookies.Set (Name, Buffer, false);
+    ((RequestInternal *) InternalTag)->OutCookies.Set (strdup (Name), Buffer, false);
 }
 
 void Lacewing::Webserver::Request::Status(int Code, const char * Message)
