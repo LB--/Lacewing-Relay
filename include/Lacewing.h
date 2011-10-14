@@ -590,7 +590,7 @@ struct Thread
     LacewingFunction   Thread (const char * Name, void * Function);
     LacewingFunction ~ Thread ();
 
-    LacewingFunction void Start (void * Parameter);
+    LacewingFunction void Start (void * Parameter = 0);
     LacewingFunction bool Started ();
 
     LacewingFunction int Join ();
