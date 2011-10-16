@@ -535,8 +535,7 @@ struct Error
 
         /* AddRead/AddReadWrite may return a pointer-sized key, which will be passed
            to Gone() when the FD is dead.  EventPump doesn't use this mechanism, but
-           the libev pump does (it returns a pointer to the watcher so that Gone()
-           can delete it) */
+           it may be useful for a custom Pump. */
 
         LacewingFunction virtual void Gone (void *);
     };
