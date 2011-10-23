@@ -6,8 +6,14 @@ CXXFLAGS = @CXXFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
-SO_NAME = liblacewing.so.0.2
-REAL_NAME = liblacewing.so.0.2.5
+SO_EXT = @SO_EXT@
+
+SO_NAME = liblacewing.@SO_EXT@.0.2
+REAL_NAME = liblacewing.@SO_EXT@.0.2.5
+
+ifeq ($(SO_EXT),so)
+	SONAME_FLAGS=-Wl,-soname,@SO_NAME@
+endif
 
 COMMONDEPS = src/Common.h src/Backlog.h src/MessageBuilder.h src/MessageReader.h \
 				src/QueuedSend.h src/ReceiveBuffer.h src/TimeHelper.h src/Utility.h \
@@ -24,11 +30,11 @@ OBJECTS = build/Global.o build/Sync.o build/SpinSync.o build/Filter.o build/Addr
 
 ###########
 
-all: liblacewing.so liblacewing.a
+all: liblacewing.@SO_EXT@ liblacewing.a
 
-liblacewing.so: $(OBJECTS)
+liblacewing.@SO_EXT@: $(OBJECTS)
 	@echo Linking shared library...
-	@g++ $(CXXFLAGS) -Wl,-soname,$(SO_NAME) -shared -o $(REAL_NAME) ./build/*.o $(LIBS)
+	@g++ $(CXXFLAGS) $(SONAME_FLAGS) -shared -o $(REAL_NAME) ./build/*.o $(LIBS)
 
 liblacewing.a: $(OBJECTS)
 	@echo Linking static library...
@@ -110,17 +116,17 @@ build/thread_flat.o: src/c/thread_flat.cc $(COMMONDEPS)
 ############
     
 clean:
-	rm -f liblacewing.so* liblacewing.a ./build/*.o
+	rm -f liblacewing.@SO_EXT@* liblacewing.a ./build/*.o
 
-install: liblacewing.so liblacewing.a
+install: liblacewing.@SO_EXT@ liblacewing.a
 	@echo -----
-	@echo Installing shared library: $(PREFIX)/lib/liblacewing.so
+	@echo Installing shared library: $(PREFIX)/lib/liblacewing.@SO_EXT@
 	@install -d $(PREFIX)/lib
 	@install -m 0755 $(REAL_NAME) $(PREFIX)/lib/$(REAL_NAME)
 	@rm -f $(PREFIX)/lib/$(SO_NAME)
 	@ln -s $(REAL_NAME) $(PREFIX)/lib/$(SO_NAME)
-	@rm -f $(PREFIX)/lib/liblacewing.so
-	@ln -s $(SO_NAME) $(PREFIX)/lib/liblacewing.so
+	@rm -f $(PREFIX)/lib/liblacewing.@SO_EXT@
+	@ln -s $(SO_NAME) $(PREFIX)/lib/liblacewing.@SO_EXT@
 	@echo Installing static library: $(PREFIX)/lib/liblacewing.a
 	@install -m 0755 liblacewing.a $(PREFIX)/lib/liblacewing.a
 	@echo Installing header file: $(PREFIX)/include/Lacewing.h
