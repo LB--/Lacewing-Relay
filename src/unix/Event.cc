@@ -131,8 +131,6 @@ void Lacewing::Event::Wait(int Timeout)
         
         LacewingSyncDecrement(&((EventInternal *) InternalTag)->WaiterCount);
         
-        printf("Event: Wake up\n");
-        
     #else
 
         if(Timeout == -1)
