@@ -180,6 +180,11 @@ template <class T> struct Array
         return Items [Index];
     }
 
+    inline operator T * ()
+    {
+        return Items;
+    }
+
     inline void Clear ()
     {
         Size = 0;
