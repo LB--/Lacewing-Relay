@@ -335,6 +335,16 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFlat (lw_ws_upload);
   LacewingFlat (lw_ws_upload_hdr);
 
+  LacewingFunction              lw_ws* lw_ws_new                    (lw_eventpump *);
+  LacewingFunction               void  lw_ws_delete                 (lw_ws *);
+  LacewingFunction               void  lw_ws_host                   (lw_ws *, long port);
+  LacewingFunction               void  lw_ws_host_secure            (lw_ws *, long port);
+  LacewingFunction               void  lw_ws_host_filter            (lw_ws *, lw_filter *);
+  LacewingFunction               void  lw_ws_host_secure_filter     (lw_ws *, lw_filter *);
+  LacewingFunction               void  lw_ws_unhost                 (lw_ws *);
+  LacewingFunction               void  lw_ws_unhost_secure          (lw_ws *);
+  LacewingFunction            lw_bool  lw_ws_hosting                (lw_ws *);
+  LacewingFunction            lw_bool  lw_ws_hosting_secure         (lw_ws *);
   LacewingFunction               long  lw_ws_port                   (lw_ws *);
   LacewingFunction               long  lw_ws_port_secure            (lw_ws *);
   LacewingFunction            lw_bool  lw_ws_load_cert_file         (lw_ws *, const char * filename, const char * passphrase);
