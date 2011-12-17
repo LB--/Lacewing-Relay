@@ -49,7 +49,7 @@ struct TimerInternal
 
     TimerInternal(Lacewing::Timer &_Timer, EventPumpInternal &_EventPump)
                 : Timer(_Timer), EventPump(_EventPump),
-                    TimerThread ("Timer", ::TimerThread)
+                    TimerThread ("Timer", (void *) ::TimerThread)
     {
         ShutdownEvent = CreateEvent         (0, TRUE, FALSE, 0);
         TimerHandle   = CreateWaitableTimer (0, FALSE, 0);

@@ -133,17 +133,28 @@ inline time_t ParseTimeString(const char * StringC)
 
     ParseTime(Time, TM);
 
-    #ifdef ANDROID
-        return timegm64(&TM);
-    #else
-        #ifdef LacewingWindows
-            return _mkgmtime(&TM);
+    #if defined(ANDROID)
+        return timegm64 (&TM);
+    #elif defined (LacewingWindows)
+        #ifndef __MINGW_H
+            return _mkgmtime64 (&TM);
         #else
-            #if HAVE_TIMEGM
-                return timegm(&TM);
-            #else
-                #pragma error "Can't find a suitable way to convert a tm to a UTC UNIX time"
-            #endif
+
+            /* _mkgmtime is missing from MinGW.  Argghh! */
+
+            static HINSTANCE MSVCRT = LoadLibraryA ("msvcrt.dll");
+
+            static __time64_t (__stdcall * fn) (tm *) =
+                (__time64_t (__stdcall *) (tm *)) GetProcAddress (MSVCRT, "_mkgmtime64");
+
+            return fn (&TM);
+
+        #endif
+    #else
+        #if HAVE_TIMEGM
+            return timegm (&TM);
+        #else
+            #pragma error "Can't find a suitable way to convert a tm to a UTC UNIX time"
         #endif
     #endif
 }

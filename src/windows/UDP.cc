@@ -211,7 +211,7 @@ void Lacewing::UDP::Host(Lacewing::Filter &Filter)
     Internal.Socket = WSASocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP, 0, 0, WSA_FLAG_OVERLAPPED);
     Internal.RemoteIP = Filter.Remote().IP();
 
-    Internal.EventPump.Add((HANDLE) Internal.Socket, &Internal, UDPSocketCompletion);
+    Internal.EventPump.Add((HANDLE) Internal.Socket, &Internal, (void *) UDPSocketCompletion);
 
     sockaddr_in SocketAddress;
     memset(&SocketAddress, 0, sizeof(Address));

@@ -33,15 +33,21 @@
 #define LacewingInternal
 
 #ifdef _MSC_VER
+    #pragma warning (disable : 4355) /* 'this' : used in base member initializer list */
+#endif
 
+#if defined(_WIN32) && !defined (LacewingWindows)
     #define LacewingWindows
+#endif
 
-    #ifdef _WIN64
-        #define Lacewing64
-    #endif
+#ifdef LacewingWindows
 
     #ifdef _DEBUG
         #define LacewingDebug
+    #endif
+
+    #ifdef _WIN64
+        #define Lacewing64
     #endif
 
     #ifndef _CRT_SECURE_NO_WARNINGS
@@ -52,8 +58,6 @@
         #define _CRT_NONSTDC_NO_WARNINGS
     #endif
 
-    #pragma warning (disable : 4355) /* 'this' : used in base member initializer list */
-
 #else
 
     #ifdef ANDROID
@@ -63,14 +67,14 @@
         #ifdef HAVE_CONFIG_H
             #include "../config.h"
         #else
-            #error Valid config.h required for non-MSVC! Run ./configure
+            #error Valid config.h required for non-Windows! Run ./configure
         #endif
     #endif
-    
+
 #endif
 
 #ifdef LacewingLibrary
-    #ifdef _MSC_VER
+    #ifdef LacewingWindows
         #define LacewingFunction __declspec(dllexport)
     #else
         #ifdef __GNUC__
@@ -114,6 +118,7 @@ void LacewingInitialise();
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <ctype.h>
 #include <new>
 
 const int lw_max_path = 512;
@@ -141,7 +146,6 @@ const int lw_max_path = 512;
     #include <security.h>
     #include <sspi.h>
     #include <wincrypt.h>
-    #include <wintrust.h>
     #include <schannel.h>
     #include <process.h>
     #include <ctime>
@@ -208,7 +212,6 @@ const int lw_max_path = 512;
     
     #define UDFormat    "%ud"
 
-    #include <stdio.h>
     #include <sys/types.h> 
     #include <sys/stat.h>
     #include <sys/socket.h>
@@ -218,12 +221,10 @@ const int lw_max_path = 512;
     #include <netinet/tcp.h>
     #include <pthread.h>
     #include <errno.h>
-    #include <stdlib.h>
     #include <unistd.h>
     #include <arpa/inet.h>
     #include <fcntl.h>
     #include <sched.h>
-    #include <ctype.h>
     
     #ifdef LacewingAndroid
         #include <time64.h>
@@ -415,7 +416,7 @@ inline void LacewingSyncIncrement(volatile long * Target)
     #ifdef __GNUC__
         __sync_add_and_fetch(Target, 1);
     #else
-        #ifdef _MSC_VER
+        #ifdef LacewingWindows
             InterlockedIncrement(Target);
         #else
             #error "Don't know how to implement LacewingSyncIncrement on this platform"
@@ -428,7 +429,7 @@ inline void LacewingSyncDecrement(volatile long * Target)
     #ifdef __GNUC__
         __sync_sub_and_fetch(Target, 1);
     #else
-        #ifdef _MSC_VER
+        #ifdef LacewingWindows
             InterlockedDecrement(Target);
         #else
             #error "Don't know how to implement LacewingSyncDecrement on this platform"
@@ -441,7 +442,7 @@ inline long LacewingSyncCompareExchange(volatile long * Target, long NewValue, l
     #ifdef __GNUC__
         return __sync_val_compare_and_swap(Target, OldValue, NewValue);
     #else
-        #ifdef _MSC_VER
+        #ifdef LacewingWindows
             return InterlockedCompareExchange(Target, NewValue, OldValue);
         #else
             #error "Don't know how to implement LacewingSyncCompareExchange on this platform"
@@ -462,7 +463,7 @@ inline void LacewingSyncExchange(volatile long * Target, long NewValue)
         }
 
     #else
-        #ifdef _MSC_VER
+        #ifdef LacewingWindows
             InterlockedExchange(Target, NewValue);
         #else
             #error "Don't know how to implement LacewingSyncExchange on this platform"

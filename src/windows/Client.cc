@@ -254,12 +254,27 @@ void Lacewing::Client::Connect(Lacewing::Address &Address)
     memset(&Internal.Overlapped, 0, sizeof(OVERLAPPED));
     Internal.Overlapped.IsSend = false;
 
-    LPFN_CONNECTEX ConnectEx;
-    
-    {   GUID  ID    = WSAID_CONNECTEX;
+    /* LPFN_CONNECTEX and WSAID_CONNECTEX aren't defined w/ MinGW */
+
+    static BOOL (PASCAL FAR * lw_ConnectEx)
+    (   
+        SOCKET s,
+        const struct sockaddr FAR *name,
+        int namelen,
+        PVOID lpSendBuffer,
+        DWORD dwSendDataLength,
+        LPDWORD lpdwBytesSent,
+        LPOVERLAPPED lpOverlapped
+
+    ) = 0;
+
+    if (!lw_ConnectEx)
+    {   
+        GUID  ID = {0x25a207b9,0xddf3,0x4660,{0x8e,0xe9,0x76,0xe5,0x8c,0x74,0x06,0x3e}};
         DWORD Bytes = 0;
 
-        WSAIoctl(Internal.Socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &ID, sizeof(ID), &ConnectEx, sizeof(LPFN_CONNECTEX), &Bytes, 0, 0);
+        WSAIoctl (Internal.Socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &ID,
+                        sizeof(ID), &lw_ConnectEx, sizeof (lw_ConnectEx), &Bytes, 0, 0);
     }
 
     sockaddr_in LocalAddress;
@@ -275,7 +290,8 @@ void Lacewing::Client::Connect(Lacewing::Address &Address)
         LacewingAssert(false);
     }
 
-    if(!ConnectEx(Internal.Socket, (sockaddr *) &Internal.HostStructure, sizeof(sockaddr_in), 0, 0, 0, (OVERLAPPED *) &Internal.Overlapped))
+    if(!lw_ConnectEx (Internal.Socket, (sockaddr *) &Internal.HostStructure, sizeof(sockaddr_in),
+                0, 0, 0, (OVERLAPPED *) &Internal.Overlapped))
     {
         int Code = LacewingGetSocketError();
 

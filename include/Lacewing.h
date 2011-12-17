@@ -36,7 +36,7 @@
 
 #include <stdarg.h>
 
-#ifndef _WIN32
+#ifndef _MSC_VER
 
     #include <inttypes.h>
     
@@ -46,13 +46,6 @@
     #define lw_i16   int16_t
     #define lw_i8    int8_t
 
-    #ifndef LacewingHandler
-        #define LacewingHandler
-    #endif
-
-    #ifndef LacewingFunction
-        #define LacewingFunction
-    #endif
     
 #else
 
@@ -66,9 +59,19 @@
     #define lw_i32  __int32
     #define lw_i16  __int16
     #define lw_i8   __int8
-
-    #define LacewingHandler __cdecl
     
+#endif
+
+#ifndef _WIN32
+    #ifndef LacewingHandler
+        #define LacewingHandler
+    #endif
+
+    #ifndef LacewingFunction
+        #define LacewingFunction
+    #endif
+#else
+    #define LacewingHandler __cdecl
 #endif
 
 #ifndef LacewingFunction

@@ -30,6 +30,11 @@
 #include "../Common.h"
 #include "../QueuedSend.h"
 
+#ifndef CERT_STORE_READONLY_FLAG
+    #define CERT_STORE_READONLY_FLAG                        0x00008000
+    #define CERT_STORE_OPEN_EXISTING_FLAG                   0x00004000
+#endif
+
 const int IdealPendingAcceptCount = 16;
 
 struct ServerInternal;
@@ -427,7 +432,7 @@ void Lacewing::Server::Client::Disconnect()
     if(Client.Connecting)
         return;
 
-    Internal.EventPump.Pump.Post (Disconnecter, &Client);
+    Internal.EventPump.Pump.Post ((void *) Disconnecter, &Client);
 }
 
 void ClientSocketCompletion(ServerClientInternal &Client, ServerOverlapped &Overlapped, unsigned int BytesTransferred, int Error)
@@ -1149,49 +1154,49 @@ bool Lacewing::Server::LoadSystemCertificate(const char * StoreName, const char 
     {
         if(!strcasecmp(Location, "CurrentService"))
         {
-            LocationID = CERT_SYSTEM_STORE_CURRENT_SERVICE;
+            LocationID = 0x40000; /* CERT_SYSTEM_STORE_CURRENT_SERVICE */
             break;
         }
 
         if(!strcasecmp(Location, "CurrentUser"))
         {
-            LocationID = CERT_SYSTEM_STORE_CURRENT_USER;
+            LocationID = 0x10000; /* CERT_SYSTEM_STORE_CURRENT_USER */
             break;
         }
 
         if(!strcasecmp(Location, "CurrentUserGroupPolicy"))
         {
-            LocationID = CERT_SYSTEM_STORE_CURRENT_USER_GROUP_POLICY;
+            LocationID = 0x70000; /* CERT_SYSTEM_STORE_CURRENT_USER_GROUP_POLICY */
             break;
         }
 
         if(!strcasecmp(Location, "LocalMachine"))
         {
-            LocationID = CERT_SYSTEM_STORE_LOCAL_MACHINE;
+            LocationID = 0x20000; /* CERT_SYSTEM_STORE_LOCAL_MACHINE */
             break;
         }
 
         if(!strcasecmp(Location, "LocalMachineEnterprise"))
         {
-            LocationID = CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE;
+            LocationID = 0x90000; /* CERT_SYSTEM_STORE_LOCAL_MACHINE_ENTERPRISE */
             break;
         }
 
         if(!strcasecmp(Location, "LocalMachineGroupPolicy"))
         {
-            LocationID = CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY;
+            LocationID = 0x80000; /* CERT_SYSTEM_STORE_LOCAL_MACHINE_GROUP_POLICY */
             break;
         }
 
         if(!strcasecmp(Location, "Services"))
         {
-            LocationID = CERT_SYSTEM_STORE_SERVICES;
+            LocationID = 0x50000; /* CERT_SYSTEM_STORE_SERVICES */
             break;
         }
 
         if(!strcasecmp(Location, "Users"))
         {
-            LocationID = CERT_SYSTEM_STORE_USERS;
+            LocationID = 0x60000; /* CERT_SYSTEM_STORE_USERS */
             break;
         }
 
@@ -1210,7 +1215,8 @@ bool Lacewing::Server::LoadSystemCertificate(const char * StoreName, const char 
         return false;
     }
 
-    HCERTSTORE CertStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, 0, LocationID, StoreName);
+    HCERTSTORE CertStore = CertOpenStore ((LPCSTR) 9, /* CERT_STORE_PROV_SYSTEM_A */
+                                0, 0, LocationID, StoreName);
 
     if(!CertStore)
     {
@@ -1254,12 +1260,12 @@ bool Lacewing::Server::LoadSystemCertificate(const char * StoreName, const char 
     Creds.dwVersion = SCHANNEL_CRED_VERSION;
     Creds.cCreds = 1;
     Creds.paCred = &Context;
-    Creds.grbitEnabledProtocols = SP_PROT_SSL3TLS1;
+    Creds.grbitEnabledProtocols = 0xF0; /* SP_PROT_SSL3TLS1 */
 
     {   TimeStamp ExpiryTime;
 
-        int Result = AcquireCredentialsHandleA(0, UNISP_NAME_A, SECPKG_CRED_INBOUND, 0, &Creds, 0, 0,
-                            &Internal.ServerCreds, &ExpiryTime);
+        int Result = AcquireCredentialsHandleA (0, (SEC_CHAR *) UNISP_NAME_A, SECPKG_CRED_INBOUND, 0, &Creds, 0, 0,
+                                                    &Internal.ServerCreds, &ExpiryTime);
 
         if(Result != SEC_E_OK)
         {
@@ -1306,14 +1312,14 @@ bool Lacewing::Server::LoadCertificateFile(const char * Filename, const char * C
         ((ServerInternal *)InternalTag)->CertificateLoaded = false;
     }
 
-    HCERTSTORE CertStore = CertOpenStore(CERT_STORE_PROV_FILENAME_A, X509_ASN_ENCODING, 0,
+    HCERTSTORE CertStore = CertOpenStore ((LPCSTR) 7 /* CERT_STORE_PROV_FILENAME_A */, X509_ASN_ENCODING, 0,
                                 CERT_STORE_OPEN_EXISTING_FLAG | CERT_STORE_READONLY_FLAG, Filename);
 
     bool PKCS7 = false;
 
     if(!CertStore)
     {
-        CertStore = CertOpenStore(CERT_STORE_PROV_FILENAME_A, PKCS_7_ASN_ENCODING, 0,
+        CertStore = CertOpenStore((LPCSTR) 7 /* CERT_STORE_PROV_FILENAME_A */, PKCS_7_ASN_ENCODING, 0,
                                      CERT_STORE_OPEN_EXISTING_FLAG | CERT_STORE_READONLY_FLAG, Filename);
 
         PKCS7 = true;
@@ -1363,12 +1369,12 @@ bool Lacewing::Server::LoadCertificateFile(const char * Filename, const char * C
     Creds.dwVersion = SCHANNEL_CRED_VERSION;
     Creds.cCreds = 1;
     Creds.paCred = &Context;
-    Creds.grbitEnabledProtocols = SP_PROT_SSL3TLS1;
+    Creds.grbitEnabledProtocols = 0xF0; /* SP_PROT_SSL3TLS1 */
 
     {   TimeStamp ExpiryTime;
 
-        int Result = AcquireCredentialsHandleA(0, UNISP_NAME_A, SECPKG_CRED_INBOUND, 0, &Creds, 0, 0,
-                            &Internal.ServerCreds, &ExpiryTime);
+        int Result = AcquireCredentialsHandleA (0, (SEC_CHAR *) UNISP_NAME_A, SECPKG_CRED_INBOUND, 0, &Creds,
+                                                   0, 0, &Internal.ServerCreds, &ExpiryTime);
 
         if(Result != SEC_E_OK)
         {
@@ -1435,7 +1441,7 @@ void SecureClientInternal::ProcessMessageData(char * &Buffer, unsigned int &Size
     
     this->Buffer.Size = 0;
 
-    if(Status == SEC_I_CONTEXT_EXPIRED)
+    if(Status == _HRESULT_TYPEDEF_ (0x00090317L)) /* SEC_I_CONTENT_EXPIRED */
     {
         Client.Public.Disconnect();
         return;

@@ -66,7 +66,7 @@ Lacewing::Thread::~Thread ()
 
 int ThreadWrapper (ThreadInternal &Internal)
 {
-    #ifdef LacewingWindows
+    #ifdef _MSC_VER
         
         struct
         {
