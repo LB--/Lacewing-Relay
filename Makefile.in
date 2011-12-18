@@ -7,13 +7,10 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
 SO_EXT = @SO_EXT@
+SONAME_FLAGS = @SONAME_FLAGS@
 
-SO_NAME = liblacewing.@SO_EXT@.0.2
-REAL_NAME = liblacewing.@SO_EXT@.0.2.5
-
-ifeq ($(SO_EXT),so)
-	SONAME_FLAGS=-Wl,-soname,@SO_NAME@
-endif
+SO_NAME = @SO_NAME@
+REAL_NAME = liblacewing.@SO_EXT@.0.2.6
 
 COMMONDEPS = src/Common.h src/Backlog.h src/MessageBuilder.h src/MessageReader.h \
 				src/QueuedSend.h src/ReceiveBuffer.h src/TimeHelper.h src/Utility.h \

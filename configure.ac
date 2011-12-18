@@ -1,5 +1,5 @@
 AC_PREREQ([2.49])
-AC_INIT([liblacewing], [0.2.5], [])
+AC_INIT([liblacewing], [0.2.6], [])
 
 AC_PROG_CXX
 
@@ -41,7 +41,16 @@ SO_EXT="so"
 AC_CHECK_HEADERS([CoreServices/CoreServices.h], [[LIBS="$LIBS -framework CoreServices "]
 [SO_EXT="dylib"]])
 
+SO_NAME=liblacewing.$SO_EXT.0.2
+
+AC_SUBST(SO_NAME, $SO_NAME)
 AC_SUBST(SO_EXT, $SO_EXT)
+
+if test $SO_EXT = "so"; then
+    AC_SUBST(SONAME_FLAGS, [-Wl,-soname,$SO_NAME])
+else
+    AC_SUBST(SONAME_FLAGS, [  ])
+fi
 
 AC_CHECK_FUNCS([timegm kqueue vasprintf])
 
