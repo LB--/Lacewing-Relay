@@ -81,6 +81,8 @@ void HTTPClient::Process (char * Buffer, int Size)
             }
             else if(*i == '\n')
             {
+                i [State == 1 ? -1 : 0] = 0;
+
                 if(this->Buffer.Size)
                 {
                     this->Buffer.Add (Buffer, -1);
@@ -92,7 +94,6 @@ void HTTPClient::Process (char * Buffer, int Size)
                 }
                 else
                 {
-                    i [State == 1 ? -1 : 0] = 0;
                     ProcessLine(Buffer);
                 }
 
