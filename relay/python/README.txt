@@ -19,4 +19,4 @@ Wiki:
 http://code.google.com/p/pylacewing/w/list
 
 API reference:
-http://mp2.dk/pylacewing/docs
+"docs" folder or http://mp2.dk/pylacewing/docs (less likely to be updated)
