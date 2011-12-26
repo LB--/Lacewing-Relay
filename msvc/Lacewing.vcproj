@@ -4,6 +4,7 @@
 	Version="9.00"
 	Name="Lacewing"
 	ProjectGUID="{522C3F0C-C515-4722-A30B-98D2D156E907}"
+	RootNamespace="Lacewing"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>
@@ -15,7 +16,7 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
+			Name="DLL - Debug|Win32"
 			OutputDirectory="../build"
 			IntermediateDirectory="../build"
 			ConfigurationType="2"
@@ -78,7 +79,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib mpr.lib mswsock.lib crypt32.lib secur32.lib"
-				OutputFile="../bin/Lacewing.dll"
+				OutputFile="../bin/liblacewing-debug.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="../"
@@ -114,7 +115,7 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
+			Name="DLL - Release|Win32"
 			OutputDirectory="../build"
 			IntermediateDirectory="../build"
 			ConfigurationType="2"
@@ -182,7 +183,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib mpr.lib mswsock.lib secur32.lib crypt32.lib"
-				OutputFile="../bin/Lacewing.dll"
+				OutputFile="../bin/liblacewing.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="../"
@@ -215,6 +216,177 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Static Library - Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="4"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName="../build/Lacewing.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="../;../src/"
+				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;_WINDOWS;_USRDLL;LacewingLibrary"
+				GeneratePreprocessedFile="0"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				PrecompiledHeaderFile="../build/Lacewing.pch"
+				AssemblerListingLocation="../build/"
+				ObjectFile="../build/"
+				ProgramDataBaseFileName="../build/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="4"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="2057"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="../bin/liblacewing-static-debug.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+				SuppressStartupBanner="true"
+				OutputFile="../build/Lacewing.bsc"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Static Library - Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="4"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName="../build/Lacewing.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="true"
+				EnableFiberSafeOptimizations="true"
+				WholeProgramOptimization="true"
+				AdditionalIncludeDirectories="../;../src/"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LacewingLibrary"
+				StringPooling="true"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="false"
+				PrecompiledHeaderFile="../build/Lacewing.pch"
+				AssemblerListingLocation="../build/"
+				ObjectFile="../build/"
+				ProgramDataBaseFileName="../build/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="2057"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="../bin/liblacewing-static.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+				SuppressStartupBanner="true"
+				OutputFile="../build/Lacewing.bsc"
+			/>
+			<Tool
+				Name="VCFxCopTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -359,7 +531,7 @@
 					RelativePath="..\src\unix\Client.cc"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
+						Name="DLL - Debug|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -367,7 +539,23 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
+						Name="DLL - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -379,7 +567,7 @@
 					RelativePath="..\src\unix\Event.cc"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
+						Name="DLL - Debug|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -387,7 +575,23 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
+						Name="DLL - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -399,7 +603,7 @@
 					RelativePath="..\src\unix\EventPump.cc"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
+						Name="DLL - Debug|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -407,7 +611,23 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
+						Name="DLL - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -419,7 +639,7 @@
 					RelativePath="..\src\unix\Pump.cc"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
+						Name="DLL - Debug|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -427,7 +647,23 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
+						Name="DLL - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -439,7 +675,7 @@
 					RelativePath="..\src\unix\Pump.h"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
+						Name="DLL - Debug|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -447,7 +683,23 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
+						Name="DLL - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -459,7 +711,7 @@
 					RelativePath="..\src\unix\SendFile.h"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
+						Name="DLL - Debug|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -467,7 +719,23 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
+						Name="DLL - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -479,7 +747,7 @@
 					RelativePath="..\src\unix\Server.cc"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
+						Name="DLL - Debug|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -487,7 +755,23 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
+						Name="DLL - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -499,7 +783,7 @@
 					RelativePath="..\src\unix\Timer.cc"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
+						Name="DLL - Debug|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -507,7 +791,23 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
+						Name="DLL - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -519,7 +819,7 @@
 					RelativePath="..\src\unix\UDP.cc"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
+						Name="DLL - Debug|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
@@ -527,7 +827,23 @@
 						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Release|Win32"
+						Name="DLL - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool

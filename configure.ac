@@ -1,5 +1,5 @@
 AC_PREREQ([2.49])
-AC_INIT([liblacewing], [0.2.6], [])
+AC_INIT([liblacewing], [0.3.0], [])
 
 AC_PROG_CXX
 
@@ -41,7 +41,7 @@ SO_EXT="so"
 AC_CHECK_HEADERS([CoreServices/CoreServices.h], [[LIBS="$LIBS -framework CoreServices "]
 [SO_EXT="dylib"]])
 
-SO_NAME=liblacewing.$SO_EXT.0.2
+SO_NAME=liblacewing.$SO_EXT.0.3
 
 AC_SUBST(SO_NAME, $SO_NAME)
 AC_SUBST(SO_EXT, $SO_EXT)
