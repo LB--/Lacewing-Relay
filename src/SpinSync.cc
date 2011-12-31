@@ -31,15 +31,15 @@
 
 const long WriterPresent = 0x8000;
 
-struct SpinSyncInternal
+struct SpinSync::Internal
 {
-    SpinSyncInternal()
+    Internal ()
     {
         Readers        = 0;
         WritersWaiting = 0;
     }
 
-    ~SpinSyncInternal()
+    ~ Internal ()
     {
     }
 
@@ -47,33 +47,31 @@ struct SpinSyncInternal
     volatile long WritersWaiting;
 };
 
-Lacewing::SpinSync::SpinSync()
+SpinSync::SpinSync ()
 {
-    InternalTag = new SpinSyncInternal;
-    Tag         = 0;
+    internal = new SpinSync::Internal;
+    Tag = 0;
 }
 
-Lacewing::SpinSync::~SpinSync()
+SpinSync::~SpinSync ()
 {
-    delete ((SpinSyncInternal *) InternalTag);
+    delete internal;
 }
 
-Lacewing::SpinSync::ReadLock::ReadLock(Lacewing::SpinSync &Object)
+SpinSync::ReadLock::ReadLock (SpinSync &Object)
 {
-    if(!(InternalTag = Object.InternalTag))
+    if (!(internal = Object.internal))
         return;
 
-    SpinSyncInternal &Internal = *((SpinSyncInternal *) InternalTag);
-
-    for(;;)
+    for (;;)
     {
-        if(Internal.WritersWaiting)
+        if (internal->WritersWaiting)
         {
-            LacewingYield();
+            LacewingYield ();
             continue;
         }
 
-        long OldReaders = Internal.Readers;
+        long OldReaders = internal->Readers;
 
         if(OldReaders == WriterPresent)
         {
@@ -81,60 +79,58 @@ Lacewing::SpinSync::ReadLock::ReadLock(Lacewing::SpinSync &Object)
             continue;
         }
 
-        if(LacewingSyncCompareExchange((volatile LONG *) &Internal.Readers, OldReaders + 1, OldReaders) == OldReaders)
+        if (LacewingSyncCompareExchange ((volatile long *) &internal->Readers, OldReaders + 1, OldReaders) == OldReaders)
             break;
     }
 }
 
-Lacewing::SpinSync::ReadLock::~ReadLock()
+SpinSync::ReadLock::~ReadLock ()
 {
     Release();
 }
 
-void Lacewing::SpinSync::ReadLock::Release()
+void SpinSync::ReadLock::Release ()
 {
-    if(!InternalTag)
+    if (!internal)
         return;
 
-    LacewingSyncDecrement((volatile LONG *) &((SpinSyncInternal *) InternalTag)->Readers);
-    InternalTag = 0;
+    LacewingSyncDecrement ((volatile long *) &internal->Readers);
+    internal = 0;
 }
 
-Lacewing::SpinSync::WriteLock::WriteLock(Lacewing::SpinSync &Object)
+SpinSync::WriteLock::WriteLock (SpinSync &Object)
 {
-    if(!(InternalTag = Object.InternalTag))
+    if (!(internal = Object.internal))
         return;
 
-    SpinSyncInternal &Internal = *((SpinSyncInternal *) InternalTag);
-
-    LacewingSyncIncrement(&Internal.WritersWaiting);
+    LacewingSyncIncrement (&internal->WritersWaiting);
 
     for(;;)
     {
-        if(Internal.Readers != 0)
+        if(internal->Readers != 0)
         {
             LacewingYield();
             continue;
         }
 
-        if(LacewingSyncCompareExchange((volatile LONG *) &Internal.Readers, WriterPresent, 0) == 0)
+        if (LacewingSyncCompareExchange ((volatile long *) &internal->Readers, WriterPresent, 0) == 0)
             break;
     }
 
-    LacewingSyncDecrement(&Internal.WritersWaiting);
+    LacewingSyncDecrement (&internal->WritersWaiting);
 }
 
-Lacewing::SpinSync::WriteLock::~WriteLock()
+SpinSync::WriteLock::~WriteLock ()
 {
     Release();
 }
 
-void Lacewing::SpinSync::WriteLock::Release()
+void SpinSync::WriteLock::Release ()
 {
-    if(!InternalTag)
+    if (!internal)
         return;
 
-    LacewingSyncExchange(&((SpinSyncInternal *) InternalTag)->Readers, 0);
-    InternalTag = 0;
+    LacewingSyncExchange (&internal->Readers, 0);
+    internal = 0;
 }
 

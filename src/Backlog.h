@@ -27,7 +27,7 @@
  * SUCH DAMAGE.
  */
 
-template<class P, class T> class Backlog
+template <class T> class Backlog
 {
 protected:
 
@@ -36,59 +36,26 @@ protected:
 
     Lacewing::SpinSync Sync;
 
-public:
-
-    inline Backlog()
-    {
-        Count = 8;
-    }
-
-    inline Backlog(unsigned int Count)
-    {
-        this->Count = Count;   
-    }
-
-    inline ~Backlog()
-    {
-        for (typename List <T *>::Element * E = Items.First; E; E = E->Next)
-        {
-            #ifdef LacewingWindows
-            #ifdef LacewingDebug
-
-                DWORD Old;
-
-                VirtualProtect(** E, sizeof(T), PAGE_READWRITE, &Old);
-                VirtualFree(** E, MEM_RELEASE, 0);
-
-                continue;
-
-            #endif
-            #endif
-
-            free (** E);
-        }
-    }
-
-    inline T &Borrow(P &Parent)
+    inline T * BorrowMem ()
     {
         T * Borrowed;
 
-        {   Lacewing::SpinSync::WriteLock Lock(Sync);
+        {   Lacewing::SpinSync::WriteLock Lock (Sync);
 
-            if(!Items.First)
+            if (!Items.First)
             {
-                for(unsigned int i = Count; i; -- i)
+                for (unsigned int i = Count; i; -- i)
                 {
                     #ifdef LacewingDebug
                     #ifdef LacewingWindows
         
-                        Items.Push ((T *) VirtualAlloc(0, sizeof(T), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
+                        Items.Push ((T *) VirtualAlloc (0, sizeof (T), MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
                         continue;
 
                     #endif
                     #endif
             
-                    Items.Push ((T *) malloc(sizeof(T)));
+                    Items.Push ((T *) malloc (sizeof (T)));
                 }
             }
 
@@ -101,21 +68,64 @@ public:
             /* Restore normal protection (see Return) */
 
             DWORD Old;
-            VirtualProtect(Borrowed, sizeof(T), PAGE_READWRITE, &Old);
+            VirtualProtect (Borrowed, sizeof (T), PAGE_READWRITE, &Old);
 
         #endif
         #endif
 
-        return * new (Borrowed) T (Parent);
+        return Borrowed;
     }
 
-    inline void Return(T &Object)
+public:
+
+    inline Backlog ()
     {
-        Object.~T();
+        Count = 8;
+    }
+
+    inline Backlog (unsigned int Count)
+    {
+        this->Count = Count;   
+    }
+
+    inline ~Backlog ()
+    {
+        for (typename List <T *>::Element * E = Items.First; E; E = E->Next)
+        {
+            #ifdef LacewingWindows
+            #ifdef LacewingDebug
+
+                DWORD Old;
+
+                VirtualProtect (** E, sizeof (T), PAGE_READWRITE, &Old);
+                VirtualFree (** E, MEM_RELEASE, 0);
+
+                continue;
+
+            #endif
+            #endif
+
+            free (** E);
+        }
+    }
+
+    template <class P> inline T &Borrow (P &Parent)
+    {
+        return * new (BorrowMem ()) T (Parent);
+    }
+
+    inline T &Borrow ()
+    {
+        return * new (BorrowMem ()) T;
+    }
+
+    inline void Return (T &Object)
+    {
+        Object.~T ();
 
         #ifdef LacewingDebug
 
-            memset(&Object, 0, sizeof(T));
+            memset (&Object, 0, sizeof (T));
 
             #ifdef LacewingWindows
 
@@ -123,16 +133,14 @@ public:
                    being returned to the backlog */
 
                 DWORD Old;
-                VirtualProtect(&Object, sizeof(T), PAGE_NOACCESS, &Old);
+                VirtualProtect (&Object, sizeof (T), PAGE_NOACCESS, &Old);
 
             #endif
 
         #endif
 
-        Lacewing::SpinSync::WriteLock Lock(Sync);
+        Lacewing::SpinSync::WriteLock Lock (Sync);
         Items.Push (&Object);
     }
-
-
 };
 

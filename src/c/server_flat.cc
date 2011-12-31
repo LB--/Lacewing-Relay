@@ -30,76 +30,76 @@
 #include "../Common.h"
 
 lw_server * lw_server_new (lw_eventpump * eventpump)
-    { return (lw_server *) new Lacewing::Server(*(Lacewing::EventPump *) eventpump);
+    { return (lw_server *) new Server (*(EventPump *) eventpump);
     }
 void lw_server_delete (lw_server * server)
-    { delete (Lacewing::Server *) server;
+    { delete (Server *) server;
     }
 void lw_server_host (lw_server * server, long port)
-    { ((Lacewing::Server *) server)->Host(port);
+    { ((Server *) server)->Host (port);
     }
 void lw_server_host_ex (lw_server * server, long port, lw_bool client_speaks_first)
-    { ((Lacewing::Server *) server)->Host(port, client_speaks_first != 0);
+    { ((Server *) server)->Host (port, client_speaks_first != 0);
     }
 void lw_server_host_filter (lw_server * server, lw_filter * filter)
-    { ((Lacewing::Server *) server)->Host(*(Lacewing::Filter *) filter);
+    { ((Server *) server)->Host (*(Filter *) filter);
     }
 void lw_server_host_filter_ex (lw_server * server, lw_filter * filter, lw_bool client_speaks_first)
-    { ((Lacewing::Server *) server)->Host(*(Lacewing::Filter *) filter, client_speaks_first != 0);
+    { ((Server *) server)->Host (*(Filter *) filter, client_speaks_first != 0);
     }
 void lw_server_unhost (lw_server * server)
-    { ((Lacewing::Server *) server)->Unhost();
+    { ((Server *) server)->Unhost ();
     }
 lw_bool lw_server_hosting (lw_server * server)
-    { return ((Lacewing::Server *) server)->Hosting() ? 1 : 0;
+    { return ((Server *) server)->Hosting () ? 1 : 0;
     }
 long lw_server_port (lw_server * server)
-    { return ((Lacewing::Server *) server)->Port();
+    { return ((Server *) server)->Port ();
     }
 lw_bool lw_server_load_cert_file (lw_server * server, const char * filename, const char * passphrase)
-    { return ((Lacewing::Server *) server)->LoadCertificateFile(filename, passphrase);
+    { return ((Server *) server)->LoadCertificateFile (filename, passphrase);
     }
 lw_bool lw_server_load_sys_cert (lw_server * server, const char * store_name, const char * common_name, const char * location)
-    { return ((Lacewing::Server *) server)->LoadSystemCertificate(store_name, common_name, location);
+    { return ((Server *) server)->LoadSystemCertificate (store_name, common_name, location);
     }
 lw_bool lw_server_cert_loaded (lw_server * server)
-    { return ((Lacewing::Server *) server)->CertificateLoaded();
+    { return ((Server *) server)->CertificateLoaded ();
     }
 lw_i64 lw_server_bytes_sent (lw_server * server)
-    { return ((Lacewing::Server *) server)->BytesSent();
+    { return ((Server *) server)->BytesSent ();
     }
 lw_i64 lw_server_bytes_received (lw_server * server)
-    { return ((Lacewing::Server *) server)->BytesReceived();
+    { return ((Server *) server)->BytesReceived ();
     }
 void lw_server_disable_nagling (lw_server * server)
-    { ((Lacewing::Server *) server)->DisableNagling();
+    { ((Server *) server)->DisableNagling ();
     }
 lw_addr * lw_server_client_address (lw_server_client * client)
-    { return (lw_addr *) &((Lacewing::Server::Client *) client)->GetAddress();
+    { return (lw_addr *) &((Server::Client *) client)->GetAddress ();
     }
 void lw_server_client_send (lw_server_client * client, const char * data, long size)
-    { ((Lacewing::Server::Client *) client)->Send(data, size);
+    { ((Server::Client *) client)->Send (data, size);
     }
 void lw_server_client_send_text (lw_server_client * client, const char * text)
-    { ((Lacewing::Server::Client *) client)->Send(text);
+    { ((Server::Client *) client)->Send (text);
     }
 void lw_server_client_send_writable (lw_server_client * client, char * data, long size)
-    { ((Lacewing::Server::Client *) client)->SendWritable(data, size);
+    { ((Server::Client *) client)->SendWritable (data, size);
     }
 lw_bool lw_server_client_cheap_buffering (lw_server_client * client)
-    { return ((Lacewing::Server::Client *) client)->CheapBuffering();
+    { return ((Server::Client *) client)->CheapBuffering ();
     }
 void lw_server_client_start_buffering (lw_server_client * client)
-    { ((Lacewing::Server::Client *) client)->StartBuffering();
+    { ((Server::Client *) client)->StartBuffering ();
     }
 void lw_server_client_flush (lw_server_client * client)
-    { ((Lacewing::Server::Client *) client)->Flush();
+    { ((Server::Client *) client)->Flush ();
     }
 void lw_server_client_disconnect (lw_server_client * client)
-    { ((Lacewing::Server::Client *) client)->Disconnect();
+    { ((Server::Client *) client)->Disconnect ();
     }
 lw_server_client * lw_server_client_next (lw_server_client * client)
-    { return (lw_server_client *) ((Lacewing::Server::Client *) client)->Next();
+    { return (lw_server_client *) ((Server::Client *) client)->Next ();
     }
 
 void lw_server_client_sendf (lw_server_client * client, const char * format, ...)
@@ -110,16 +110,16 @@ void lw_server_client_sendf (lw_server_client * client, const char * format, ...
     char * data;
     int size = LacewingFormat (data, format, args);
     
-    if(size > 0)
-        ((Lacewing::Server::Client *) client)->SendWritable (data, size);
+    if (size > 0)
+        ((Server::Client *) client)->SendWritable (data, size);
 
     va_end (args);
 }
 
-AutoHandlerFlat(Lacewing::Server, lw_server, Connect, connect)
-AutoHandlerFlat(Lacewing::Server, lw_server, Disconnect, disconnect)
-AutoHandlerFlat(Lacewing::Server, lw_server, Receive, receive)
-AutoHandlerFlat(Lacewing::Server, lw_server, Error, error)
+AutoHandlerFlat (Server, lw_server, Connect, connect)
+AutoHandlerFlat (Server, lw_server, Disconnect, disconnect)
+AutoHandlerFlat (Server, lw_server, Receive, receive)
+AutoHandlerFlat (Server, lw_server, Error, error)
 
 
 

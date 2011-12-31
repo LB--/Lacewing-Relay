@@ -32,86 +32,57 @@
 #include "FrameReader.h"
 #include "FrameBuilder.h"
 
-struct ChannelInternal;
-
-struct RelayClientInternal
+struct RelayClient::Internal
 {
-    Lacewing::RelayClient   &Client;
-    Lacewing::Client        &Socket;
-    Lacewing::UDP           &UDP;
+    RelayClient       &Client;
 
-    Lacewing::Timer         Timer;
+    Lacewing::Client  Socket;
+    Lacewing::UDP     UDP;
+    Lacewing::Timer   Timer;
 
-    Lacewing::RelayClient::HandlerConnect               HandlerConnect;
-    Lacewing::RelayClient::HandlerConnectionDenied      HandlerConnectionDenied;
-    Lacewing::RelayClient::HandlerDisconnect            HandlerDisconnect;
-    Lacewing::RelayClient::HandlerServerMessage         HandlerServerMessage;
-    Lacewing::RelayClient::HandlerChannelMessage        HandlerChannelMessage;
-    Lacewing::RelayClient::HandlerPeerMessage           HandlerPeerMessage;
-    Lacewing::RelayClient::HandlerServerChannelMessage  HandlerServerChannelMessage;
-    Lacewing::RelayClient::HandlerError                 HandlerError;
-    Lacewing::RelayClient::HandlerJoin                  HandlerJoin;
-    Lacewing::RelayClient::HandlerJoinDenied            HandlerJoinDenied;
-    Lacewing::RelayClient::HandlerLeave                 HandlerLeave;
-    Lacewing::RelayClient::HandlerLeaveDenied           HandlerLeaveDenied;
-    Lacewing::RelayClient::HandlerNameSet               HandlerNameSet;
-    Lacewing::RelayClient::HandlerNameChanged           HandlerNameChanged;
-    Lacewing::RelayClient::HandlerNameDenied            HandlerNameDenied;
-    Lacewing::RelayClient::HandlerPeerConnect           HandlerPeerConnect;
-    Lacewing::RelayClient::HandlerPeerDisconnect        HandlerPeerDisconnect;
-    Lacewing::RelayClient::HandlerPeerChangeName        HandlerPeerChangeName;
-    Lacewing::RelayClient::HandlerChannelListReceived   HandlerChannelListReceived;
-
-    RelayClientInternal(Lacewing::RelayClient &_Client, Lacewing::Client &_Socket,
-                Lacewing::UDP &_UDP, Lacewing::Pump &_EventPump) : Client(_Client),
-                    Socket(_Socket), UDP(_UDP), Message (true), Timer(_EventPump)
+    struct
     {
-        HandlerConnect               = 0;
-        HandlerConnectionDenied      = 0;
-        HandlerDisconnect            = 0; 
-        HandlerServerMessage         = 0;
-        HandlerChannelMessage        = 0;
-        HandlerPeerMessage           = 0;
-        HandlerServerChannelMessage  = 0;
-        HandlerError                 = 0;
-        HandlerJoin                  = 0;
-        HandlerJoinDenied            = 0;
-        HandlerLeave                 = 0;
-        HandlerLeaveDenied           = 0;
-        HandlerNameSet               = 0;
-        HandlerNameChanged           = 0;
-        HandlerNameDenied            = 0;
-        HandlerPeerConnect           = 0;
-        HandlerPeerDisconnect        = 0;
-        HandlerPeerChangeName        = 0;
-        HandlerChannelListReceived   = 0;
+        HandlerConnect               Connect;
+        HandlerConnectionDenied      ConnectionDenied;
+        HandlerDisconnect            Disconnect;
+        HandlerServerMessage         ServerMessage;
+        HandlerChannelMessage        ChannelMessage;
+        HandlerPeerMessage           PeerMessage;
+        HandlerServerChannelMessage  ServerChannelMessage;
+        HandlerError                 Error;
+        HandlerJoin                  Join;
+        HandlerJoinDenied            JoinDenied;
+        HandlerLeave                 Leave;
+        HandlerLeaveDenied           LeaveDenied;
+        HandlerNameSet               NameSet;
+        HandlerNameChanged           NameChanged;
+        HandlerNameDenied            NameDenied;
+        HandlerPeerConnect           PeerConnect;
+        HandlerPeerDisconnect        PeerDisconnect;
+        HandlerPeerChangeName        PeerChangeName;
+        HandlerChannelListReceived   ChannelListReceived;
 
-        Reader.MessageHandler = MessageHandler;
-        Reader.Tag = this;
+    } Handlers;
 
-        Timer.onTick(ClientTick);
-        Timer.Tag = this;
-
-        Clear();
-    }
+    Internal (RelayClient &_Client, Pump &_EventPump);
 
     FrameReader Reader;
 
     static void MessageHandler (void * Tag, unsigned char Type, char * Message, int Size);
     void        MessageHandler (unsigned char Type, char * Message, int Size, bool Blasted);
 
-    static void ClientTick (Lacewing::Timer &Timer);
+    static void ClientTick (Lacewing::Timer &);
     void        ClientTick ();
 
-    ChannelInternal * ReadChannel(MessageReader &Reader);
+    RelayClient::Channel::Internal * ReadChannel (MessageReader &Reader);
 
     FrameBuilder Message;
 
-    List <Lacewing::RelayClient::ChannelListing *> ChannelList;
+    List <RelayClient::ChannelListing *> ChannelList;
 
     void ClearChannelList()
     {
-        for (List <Lacewing::RelayClient::ChannelListing *>::Element * E = ChannelList.First; E; E = E->Next)
+        for (List <RelayClient::ChannelListing *>::Element * E = ChannelList.First; E; E = E->Next)
             delete ** E;
         
         ChannelList.Clear();
@@ -119,7 +90,7 @@ struct RelayClientInternal
 
     void Clear();
 
-    List <ChannelInternal *> Channels;
+    List <RelayClient::Channel::Internal *> Channels;
     String Name;
 
     int ID;
@@ -128,16 +99,20 @@ struct RelayClientInternal
     bool Connected;
 };
 
-struct PeerInternal
+struct RelayClient::ChannelListing::Internal
 {
-    Lacewing::RelayClient::Channel::Peer Public;
-    List <PeerInternal *>::Element * Element;
+};
 
-    ChannelInternal &Channel;
+struct RelayClient::Channel::Peer::Internal
+{
+    RelayClient::Channel::Peer Public;
+    List <RelayClient::Channel::Peer::Internal *>::Element * Element;
 
-    PeerInternal(ChannelInternal &_Channel) : Channel(_Channel)
+    RelayClient::Channel::Internal &Channel;
+
+    Internal (RelayClient::Channel::Internal &_Channel) : Channel (_Channel)
     {
-        Public.InternalTag = this;
+        Public.internal = this;
         Public.Tag = 0;
     }
 
@@ -147,40 +122,39 @@ struct PeerInternal
     bool IsChannelMaster;
 };
 
-struct ChannelInternal
+struct RelayClient::Channel::Internal
 {
-    Lacewing::RelayClient::Channel Public;
-    List <ChannelInternal *>::Element * Element;
+    RelayClient::Channel Public;
+    List <RelayClient::Channel::Internal *>::Element * Element;
 
-    RelayClientInternal &Client;
+    RelayClient::Internal &Client;
 
-    ChannelInternal(RelayClientInternal &_Client) : Client(_Client)
+    Internal (RelayClient::Internal &_Client) : Client (_Client)
     {
-        Public.InternalTag = this;
+        Public.internal = this;
         Public.Tag = 0;
     }
 
-    ~ChannelInternal()
+    ~ Internal ()
     {
-
     }
 
     int ID;
     String Name;
     bool IsChannelMaster;
 
-    List <PeerInternal *> Peers;
+    List <RelayClient::Channel::Peer::Internal *> Peers;
 
-    PeerInternal * ReadPeer(MessageReader &Reader)
+    RelayClient::Channel::Peer::Internal * ReadPeer (MessageReader &Reader)
     {
         int PeerID = Reader.Get<unsigned short>();
 
         if(Reader.Failed)
             return 0;
 
-        for(List <PeerInternal *>::Element * E = Peers.First; E; E = E->Next)
+        for (List <RelayClient::Channel::Peer::Internal *>::Element * E = Peers.First; E; E = E->Next)
         {
-            PeerInternal * Peer = ** E;
+            RelayClient::Channel::Peer::Internal * Peer = ** E;
 
             if(Peer->ID == PeerID)
                 return Peer;
@@ -190,9 +164,9 @@ struct ChannelInternal
         return 0;
     }
 
-    PeerInternal * AddNewPeer(int PeerID, int Flags, const char * Name)
+    RelayClient::Channel::Peer::Internal * AddNewPeer (int PeerID, int Flags, const char * Name)
     {
-        PeerInternal * Peer = new PeerInternal(*this);
+        RelayClient::Channel::Peer::Internal * Peer = new RelayClient::Channel::Peer::Internal (*this);
 
         Peer->ID               = PeerID;
         Peer->IsChannelMaster  = (Flags & 1) != 0;
@@ -204,11 +178,11 @@ struct ChannelInternal
     }
 };
 
-void RelayClientInternal::Clear()
+void RelayClient::Internal::Clear()
 {
     ClearChannelList();
 
-    for(List <ChannelInternal *>::Element * E = Channels.First; E; E = E->Next)
+    for (List <RelayClient::Channel::Internal *>::Element * E = Channels.First; E; E = E->Next)
         delete ** E;
     
     Channels.Clear();
@@ -219,14 +193,14 @@ void RelayClientInternal::Clear()
     Connected = false;
 }
 
-ChannelInternal * RelayClientInternal::ReadChannel(MessageReader &Reader)
+RelayClient::Channel::Internal * RelayClient::Internal::ReadChannel (MessageReader &Reader)
 {
     int ChannelID = Reader.Get <unsigned short> ();
 
     if(Reader.Failed)
         return 0;
 
-    for(List <ChannelInternal *>::Element * E = Channels.First; E; E = E->Next)
+    for(List <RelayClient::Channel::Internal *>::Element * E = Channels.First; E; E = E->Next)
         if((** E)->ID == ChannelID)
             return ** E;
      
@@ -234,79 +208,89 @@ ChannelInternal * RelayClientInternal::ReadChannel(MessageReader &Reader)
     return 0;
 }
 
-void HandlerConnect(Lacewing::Client &Socket)
+static void HandlerConnect (Client &Socket)
 {
-    RelayClientInternal &Internal = *(RelayClientInternal *) Socket.Tag;
+    RelayClient::Internal * internal = (RelayClient::Internal *) Socket.Tag;
 
     /* Opening 0 byte */
     Socket.Send ("", 1);
 
-    Internal.UDP.Host(Socket.ServerAddress());
+    internal->UDP.Host (Socket.ServerAddress ());
 
-    FrameBuilder &Message = Internal.Message;
+    FrameBuilder &Message = internal->Message;
 
     Message.AddHeader(0, 0); /* Request */
 
     Message.Add <unsigned char> (0); /* Connect */
     Message.Add ("revision 3", -1);
 
-    Message.Send(Internal.Socket);
+    Message.Send(internal->Socket);
 }
 
-void HandlerDisconnect(Lacewing::Client &Socket)
+static void HandlerDisconnect (Client &Socket)
 {
-    RelayClientInternal &Internal = *(RelayClientInternal *) Socket.Tag;
+    RelayClient::Internal * internal = (RelayClient::Internal *) Socket.Tag;
 
-    Internal.Timer.Stop();
+    internal->Timer.Stop();
 
-    Internal.Connected = false;
+    internal->Connected = false;
 
-    if(Internal.HandlerDisconnect)
-        Internal.HandlerDisconnect(Internal.Client);
+    if (internal->Handlers.Disconnect)
+        internal->Handlers.Disconnect (internal->Client);
 
-    Internal.Clear();
+    internal->Clear ();
 }
 
-void HandlerReceive(Lacewing::Client &Socket, char * Data, int Size)
+static void HandlerReceive (Client &Socket, char * Data, int Size)
 {
-    RelayClientInternal &Internal = *(RelayClientInternal *) Socket.Tag;
+    RelayClient::Internal * internal = (RelayClient::Internal *) Socket.Tag;
 
-    Internal.Reader.Process(Data, Size);
+    internal->Reader.Process (Data, Size);
 }
 
-void HandlerError(Lacewing::Client &Socket, Lacewing::Error &Error)
+static void HandlerError (Client &Socket, Error &Error)
 {
-    RelayClientInternal &Internal = *(RelayClientInternal *) Socket.Tag;
+    RelayClient::Internal * internal = (RelayClient::Internal *) Socket.Tag;
 
     Error.Add("Socket error");
     
-    if(Internal.HandlerError)
-        Internal.HandlerError(Internal.Client, Error);
+    if (internal->Handlers.Error)
+        internal->Handlers.Error (internal->Client, Error);
 }
 
-void HandlerClientUDPReceive(Lacewing::UDP &UDP, Lacewing::Address &Address, char * Data, int Size)
+void HandlerClientUDPReceive (UDP &UDP, Address &Address, char * Data, int Size)
 {
-    RelayClientInternal &Internal = *(RelayClientInternal *) UDP.Tag;
+    RelayClient::Internal * internal = (RelayClient::Internal *) UDP.Tag;
 
     if(!Size)
         return;
 
-    Internal.MessageHandler(*Data, Data + 1, Size - 1, true);
+    internal->MessageHandler (*Data, Data + 1, Size - 1, true);
 }
 
-void HandlerClientUDPError(Lacewing::UDP &UDP, Lacewing::Error &Error)
+void HandlerClientUDPError (UDP &UDP, Error &Error)
 {
-    RelayClientInternal &Internal = *(RelayClientInternal *) UDP.Tag;
+    RelayClient::Internal * internal = (RelayClient::Internal *) UDP.Tag;
 
     Error.Add("Socket error");
     
-    if(Internal.HandlerError)
-        Internal.HandlerError(Internal.Client, Error);
+    if (internal->Handlers.Error)
+        internal->Handlers.Error (internal->Client, Error);
 }
 
-Lacewing::RelayClient::RelayClient(Lacewing::Pump &EventPump) : Socket(EventPump), UDP(EventPump)
+RelayClient::Internal::Internal (RelayClient &_Client, Pump &_EventPump)
+    : Client (_Client), Message (true), Socket (_EventPump), Timer (_EventPump), UDP (_EventPump)
 {
-    LacewingInitialise();
+    memset (&Handlers, 0, sizeof (Handlers));
+
+    Reader.MessageHandler = MessageHandler;
+    Reader.Tag = this;
+
+    Timer.onTick (ClientTick);
+
+    Socket.Tag = UDP.Tag = Timer.Tag = this;
+
+    Socket.DisableNagling ();
 
     Socket.onConnect     (::HandlerConnect);
     Socket.onDisconnect  (::HandlerDisconnect);
@@ -315,76 +299,81 @@ Lacewing::RelayClient::RelayClient(Lacewing::Pump &EventPump) : Socket(EventPump
 
     UDP.onReceive (::HandlerClientUDPReceive);
     UDP.onError   (::HandlerClientUDPError);
- 
-    Socket.DisableNagling ();
 
-    InternalTag = Socket.Tag = UDP.Tag = new RelayClientInternal(*this, Socket, UDP, EventPump);
-    Tag         = 0;
+    Clear ();
 }
 
-Lacewing::RelayClient::~RelayClient()
+RelayClient::RelayClient (Pump &EventPump)
 {
-    Disconnect();
+    LacewingInitialise ();
 
-    delete ((RelayClientInternal *) InternalTag);
+    internal = new RelayClient::Internal (*this, EventPump);
+
+    Tag = 0;
 }
 
-void Lacewing::RelayClient::Connect(const char * Host, int Port)
+RelayClient::~RelayClient ()
 {
-    Socket.Connect(Host, Port);
+    Disconnect ();
+
+    delete internal;
 }
 
-void Lacewing::RelayClient::Connect(Lacewing::Address &Address)
+void RelayClient::Connect (const char * Host, int Port)
 {
-    if(!Address.Port())
-        Address.Port(6121);
+    if (!Port)
+        Port = 6121;
 
-    Socket.Connect(Address);
+    internal->Socket.Connect (Host, Port);
 }
 
-void Lacewing::RelayClient::Disconnect()
+void RelayClient::Connect (Address &Address)
 {
-    Socket.Disconnect();
+    internal->Socket.Connect (Address);
 }
 
-bool Lacewing::RelayClient::Connected()
+void RelayClient::Disconnect ()
 {
-    return ((RelayClientInternal *) InternalTag)->Connected;
+    internal->Socket.Disconnect ();
 }
 
-bool Lacewing::RelayClient::Connecting()
+bool RelayClient::Connected ()
 {
-    return (!Connected ()) && (Socket.Connected () || Socket.Connecting ());
+    return internal->Connected;
 }
 
-const char * Lacewing::RelayClient::Name()
+bool RelayClient::Connecting ()
 {
-    return ((RelayClientInternal *) InternalTag)->Name;
+    return (!Connected ()) &&
+        (internal->Socket.Connected () || internal->Socket.Connecting ());
 }
 
-void Lacewing::RelayClient::ListChannels()
+const char * RelayClient::Name ()
 {
-    RelayClientInternal &Internal = *((RelayClientInternal *) InternalTag);
-    FrameBuilder   &Message  = Internal.Message;
+    return internal->Name;
+}
+
+void RelayClient::ListChannels ()
+{
+    FrameBuilder   &Message  = internal->Message;
 
     Message.AddHeader        (0, 0);  /* Request */
     Message.Add <unsigned char> (4);  /* ChannelList */
     
-    Message.Send(Internal.Socket);
+    Message.Send (internal->Socket);
 }
 
-void Lacewing::RelayClient::Name(const char * Name)
+void RelayClient::Name (const char * Name)
 {
-    RelayClientInternal &Internal = *((RelayClientInternal *) InternalTag);
-    FrameBuilder   &Message  = Internal.Message;
+    FrameBuilder   &Message  = internal->Message;
 
     if(!*Name)
     {
         Lacewing::Error Error;
         Error.Add("Can't set a blank name");
         
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error(*this, Error);
 
         return;
     }
@@ -393,21 +382,20 @@ void Lacewing::RelayClient::Name(const char * Name)
     Message.Add <unsigned char> (1);  /* SetName */
     Message.Add (Name, -1);
 
-    Message.Send(Internal.Socket);
+    Message.Send (internal->Socket);
 }
 
-void Lacewing::RelayClient::Join(const char * Channel, bool Hidden, bool AutoClose)
+void RelayClient::Join (const char * Channel, bool Hidden, bool AutoClose)
 {
-    RelayClientInternal &Internal = *((RelayClientInternal *) InternalTag);
-    FrameBuilder   &Message  = Internal.Message;
+    FrameBuilder &Message = internal->Message;
 
-    if(!*Name())
+    if(!*Name ())
     {
         Lacewing::Error Error;
         Error.Add("Set a name before joining a channel");
         
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (*this, Error);
 
         return;
     }
@@ -417,8 +405,8 @@ void Lacewing::RelayClient::Join(const char * Channel, bool Hidden, bool AutoClo
         Lacewing::Error Error;
         Error.Add("Can't join a channel with a blank name");
         
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (*this, Error);
 
         return;
     }
@@ -428,161 +416,156 @@ void Lacewing::RelayClient::Join(const char * Channel, bool Hidden, bool AutoClo
     Message.Add <unsigned char> ((Hidden ? 1 : 0) | (AutoClose ? 2 : 0));
     Message.Add (Channel, -1);
 
-    Message.Send(Internal.Socket);
+    Message.Send (internal->Socket);
 }
 
-void Lacewing::RelayClient::SendServer(int Subchannel, const char * Data, int Size, int Variant)
+void RelayClient::SendServer (int Subchannel, const char * Data, int Size, int Variant)
 {
     if(Size == -1)
         Size = strlen(Data);
 
-    RelayClientInternal &Internal = *((RelayClientInternal *) InternalTag);
-    FrameBuilder &Message = Internal.Message;
+    FrameBuilder &Message = internal->Message;
 
     Message.AddHeader(1, Variant); /* BinaryServerMessage */
     Message.Add <unsigned char>  (Subchannel);
     Message.Add (Data, Size);
 
-    Message.Send(Internal.Socket);
+    Message.Send (internal->Socket);
 }
 
-void Lacewing::RelayClient::BlastServer(int Subchannel, const char * Data, int Size, int Variant)
+void RelayClient::BlastServer (int Subchannel, const char * Data, int Size, int Variant)
 {
     if(Size == -1)
         Size = strlen(Data);
 
-    RelayClientInternal &Internal = *((RelayClientInternal *) InternalTag);
-    FrameBuilder &Message = Internal.Message;
+    FrameBuilder &Message = internal->Message;
 
-    Message.AddHeader (1, Variant, 1, Internal.ID); /* BinaryServerMessage */
+    Message.AddHeader (1, Variant, 1, internal->ID); /* BinaryServerMessage */
     Message.Add <unsigned char> (Subchannel);
     Message.Add (Data, Size);
 
-    Message.Send(Internal.UDP, Internal.Socket.ServerAddress());
+    Message.Send (internal->UDP, internal->Socket.ServerAddress ());
 }
 
-void Lacewing::RelayClient::Channel::Send(int Subchannel, const char * Data, int Size, int Variant)
+void RelayClient::Channel::Send (int Subchannel, const char * Data, int Size, int Variant)
 {
     if(Size == -1)
         Size = strlen(Data);
 
-    ChannelInternal &Channel = *((ChannelInternal *) InternalTag);
-    RelayClientInternal &Internal = Channel.Client;
-    FrameBuilder &Message = Internal.Message;
+    RelayClient::Internal &Client = internal->Client;
+    FrameBuilder &Message = Client.Message;
 
     Message.AddHeader (2, Variant); /* BinaryChannelMessage */
     Message.Add <unsigned char>  (Subchannel);
-    Message.Add <unsigned short> (Channel.ID);
+    Message.Add <unsigned short> (internal->ID);
     Message.Add (Data, Size);
 
-    Message.Send(Internal.Socket);
+    Message.Send (Client.Socket);
 }
 
-void Lacewing::RelayClient::Channel::Blast(int Subchannel, const char * Data, int Size, int Variant)
+void RelayClient::Channel::Blast (int Subchannel, const char * Data, int Size, int Variant)
 {
     if(Size == -1)
         Size = strlen(Data);
 
-    ChannelInternal &Channel = *((ChannelInternal *) InternalTag);
-    RelayClientInternal &Internal = Channel.Client;
-    FrameBuilder &Message = Internal.Message;
+    RelayClient::Internal &Client = internal->Client;
+    FrameBuilder &Message = Client.Message;
 
-    Message.AddHeader(2, Variant, 1, Internal.ID); /* BinaryChannelMessage */
+    Message.AddHeader (2, Variant, 1, Client.ID); /* BinaryChannelMessage */
     Message.Add <unsigned char>  (Subchannel);
-    Message.Add <unsigned short> (Channel.ID);
+    Message.Add <unsigned short> (internal->ID);
     Message.Add (Data, Size);
 
-    Message.Send(Internal.UDP, Internal.Socket.ServerAddress());
+    Message.Send (Client.UDP, Client.Socket.ServerAddress ());
 }
 
-void Lacewing::RelayClient::Channel::Peer::Send(int Subchannel, const char * Data, int Size, int Variant)
+void RelayClient::Channel::Peer::Send (int Subchannel, const char * Data, int Size, int Variant)
 {
     if(Size == -1)
         Size = strlen(Data);
 
-    PeerInternal &Peer = *((PeerInternal *) InternalTag);
-    ChannelInternal &Channel = Peer.Channel;
-    RelayClientInternal &Internal = Channel.Client;
-    FrameBuilder &Message = Internal.Message;
+    RelayClient::Channel::Internal &Channel = internal->Channel;
+    RelayClient::Internal &Client = Channel.Client;
+    FrameBuilder &Message = Client.Message;
 
-    Message.AddHeader(3, Variant); /* BinaryPeerMessage */
+    Message.AddHeader (3, Variant); /* BinaryPeerMessage */
     Message.Add <unsigned char>  (Subchannel);
     Message.Add <unsigned short> (Channel.ID);
-    Message.Add <unsigned short> (Peer.ID);
+    Message.Add <unsigned short> (internal->ID);
     Message.Add (Data, Size);
 
-    Message.Send(Internal.Socket);
+    Message.Send (Client.Socket);
 }
 
-void Lacewing::RelayClient::Channel::Peer::Blast(int Subchannel, const char * Data, int Size, int Variant)
+void RelayClient::Channel::Peer::Blast (int Subchannel, const char * Data, int Size, int Variant)
 {
     if(Size == -1)
         Size = strlen(Data);
 
-    PeerInternal &Peer = *((PeerInternal *) InternalTag);
-    ChannelInternal &Channel = Peer.Channel;
-    RelayClientInternal &Internal = Channel.Client;
-    FrameBuilder &Message = Internal.Message;
+    RelayClient::Channel::Peer::Internal &Peer = *((RelayClient::Channel::Peer::Internal *) internal);
+    RelayClient::Channel::Internal &Channel = Peer.Channel;
+    RelayClient::Internal &Client = Channel.Client;
+    FrameBuilder &Message = Client.Message;
 
-    Message.AddHeader(3, Variant, 1, Internal.ID); /* BinaryPeerMessage */
+    Message.AddHeader (3, Variant, 1, Client.ID); /* BinaryPeerMessage */
     Message.Add <unsigned char>  (Subchannel);
     Message.Add <unsigned short> (Channel.ID);
-    Message.Add <unsigned short> (Peer.ID);
+    Message.Add <unsigned short> (internal->ID);
     Message.Add (Data, Size);
 
-    Message.Send(Internal.UDP, Internal.Socket.ServerAddress());
+    Message.Send (Client.UDP, Client.Socket.ServerAddress ());
 }
 
-void Lacewing::RelayClient::Channel::Leave()
+void RelayClient::Channel::Leave ()
 {
-    ChannelInternal &Channel  = *((ChannelInternal *) InternalTag);
-    RelayClientInternal  &Internal = Channel.Client;
-    FrameBuilder    &Message  = Internal.Message;
+    RelayClient::Channel::Internal &Channel  = *((RelayClient::Channel::Internal *) internal);
+    RelayClient::Internal &Client = Channel.Client;
+    FrameBuilder &Message = Client.Message;
 
-    Internal.Message.AddHeader(0, 0); /* Request */
+    Message.AddHeader (0, 0); /* Request */
 
     Message.Add <unsigned char>  (3);  /* LeaveChannel */
     Message.Add <unsigned short> (Channel.ID);
 
-    Message.Send(Internal.Socket);
+    Message.Send (Client.Socket);
 }
 
-const char * Lacewing::RelayClient::Channel::Name()
+const char * RelayClient::Channel::Name ()
 {
-    return ((ChannelInternal *) InternalTag)->Name;
+    return ((RelayClient::Channel::Internal *) internal)->Name;
 }
 
-int Lacewing::RelayClient::Channel::PeerCount()
+int RelayClient::Channel::PeerCount ()
 {
-    return ((ChannelInternal *) InternalTag)->Peers.Size;
+    return ((RelayClient::Channel::Internal *) internal)->Peers.Size;
 }
 
-const char * Lacewing::RelayClient::Channel::Peer::Name()
+const char * RelayClient::Channel::Peer::Name ()
 {
-    return ((PeerInternal *) InternalTag)->Name;
+    return ((RelayClient::Channel::Peer::Internal *) internal)->Name;
 }
 
-int Lacewing::RelayClient::ChannelCount()
+int RelayClient::ChannelCount ()
 {
-     return ((RelayClientInternal *) InternalTag)->Channels.Size;
+     return internal->Channels.Size;
 }
 
-int Lacewing::RelayClient::ID()
+int RelayClient::ID ()
 {
-    return ((RelayClientInternal *) InternalTag)->ID;
+    return internal->ID;
 }
 
-Lacewing::Address &Lacewing::RelayClient::ServerAddress()
+Address &RelayClient::ServerAddress ()
 {
-    return Socket.ServerAddress();
+    return internal->Socket.ServerAddress ();
 }
 
-const char * Lacewing::RelayClient::WelcomeMessage()
+const char * RelayClient::WelcomeMessage ()
 {
-    return ((RelayClientInternal *) InternalTag)->WelcomeMessage;
+    return internal->WelcomeMessage;
 }
 
-void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int Size, bool Blasted)
+void RelayClient::Internal::MessageHandler (unsigned char Type, char * Message, int Size, bool Blasted)
 {
     unsigned char MessageTypeID  = (Type >> 4);
     unsigned char Variant        = (Type << 4);
@@ -601,7 +584,7 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
             if(Reader.Failed)
                 break;
 
-            switch(ResponseType)
+            switch (ResponseType)
             {
                 case 0: /* Connect */
                 {
@@ -610,7 +593,7 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
                         ID = Reader.Get <unsigned short> ();
                         WelcomeMessage = Reader.GetRemaining();
 
-                        if(Reader.Failed)
+                        if (Reader.Failed)
                             break;
 
                         ClientTick();
@@ -620,8 +603,8 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
                     }
                     else
                     {
-                        if(HandlerConnectionDenied)
-                            HandlerConnectionDenied(Client, Reader.GetRemaining());
+                        if (Handlers.ConnectionDenied)
+                            Handlers.ConnectionDenied(Client, Reader.GetRemaining ());
                     }
 
                     break;
@@ -641,24 +624,24 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
                         {
                             this->Name = Name;
 
-                            if(HandlerNameSet)
-                                HandlerNameSet(Client);
+                            if (Handlers.NameSet)
+                                Handlers.NameSet (Client);
                         }
                         else
                         {
                             String OldName = this->Name;
                             this->Name = Name;
 
-                            if(HandlerNameChanged)
-                                HandlerNameChanged(Client, OldName);
+                            if (Handlers.NameChanged)
+                                Handlers.NameChanged (Client, OldName);
                         }
                     }
                     else
                     {
                         char * DenyReason = Reader.GetRemaining();
 
-                        if(HandlerNameDenied)
-                            HandlerNameDenied(Client, Name, DenyReason);
+                        if (Handlers.NameDenied)
+                            Handlers.NameDenied (Client, Name, DenyReason);
                     }
 
                     break;
@@ -680,13 +663,13 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
                         if(Reader.Failed)
                             break;
 
-                        ChannelInternal * Channel = new ChannelInternal(*this);
+                        RelayClient::Channel::Internal * Channel = new RelayClient::Channel::Internal (*this);
 
                         Channel->ID              = ChannelID;
                         Channel->Name            = Name;
                         Channel->IsChannelMaster = (Flags & 1) != 0;
 
-                        for(;;)
+                        for (;;)
                         {
                             int PeerID     = Reader.Get <unsigned short> ();
                             int Flags      = Reader.Get <unsigned char>  ();
@@ -705,15 +688,15 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
 
                         Channel->Element = Channels.Push (Channel);
 
-                        if(HandlerJoin)
-                            HandlerJoin(Client, Channel->Public);
+                        if (Handlers.Join)
+                            Handlers.Join (Client, Channel->Public);
                     }
                     else
                     {
                         char * DenyReason = Reader.GetRemaining();
 
-                        if(HandlerJoinDenied)
-                            HandlerJoinDenied(Client, Name, DenyReason);
+                        if (Handlers.JoinDenied)
+                            Handlers.JoinDenied (Client, Name, DenyReason);
                     }
 
                     break;
@@ -721,7 +704,7 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
                 
                 case 3: /* LeaveChannel */
                 {
-                    ChannelInternal * Channel = ReadChannel(Reader);
+                    RelayClient::Channel::Internal * Channel = ReadChannel (Reader);
 
                     if(Reader.Failed)
                         break;
@@ -730,8 +713,8 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
                     {
                         Channels.Erase (Channel->Element);
 
-                        if(HandlerLeave)
-                            HandlerLeave(Client, Channel->Public);
+                        if (Handlers.Leave)
+                            Handlers.Leave (Client, Channel->Public);
 
                         delete Channel;
                     }
@@ -739,8 +722,8 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
                     {
                         char * DenyReason = Reader.GetRemaining();
 
-                        if(HandlerLeaveDenied)
-                            HandlerLeaveDenied(Client, Channel->Public, DenyReason);
+                        if (Handlers.LeaveDenied)
+                            Handlers.LeaveDenied (Client, Channel->Public, DenyReason);
                     }
 
                     break;
@@ -763,15 +746,17 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
                         if(Reader.Failed)
                             break;
 
-                        Lacewing::RelayClient::ChannelListing * Listing = new Lacewing::RelayClient::ChannelListing;
+                        RelayClient::ChannelListing * Listing = new RelayClient::ChannelListing;
 
                         Listing->Name         = strdup(Name);
                         Listing->PeerCount    = PeerCount;
-                        Listing->InternalTag  = ChannelList.Push (Listing);
+
+                        Listing->internal =
+                            (RelayClient::ChannelListing::Internal *) ChannelList.Push (Listing);
                     }
 
-                    if(HandlerChannelListReceived)
-                        HandlerChannelListReceived(Client);
+                    if (Handlers.ChannelListReceived)
+                        Handlers.ChannelListReceived (Client);
 
                     break;
                 }
@@ -799,17 +784,17 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
             if(Reader.Failed)
                 break;
 
-            if(HandlerServerMessage)
-                HandlerServerMessage(Client, Blasted, Subchannel, Message, Size, Variant);
+            if (Handlers.ServerMessage)
+                Handlers.ServerMessage (Client, Blasted, Subchannel, Message, Size, Variant);
 
             break;
         }
 
         case 2: /* BinaryChannelMessage */
         {
-            int Subchannel            = Reader.Get <unsigned char> ();
-            ChannelInternal * Channel = ReadChannel          (Reader);
-            PeerInternal    * Peer    = Channel->ReadPeer    (Reader);
+            int Subchannel = Reader.Get <unsigned char> ();
+            RelayClient::Channel::Internal * Channel = ReadChannel (Reader);
+            RelayClient::Channel::Peer::Internal * Peer = Channel->ReadPeer (Reader);
 
             char * Message;
             unsigned int Size;
@@ -819,8 +804,8 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
             if(Reader.Failed)
                 break;
 
-            if(HandlerChannelMessage)
-                HandlerChannelMessage(Client, Channel->Public, Peer->Public, Blasted,
+            if (Handlers.ChannelMessage)
+                Handlers.ChannelMessage (Client, Channel->Public, Peer->Public, Blasted,
                                         Subchannel, Message, Size, Variant);
 
             break;
@@ -828,9 +813,9 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
         
         case 3: /* BinaryPeerMessage */
         {
-            int Subchannel            = Reader.Get <unsigned char> ();
-            ChannelInternal * Channel = ReadChannel          (Reader);
-            PeerInternal    * Peer    = Channel->ReadPeer    (Reader);
+            int Subchannel = Reader.Get <unsigned char> ();
+            RelayClient::Channel::Internal * Channel = ReadChannel (Reader);
+            RelayClient::Channel::Peer::Internal * Peer = Channel->ReadPeer (Reader);
 
             char * Message;
             unsigned int Size;
@@ -840,8 +825,8 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
             if(Reader.Failed)
                 break;
 
-            if(HandlerPeerMessage)
-                HandlerPeerMessage(Client, Channel->Public, Peer->Public, Blasted,
+            if (Handlers.PeerMessage)
+                Handlers.PeerMessage (Client, Channel->Public, Peer->Public, Blasted,
                                          Subchannel, Message, Size, Variant);
 
             break;
@@ -849,8 +834,8 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
 
         case 4: /* BinaryServerChannelMessage */
         {
-            int Subchannel            = Reader.Get <unsigned char> ();
-            ChannelInternal * Channel = ReadChannel          (Reader);
+            int Subchannel = Reader.Get <unsigned char> ();
+            RelayClient::Channel::Internal * Channel = ReadChannel (Reader);
 
             char * Message;
             unsigned int Size;
@@ -860,8 +845,8 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
             if(Reader.Failed)
                 break;
 
-            if(HandlerServerChannelMessage)
-                HandlerServerChannelMessage (Client, Channel->Public, Blasted,
+            if (Handlers.ServerChannelMessage)
+                Handlers.ServerChannelMessage (Client, Channel->Public, Blasted,
                                 Subchannel, Message, Size, Variant);
 
             break;
@@ -876,15 +861,15 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
 
         case 9: /* Peer */
         {
-            ChannelInternal * Channel = ReadChannel (Reader);
+            RelayClient::Channel::Internal * Channel = ReadChannel (Reader);
             
-            if(Reader.Failed)
+            if (Reader.Failed)
                 break;
 
             int PeerID = Reader.Get <unsigned short> ();
-            PeerInternal * Peer = 0;
+            RelayClient::Channel::Peer::Internal * Peer = 0;
 
-            for(List <PeerInternal *>::Element * E = Channel->Peers.First; E; E = E->Next)
+            for (List <RelayClient::Channel::Peer::Internal *>::Element * E = Channel->Peers.First; E; E = E->Next)
             {
                 if((** E)->ID == PeerID)
                 {
@@ -905,8 +890,8 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
                 
                 Channel->Peers.Erase (Peer->Element);
 
-                if(HandlerPeerDisconnect)
-                    HandlerPeerDisconnect(Client, Channel->Public, Peer->Public);
+                if (Handlers.PeerDisconnect)
+                    Handlers.PeerDisconnect (Client, Channel->Public, Peer->Public);
                 
                 delete Peer;
                 break;
@@ -918,23 +903,23 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
 
                 Peer = Channel->AddNewPeer (PeerID, Flags, Name);
 
-                if(HandlerPeerConnect)
-                    HandlerPeerConnect(Client, Channel->Public, Peer->Public);
+                if (Handlers.PeerConnect)
+                    Handlers.PeerConnect (Client, Channel->Public, Peer->Public);
 
                 break;
             }
 
             /* Existing peer */
 
-            if(strcmp(Name, Peer->Name))
+            if (strcmp(Name, Peer->Name))
             {
                 /* Peer is changing their name */
 
                 String OldName (Peer->Name);
                 Peer->Name = Name;
 
-                if(HandlerPeerChangeName)
-                    HandlerPeerChangeName(Client, Channel->Public, Peer->Public, OldName);
+                if (Handlers.PeerChangeName)
+                    Handlers.PeerChangeName (Client, Channel->Public, Peer->Public, OldName);
             }
 
             Peer->IsChannelMaster = (Flags & 1) != 0;
@@ -950,8 +935,8 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
             Timer.Stop();
             Connected = true;
 
-            if(HandlerConnect)
-                HandlerConnect(Client);
+            if (Handlers.Connect)
+                Handlers.Connect (Client);
 
             break;
 
@@ -966,103 +951,95 @@ void RelayClientInternal::MessageHandler(unsigned char Type, char * Message, int
 }
 
 
-void RelayClientInternal::MessageHandler(void * Tag, unsigned char Type, char * Message, int Size)
+void RelayClient::Internal::MessageHandler (void * Tag, unsigned char Type, char * Message, int Size)
 {
-    ((RelayClientInternal *) Tag)->MessageHandler(Type, Message, Size, false);
+    ((RelayClient::Internal *) Tag)->MessageHandler (Type, Message, Size, false);
 }
 
-void RelayClientInternal::ClientTick(Lacewing::Timer &Timer)
+void RelayClient::Internal::ClientTick (Lacewing::Timer &Timer)
 {
-    ((RelayClientInternal *) Timer.Tag)->ClientTick();
+    ((RelayClient::Internal *) Timer.Tag)->ClientTick ();
 }
 
-void RelayClientInternal::ClientTick()
+void RelayClient::Internal::ClientTick ()
 {
     Message.AddHeader (7, 0, 1, ID); /* UDPHello */
     Message.Send      (UDP, Socket.ServerAddress());
 }
 
-bool Lacewing::RelayClient::Channel::Peer::IsChannelMaster()
+bool RelayClient::Channel::Peer::IsChannelMaster ()
 {
-    PeerInternal &Internal = *(PeerInternal *) InternalTag;
-
-    return Internal.IsChannelMaster;
+    return internal->IsChannelMaster;
 }
 
-int Lacewing::RelayClient::Channel::Peer::ID()
+int RelayClient::Channel::Peer::ID ()
 {
-    PeerInternal &Internal = *(PeerInternal *) InternalTag;
-
-    return Internal.ID;
+    return internal->ID;
 }
 
-bool Lacewing::RelayClient::Channel::IsChannelMaster()
+bool RelayClient::Channel::IsChannelMaster ()
 {
-    ChannelInternal &Internal = *(ChannelInternal *) InternalTag;
-
-    return Internal.IsChannelMaster;
+    return internal->IsChannelMaster;
 }
 
-Lacewing::RelayClient::Channel * Lacewing::RelayClient::FirstChannel ()
+RelayClient::Channel * RelayClient::FirstChannel ()
 {
-    return ((RelayClientInternal *) InternalTag)->Channels.First ? 
-        &(** ((RelayClientInternal *) InternalTag)->Channels.First)->Public : 0;
+    return internal->Channels.First ? 
+        &(** internal->Channels.First)->Public : 0;
 }
 
-Lacewing::RelayClient::Channel * Lacewing::RelayClient::Channel::Next ()
+RelayClient::Channel * RelayClient::Channel::Next ()
 {
-    return ((ChannelInternal *) InternalTag)->Element->Next ?
-        &(** ((ChannelInternal *) InternalTag)->Element->Next)->Public : 0;
+    return ((RelayClient::Channel::Internal *) internal)->Element->Next ?
+        &(** ((RelayClient::Channel::Internal *) internal)->Element->Next)->Public : 0;
 }
 
-Lacewing::RelayClient::Channel::Peer * Lacewing::RelayClient::Channel::FirstPeer ()
+RelayClient::Channel::Peer * RelayClient::Channel::FirstPeer ()
 {
-    return ((ChannelInternal *) InternalTag)->Peers.First ?
-            &(** ((ChannelInternal *) InternalTag)->Peers.First)->Public : 0;
+    return ((RelayClient::Channel::Internal *) internal)->Peers.First ?
+            &(** ((RelayClient::Channel::Internal *) internal)->Peers.First)->Public : 0;
 }
 
-Lacewing::RelayClient::Channel::Peer * Lacewing::RelayClient::Channel::Peer::Next ()
+RelayClient::Channel::Peer * RelayClient::Channel::Peer::Next ()
 {
-    return ((PeerInternal *) InternalTag)->Element->Next ?
-        &(** ((PeerInternal *) InternalTag)->Element->Next)->Public : 0;
+    return ((RelayClient::Channel::Peer::Internal *) internal)->Element->Next ?
+        &(** ((RelayClient::Channel::Peer::Internal *) internal)->Element->Next)->Public : 0;
 }
 
-int Lacewing::RelayClient::ChannelListingCount ()
+int RelayClient::ChannelListingCount ()
 {
-    return ((RelayClientInternal *) InternalTag)->ChannelList.Size;
+    return internal->ChannelList.Size;
 }
 
-Lacewing::RelayClient::ChannelListing * Lacewing::RelayClient::FirstChannelListing ()
+RelayClient::ChannelListing * RelayClient::FirstChannelListing ()
 {
-    return ((RelayClientInternal *) InternalTag)->ChannelList.First ?
-        ** ((RelayClientInternal *) InternalTag)->ChannelList.First : 0;
+    return internal->ChannelList.First ?
+        ** internal->ChannelList.First : 0;
 }
 
-Lacewing::RelayClient::ChannelListing * Lacewing::RelayClient::ChannelListing::Next ()
+RelayClient::ChannelListing * RelayClient::ChannelListing::Next ()
 {
-    return ((List <Lacewing::RelayClient::ChannelListing *>::Element *) InternalTag)->Next ?
-        ** ((List <Lacewing::RelayClient::ChannelListing *>::Element *) InternalTag)->Next : 0; 
+    return ((List <RelayClient::ChannelListing *>::Element *) internal)->Next ?
+        ** ((List <RelayClient::ChannelListing *>::Element *) internal)->Next : 0; 
 }
 
-
-
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, Connect)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, ConnectionDenied)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, Disconnect) 
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, ServerMessage)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, ChannelMessage)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, PeerMessage)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, ServerChannelMessage)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, Error)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, Join)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, JoinDenied)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, Leave)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, LeaveDenied)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, NameSet)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, NameChanged)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, NameDenied)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, PeerConnect)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, PeerDisconnect)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, PeerChangeName)
-AutoHandlerFunctions(Lacewing::RelayClient, RelayClientInternal, ChannelListReceived)
+AutoHandlerFunctions (RelayClient, Connect)
+AutoHandlerFunctions (RelayClient, ConnectionDenied)
+AutoHandlerFunctions (RelayClient, Disconnect) 
+AutoHandlerFunctions (RelayClient, ServerMessage)
+AutoHandlerFunctions (RelayClient, ChannelMessage)
+AutoHandlerFunctions (RelayClient, PeerMessage)
+AutoHandlerFunctions (RelayClient, ServerChannelMessage)
+AutoHandlerFunctions (RelayClient, Error)
+AutoHandlerFunctions (RelayClient, Join)
+AutoHandlerFunctions (RelayClient, JoinDenied)
+AutoHandlerFunctions (RelayClient, Leave)
+AutoHandlerFunctions (RelayClient, LeaveDenied)
+AutoHandlerFunctions (RelayClient, NameSet)
+AutoHandlerFunctions (RelayClient, NameChanged)
+AutoHandlerFunctions (RelayClient, NameDenied)
+AutoHandlerFunctions (RelayClient, PeerConnect)
+AutoHandlerFunctions (RelayClient, PeerDisconnect)
+AutoHandlerFunctions (RelayClient, PeerChangeName)
+AutoHandlerFunctions (RelayClient, ChannelListReceived)
 

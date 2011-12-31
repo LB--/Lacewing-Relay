@@ -13,7 +13,6 @@ LOCAL_SRC_FILES     := \
     ../src/Filter.cc \
     ../src/Address.cc \
     ../src/Error.cc \
-    ../src/Thread.cc \
     ../src/FlashPolicy.cc \
     ../src/relay/RelayServer.cc \
     ../src/relay/RelayClient.cc \
@@ -29,7 +28,7 @@ LOCAL_SRC_FILES     := \
     ../src/unix/Timer.cc \
     ../src/unix/UDP.cc \
     ../src/unix/Client.cc \
-    ../src/unix/Pump.cc \
+    ../src/unix/Thread.cc \
     ../src/c/addr_flat.cc \
     ../src/c/eventpump_flat.cc \
     ../src/c/global_flat.cc \

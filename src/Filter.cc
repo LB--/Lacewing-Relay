@@ -29,101 +29,249 @@
 
 #include "Common.h"
 
-struct FilterInternal
+struct Filter::Internal
 {
-    FilterInternal() : RemoteAddress((unsigned int) 0, 0)
+    Internal ()
     {
-        LocalIP = 0;
-        LocalPort = 0;
+        LocalPort = RemotePort = 0;
+        Local     = Remote     = 0;
 
-        Reuse = false;
+        Reuse  = false;
+        IPv6   = true;
     }
 
-    int LocalIP;
-    int LocalPort;
+    bool Reuse, IPv6;
 
-    Lacewing::Address RemoteAddress;
-    
-    bool Reuse;
+    Lacewing::Address * Local, * Remote;
+    int LocalPort, RemotePort;
 };
 
-Lacewing::Filter::Filter()
+Filter::Filter ()
 {
-    InternalTag = new FilterInternal;
-    Tag         = 0;
+    internal  = new Filter::Internal;
+    Tag       = 0;
 }
 
-Lacewing::Filter::Filter(const Filter &_Filter)
+Filter::Filter (Filter &_Filter)
 {
-    InternalTag = new FilterInternal;
-    Tag         = 0;
-
-    Remote        (_Filter.Remote());
-    LocalIP       (_Filter.LocalIP());
-    LocalPort     (_Filter.LocalPort());
+    internal  = new Filter::Internal;
+    Tag       = 0;
 }
 
-Lacewing::Filter::~Filter()
+Filter::~Filter ()
 {
-    delete ((FilterInternal *) InternalTag);
+    delete internal;
 }
 
-void Lacewing::Filter::Remote(const Lacewing::Address &Address)
+void Filter::Remote (Lacewing::Address * Address)
 {
-    while(!Address.Ready())
-        LacewingYield();
+    if (Address)
+    {
+        if (Address->Resolve ())
+            return;
 
-    ((FilterInternal *) InternalTag)->RemoteAddress.~Address();
-    new (&((FilterInternal *) InternalTag)->RemoteAddress) Lacewing::Address (Address);
+        delete internal->Remote;
+        internal->Remote = new Lacewing::Address (*Address);
+
+        if (internal->RemotePort)
+            internal->Remote->Port (internal->RemotePort);
+    }
+    else
+    {
+        internal->RemotePort =
+            internal->Remote ? internal->Remote->Port () : 0;
+        
+        delete internal->Remote;
+        internal->Remote = 0;
+    }
 }
 
-void Lacewing::Filter::LocalIP(int IP)
+Lacewing::Address * Filter::Remote ()
 {
-    ((FilterInternal *) InternalTag)->LocalIP = IP;
+    return internal->Remote;
 }
 
-int Lacewing::Filter::LocalIP() const
+void Filter::Local (Lacewing::Address * Address)
 {
-    return ((FilterInternal *) InternalTag)->LocalIP;
-}
-
-void Lacewing::Filter::LocalPort(int Port)
-{
-    ((FilterInternal *) InternalTag)->LocalPort = Port;
-}
-
-int Lacewing::Filter::LocalPort() const
-{
-    return ((FilterInternal *) InternalTag)->LocalPort;
-}
-
-Lacewing::Address &Lacewing::Filter::Remote() const
-{
-    return ((FilterInternal *) InternalTag)->RemoteAddress;
-}
-
-void Lacewing::Filter::Reuse(bool Enabled)
-{
-    ((FilterInternal *) InternalTag)->Reuse = Enabled;
-}
-
-bool Lacewing::Filter::Reuse() const
-{
-    return ((FilterInternal *) InternalTag)->Reuse;
-}
-
-void Lacewing::Filter::Local (const char * Name)
-{
-    Lacewing::Address Address(Name, 0, true);
+    if (Address)
+    {
+        if (Address->Resolve ())
+            return;
     
-    LocalIP(Address.IP());
-    LocalPort(Address.Port());
+        delete internal->Local;
+        internal->Local = new Lacewing::Address (*Address);
+
+        if (internal->LocalPort)
+            internal->Local->Port (internal->LocalPort);
+    }
+    else
+    {
+        internal->LocalPort =
+            internal->Local ? internal->Local->Port () : 0;
+        
+        delete internal->Local;
+        internal->Local = 0;
+    }
 }
 
-void Lacewing::Filter::Remote (const char * Name)
+Lacewing::Address * Filter::Local ()
 {
-    Lacewing::Address Address(Name, 0, true);
-    Remote (Address);
+    return internal->Local;
 }
 
+void Filter::Reuse (bool Enabled)
+{
+    internal->Reuse = Enabled;
+}
+
+bool Filter::Reuse ()
+{
+    return internal->Reuse;
+}
+
+void Filter::IPv6 (bool Enabled)
+{
+    internal->IPv6 = Enabled;
+}
+
+bool Filter::IPv6 ()
+{
+    return internal->IPv6;
+}
+
+int Filter::LocalPort ()
+{
+    return internal->Local
+        ? internal->Local->Port () : internal->LocalPort;
+}
+
+void Filter::LocalPort (int Port)
+{
+    if (internal->Local)
+        internal->Local->Port (Port);
+    else
+        internal->LocalPort = Port;
+}
+
+int Filter::RemotePort ()
+{
+    return internal->Remote
+        ? internal->Remote->Port () : internal->RemotePort;
+}
+
+void Filter::RemotePort (int Port)
+{
+    if (internal->Remote)
+        internal->Remote->Port (Port);
+    else
+        internal->RemotePort = Port;
+}
+
+/* Used internally by the library to create a server socket from a Filter */
+
+int Lacewing::CreateServerSocket (Lacewing::Filter &Filter, int Type, int Protocol, Lacewing::Error &Error)
+{
+    if ((!Filter.IPv6 ()) && ( (Filter.Local () && Filter.Local ()->IPv6 ())
+                               || (Filter.Remote () && Filter.Remote ()->IPv6 ()) ))
+    {
+        Error.Add ("Filter has IPv6 disabled, but one of the attached addresses is an IPv6 address.  "
+                    "Try using HINT_IPv4 when constructing the Address object.");
+
+        return -1;
+    }
+
+    lw_socket Socket;
+
+    #ifdef LacewingWindows
+
+        if ((Socket = WSASocket
+            (Filter.IPv6 () ? AF_INET6 : AF_INET,
+                Type, Protocol, 0, 0, WSA_FLAG_OVERLAPPED)) == -1)
+        {
+            Error.Add (LacewingGetLastError ());
+            Error.Add ("Error creating socket");
+
+            return -1;
+        }
+
+    #else
+
+        if ((Socket = socket (Filter.IPv6 () ? AF_INET6 : AF_INET, Type, Protocol)) == -1)
+        {
+            Error.Add (LacewingGetLastError ());
+            Error.Add ("Error creating socket");
+
+            return -1;
+        }
+
+        fcntl (Socket, F_SETFL, fcntl (Socket, F_GETFL, 0) | O_NONBLOCK);
+        DisableSigPipe (Socket);
+
+    #endif
+
+    if (Filter.IPv6 ())
+        DisableIPV6Only (Socket);
+
+    {   int reuse = Filter.Reuse () ? 1 : 0;
+        setsockopt (Socket, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof (reuse));
+    }
+
+    sockaddr_storage addr;
+    memset (&addr, 0, sizeof (sockaddr_storage));
+
+    int addr_len = 0;
+
+    if (Filter.Local ())
+    {
+        addrinfo * info = Filter.Local ()->internal->Info;
+
+        if (info)
+        {
+            memcpy (&addr, info->ai_addr, info->ai_addrlen);
+            addr_len = info->ai_addrlen;
+        }
+    }
+
+    if (!addr_len)
+    {
+        if (Filter.IPv6 ())
+        {
+            addr_len = sizeof (sockaddr_in6);
+
+            ((sockaddr_in6 *) &addr)->sin6_family
+                = AF_INET6;
+
+            ((sockaddr_in6 *) &addr)->sin6_addr
+                = in6addr_any;
+
+            ((sockaddr_in6 *) &addr)->sin6_port
+                = Filter.LocalPort () ? htons (Filter.LocalPort ()) : 0;
+        }
+        else
+        {
+            addr_len = sizeof (sockaddr_in);
+
+            ((sockaddr_in *) &addr)->sin_family
+                = AF_INET;
+
+            ((sockaddr_in *) &addr)->sin_addr.s_addr
+                = INADDR_ANY;
+
+            ((sockaddr_in *) &addr)->sin_port
+                = Filter.LocalPort () ? htons (Filter.LocalPort ()) : 0;
+        }
+    }
+
+    if (bind (Socket, (sockaddr *) &addr, addr_len) == -1)
+    {
+        Error.Add (LacewingGetLastError ());
+        Error.Add ("Error binding socket");
+
+        LacewingCloseSocket (Socket);
+
+        return -1;
+    }
+
+    return Socket;
+}
 

@@ -29,19 +29,55 @@
 
 #include "../Common.h"
 
-lw_thread * lw_thread_new (const char * name, void * function)
-    { return (lw_thread *) new Thread (name, function);
-    }
-void lw_thread_delete (lw_thread * thread)
-    { delete (Thread *) thread;
-    }
-void lw_thread_start (lw_thread * thread, void * parameter)
-    { ((Thread *) thread)->Start (parameter);
-    }
-lw_bool lw_thread_started (lw_thread * thread)
-    { return ((Thread *) thread)->Started ();
-    }
-long lw_thread_join (lw_thread * thread)
-    { return ((Thread *) thread)->Join ();
-    }
+using namespace Compat;
+
+static void * MSVCRT (const char * fn)
+{
+    static HINSTANCE DLL = LoadLibraryA ("msvcrt.dll");
+    return DLL ? (void *) GetProcAddress (DLL, fn) : 0;
+}
+
+static void * WS2_32 (const char * fn)
+{
+    static HINSTANCE DLL = LoadLibraryA ("ws2_32.dll");
+    return DLL ? (void *) GetProcAddress (DLL, fn) : 0;
+}
+
+static void * KERNEL32 (const char * fn)
+{
+    static HINSTANCE DLL = LoadLibraryA ("kernel32.dll");
+    return DLL ? (void *) GetProcAddress (DLL, fn) : 0;
+}
+
+fn_getaddrinfo Compat::getaddrinfo ()
+{
+    static fn_getaddrinfo fn
+        = (fn_getaddrinfo) WS2_32 ("getaddrinfo");
+
+    return fn;
+}
+
+fn_freeaddrinfo Compat::freeaddrinfo ()
+{
+    static fn_freeaddrinfo fn
+        = (fn_freeaddrinfo) WS2_32 ("freeaddrinfo");
+
+    return fn;
+}
+
+fn__mkgmtime64 Compat::_mkgmtime64 ()
+{
+    static fn__mkgmtime64 fn
+        = (fn__mkgmtime64) MSVCRT ("_mkgmtime64");
+
+    return fn;
+}
+
+fn_GetFileSizeEx Compat::GetFileSizeEx ()
+{
+    static fn_GetFileSizeEx fn
+        = (fn_GetFileSizeEx) KERNEL32 ("GetFileSizeEx");
+
+    return fn;
+}
 

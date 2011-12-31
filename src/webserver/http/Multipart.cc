@@ -69,7 +69,7 @@ HTTPClient::MultipartProcessor::MultipartProcessor
 HTTPClient::MultipartProcessor::~MultipartProcessor()
 {
     for (int i = 0; i < Uploads.Size; ++ i)
-        delete (UploadInternal *) Uploads [i]->InternalTag;
+        delete Uploads [i]->internal;
     
     Uploads.Clear ();
 }
@@ -152,8 +152,11 @@ int HTTPClient::MultipartProcessor::Process(char * Data, size_t Size)
                 {
                     /* Manual save */
 
-                    if(Client.Server.HandlerUploadDone)
-                        Client.Server.HandlerUploadDone(Client.Server.Webserver, Client.Request.Public, CurrentUpload->Upload);
+                    if (Client.Server.Handlers.UploadDone)
+                    {
+                        Client.Server.Handlers.UploadDone
+                            (Client.Server.Webserver, Client.Request.Public, CurrentUpload->Upload);
+                    }
                 }
                 else
                 {
@@ -220,8 +223,11 @@ void HTTPClient::MultipartProcessor::ProcessHeader()
             CurrentUpload->FormElement = CurrentUpload->Copier.Set("name",
                                                     Parent ? Parent->Disposition.Get("name") : Disposition.Get("name"))->Value;
         
-            if(Client.Server.HandlerUploadStart)
-                Client.Server.HandlerUploadStart(Client.Server.Webserver, Client.Request.Public, CurrentUpload->Upload);
+            if(Client.Server.Handlers.UploadStart)
+            {
+                Client.Server.Handlers.UploadStart
+                    (Client.Server.Webserver, Client.Request.Public, CurrentUpload->Upload);
+            }
 
             return;
         }
@@ -347,8 +353,8 @@ void HTTPClient::MultipartProcessor::ToFile(const char * Data, size_t Size)
         {
             /* Manual save */
 
-            if(Client.Server.HandlerUploadChunk)
-                Client.Server.HandlerUploadChunk(Client.Server.Webserver,
+            if(Client.Server.Handlers.UploadChunk)
+                Client.Server.Handlers.UploadChunk(Client.Server.Webserver,
                         Client.Request.Public, CurrentUpload->Upload, Data, Size);
 
             return;
@@ -372,9 +378,11 @@ void HTTPClient::MultipartProcessor::CallRequestHandler()
 {
     Client.Request.BeforeHandler ();
 
-    if(Client.Server.HandlerUploadPost)
-        Client.Server.HandlerUploadPost (Client.Server.Webserver, Client.Request.Public,
-                                                Uploads.Items, Uploads.Size);
+    if(Client.Server.Handlers.UploadPost)
+    {
+        Client.Server.Handlers.UploadPost
+           (Client.Server.Webserver, Client.Request.Public, Uploads.Items, Uploads.Size);
+    }
 
     Client.Request.AfterHandler ();
 }

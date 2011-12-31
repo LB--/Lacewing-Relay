@@ -29,36 +29,40 @@
 
 #include "../Common.h"
 
-struct ClientInternal;
-
-struct ClientInternal
+struct Client::Internal
 {
-    PumpInternal &EventPump;
+    Lacewing::Pump &Pump;
 
-    Lacewing::Client::HandlerConnect     HandlerConnect;
-    Lacewing::Client::HandlerDisconnect  HandlerDisconnect;
-    Lacewing::Client::HandlerReceive     HandlerReceive;
-    Lacewing::Client::HandlerError       HandlerError;
+    struct
+    {
+        HandlerConnect     Connect;
+        HandlerDisconnect  Disconnect;
+        HandlerReceive     Receive;
+        HandlerError       Error;
 
-    Lacewing::Client &Public;
+    } Handlers;
 
-    ClientInternal(Lacewing::Client &_Public, PumpInternal &_EventPump)
-            : Public(_Public), EventPump(_EventPump)
+    Client &Public;
+
+    Internal (Client &_Public, Lacewing::Pump &_Pump)
+            : Public (_Public), Pump (_Pump)
     {
         Connected = Connecting = false;
 
         Address =  0;
         Socket  = -1;
 
-        HandlerConnect     = 0;
-        HandlerDisconnect  = 0;
-        HandlerReceive     = 0;
-        HandlerError       = 0;
+        memset (&Handlers, 0, sizeof (Handlers));
 
         Nagle = true;
-        Address = new Lacewing::Address();
+        Address = 0;
 
         QueuedOffset = 0;
+    }
+
+    ~ Internal ()
+    {
+        delete Address;
     }
 
     Lacewing::Address * Address;
@@ -66,12 +70,10 @@ struct ClientInternal
     int Socket;
     bool Connected, Connecting;
 
-    sockaddr_in HostStructure;
-
     ReceiveBuffer Buffer;
 
-    void ReadReady();
-    void WriteReady();
+    void ReadReady ();
+    void WriteReady ();
 
     bool Nagle;
 
@@ -79,38 +81,34 @@ struct ClientInternal
     int QueuedOffset;
 };
 
-Lacewing::Client::Client(Lacewing::Pump &EventPump)
+Client::Client (Lacewing::Pump &Pump)
 {
-    LacewingInitialise();
-    InternalTag = new ClientInternal(*this, *(PumpInternal *) EventPump.InternalTag);
+    LacewingInitialise ();
+
+    internal = new Internal (*this, Pump);
 }
 
-Lacewing::Client::~Client()
+Client::~Client ()
 {
-    Disconnect();
+    Disconnect ();
 
-    delete ((ClientInternal *) InternalTag);
+    delete internal;
 }
 
-void Lacewing::Client::Connect(const char * Host, int Port)
+void Client::Connect (const char * Host, int Port)
 {
-    Lacewing::Address Address(Host, Port, true);
-    Connect(Address);
+    Address Address (Host, Port, true);
+    Connect (Address);
 }
 
-void WriteReady(ClientInternal &Internal)
-{
-    Internal.WriteReady();
-}
-
-void ClientInternal::WriteReady()
+void Client::Internal::WriteReady ()
 {
     if(Connecting)
     {
         int Error;
         
-        {   socklen_t ErrorLength = sizeof(Error);
-            getsockopt(Socket, SOL_SOCKET, SO_ERROR, &Error, &ErrorLength);
+        {   socklen_t ErrorLength = sizeof (Error);
+            getsockopt (Socket, SOL_SOCKET, SO_ERROR, &Error, &ErrorLength);
         }
 
         if(Error != 0)
@@ -122,8 +120,8 @@ void ClientInternal::WriteReady()
             Lacewing::Error Error;
             Error.Add("Error connecting");
 
-            if(HandlerError)
-                HandlerError(Public, Error);
+            if (Handlers.Error)
+                Handlers.Error (Public, Error);
 
             return;
         }
@@ -131,8 +129,8 @@ void ClientInternal::WriteReady()
         Connected  = true;
         Connecting = false;
 
-        if(HandlerConnect)
-            HandlerConnect(Public);
+        if (Handlers.Connect)
+            Handlers.Connect (Public);
     }
 
     if(Queued.Size > 0)
@@ -149,17 +147,12 @@ void ClientInternal::WriteReady()
     }
 }
 
-void ReadReady(ClientInternal &Internal)
-{
-    Internal.ReadReady();
-}
-
-void ClientInternal::ReadReady()
+void Client::Internal::ReadReady ()
 {
     for(;;)
     {
-        Buffer.Prepare();
-        int Bytes = recv(Socket, Buffer.Buffer, Buffer.Size, MSG_DONTWAIT);
+        Buffer.Prepare ();
+        int Bytes = recv (Socket, Buffer.Buffer, Buffer.Size, MSG_DONTWAIT);
 
         if(Bytes == -1)
         {
@@ -177,16 +170,16 @@ void ClientInternal::ReadReady()
             Socket = -1;
             Connected = false;
 
-            if(HandlerDisconnect)
-                HandlerDisconnect(Public);
+            if (Handlers.Disconnect)
+                Handlers.Disconnect (Public);
 
             return;
         }
 
         Buffer.Received(Bytes);
 
-        if(HandlerReceive)
-            HandlerReceive(Public, Buffer.Buffer, Bytes);
+        if (Handlers.Receive)
+            Handlers.Receive (Public, Buffer.Buffer, Bytes);
             
         if(Socket == -1)
         {
@@ -194,169 +187,175 @@ void ClientInternal::ReadReady()
 
             Connected = false;
             
-            if(HandlerDisconnect)
-                HandlerDisconnect(Public);
+            if (Handlers.Disconnect)
+                Handlers.Disconnect (Public);
 
             return;
         }
     }
 }
 
-void Lacewing::Client::Connect(Lacewing::Address &Address)
+static void WriteReady (Client::Internal * internal)
+{   internal->WriteReady ();
+}
+
+static void ReadReady (Client::Internal * internal)
+{   internal->ReadReady ();
+}
+
+void Client::Connect (Address &Address)
 {
-    ClientInternal &Internal = *((ClientInternal *) InternalTag);
-    
-    if(Connected() || Connecting())
+    if (Connected () || Connecting ())
     {
         Lacewing::Error Error;
         Error.Add("Already connected to a server");
         
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (*this, Error);
 
         return;
     }
 
-    Internal.Connecting = true;
+    internal->Connecting = true;
 
-    while(!Address.Ready())
-        LacewingYield();
+    /* TODO : Resolve asynchronously? */
 
-    delete Internal.Address;
-    Internal.Address = new Lacewing::Address(Address);
+    {   Error * Error = Address.Resolve ();
 
-    GetSockaddr(*Internal.Address, Internal.HostStructure);
+        if (Error)
+        {
+            if (internal->Handlers.Error)
+                internal->Handlers.Error (*this, *Error);
+                
+            return;
+        }
+    }
 
-    if((Internal.Socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
+    delete internal->Address;
+    internal->Address = new Lacewing::Address (Address);
+
+    if ((internal->Socket = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
     {
         Lacewing::Error Error;
        
-        Error.Add(LacewingGetSocketError());        
+        Error.Add(LacewingGetSocketError ());        
         Error.Add("Error creating socket");
         
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (*this, Error);
 
         return;
     }
 
-    DisableSigPipe (Internal.Socket);
+    DisableSigPipe (internal->Socket);
 
-    if(!Internal.Nagle)
-        ::DisableNagling(Internal.Socket);
+    if (!internal->Nagle)
+        ::DisableNagling (internal->Socket);
 
-    fcntl(Internal.Socket, F_SETFL, fcntl(Internal.Socket, F_GETFL, 0) | O_NONBLOCK);
+    fcntl (internal->Socket, F_SETFL, fcntl (internal->Socket, F_GETFL, 0) | O_NONBLOCK);
 
-    Internal.EventPump.AddReadWrite(Internal.Socket, (void *) &Internal, (void *) ReadReady, (void *) WriteReady);
+    internal->Pump.Add (internal->Socket, internal,
+                    (Pump::Callback) ReadReady, (Pump::Callback) WriteReady);
 
-    if(connect(Internal.Socket, (sockaddr *) &Internal.HostStructure, sizeof(sockaddr)) == -1)
+    if (connect (internal->Socket, Address.internal->Info->ai_addr,
+                        Address.internal->Info->ai_addrlen) == -1)
     {
         if(errno == EINPROGRESS)
             return;
 
-        Internal.Connecting = false;
+        internal->Connecting = false;
 
         Lacewing::Error Error;
        
         Error.Add(errno);        
         Error.Add("Error connecting");
 
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (*this, Error);
     }
 }
 
-bool Lacewing::Client::Connected()
+bool Client::Connected ()
 {
-    return ((ClientInternal *) InternalTag)->Connected;
+    return internal->Connected;
 }
 
-bool Lacewing::Client::Connecting()
+bool Client::Connecting ()
 {
-    return ((ClientInternal *) InternalTag)->Connecting;
+    return internal->Connecting;
 }
 
-void Lacewing::Client::Disconnect()
+void Client::Disconnect ()
 {
-    ClientInternal &Internal = *((ClientInternal *) InternalTag);
-
-    LacewingCloseSocket(Internal.Socket);
-    Internal.Socket = -1;
+    LacewingCloseSocket (internal->Socket);
+    internal->Socket = -1;
 }
 
-void Lacewing::Client::Send(const char * Data, int Size)
+void Client::Send (const char * Data, int Size)
 {
     if(!Connected())
         return;
 
-    if(Size == -1)
-        Size = strlen(Data);
+    if (Size == -1)
+        Size = strlen (Data);
 
-    ClientInternal &Internal = *(ClientInternal *) InternalTag;
 
-    if(Internal.Queued.Size > 0)
+    if (internal->Queued.Size > 0)
     {
-        Internal.Queued.Add(Data, Size);
+        internal->Queued.Add (Data, Size);
         return;
     }
 
-    int Sent = send (Internal.Socket, Data, Size, LacewingNoSignal);
+    int Sent = send (internal->Socket, Data, Size, LacewingNoSignal);
 
     if(Sent < Size)
-        Internal.Queued.Add(Data + Sent, Size - Sent);
+        internal->Queued.Add (Data + Sent, Size - Sent);
 }
 
-Lacewing::Address &Lacewing::Client::ServerAddress()
+Address &Client::ServerAddress ()
 {
-    return *((ClientInternal *) InternalTag)->Address;
+    return *internal->Address;
 }
 
-void Lacewing::Client::DisableNagling()
+void Client::DisableNagling ()
 {
-    ClientInternal &Internal = *(ClientInternal *) InternalTag;
+    internal->Nagle = false;
 
-    Internal.Nagle = false;
-
-    if(Internal.Socket != -1)
-        ::DisableNagling(Internal.Socket);
+    if (internal->Socket != -1)
+        ::DisableNagling (internal->Socket);
 }
 
-bool Lacewing::Client::CheapBuffering ()
+bool Client::CheapBuffering ()
 {
     /* TODO : Userland buffering support for Unix client? */
 
     return true;
 }
 
-void Lacewing::Client::StartBuffering()
+void Client::StartBuffering ()
 {
     if(!Connected())
         return;
-
-    ClientInternal &Internal = *(ClientInternal *) InternalTag;
 
     #ifdef LacewingAllowCork
         int Enabled = 1;
-        setsockopt(Internal.Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof(Enabled));
+        setsockopt (internal->Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof (Enabled));
     #endif
 }
 
-void Lacewing::Client::Flush()
+void Client::Flush ()
 {
     if(!Connected())
         return;
 
-    ClientInternal &Internal = *(ClientInternal *) InternalTag;
-
     #ifdef LacewingAllowCork    
         int Enabled = 0;
-        setsockopt(Internal.Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof(Enabled));
+        setsockopt (internal->Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof (Enabled));
     #endif
 }
 
-
-AutoHandlerFunctions(Lacewing::Client, ClientInternal, Connect)
-AutoHandlerFunctions(Lacewing::Client, ClientInternal, Disconnect)
-AutoHandlerFunctions(Lacewing::Client, ClientInternal, Receive)
-AutoHandlerFunctions(Lacewing::Client, ClientInternal, Error)
+AutoHandlerFunctions (Client, Connect)
+AutoHandlerFunctions (Client, Disconnect)
+AutoHandlerFunctions (Client, Receive)
+AutoHandlerFunctions (Client, Error)
 

@@ -27,252 +27,261 @@
  * SUCH DAMAGE.
  */
 
-template <class T> struct List
-{   
-    struct Element
-    {
-        Element * Next, * Prev;
-        T Value;
-        
-        inline T operator * ()
+#ifndef LacewingUtility
+#define LacewingUtility
+
+namespace Lacewing
+{
+    template <class T> struct List
+    {   
+        struct Element
         {
+            Element * Next, * Prev;
+            T Value;
+            
+            inline T operator * ()
+            {
+                return Value;
+            }
+            
+        } * First, * Last;
+        
+        int Size;
+
+        inline List ()
+        {
+            First = Last = 0;
+            Size = 0;
+        }
+        
+        inline ~ List ()
+        {
+            Clear ();
+        }
+
+        inline Element * Push (T What)
+        {
+            Element * E = new Element;
+            
+            E->Value = What;
+            E->Next  = 0;
+            E->Prev  = Last;
+            
+            ++ Size;
+            
+            if (Last)
+            {
+                Last->Next = E;
+                Last = E;
+            }
+            else
+            {
+                First = Last = E;
+            }
+
+            return E;
+        }
+
+        inline Element * InsertBefore (Element * Before, T What)
+        {
+            Element * E = new Element;
+
+            if (Before->Prev)
+                Before->Prev->Next = E;
+
+            E->Prev = Before->Prev;
+            Before->Prev = E;
+
+            E->Value = What;
+            E->Next  = Before;
+
+            if (Before == First)
+                First = E;
+
+            ++ Size;
+
+            return E;
+        }
+
+        inline T Pop ()
+        {
+            T Value = ** Last;
+            Erase (Last);
             return Value;
         }
-        
-    } * First, * Last;
-    
-    int Size;
 
-    inline List ()
-    {
-        First = Last = 0;
-        Size = 0;
-    }
-    
-    inline ~ List ()
-    {
-        Clear ();
-    }
-
-    inline Element * Push (T What)
-    {
-        Element * E = new Element;
-        
-        E->Value = What;
-        E->Next  = 0;
-        E->Prev  = Last;
-        
-        ++ Size;
-        
-        if (Last)
+        inline T PopFront ()
         {
-            Last->Next = E;
-            Last = E;
-        }
-        else
-        {
-            First = Last = E;
+            T Value = ** First;
+            Erase (First);
+            return Value;
         }
 
-        return E;
-    }
-
-    inline Element * InsertBefore (Element * Before, T What)
-    {
-        Element * E = new Element;
-
-        if (Before->Prev)
-            Before->Prev->Next = E;
-
-        E->Prev = Before->Prev;
-        Before->Prev = E;
-
-        E->Value = What;
-        E->Next  = Before;
-
-        if (Before == First)
-            First = E;
-
-        ++ Size;
-
-        return E;
-    }
-
-    inline T Pop ()
-    {
-        T Value = ** Last;
-        Erase (Last);
-        return Value;
-    }
-
-    inline T PopFront ()
-    {
-        T Value = ** First;
-        Erase (First);
-        return Value;
-    }
-
-    inline void Erase (Element * E)
-    {
-        if (E == First)
-            First = E->Next;
-
-        if (E == Last)
-            Last = E->Prev;
-
-        if (E->Next)
-            E->Next->Prev = E->Prev;
-
-        if (E->Prev)
-            E->Prev->Next = E->Next;
-    
-        delete E;
-
-        -- Size;
-    }
-    
-    inline void Clear ()
-    {
-        while (First)
+        inline void Erase (Element * E)
         {
-            Element * Next = First->Next;
-            delete First;
-            First = Next;
+            if (E == First)
+                First = E->Next;
+
+            if (E == Last)
+                Last = E->Prev;
+
+            if (E->Next)
+                E->Next->Prev = E->Prev;
+
+            if (E->Prev)
+                E->Prev->Next = E->Next;
+        
+            delete E;
+
+            -- Size;
+        }
+        
+        inline void Clear ()
+        {
+            while (First)
+            {
+                Element * Next = First->Next;
+                delete First;
+                First = Next;
+            }
+
+            Last = 0;
+            Size = 0;
+        }
+    };
+
+    template <class T> struct Array
+    {       
+        T * Items;
+        
+        int Allocated, Size;
+
+        inline Array ()
+        {
+            Items = (T *) malloc (sizeof (T) * (Allocated = 16));
+            Size = 0;
+        }
+        
+        inline ~Array ()
+        {
+            free (Items);
         }
 
-        Last = 0;
-        Size = 0;
-    }
-};
-
-template <class T> struct Array
-{       
-    T * Items;
-    
-    int Allocated, Size;
-
-    inline Array ()
-    {
-        Items = (T *) malloc (sizeof(T) * (Allocated = 16));
-        Size = 0;
-    }
-    
-    inline ~Array ()
-    {
-        free (Items);
-    }
-
-    inline void Push (T What)
-    {
-        if (Size + 1 >= Allocated)
-            Items = (T *) realloc (Items, sizeof(T) * (Allocated *= 3));
-
-        Items [Size ++] = What;
-    }
-
-    inline T Pop ()
-    {
-        return Items [-- Size];
-    }
-
-    inline T operator [] (int Index)
-    {
-        return Items [Index];
-    }
-
-    inline operator T * ()
-    {
-        return Items;
-    }
-
-    inline void Clear ()
-    {
-        Size = 0;
-    }
-};
-
-struct String
-{
-    const static int MaxPrealloc = 4096;
-
-    int Length, AllocatedFor, MaxLength;
-    char * Buffer;
- 
-    inline String (int _MaxLength = 512) : MaxLength (_MaxLength)
-    {
-        *(Buffer = (char *) malloc (AllocatedFor = (MaxLength
-                        <= MaxPrealloc ? MaxLength : MaxPrealloc))) = 0;
-
-        Length = 0;
-    }
-
-    inline String (const char * Source)
-    {
-        AllocatedFor = Length = strlen (Source);
-        Buffer = strdup (Source);
-    }
-
-    inline String (const String &Source)
-    {
-        AllocatedFor = Length = strlen (Source.Buffer);
-        Buffer = strdup (Source.Buffer);
-
-        MaxLength = Source.MaxLength;
-    }
-
-    inline ~ String ()
-    {
-        free (Buffer);
-    }   
-
-    inline int Prepare (int Size)
-    {
-        if (MaxLength && Size > MaxLength)
-            Size = MaxLength;
-
-        if (Size < AllocatedFor)
-            return Size;
-
-        char * New = (char *) realloc (Buffer, AllocatedFor *= 3);
-
-        if (New)
+        inline void Push (T What)
         {
-            Buffer = New;
-            return Size;
+            if (Size + 1 >= Allocated)
+                Items = (T *) realloc (Items, sizeof (T) * (Allocated *= 3));
+
+            Items [Size ++] = What;
         }
 
-        return 0;
-    }
+        inline T Pop ()
+        {
+            return Items [-- Size];
+        }
 
-    inline String &operator = (const char * S)
+        inline T operator [] (int Index)
+        {
+            return Items [Index];
+        }
+
+        inline operator T * ()
+        {
+            return Items;
+        }
+
+        inline void Clear ()
+        {
+            Size = 0;
+        }
+    };
+
+    struct String
     {
-        memcpy (Buffer, S, Length = (Prepare (strlen (S) + 1) - 1));
-        Buffer [Length] = 0;
+        const static int MaxPrealloc = 4096;
 
-        return *this;
-    }
+        int Length, AllocatedFor, MaxLength;
+        char * Buffer;
+     
+        inline String (int _MaxLength = 512) : MaxLength (_MaxLength)
+        {
+            *(Buffer = (char *) malloc (AllocatedFor = (MaxLength
+                            <= MaxPrealloc ? MaxLength : MaxPrealloc))) = 0;
 
-    inline String &operator = (const String &S)
-    {
-        memcpy (Buffer, S.Buffer, Length = (Prepare (strlen (S.Buffer) + 1) - 1));
-        Buffer [Length] = 0;
+            Length = 0;
+        }
 
-        return *this;
-    }
+        inline String (const char * Source)
+        {
+            AllocatedFor = Length = strlen (Source);
+            Buffer = strdup (Source);
+        }
 
-    inline operator const char * ()
-    {
-        return Buffer ? Buffer : "";
-    }
+        inline String (const String &Source)
+        {
+            AllocatedFor = Length = strlen (Source.Buffer);
+            Buffer = strdup (Source.Buffer);
 
-    inline int CompareCaseSensitive (String &B)
-    {
-        return strcmp ((const char *) *this, (const char *) B);
-    }
-    
-    inline int Compare (String &B)
-    {
-        return strcasecmp ((const char *) *this, (const char *) B);
-    }
-};
+            MaxLength = Source.MaxLength;
+        }
+
+        inline ~ String ()
+        {
+            free (Buffer);
+        }   
+
+        inline int Prepare (int Size)
+        {
+            if (MaxLength && Size > MaxLength)
+                Size = MaxLength;
+
+            if (Size < AllocatedFor)
+                return Size;
+
+            char * New = (char *) realloc (Buffer, AllocatedFor *= 3);
+
+            if (New)
+            {
+                Buffer = New;
+                return Size;
+            }
+
+            return 0;
+        }
+
+        inline String &operator = (const char * S)
+        {
+            memcpy (Buffer, S, Length = (Prepare (strlen (S) + 1) - 1));
+            Buffer [Length] = 0;
+
+            return *this;
+        }
+
+        inline String &operator = (const String &S)
+        {
+            memcpy (Buffer, S.Buffer, Length = (Prepare (strlen (S.Buffer) + 1) - 1));
+            Buffer [Length] = 0;
+
+            return *this;
+        }
+
+        inline operator const char * ()
+        {
+            return Buffer ? Buffer : "";
+        }
+
+        inline int CompareCaseSensitive (String &B)
+        {
+            return strcmp ((const char *) *this, (const char *) B);
+        }
+        
+        inline int Compare (String &B)
+        {
+            return strcasecmp ((const char *) *this, (const char *) B);
+        }
+    };
+}
+
+#endif
+
 

@@ -32,7 +32,7 @@
 
 class HTTPClient;
 
-struct UploadInternal
+struct Webserver::Upload::Internal
 {
     Lacewing::Webserver::Upload Upload;
 
@@ -44,16 +44,16 @@ struct UploadInternal
 
     Map Headers, Copier;
 
-    inline UploadInternal()
+    inline Internal ()
     {
-        Upload.InternalTag = this;
+        Upload.internal = this;
         Upload.Tag         = 0;
 
         AutoSaveFilename = "";
         AutoSaveFile     = 0;
     }
 
-    inline ~ UploadInternal()
+    inline ~ Internal ()
     {
         DebugOut("Free upload!");
     }
@@ -61,11 +61,9 @@ struct UploadInternal
     virtual const char * Header (const char * Name) = 0;
 };
 
-class WebserverInternal
+struct Webserver::Internal
 {
-public:
-
-    PumpInternal &EventPump;
+    Lacewing::Pump &Pump;
 
     const static size_t SendBufferSize    = 1024 * 32;  /* Maximum of 32 KB wasted per SendFile/SendConstant */
     const static size_t SendBufferBacklog = 32;         /* 256 KB allocated initially and when the server runs out */
@@ -102,7 +100,7 @@ public:
     {
         if(!Socket)
         {
-            Socket = new Lacewing::Server(EventPump.Pump);
+            Socket = new Lacewing::Server (Pump);
 
             Socket->Tag = this;
 
@@ -119,7 +117,7 @@ public:
     {
         if(!SecureSocket)
         {
-            SecureSocket = new Lacewing::Server(EventPump.Pump);
+            SecureSocket = new Lacewing::Server (Pump);
     
             SecureSocket->Tag = this;
 
@@ -153,30 +151,26 @@ public:
 
     Lacewing::Webserver &Webserver;
 
-    Lacewing::Webserver::HandlerError        HandlerError;
-    Lacewing::Webserver::HandlerGet          HandlerGet;
-    Lacewing::Webserver::HandlerPost         HandlerPost;
-    Lacewing::Webserver::HandlerHead         HandlerHead;
-    Lacewing::Webserver::HandlerUploadStart  HandlerUploadStart;
-    Lacewing::Webserver::HandlerUploadChunk  HandlerUploadChunk;
-    Lacewing::Webserver::HandlerUploadDone   HandlerUploadDone;
-    Lacewing::Webserver::HandlerUploadPost   HandlerUploadPost;
-    Lacewing::Webserver::HandlerDisconnect   HandlerDisconnect;
+    struct
+    {
+        HandlerError        Error;
+        HandlerGet          Get;
+        HandlerPost         Post;
+        HandlerHead         Head;
+        HandlerUploadStart  UploadStart;
+        HandlerUploadChunk  UploadChunk;
+        HandlerUploadDone   UploadDone;
+        HandlerUploadPost   UploadPost;
+        HandlerDisconnect   Disconnect;
 
-    inline WebserverInternal(Lacewing::Webserver &_Webserver, PumpInternal &_EventPump)
-            : Webserver(_Webserver), EventPump(_EventPump), Timer (_EventPump.Pump)
+    } Handlers;
+
+    inline Internal (Lacewing::Webserver &_Webserver, Lacewing::Pump &_Pump)
+            : Webserver (_Webserver), Pump (_Pump), Timer (_Pump)
     {
         Socket = SecureSocket = 0;
 
-        HandlerError        = 0;
-        HandlerGet          = 0;
-        HandlerPost         = 0;
-        HandlerHead         = 0;
-        HandlerUploadStart  = 0;
-        HandlerUploadChunk  = 0;
-        HandlerUploadDone   = 0;
-        HandlerUploadPost   = 0;
-        HandlerDisconnect   = 0;
+        memset (&Handlers, 0, sizeof (Handlers));
 
         AutoFinish = true;
         FirstSession = 0;
@@ -193,17 +187,17 @@ public:
 
 class WebserverClient;
 
-struct RequestInternal
+struct Webserver::Request::Internal
 {
     Lacewing::Webserver::Request Public; 
 
     void * Tag;
 
-    WebserverInternal &Server;
+    Webserver::Internal &Server;
     WebserverClient   &Client;
 
-    RequestInternal (WebserverInternal &_Server, WebserverClient &_Client);
-    ~ RequestInternal ();
+    Internal (Webserver::Internal &_Server, WebserverClient &_Client);
+    ~ Internal ();
 
     void Clean ();
     
@@ -262,16 +256,16 @@ public:
     bool Secure;
 
     Lacewing::Server::Client &Socket;
-    WebserverInternal &Server;
+    Webserver::Internal &Server;
 
     int Timeout;
 
-    WebserverClient (WebserverInternal &, Lacewing::Server::Client &, bool Secure);
+    WebserverClient (Webserver::Internal &, Lacewing::Server::Client &, bool Secure);
     
     virtual void Tick () = 0;
 
     virtual void Process (char * Buffer, int Size) = 0;
-    virtual void Respond (RequestInternal &Request) = 0;
+    virtual void Respond (Webserver::Request::Internal &Request) = 0;
     virtual void Dead () = 0;
     
     virtual bool IsSPDY () = 0;

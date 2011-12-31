@@ -30,27 +30,24 @@
 #include "../Common.h"
 
 lw_eventpump * lw_eventpump_new ()
-    { return (lw_eventpump *) new Lacewing::EventPump;
+    { return (lw_eventpump *) new EventPump;
     }
 void lw_eventpump_delete (lw_eventpump * eventpump)
-    { delete (Lacewing::EventPump *) eventpump;
+    { delete (EventPump *) eventpump;
     }
 void lw_eventpump_tick (lw_eventpump * eventpump)
-    { ((Lacewing::EventPump *) eventpump)->Tick();
+    { ((EventPump *) eventpump)->Tick ();
     }
 void lw_eventpump_start_event_loop (lw_eventpump * eventpump)
-    { ((Lacewing::EventPump *) eventpump)->StartEventLoop();
+    { ((EventPump *) eventpump)->StartEventLoop ();
     }
 void lw_eventpump_start_sleepy_ticking (lw_eventpump * eventpump, void (LacewingHandler * on_tick_needed) (lw_eventpump *))
-    { ((Lacewing::EventPump *) eventpump)->StartSleepyTicking((void (LacewingHandler *) (Lacewing::EventPump &)) on_tick_needed);
+    { ((EventPump *) eventpump)->StartSleepyTicking ((void (LacewingHandler *) (EventPump &)) on_tick_needed);
     }
 void lw_eventpump_post_eventloop_exit (lw_eventpump * eventpump)
-    { ((Lacewing::EventPump *) eventpump)->PostEventLoopExit();
+    { ((EventPump *) eventpump)->PostEventLoopExit ();
     }
 lw_bool lw_eventpump_in_use (lw_eventpump * eventpump)
-    { return ((Lacewing::EventPump *) eventpump)->InUse();
-    }
-void lw_eventpump_set_in_use (lw_eventpump * eventpump, lw_bool in_use)
-    { ((Lacewing::EventPump *) eventpump)->InUse(in_use != 0);
+    { return ((EventPump *) eventpump)->InUse ();
     }
 

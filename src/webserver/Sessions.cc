@@ -31,21 +31,20 @@
 
 const char * const SessionCookie = "LacewingSession";
 
-void Lacewing::Webserver::Request::Session(const char * Key, const char * Value)
+void Webserver::Request::Session (const char * Key, const char * Value)
 {
-    RequestInternal &Internal = *((RequestInternal *) InternalTag);
 
-    WebserverInternal::Session * Session = Internal.Server.FindSession (Cookie (SessionCookie));
+    Webserver::Internal::Session * Session = internal->Server.FindSession (Cookie (SessionCookie));
 
     if (!Session)
     {
         char SessionID [128];
 
-        sprintf(SessionID, "Session-%s-%d%d%d",
-            Internal.Client.Socket.GetAddress().ToString(), (int) time(0),
-                rand(), (int) (lw_iptr) this);
+        sprintf (SessionID, "Session-%s-%d%d%d",
+            internal->Client.Socket.GetAddress ().ToString (), (int) time (0),
+                rand (), (int) (lw_iptr) this);
 
-        Lacewing::MD5 (SessionID, SessionID);
+        MD5 (SessionID, SessionID);
 
         {   char SessionID_Hex [40];
             
@@ -55,47 +54,46 @@ void Lacewing::Webserver::Request::Session(const char * Key, const char * Value)
             Cookie (SessionCookie, SessionID_Hex);
         }
 
-        Session = new WebserverInternal::Session;
+        Session = new Webserver::Internal::Session;
 
         Session->ID_Part1 = ((lw_i64 *) SessionID) [0];
         Session->ID_Part2 = ((lw_i64 *) SessionID) [1];
 
-        if (Internal.Server.FirstSession)
+        if (internal->Server.FirstSession)
         {
-            Session->Next = Internal.Server.FirstSession;
-            Internal.Server.FirstSession = Session;
+            Session->Next = internal->Server.FirstSession;
+            internal->Server.FirstSession = Session;
         }
         else
         {
             Session->Next = 0;
-            Internal.Server.FirstSession = Session;
+            internal->Server.FirstSession = Session;
         }
     }
 
     Session->Data.Set (Key, Value);
 }
 
-const char * Lacewing::Webserver::Request::Session(const char * Key)
+const char * Webserver::Request::Session (const char * Key)
 {
-    WebserverInternal::Session * Session = ((RequestInternal *) InternalTag)->Server
-                                                    .FindSession (Cookie (SessionCookie));
+    Webserver::Internal::Session * Session
+        = internal->Server.FindSession (Cookie (SessionCookie));
+
     if (!Session)
         return "";
 
     return Session->Data.Get (Key);
 }
 
-void Lacewing::Webserver::CloseSession (const char * ID)
+void Webserver::CloseSession (const char * ID)
 {
-    RequestInternal &Internal = *((RequestInternal *) InternalTag);
+    Webserver::Internal::Session * Session = internal->FindSession (ID);
 
-    WebserverInternal::Session * Session = Internal.Server.FindSession (ID);
-
-    if (Session == Internal.Server.FirstSession)
-        Internal.Server.FirstSession = Session->Next;
+    if (Session == internal->FirstSession)
+        internal->FirstSession = Session->Next;
     else
     {
-        for (WebserverInternal::Session * S = Internal.Server.FirstSession; S; S = S->Next)
+        for (Webserver::Internal::Session * S = internal->FirstSession; S; S = S->Next)
         {
             if (S->Next == Session)
             {
@@ -108,17 +106,17 @@ void Lacewing::Webserver::CloseSession (const char * ID)
     delete Session;
 }
 
-void Lacewing::Webserver::Request::CloseSession()
+void Webserver::Request::CloseSession ()
 {
-    ((RequestInternal *) InternalTag)->Server.Webserver.CloseSession(Session ());
+    internal->Server.Webserver.CloseSession (Session ());
 }
 
-const char * Lacewing::Webserver::Request::Session()
+const char * Webserver::Request::Session ()
 {
     return Cookie (SessionCookie);
 }
 
-WebserverInternal::Session * WebserverInternal::FindSession (const char * SessionID_Hex)
+Webserver::Internal::Session * Webserver::Internal::FindSession (const char * SessionID_Hex)
 {
     if (strlen (SessionID_Hex) != 32)
         return 0;
@@ -146,7 +144,7 @@ WebserverInternal::Session * WebserverInternal::FindSession (const char * Sessio
         SessionID_Bytes [i] = (char) strtol (hex, 0, 16);
     }
 
-    WebserverInternal::Session * Session;
+    Webserver::Internal::Session * Session;
 
     for (Session = FirstSession; Session; Session = Session->Next)
     {
@@ -161,30 +159,29 @@ WebserverInternal::Session * WebserverInternal::FindSession (const char * Sessio
 }
 
 
-Lacewing::Webserver::Request::SessionItem * Lacewing::Webserver::Request::FirstSessionItem ()
+Webserver::Request::SessionItem * Webserver::Request::FirstSessionItem ()
 {
-    RequestInternal &Internal = *(RequestInternal *) InternalTag;
 
-    WebserverInternal::Session * Session = Internal.Server.FindSession (Cookie (SessionCookie));
+    Webserver::Internal::Session * Session = internal->Server.FindSession (Cookie (SessionCookie));
 
     if (!Session)
         return 0;
 
-    return (Lacewing::Webserver::Request::SessionItem *) Session->Data.First;
+    return (Webserver::Request::SessionItem *) Session->Data.First;
 }
 
-Lacewing::Webserver::Request::SessionItem *
-        Lacewing::Webserver::Request::SessionItem::Next ()
+Webserver::Request::SessionItem *
+        Webserver::Request::SessionItem::Next ()
 {
-    return (Lacewing::Webserver::Request::SessionItem *) ((Map::Item *) this)->Next;
+    return (Webserver::Request::SessionItem *) ((Map::Item *) this)->Next;
 }
 
-const char * Lacewing::Webserver::Request::SessionItem::Name ()
+const char * Webserver::Request::SessionItem::Name ()
 {
     return ((Map::Item *) this)->Key;
 }
 
-const char * Lacewing::Webserver::Request::SessionItem::Value ()
+const char * Webserver::Request::SessionItem::Value ()
 {
     return ((Map::Item *) this)->Value;
 }

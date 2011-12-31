@@ -30,19 +30,19 @@
 #include "../Common.h"
 
 lw_error* lw_error_new ()
-    { return (lw_error *) new Lacewing::Error();
+    { return (lw_error *) new Error ();
     }
 void lw_error_delete (lw_error * error)
-    { delete ((Lacewing::Error *) error); 
+    { delete ((Error *) error); 
     }
 void lw_error_add (lw_error * error, long code)
-    { ((Lacewing::Error *) error)->Add(code);
+    { ((Error *) error)->Add (code);
     }
 const char* lw_error_tostring (lw_error * error)
-    { return ((Lacewing::Error *) error)->ToString();
+    { return ((Error *) error)->ToString ();
     }
 lw_error* lw_error_clone (lw_error * error)
-    {  return (lw_error *) ((Lacewing::Error *) error)->Clone();
+    {  return (lw_error *) ((Error *) error)->Clone ();
     }
 
 void lw_error_addf (lw_error * error, const char * format, ...)
@@ -50,7 +50,7 @@ void lw_error_addf (lw_error * error, const char * format, ...)
     va_list args;
     va_start (args, format);
 
-    ((Lacewing::Error *) error)->Add(format, args);    
+    ((Error *) error)->Add (format, args);    
 
     va_end (args);
 }

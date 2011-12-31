@@ -27,51 +27,42 @@
  * SUCH DAMAGE.
  */
 
-#ifndef LacewingPump
-#define LacewingPump
-
-#define SigRemoveClient        (void *) 1
-#define SigEndWatcherThread    (void *) 2
-#define SigExitEventLoop       (void *) 3
-
-struct PumpInternal
-{
-    Lacewing::Pump &Pump;
-
-    int PostFD_Read, PostFD_Write;
-    bool PostFD_Added;
-
-    PumpInternal (Lacewing::Pump &_Pump);
-    
-    void * AddRead      (int FD, void * Tag, void * Callback);
-    void * AddReadWrite (int FD, void * Tag, void * ReadCallback, void * WriteCallback);
-
-    struct Event
-    {
-        Event(PumpInternal &)
-        {
-        }
-
-        void * Tag, * ReadCallback, * WriteCallback, * GoneKey;
-        bool Removing;
-    };
-
-    inline void Remove (void * RemoveKey)
-    {
-        ((Event *) RemoveKey)->Removing = true;
-        Pump.Post(SigRemoveClient, RemoveKey);
-    }
-    
-    Backlog<PumpInternal, Event> EventBacklog;
-
-    List <Event *> PostQueue;
-    Lacewing::Sync Sync_PostQueue;
-
-    bool IsEventPump, InUse;
-
-    friend struct Lacewing::Pump;
-};
-
+#ifndef IPV6_V6ONLY
+    #define IPV6_V6ONLY 27
 #endif
+
+#ifndef CERT_STORE_READONLY_FLAG
+    #define CERT_STORE_READONLY_FLAG           0x00008000
+#endif
+
+#ifndef CERT_STORE_OPEN_EXISTING_FLAG
+    #define CERT_STORE_OPEN_EXISTING_FLAG      0x00004000
+#endif
+
+#ifndef AI_V4MAPPED
+    #define AI_V4MAPPED 0x00000800
+#endif
+
+#ifndef AI_ADDRCONFIG
+    #define AI_ADDRCONFIG 0x00000400
+#endif
+
+namespace Lacewing
+{
+    namespace Compat
+    {
+        typedef INT (WSAAPI * fn_getaddrinfo) (PCSTR, PCSTR, const addrinfo *, addrinfo **);
+        fn_getaddrinfo getaddrinfo ();
+
+        typedef INT (WSAAPI * fn_freeaddrinfo) (addrinfo *);
+        fn_freeaddrinfo freeaddrinfo ();
+
+        typedef __time64_t (__stdcall * fn__mkgmtime64) (tm *);
+        fn__mkgmtime64 _mkgmtime64 ();
+
+        typedef BOOL (WINAPI * fn_GetFileSizeEx) (HANDLE, PLARGE_INTEGER);
+        fn_GetFileSizeEx GetFileSizeEx ();
+    }
+}
 
 

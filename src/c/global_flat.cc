@@ -30,41 +30,41 @@
 #include "../Common.h"
 
 const char * lw_version ()
-    { return Lacewing::Version();
+    { return Version ();
     }
 lw_i64 lw_current_thread_id ()
-    { return Lacewing::CurrentThreadID();
+    { return CurrentThreadID ();
     }
 lw_i64 lw_file_last_modified (const char * filename)
-    { return Lacewing::LastModified(filename);
+    { return LastModified (filename);
     }
 lw_bool lw_file_exists (const char * filename)
-    { return Lacewing::FileExists(filename);
+    { return FileExists (filename);
     }
 lw_bool lw_path_exists (const char * filename)
-    { return Lacewing::PathExists(filename);
+    { return PathExists (filename);
     }
 lw_i64 lw_file_size (const char * filename)
-    { return Lacewing::FileSize(filename);
+    { return FileSize (filename);
     }
 void lw_int64_to_string (lw_i64 int64, char * buffer)
-    { Lacewing::Int64ToString(int64, buffer);
+    { Int64ToString (int64, buffer);
     }
 void lw_temp_path (char * buffer)
-    { Lacewing::TempPath(buffer);
+    { TempPath (buffer);
     }
 void lw_new_temp_file (char * buffer)
-    { Lacewing::NewTempFile(buffer);
+    { NewTempFile (buffer);
     }
 void lw_md5 (char * output, const char * input, long length)
-    { Lacewing::MD5 (output, input, length);
+    { MD5 (output, input, length);
     }
 void lw_md5_hex (char * output, const char * input, long length)
-    { Lacewing::MD5_Hex (output, input, length);
+    { MD5_Hex (output, input, length);
     }
 void lw_sha1 (char * output, const char * input, long length)
-    { Lacewing::SHA1 (output, input, length);
+    { SHA1 (output, input, length);
     }
 void lw_sha1_hex (char * output, const char * input, long length)
-    { Lacewing::SHA1_Hex (output, input, length);
+    { SHA1_Hex (output, input, length);
     }

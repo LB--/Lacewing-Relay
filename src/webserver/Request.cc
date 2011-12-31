@@ -29,20 +29,21 @@
 
 #include "Common.h"
 
-RequestInternal::RequestInternal (WebserverInternal &_Server, WebserverClient &_Client)
-    : Server(_Server), Client (_Client)
+Webserver::Request::Internal::Internal
+    (Webserver::Internal &_Server, WebserverClient &_Client)
+        : Server (_Server), Client (_Client)
 {
     Public.Tag         = 0;
-    Public.InternalTag = this;
+    Public.internal = this;
 
     FirstFile = 0;
 }
 
-RequestInternal::~RequestInternal ()
+Webserver::Request::Internal::~ Internal ()
 {
 }
 
-void RequestInternal::Clean ()
+void Webserver::Request::Internal::Clean ()
 {
     /* HTTP clients reuse the same request object, so this should clear
        everything ready for a new request. */
@@ -67,7 +68,7 @@ void RequestInternal::Clean ()
     OutCookies.Clear();
 }
 
-void RequestInternal::BeforeHandler ()
+void Webserver::Request::Internal::BeforeHandler ()
 {
     /* Any preparation to be done immediately before calling the handler should be in this function */
 
@@ -95,7 +96,7 @@ void RequestInternal::BeforeHandler ()
     Responded = false;
 }
 
-void RequestInternal::AfterHandler ()
+void Webserver::Request::Internal::AfterHandler ()
 {
     /* Anything to be done immediately after the handler has returned should be in this function */
     
@@ -103,7 +104,7 @@ void RequestInternal::AfterHandler ()
         Respond ();
 }
 
-void RequestInternal::RunStandardHandler ()
+void Webserver::Request::Internal::RunStandardHandler ()
 {
     /* If the protocol doesn't want to call the handler itself (ie. it's a standard GET/POST/HEAD
        request), it will call this function to invoke the appropriate handler automatically. */
@@ -116,24 +117,24 @@ void RequestInternal::RunStandardHandler ()
         
         if(!strcmp(Method, "GET"))
         {
-            if(Server.HandlerGet)
-                Server.HandlerGet(Server.Webserver, Public);
+            if (Server.Handlers.Get)
+                Server.Handlers.Get (Server.Webserver, Public);
 
             break;
         }
 
         if(!strcmp(Method, "POST"))
         {
-            if(Server.HandlerPost)
-                Server.HandlerPost(Server.Webserver, Public);
+            if (Server.Handlers.Post)
+                Server.Handlers.Post (Server.Webserver, Public);
 
             break;
         }
 
         if(!strcmp(Method, "HEAD"))
         {
-            if(Server.HandlerHead)
-                Server.HandlerHead(Server.Webserver, Public);
+            if (Server.Handlers.Head)
+                Server.Handlers.Head (Server.Webserver, Public);
 
             break;
         }
@@ -148,7 +149,7 @@ void RequestInternal::RunStandardHandler ()
     AfterHandler ();
 }
 
-void RequestInternal::ProcessHeader (const char * Name, char * Value)
+void Webserver::Request::Internal::ProcessHeader (const char * Name, char * Value)
 {
     if(!strcasecmp(Name, "Cookie"))
     {
@@ -171,7 +172,7 @@ void RequestInternal::ProcessHeader (const char * Name, char * Value)
                 ++ CookieName;
 
             while(*CookieName && CookieName[strlen(CookieName - 1)] == ' ')
-                CookieName [strlen(CookieName - 1)] = 0;
+                CookieName[strlen(CookieName - 1)] = 0;
 
             /* The copy in InCookies doesn't get modified, so the response generator
                can determine which cookies have been changed. */
@@ -186,7 +187,7 @@ void RequestInternal::ProcessHeader (const char * Name, char * Value)
         return;
     }
 
-    if(!strcasecmp(Name, "Host"))
+    if(!strcasecmp (Name, "Host"))
     {
         /* The hostname gets stored separately with the port removed for
            the Request.Hostname() function (the raw header is still saved) */
@@ -206,7 +207,7 @@ void RequestInternal::ProcessHeader (const char * Name, char * Value)
     InHeaders.Set (Name, Value);
 }
 
-bool RequestInternal::ProcessURL (char * URL)
+bool Webserver::Request::Internal::ProcessURL (char * URL)
 {
     /* Must be able to process both absolute and relative URLs (which may come from either SPDY or HTTP) */
 
@@ -291,7 +292,7 @@ bool RequestInternal::ProcessURL (char * URL)
 
     for(char * i = this->URL; *i; ++ i)
     {
-        if(i[0] == '.' && i[1] == '.')
+        if(i [0] == '.' && i [1] == '.')
             return false;
 
         if(*i == '\\')
@@ -301,20 +302,20 @@ bool RequestInternal::ProcessURL (char * URL)
     return true;
 }
 
-void RequestInternal::AddFileSend(const char * Filename, lw_i64 FileOffset, lw_i64 FileSize)
+void Webserver::Request::Internal::AddFileSend (const char * Filename, lw_i64 FileOffset, lw_i64 FileSize)
 {
-    RequestInternal::File * File = FirstFile;
+    Webserver::Request::Internal::File * File = FirstFile;
 
     if(!File)
     {
-        File = FirstFile = new RequestInternal::File;
+        File = FirstFile = new Webserver::Request::Internal::File;
     }
     else
     {
         while(File->Next)
             File = File->Next;
 
-        File->Next = new RequestInternal::File;
+        File->Next = new Webserver::Request::Internal::File;
         File = File->Next;
     }
 
@@ -326,7 +327,7 @@ void RequestInternal::AddFileSend(const char * Filename, lw_i64 FileOffset, lw_i
     strncpy (File->Filename, Filename, sizeof (File->Filename));
 }
 
-void RequestInternal::File::Send(Lacewing::Server::Client &Socket, int ToSend, bool &Flushed)
+void Webserver::Request::Internal::File::Send (Server::Client &Socket, int ToSend, bool &Flushed)
 {
     if (ToSend != -1)
     {
@@ -363,7 +364,7 @@ void RequestInternal::File::Send(Lacewing::Server::Client &Socket, int ToSend, b
     Socket.Send ((char *) FileOffset, (int) FileSize);
 }
 
-void RequestInternal::Respond ()
+void Webserver::Request::Internal::Respond ()
 {
     LacewingAssert (!Responded);
 
@@ -371,68 +372,60 @@ void RequestInternal::Respond ()
     Responded = true;
 }
 
-Lacewing::Address &Lacewing::Webserver::Request::GetAddress()
+Address &Webserver::Request::GetAddress ()
 {
-    return ((RequestInternal *) InternalTag)->Client.Socket.GetAddress();
+    return ((Webserver::Request::Internal *) internal)->Client.Socket.GetAddress ();
 }
 
-void Lacewing::Webserver::Request::Disconnect()
+void Webserver::Request::Disconnect ()
 {
-    ((RequestInternal *) InternalTag)->Client.Socket.Disconnect();
+    ((Webserver::Request::Internal *) internal)->Client.Socket.Disconnect ();
 }
 
-void Lacewing::Webserver::Request::Send(const char * Data, int Size)
+void Webserver::Request::Send (const char * Data, int Size)
 {
-    RequestInternal &Internal = *(RequestInternal *) InternalTag;
-
     if(Size == -1)
         Size = strlen(Data);
 
     if (Size <= 0)
         return;
 
-    Internal.TotalNonFileSize += Size;
-    Internal.Response.Add (Data, Size);
+    internal->TotalNonFileSize += Size;
+    internal->Response.Add (Data, Size);
 }
 
-void Lacewing::Webserver::Request::SendConstant(const char * Data, int Size)
+void Webserver::Request::SendConstant (const char * Data, int Size)
 {
-    RequestInternal &Internal = *(RequestInternal *) InternalTag;
-
     if(Size == -1)
         Size = strlen(Data);
 
     if (Size <= 0)
         return;
 
-    Internal.TotalNonFileSize += Size;
-    Internal.AddFileSend("", (lw_i64) Data, Size);
+    internal->TotalNonFileSize += Size;
+    internal->AddFileSend ("", (lw_i64) Data, Size);
 }
 
-void Lacewing::Webserver::Request::SendFile(const char * Filename, lw_i64 Offset, lw_i64 Size)
+void Webserver::Request::SendFile (const char * Filename, lw_i64 Offset, lw_i64 Size)
 {
-    RequestInternal &Internal = *(RequestInternal *) InternalTag;
-
     if (!*Filename)
         return;
 
     if (Size == -1)
-        Size = Lacewing::FileSize (Filename);
+        Size = FileSize (Filename);
 
     if (Size <= 0)
         return;
 
-    Internal.TotalFileSize += Size;
-    Internal.AddFileSend (Filename, Offset, Size);
+    internal->TotalFileSize += Size;
+    internal->AddFileSend (Filename, Offset, Size);
 }
 
-void Lacewing::Webserver::Request::Reset()
+void Webserver::Request::Reset ()
 {
-    RequestInternal &Internal = *(RequestInternal *) InternalTag;
-
-    Internal.Response.Reset ();
+    internal->Response.Reset ();
     
-    {   RequestInternal::File * File = Internal.FirstFile;
+    {   Webserver::Request::Internal::File * File = internal->FirstFile;
 
         while(File)
         {
@@ -440,19 +433,19 @@ void Lacewing::Webserver::Request::Reset()
             File = File->Next;
         }
 
-        Internal.FirstFile = 0;
+        internal->FirstFile = 0;
     }
 
-    Internal.TotalFileSize = 0;
-    Internal.TotalNonFileSize = 0;
+    internal->TotalFileSize = 0;
+    internal->TotalNonFileSize = 0;
 }
 
-void Lacewing::Webserver::Request::GuessMimeType(const char * Filename)
+void Webserver::Request::GuessMimeType (const char * Filename)
 {
     SetMimeType(Lacewing::GuessMimeType(Filename));
 }
 
-void Lacewing::Webserver::Request::SetMimeType(const char * MimeType, const char * Charset)
+void Webserver::Request::SetMimeType (const char * MimeType, const char * Charset)
 {
      if (!*Charset)
      {
@@ -466,32 +459,32 @@ void Lacewing::Webserver::Request::SetMimeType(const char * MimeType, const char
      Header ("Content-Type", Type);
 }
 
-void Lacewing::Webserver::Request::SetRedirect(const char * URL)
+void Webserver::Request::SetRedirect (const char * URL)
 {
     Status (303, "See Other");
     Header ("Location", URL);
 }
 
-void Lacewing::Webserver::Request::DisableCache()
+void Webserver::Request::DisableCache ()
 {
     Header("Cache-Control", "no-cache");
 }
 
-void Lacewing::Webserver::Request::Header(const char * Name, const char * Value)
+void Webserver::Request::Header (const char * Name, const char * Value)
 {
-    ((RequestInternal *) InternalTag)->OutHeaders.Set(Name, Value);
+    ((Webserver::Request::Internal *) internal)->OutHeaders.Set (Name, Value);
 }
 
-void Lacewing::Webserver::Request::Cookie(const char * Name, const char * Value)
+void Webserver::Request::Cookie (const char * Name, const char * Value)
 {
     Cookie (Name, Value, Secure () ? "Secure; HttpOnly" : "HttpOnly");
 }
 
-void Lacewing::Webserver::Request::Cookie(const char * Name, const char * Value, const char * Attributes)
+void Webserver::Request::Cookie (const char * Name, const char * Value, const char * Attributes)
 {
     if (!*Attributes)
     {
-        ((RequestInternal *) InternalTag)->OutCookies.Set (Name, Value);
+        ((Webserver::Request::Internal *) internal)->OutCookies.Set (Name, Value);
         return;
     }
 
@@ -501,129 +494,129 @@ void Lacewing::Webserver::Request::Cookie(const char * Name, const char * Value,
     strcat (Buffer, "; ");
     strcat (Buffer, Attributes);
 
-    ((RequestInternal *) InternalTag)->OutCookies.Set (strdup (Name), Buffer, false);
+    ((Webserver::Request::Internal *) internal)->OutCookies.Set (strdup (Name), Buffer, false);
 }
 
-void Lacewing::Webserver::Request::Status(int Code, const char * Message)
+void Webserver::Request::Status (int Code, const char * Message)
 {
-    sprintf(((RequestInternal *) InternalTag)->Status, "%d %s", Code, Message);
+    sprintf (((Webserver::Request::Internal *) internal)->Status, "%d %s", Code, Message);
 }
 
-void Lacewing::Webserver::Request::SetUnmodified()
+void Webserver::Request::SetUnmodified ()
 {
     Status (304, "Not Modified");
 }
 
-void Lacewing::Webserver::Request::LastModified(lw_i64 Time)
+void Webserver::Request::LastModified (lw_i64 Time)
 {
     tm TM;
 
     time_t TimeT = (time_t) Time;
     gmtime_r(&TimeT, &TM);
 
-    char LastModified[128];
-    sprintf(LastModified, "%s, %02d %s %d %02d:%02d:%02d GMT", Weekdays[TM.tm_wday], TM.tm_mday,
-                            Months[TM.tm_mon], TM.tm_year + 1900, TM.tm_hour, TM.tm_min, TM.tm_sec);
+    char LastModified [128];
+    sprintf (LastModified, "%s, %02d %s %d %02d:%02d:%02d GMT", Weekdays [TM.tm_wday], TM.tm_mday,
+                            Months [TM.tm_mon], TM.tm_year + 1900, TM.tm_hour, TM.tm_min, TM.tm_sec);
 
     Header("Last-Modified", LastModified);
 }
 
-void Lacewing::Webserver::Request::Finish()
+void Webserver::Request::Finish ()
 {
-    ((RequestInternal *) InternalTag)->Respond ();
+    ((Webserver::Request::Internal *) internal)->Respond ();
 }
 
-const char * Lacewing::Webserver::Request::Header(const char * Name)
+const char * Webserver::Request::Header (const char * Name)
 {
-    return ((RequestInternal *) InternalTag)->InHeaders.Get(Name);
+    return ((Webserver::Request::Internal *) internal)->InHeaders.Get (Name);
 }
 
-struct Lacewing::Webserver::Request::Header * Lacewing::Webserver::Request::FirstHeader ()
+struct Webserver::Request::Header * Webserver::Request::FirstHeader ()
 {
-    return (struct Lacewing::Webserver::Request::Header *)
-                ((RequestInternal *) InternalTag)->InHeaders.First;
+    return (struct Webserver::Request::Header *)
+                ((Webserver::Request::Internal *) internal)->InHeaders.First;
 }
 
-const char * Lacewing::Webserver::Request::Header::Name ()
-{
-    return ((Map::Item *) this)->Key;
-}
-
-const char * Lacewing::Webserver::Request::Header::Value ()
-{
-    return ((Map::Item *) this)->Value;
-}
-
-struct Lacewing::Webserver::Request::Header * Lacewing::Webserver::Request::Header::Next ()
-{
-    return (struct Lacewing::Webserver::Request::Header *) ((Map::Item *) this)->Next;
-}
-
-const char * Lacewing::Webserver::Request::Cookie(const char * Name)
-{
-    return ((RequestInternal *) InternalTag)->InCookies.Get(Name);
-}
-
-struct Lacewing::Webserver::Request::Cookie * Lacewing::Webserver::Request::FirstCookie ()
-{
-    return (struct Lacewing::Webserver::Request::Cookie *)
-                ((RequestInternal *) InternalTag)->InCookies.First;
-}
-
-struct Lacewing::Webserver::Request::Cookie * Lacewing::Webserver::Request::Cookie::Next ()
-{
-    return (struct Lacewing::Webserver::Request::Cookie *) ((Map::Item *) this)->Next;
-}
-
-const char * Lacewing::Webserver::Request::Cookie::Name ()
+const char * Webserver::Request::Header::Name ()
 {
     return ((Map::Item *) this)->Key;
 }
 
-const char * Lacewing::Webserver::Request::Cookie::Value ()
+const char * Webserver::Request::Header::Value ()
 {
     return ((Map::Item *) this)->Value;
 }
 
-const char * Lacewing::Webserver::Request::GET(const char * Name)
+struct Webserver::Request::Header * Webserver::Request::Header::Next ()
 {
-    return ((RequestInternal *) InternalTag)->GetItems.Get(Name);
+    return (struct Webserver::Request::Header *) ((Map::Item *) this)->Next;
 }
 
-const char * Lacewing::Webserver::Request::POST(const char * Name)
+const char * Webserver::Request::Cookie (const char * Name)
 {
-    return ((RequestInternal *) InternalTag)->PostItems.Get(Name);
+    return ((Webserver::Request::Internal *) internal)->InCookies.Get (Name);
 }
 
-Lacewing::Webserver::Request::Parameter * Lacewing::Webserver::Request::GET ()
+struct Webserver::Request::Cookie * Webserver::Request::FirstCookie ()
 {
-    return (Lacewing::Webserver::Request::Parameter *)
-                ((RequestInternal *) InternalTag)->GetItems.First;
+    return (struct Webserver::Request::Cookie *)
+                ((Webserver::Request::Internal *) internal)->InCookies.First;
 }
 
-Lacewing::Webserver::Request::Parameter * Lacewing::Webserver::Request::POST ()
+struct Webserver::Request::Cookie * Webserver::Request::Cookie::Next ()
 {
-    return (Lacewing::Webserver::Request::Parameter *)
-                ((RequestInternal *) InternalTag)->PostItems.First;
+    return (struct Webserver::Request::Cookie *) ((Map::Item *) this)->Next;
 }
 
-Lacewing::Webserver::Request::Parameter *
-        Lacewing::Webserver::Request::Parameter::Next ()
-{
-    return (Lacewing::Webserver::Request::Parameter *) ((Map::Item *) this)->Next;
-}
-
-const char * Lacewing::Webserver::Request::Parameter::Name ()
+const char * Webserver::Request::Cookie::Name ()
 {
     return ((Map::Item *) this)->Key;
 }
 
-const char * Lacewing::Webserver::Request::Parameter::Value ()
+const char * Webserver::Request::Cookie::Value ()
 {
     return ((Map::Item *) this)->Value;
 }
 
-lw_i64 Lacewing::Webserver::Request::LastModified()
+const char * Webserver::Request::GET (const char * Name)
+{
+    return ((Webserver::Request::Internal *) internal)->GetItems.Get (Name);
+}
+
+const char * Webserver::Request::POST (const char * Name)
+{
+    return ((Webserver::Request::Internal *) internal)->PostItems.Get (Name);
+}
+
+Webserver::Request::Parameter * Webserver::Request::GET ()
+{
+    return (Webserver::Request::Parameter *)
+                ((Webserver::Request::Internal *) internal)->GetItems.First;
+}
+
+Webserver::Request::Parameter * Webserver::Request::POST ()
+{
+    return (Webserver::Request::Parameter *)
+                ((Webserver::Request::Internal *) internal)->PostItems.First;
+}
+
+Webserver::Request::Parameter *
+        Webserver::Request::Parameter::Next ()
+{
+    return (Webserver::Request::Parameter *) ((Map::Item *) this)->Next;
+}
+
+const char * Webserver::Request::Parameter::Name ()
+{
+    return ((Map::Item *) this)->Key;
+}
+
+const char * Webserver::Request::Parameter::Value ()
+{
+    return ((Map::Item *) this)->Value;
+}
+
+lw_i64 Webserver::Request::LastModified ()
 {
     const char * LastModified = Header("If-Modified-Since");
 
@@ -633,27 +626,27 @@ lw_i64 Lacewing::Webserver::Request::LastModified()
     return 0;
 }
 
-bool Lacewing::Webserver::Request::Secure()
+bool Webserver::Request::Secure ()
 {
-    return ((RequestInternal *) InternalTag)->Client.Secure;
+    return ((Webserver::Request::Internal *) internal)->Client.Secure;
 }
 
-const char * Lacewing::Webserver::Request::Hostname()
+const char * Webserver::Request::Hostname ()
 {
-    return ((RequestInternal *) InternalTag)->Hostname;
+    return ((Webserver::Request::Internal *) internal)->Hostname;
 }
 
-const char * Lacewing::Webserver::Request::URL()
+const char * Webserver::Request::URL ()
 {
-    return ((RequestInternal *) InternalTag)->URL;
+    return ((Webserver::Request::Internal *) internal)->URL;
 }
 
-int Lacewing::Webserver::Request::IdleTimeout ()
+int Webserver::Request::IdleTimeout ()
 {
-    return ((RequestInternal *) InternalTag)->Client.Timeout;
+    return ((Webserver::Request::Internal *) internal)->Client.Timeout;
 }
 
-void Lacewing::Webserver::Request::IdleTimeout (int Seconds)
+void Webserver::Request::IdleTimeout (int Seconds)
 {
-    ((RequestInternal *) InternalTag)->Client.Timeout = Seconds;
+    ((Webserver::Request::Internal *) internal)->Client.Timeout = Seconds;
 }

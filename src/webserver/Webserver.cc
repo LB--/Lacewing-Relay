@@ -29,30 +29,30 @@
 
 #include "Common.h"
 
-WebserverClient::WebserverClient(WebserverInternal &_Server, Lacewing::Server::Client &_Socket, bool _Secure)
+WebserverClient::WebserverClient (Webserver::Internal &_Server, Server::Client &_Socket, bool _Secure)
     : Server (_Server), Socket (_Socket), Secure (_Secure), Timeout (_Server.Timeout)
 {
 }
 
-char * WebserverInternal::BorrowSendBuffer()
+char * Webserver::Internal::BorrowSendBuffer ()
 {
-    if(!SendBuffers.First)
-        for(int i = WebserverInternal::SendBufferBacklog; i; -- i)
-            SendBuffers.Push (new char [WebserverInternal::SendBufferSize]);
+    if (!SendBuffers.First)
+        for (int i = Webserver::Internal::SendBufferBacklog; i; -- i)
+            SendBuffers.Push (new char [Webserver::Internal::SendBufferSize]);
 
     return SendBuffers.Pop ();
 }
 
-void WebserverInternal::ReturnSendBuffer(char * SendBuffer)
+void Webserver::Internal::ReturnSendBuffer (char * SendBuffer)
 {
     SendBuffers.Push (SendBuffer);
 }
 
-void WebserverInternal::SocketConnect(Lacewing::Server &Server, Lacewing::Server::Client &Client)
+void Webserver::Internal::SocketConnect (Server &Server, Server::Client &Client)
 {
 }
 
-void WebserverInternal::SocketDisconnect(Lacewing::Server &Server, Lacewing::Server::Client &Client)
+void Webserver::Internal::SocketDisconnect (Server &Server, Server::Client &Client)
 {
     if (!Client.Tag)
         return;
@@ -62,9 +62,9 @@ void WebserverInternal::SocketDisconnect(Lacewing::Server &Server, Lacewing::Ser
     delete ((WebserverClient *) Client.Tag);
 }
 
-void WebserverInternal::SocketReceive(Lacewing::Server &Server, Lacewing::Server::Client &Client, char * Buffer, int Size)
+void Webserver::Internal::SocketReceive (Server &Server, Server::Client &Client, char * Buffer, int Size)
 {
-    WebserverInternal &Webserver = *(WebserverInternal *) Server.Tag;
+    Webserver::Internal &Webserver = *(Webserver::Internal *) Server.Tag;
 
     if (!Client.Tag)
         Client.Tag = new HTTPClient (Webserver, Client, &Server == Webserver.SecureSocket);
@@ -72,27 +72,27 @@ void WebserverInternal::SocketReceive(Lacewing::Server &Server, Lacewing::Server
     ((WebserverClient *) Client.Tag)->Process(Buffer, Size);
 }
 
-void WebserverInternal::SocketError(Lacewing::Server &Server, Lacewing::Error &Error)
+void Webserver::Internal::SocketError (Server &Server, Error &Error)
 {
     Error.Add("Socket error");
 
-    WebserverInternal &Webserver = *(WebserverInternal *) Server.Tag;
+    Webserver::Internal &Webserver = *(Webserver::Internal *) Server.Tag;
 
-    if(Webserver.HandlerError)
-        Webserver.HandlerError(Webserver.Webserver, Error);
+    if (Webserver.Handlers.Error)
+        Webserver.Handlers.Error (Webserver.Webserver, Error);
 }
 
-void WebserverInternal::TimerTickStatic (Lacewing::Timer &Timer)
+void Webserver::Internal::TimerTickStatic (Lacewing::Timer &Timer)
 {
-    ((WebserverInternal *) Timer.Tag)->TimerTick ();
+    ((Webserver::Internal *) Timer.Tag)->TimerTick ();
 }
 
-void WebserverInternal::TimerTick ()
+void Webserver::Internal::TimerTick ()
 {
     if (Socket)
     {
-        for (Lacewing::Server::Client * Client =
-                Socket->FirstClient (); Client; Client = Client->Next())
+        for (Server::Client * Client =
+                Socket->FirstClient (); Client; Client = Client->Next ())
         {
             if (!Client->Tag)
                 continue;
@@ -103,8 +103,8 @@ void WebserverInternal::TimerTick ()
 
     if (SecureSocket)
     {
-        for (Lacewing::Server::Client * Client =
-                SecureSocket->FirstClient (); Client; Client = Client->Next())
+        for (Server::Client * Client =
+                SecureSocket->FirstClient (); Client; Client = Client->Next ())
         {
             if (!Client->Tag)
                 continue;
@@ -114,244 +114,219 @@ void WebserverInternal::TimerTick ()
     }
 }
 
-Lacewing::Webserver::Webserver(Lacewing::Pump &EventPump)
+Webserver::Webserver (Lacewing::Pump &Pump)
 {
     LacewingInitialise();
     
-    InternalTag = new WebserverInternal(*this, *(PumpInternal *) EventPump.InternalTag);
-    Tag         = 0;
+    internal = new Webserver::Internal (*this, Pump);
+    Tag = 0;
 }
 
-Lacewing::Webserver::~Webserver()
+Webserver::~Webserver ()
 {
     Unhost();
     UnhostSecure();
 
-    delete ((WebserverInternal *) InternalTag);
+    delete internal;
 }
 
-void Lacewing::Webserver::Host(int Port)
+void Webserver::Host (int Port)
 {
-    Lacewing::Filter Filter;
+    Filter Filter;
     Filter.LocalPort(Port);
 
     Host(Filter);
 }
 
-void Lacewing::Webserver::Host(Lacewing::Filter &Filter)
+void Webserver::Host (Filter &Filter)
 {
-    WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
-    Internal.PrepareSocket();
+    internal->PrepareSocket ();
 
-    if(!Filter.LocalPort())
+    if (!Filter.LocalPort())
         Filter.LocalPort(80);
 
-    Internal.Socket->Host(Filter, true);
+    internal->Socket->Host(Filter, true);
 }
 
-void Lacewing::Webserver::HostSecure(int Port)
+void Webserver::HostSecure (int Port)
 {
-    Lacewing::Filter Filter;
+    Filter Filter;
     Filter.LocalPort(Port);
 
     HostSecure(Filter);
 }
 
-void Lacewing::Webserver::HostSecure(Lacewing::Filter &Filter)
+void Webserver::HostSecure (Filter &Filter)
 {
     if(!CertificateLoaded())
         return;
 
-    WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
-    Internal.PrepareSecureSocket();
+    internal->PrepareSecureSocket();
 
-    if(!Filter.LocalPort())
+    if (!Filter.LocalPort())
         Filter.LocalPort(443);
 
-    Internal.SecureSocket->Host(Filter, true);
+    internal->SecureSocket->Host(Filter, true);
 }
 
-void Lacewing::Webserver::Unhost()
+void Webserver::Unhost ()
 {
-    WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
-
-    if(Internal.Socket)
-        Internal.Socket->Unhost();
+    if (internal->Socket)
+        internal->Socket->Unhost ();
 }
 
-void Lacewing::Webserver::UnhostSecure()
+void Webserver::UnhostSecure ()
 {
-    WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
-
-    if(Internal.SecureSocket)
-        Internal.SecureSocket->Unhost();
+    if (internal->SecureSocket)
+        internal->SecureSocket->Unhost ();
 }
 
-bool Lacewing::Webserver::Hosting()
+bool Webserver::Hosting ()
 {
-    WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
-
-    if(!Internal.Socket)
+    if (!internal->Socket)
         return false;
 
-    return Internal.Socket->Hosting();
+    return internal->Socket->Hosting ();
 }
 
-bool Lacewing::Webserver::HostingSecure()
+bool Webserver::HostingSecure ()
 {
-    WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
-
-    if(!Internal.SecureSocket)
+    if (!internal->SecureSocket)
         return false;
 
-    return Internal.SecureSocket->Hosting();
+    return internal->SecureSocket->Hosting ();
 }
 
-int Lacewing::Webserver::Port()
+int Webserver::Port ()
 {
-    WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
-
-    if(!Internal.Socket)
+    if (!internal->Socket)
         return 0;
 
-    return Internal.Socket->Port();
+    return internal->Socket->Port ();
 }
 
-int Lacewing::Webserver::SecurePort()
+int Webserver::SecurePort ()
 {
-    WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
-
-    if(!Internal.SecureSocket)
+    if (!internal->SecureSocket)
         return 0;
 
-    return Internal.SecureSocket->Port();
+    return internal->SecureSocket->Port ();
 }
 
-lw_i64 Lacewing::Webserver::BytesSent()
+lw_i64 Webserver::BytesSent ()
 {
-    WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
-
-    return (Internal.Socket ? Internal.Socket->BytesSent() : 0)
-        + (Internal.SecureSocket ? Internal.SecureSocket->BytesSent() : 0);
+    return (internal->Socket ? internal->Socket->BytesSent () : 0)
+        + (internal->SecureSocket ? internal->SecureSocket->BytesSent () : 0);
 }
 
-lw_i64 Lacewing::Webserver::BytesReceived()
+lw_i64 Webserver::BytesReceived ()
 {
-   WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
-
-    return (Internal.Socket ? Internal.Socket->BytesReceived() : 0)
-        + (Internal.SecureSocket ? Internal.SecureSocket->BytesReceived() : 0);
+    return (internal->Socket ? internal->Socket->BytesReceived () : 0)
+        + (internal->SecureSocket ? internal->SecureSocket->BytesReceived () : 0);
 }
 
-bool Lacewing::Webserver::LoadCertificateFile(const char * Filename, const char * CommonName)
+bool Webserver::LoadCertificateFile (const char * Filename, const char * CommonName)
 {
-    WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
-    Internal.PrepareSecureSocket();
+    internal->PrepareSecureSocket ();
 
-    return Internal.SecureSocket->LoadCertificateFile(Filename, CommonName);
+    return internal->SecureSocket->LoadCertificateFile (Filename, CommonName);
 }
 
-bool Lacewing::Webserver::LoadSystemCertificate(const char * StoreName, const char * CommonName, const char * Location)
+bool Webserver::LoadSystemCertificate (const char * StoreName, const char * CommonName, const char * Location)
 {
-    WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
-    Internal.PrepareSecureSocket();
+    internal->PrepareSecureSocket ();
 
-    return Internal.SecureSocket->LoadSystemCertificate(StoreName, CommonName, Location);
+    return internal->SecureSocket->LoadSystemCertificate (StoreName, CommonName, Location);
 }
 
-bool Lacewing::Webserver::CertificateLoaded()
+bool Webserver::CertificateLoaded ()
 {
-    WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
-    Internal.PrepareSecureSocket();
+    internal->PrepareSecureSocket ();
 
-    return Internal.SecureSocket->CertificateLoaded();
+    return internal->SecureSocket->CertificateLoaded ();
 }
 
-void Lacewing::Webserver::EnableManualRequestFinish()
+void Webserver::EnableManualRequestFinish ()
 {
-    ((WebserverInternal *) InternalTag)->AutoFinish = false;
+    internal->AutoFinish = false;
 }
 
-void Lacewing::Webserver::IdleTimeout (int Seconds)
+void Webserver::IdleTimeout (int Seconds)
 {
-    WebserverInternal &Internal = *((WebserverInternal *) InternalTag);
+    internal->Timeout = Seconds;
 
-    Internal.Timeout = Seconds;
-
-    if (Internal.Timer.Started())
+    if (internal->Timer.Started ())
     {
-        Internal.StopTimer ();
-        Internal.StartTimer ();
+        internal->StopTimer ();
+        internal->StartTimer ();
     }
 }
 
-int Lacewing::Webserver::IdleTimeout ()
+int Webserver::IdleTimeout ()
 {
-    return ((WebserverInternal *) InternalTag)->Timeout;
+    return internal->Timeout;
 }
 
-const char * Lacewing::Webserver::Upload::Filename()
+const char * Webserver::Upload::Filename ()
 {
-    return ((UploadInternal *) InternalTag)->Filename;
+    return internal->Filename;
 }
 
-const char * Lacewing::Webserver::Upload::FormElementName()
+const char * Webserver::Upload::FormElementName ()
 {
-    return ((UploadInternal *) InternalTag)->FormElement;
+    return internal->FormElement;
 }
 
-const char * Lacewing::Webserver::Upload::Header(const char * Name)
+const char * Webserver::Upload::Header (const char * Name)
 {
-    return ((UploadInternal *) InternalTag)->Header (Name);
+    return internal->Header (Name);
 }
 
-struct Lacewing::Webserver::Upload::Header * Lacewing::Webserver::Upload::FirstHeader ()
+struct Webserver::Upload::Header * Webserver::Upload::FirstHeader ()
 {
-    return (struct Lacewing::Webserver::Upload::Header *)
-                ((UploadInternal *) InternalTag)->Headers.First;
+    return (struct Webserver::Upload::Header *)
+                internal->Headers.First;
 }
 
-const char * Lacewing::Webserver::Upload::Header::Name ()
+const char * Webserver::Upload::Header::Name ()
 {
     return ((Map::Item *) this)->Key;
 }
 
-const char * Lacewing::Webserver::Upload::Header::Value ()
+const char * Webserver::Upload::Header::Value ()
 {
     return ((Map::Item *) this)->Value;
 }
 
-struct Lacewing::Webserver::Upload::Header * Lacewing::Webserver::Upload::Header::Next ()
+struct Webserver::Upload::Header * Webserver::Upload::Header::Next ()
 {
-    return (struct Lacewing::Webserver::Upload::Header *) ((Map::Item *) this)->Next;
+    return (struct Webserver::Upload::Header *) ((Map::Item *) this)->Next;
 }
 
-void Lacewing::Webserver::Upload::SetAutoSave()
+void Webserver::Upload::SetAutoSave ()
 {
-    UploadInternal &Internal = *((UploadInternal *) InternalTag);
-
-    if(*Internal.AutoSaveFilename)
+    if (*internal->AutoSaveFilename)
         return;
 
     char Filename [lw_max_path];
     NewTempFile (Filename);
 
-    Internal.AutoSaveFilename = Internal.Copier.Set("AutoSaveFilename", Filename)->Value;
-    Internal.AutoSaveFile     = fopen(Filename, "wb");
+    internal->AutoSaveFilename = internal->Copier.Set ("AutoSaveFilename", Filename)->Value;
+    internal->AutoSaveFile     = fopen (Filename, "wb");
 }
 
-const char * Lacewing::Webserver::Upload::GetAutoSaveFilename()
+const char * Webserver::Upload::GetAutoSaveFilename ()
 {
-    return ((UploadInternal *) InternalTag)->AutoSaveFilename;
+    return internal->AutoSaveFilename;
 }
 
-AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, Get)
-AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, Post)
-AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, Head)
-AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, Error)
-AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, UploadStart)
-AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, UploadChunk)
-AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, UploadDone)
-AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, UploadPost)
-AutoHandlerFunctions(Lacewing::Webserver, WebserverInternal, Disconnect)
+AutoHandlerFunctions (Webserver, Get)
+AutoHandlerFunctions (Webserver, Post)
+AutoHandlerFunctions (Webserver, Head)
+AutoHandlerFunctions (Webserver, Error)
+AutoHandlerFunctions (Webserver, UploadStart)
+AutoHandlerFunctions (Webserver, UploadChunk)
+AutoHandlerFunctions (Webserver, UploadDone)
+AutoHandlerFunctions (Webserver, UploadPost)
+AutoHandlerFunctions (Webserver, Disconnect)
 

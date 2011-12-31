@@ -1,4 +1,3 @@
-
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
  * Copyright (C) 2011 James McLaughlin.  All rights reserved.
@@ -29,36 +28,43 @@
 
 #include "../Common.h"
 
-Lacewing::Event::Event()
+struct Lacewing::Event::Internal
+{
+};
+
+Event::Event()
 {
     LacewingInitialise();
 
+    internal = (Lacewing::Event::Internal *) WSACreateEvent ();
     Tag = 0;
-    InternalTag = WSACreateEvent();
 }
 
-Lacewing::Event::~Event()
+Event::~Event()
 {
-    WSACloseEvent((WSAEVENT) InternalTag);
+    WSACloseEvent ((WSAEVENT) internal);
 }
 
-bool Lacewing::Event::Signalled()
+bool Event::Signalled()
 {
-    return WSAWaitForMultipleEvents(1, (WSAEVENT *) &InternalTag, true, 0, false) == WAIT_OBJECT_0;
+    return WSAWaitForMultipleEvents
+        (1, (WSAEVENT *) &internal, true, 0, false) == WAIT_OBJECT_0;
 }
 
-void Lacewing::Event::Signal()
+void Event::Signal()
 {
-    WSASetEvent((WSAEVENT) InternalTag);
+    WSASetEvent ((WSAEVENT) internal);
 }
 
-void Lacewing::Event::Unsignal()
+void Event::Unsignal()
 {
-    WSAResetEvent((WSAEVENT) InternalTag);
+    WSAResetEvent ((WSAEVENT) internal);
 }
 
-void Lacewing::Event::Wait(int Timeout)
+bool Event::Wait(int Timeout)
 {
-    WSAWaitForMultipleEvents(1, (WSAEVENT *) &InternalTag, true, Timeout == -1 ? INFINITE : Timeout, false);
+    return WSAWaitForMultipleEvents
+        (1, (WSAEVENT *) &internal, true, Timeout == -1 ? INFINITE : Timeout, false)
+            == WAIT_OBJECT_0;
 }
 

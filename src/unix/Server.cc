@@ -31,15 +31,13 @@
 #include "../QueuedSend.h"
 #include "SendFile.h"
 
-struct ServerInternal;
-
-struct ServerClientInternal
+struct Server::Client::Internal
 {
-    ServerInternal &Server;
+    Server::Internal &Server;
 
-    ServerClientInternal(ServerInternal &_Server) : Server(_Server)
+    Internal (Server::Internal &_Server) : Server (_Server)
     {
-        Public.InternalTag = this;
+        Public.internal = this;
         Public.Tag = 0;
 
         Context = 0;
@@ -48,18 +46,18 @@ struct ServerClientInternal
         Transfer = 0;
     }
 
-    ~ServerClientInternal()
+    ~ Internal ()
     {
-        delete Address;
-
         if(Context)
             SSL_free(Context);
     }
 
-    Lacewing::Server::Client Public;
-    Lacewing::Address * Address;
+    Server::Client Public;
 
-    List <ServerClientInternal *>::Element * Element;
+    AddressWrapper Address;
+    sockaddr_storage SockAddr;
+
+    List <Server::Client::Internal *>::Element * Element;
 
     int Socket;
     void * GoneKey;
@@ -144,44 +142,43 @@ struct ServerClientInternal
     void Terminate ();
 };
 
-struct ServerInternal
+struct Server::Internal
 {
     Lacewing::Server &Server;
 
-    int Port;
     int Socket;
 
-    PumpInternal &EventPump;
+    Lacewing::Pump &Pump;
     
-    Lacewing::Server::HandlerConnect    HandlerConnect;
-    Lacewing::Server::HandlerDisconnect HandlerDisconnect;
-    Lacewing::Server::HandlerReceive    HandlerReceive;
-    Lacewing::Server::HandlerError      HandlerError;
+    struct
+    {
+        HandlerConnect Connect;
+        HandlerDisconnect Disconnect;
+        HandlerReceive Receive;
+        HandlerError Error;
 
-    ServerInternal(Lacewing::Server &_Server, PumpInternal &_EventPump)
-            : Server(_Server), EventPump(_EventPump)
+    } Handlers;
+
+    Internal (Lacewing::Server &_Server, Lacewing::Pump &_Pump)
+                : Server (_Server), Pump (_Pump)
     {
         Socket  = -1;
         Context =  0;
         
-        HandlerConnect    = 0;
-        HandlerDisconnect = 0;
-        HandlerReceive    = 0;
-        HandlerError      = 0;
+        memset (&Handlers, 0, sizeof (Handlers));
 
         Nagle = true;
 
         BytesReceived = 0;
     }
 
-    ~ServerInternal()
+    ~ Internal ()
     {
     }
     
-    Backlog <ServerInternal, ServerClientInternal>
-        ClientStructureBacklog;
-        
-    List <ServerClientInternal *> Clients;
+    Backlog <Server::Client::Internal> ClientStructureBacklog;
+
+    List <Server::Client::Internal *> Clients;
 
     SSL_CTX * Context;
 
@@ -196,45 +193,45 @@ struct ServerInternal
     ReceiveBuffer Buffer;
 };
     
-void ServerClientInternal::Terminate ()
+void Server::Client::Internal::Terminate ()
 {
     DebugOut ("Terminate %d", &Public);
 
     shutdown (Socket, SHUT_RDWR);
     close (Socket);
 
-    Server.EventPump.Remove (GoneKey);
+    Server.Pump.Remove (GoneKey);
     Socket = -1;
     
-    if(Server.HandlerDisconnect)
-        Server.HandlerDisconnect(Server.Server, Public);
+    if (Server.Handlers.Disconnect)
+        Server.Handlers.Disconnect (Server.Server, Public);
 
     Server.Clients.Erase (Element);
     Server.ClientStructureBacklog.Return (*this);
 }
 
-Lacewing::Server::Server(Lacewing::Pump &Pump)
+Server::Server (Lacewing::Pump &Pump)
 {
     LacewingInitialise();
     
-    InternalTag = new ServerInternal(*this, *(PumpInternal *) Pump.InternalTag);
+    internal = new Server::Internal (*this, Pump);
     Tag = 0;
 }
 
-Lacewing::Server::~Server()
+Server::~Server ()
 {
     Unhost();
 
-    delete ((ServerInternal *) InternalTag);
+    delete internal;
 }
 
-void ClientSocketReadReady (ServerClientInternal &Client)
+static void ClientSocketReadReady (Server::Client::Internal &Client)
 {
-    ServerInternal &Internal = Client.Server;
+    Server::Internal * internal = &Client.Server;
     
     if(Client.Transfer)
     {
-        if(!Client.Transfer->ReadReady())
+        if(!Client.Transfer->ReadReady ())
         {
             delete Client.Transfer;
             Client.Transfer = 0;
@@ -250,13 +247,13 @@ void ClientSocketReadReady (ServerClientInternal &Client)
     
     for(;;)
     {
-        Internal.Buffer.Prepare();
+        internal->Buffer.Prepare ();
 
-        if(!Internal.Context)
+        if (!internal->Context)
         {
             /* Normal receive */
 
-            Received = recv(Client.Socket, Internal.Buffer, Internal.Buffer.Size, MSG_DONTWAIT);
+            Received = recv (Client.Socket, internal->Buffer, internal->Buffer.Size, MSG_DONTWAIT);
             
             if(Received < 0)
             {
@@ -314,7 +311,7 @@ void ClientSocketReadReady (ServerClientInternal &Client)
             
             /* Now do the actual read */
 
-            Received = SSL_read(Client.Context, Internal.Buffer, Internal.Buffer.Size);
+            Received = SSL_read(Client.Context, internal->Buffer, internal->Buffer.Size);
 
             if(Received == 0)
             {
@@ -354,11 +351,11 @@ void ClientSocketReadReady (ServerClientInternal &Client)
             }
         }
 
-        Internal.Buffer.Received(Received);
-        Internal.BytesReceived += Received;
+        internal->Buffer.Received (Received);
+        internal->BytesReceived += Received;
 
-        if(Internal.HandlerReceive)
-            Internal.HandlerReceive(Internal.Server, Client.Public, Internal.Buffer, Received);
+        if (internal->Handlers.Receive)
+            internal->Handlers.Receive (internal->Server, Client.Public, internal->Buffer, Received);
     }
     
     if (Disconnected)
@@ -367,7 +364,7 @@ void ClientSocketReadReady (ServerClientInternal &Client)
     }
 }
 
-void ClientSocketWriteReady(ServerClientInternal &Client)
+void ClientSocketWriteReady (Server::Client::Internal &Client)
 {
     if(Client.SSLReadWhenWriteReady)
     {
@@ -375,7 +372,7 @@ void ClientSocketWriteReady(ServerClientInternal &Client)
         ClientSocketReadReady(Client);
     }
 
-    ServerInternal &Internal = Client.Server;
+    Server::Internal &Internal = Client.Server;
 
     if(Client.Transfer)
     {
@@ -399,33 +396,37 @@ void ClientSocketWriteReady(ServerClientInternal &Client)
     }
 }
 
-void ListenSocketReadReady(ServerInternal &Internal, bool)
+static void ListenSocketReadReady (Server::Internal * internal, bool)
 {
-    sockaddr_in Address;
+    sockaddr_storage Address;
     socklen_t AddressLength = sizeof(Address);
     
     for(;;)
     {
-        int Socket = accept(Internal.Socket, (sockaddr *) &Address, &AddressLength);
+        int Socket = accept (internal->Socket, (sockaddr *) &Address, &AddressLength);
         
         if(Socket == -1)
             break; 
         
-        fcntl(Socket, F_SETFL, fcntl(Socket, F_GETFL, 0) | O_NONBLOCK);
+        fcntl(Socket, F_SETFL, fcntl (Socket, F_GETFL, 0) | O_NONBLOCK);
         
         DisableSigPipe (Socket);
 
-        if (!Internal.Nagle)
+        if (!internal->Nagle)
             DisableNagling (Socket);
 
-        ServerClientInternal &Client = Internal.ClientStructureBacklog.Borrow(Internal);
+        Server::Client::Internal &Client = internal->ClientStructureBacklog.Borrow (*internal);
 
         Client.Socket = Socket;
-        Client.Address = new Lacewing::Address(Address.sin_addr.s_addr);
 
-        if(Internal.Context)
+        /* TODO : Just accept () directly into Client.SockAddr? */
+
+        memcpy (&Client.SockAddr, &Address, sizeof (Address));
+        Client.Address.Set (&Client.SockAddr);
+
+        if (internal->Context)
         {
-            Client.Context = SSL_new(Internal.Context);
+            Client.Context = SSL_new (internal->Context);
 
             Client.SSLBio = BIO_new_socket(Client.Socket, BIO_NOCLOSE);
             SSL_set_bio(Client.Context, Client.SSLBio, Client.SSLBio);
@@ -433,184 +434,136 @@ void ListenSocketReadReady(ServerInternal &Internal, bool)
             SSL_set_accept_state(Client.Context);
         }
         
-        if(Internal.HandlerConnect)
-            Internal.HandlerConnect(Internal.Server, Client.Public);
+        if (internal->Handlers.Connect)
+            internal->Handlers.Connect (internal->Server, Client.Public);
         
-        Client.GoneKey = Internal.EventPump.AddReadWrite(Client.Socket, &Client,
-                        (void *) ClientSocketReadReady, (void *) ClientSocketWriteReady);
+        Client.GoneKey = internal->Pump.Add
+        (
+            Client.Socket,
+            &Client,
+            
+            (Pump::Callback) ClientSocketReadReady,
+            (Pump::Callback) ClientSocketWriteReady
+        );
         
-        Client.Element = Internal.Clients.Push (&Client);
+        Client.Element = internal->Clients.Push (&Client);
     }
 }
 
-void Lacewing::Server::Host(int Port, bool ClientSpeaksFirst)
+void Server::Host (int Port, bool ClientSpeaksFirst)
 {
-    Lacewing::Filter Filter;
+    Filter Filter;
     Filter.LocalPort(Port);
 
     Host(Filter, ClientSpeaksFirst);
 }
 
-void Lacewing::Server::Host(Lacewing::Filter &Filter, bool)
+void Server::Host (Filter &Filter, bool)
 {
     Unhost();
     
-    ServerInternal &Internal = *((ServerInternal *) InternalTag);
+    {   Lacewing::Error Error;
 
-    if(!(Internal.Socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)))
-    {
-        Lacewing::Error Error;
+        if ((internal->Socket = CreateServerSocket (Filter, SOCK_STREAM, IPPROTO_TCP, Error)) == -1)
+        {
+            if (internal->Handlers.Error)
+                internal->Handlers.Error (*this, Error);
 
-        Error.Add(errno);
-        Error.Add("Error creating socket");
-        
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
-
-        return;
+            return;
+        }
     }
 
-    DisableSigPipe (Internal.Socket);
+    if ((!CertificateLoaded()) && (!internal->Nagle))
+        ::DisableNagling(internal->Socket);
 
-    if((!CertificateLoaded()) && (!Internal.Nagle))
-        ::DisableNagling(Internal.Socket);
-
-    fcntl(Internal.Socket, F_SETFL, fcntl(Internal.Socket, F_GETFL, 0) | O_NONBLOCK);
-       
-    {   int reuse = Filter.Reuse() ? 1 : 0;
-        setsockopt(Internal.Socket, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof(reuse));
-    }
-
-    sockaddr_in Address;
-    memset(&Address, 0, sizeof(Address));
-    
-    Address.sin_family = AF_INET;
-    Address.sin_port = htons(Filter.LocalPort() ? Filter.LocalPort() : 0);
-    Address.sin_addr.s_addr = Filter.LocalIP() ? Filter.LocalIP() : htonl(INADDR_ANY);
-    
-    if(bind(Internal.Socket, (sockaddr *) &Address, sizeof(Address)) == -1)
+    if (listen (internal->Socket, SOMAXCONN) == -1)
     {
-        Lacewing::Error Error;
-        
-        Error.Add(errno);
-        Error.Add("Error binding port");
-
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
-        
-        return;
-    }
-
-    if(listen(Internal.Socket, SOMAXCONN) == -1)
-    {
-        Lacewing::Error Error;
+        Error Error;
         
         Error.Add(errno);
         Error.Add("Error listening");
 
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (*this, Error);
         
         return;
     }
-    
-    Internal.EventPump.AddRead(Internal.Socket, &Internal, (void *) ListenSocketReadReady);
-    
-    socklen_t AddressLength = sizeof(sockaddr_in);
-    getsockname(Internal.Socket, (sockaddr *) &Address, &AddressLength);
 
-    Internal.Port = ntohs(Address.sin_port);
+    internal->Pump.Add (internal->Socket, internal, (Pump::Callback) ListenSocketReadReady);
 }
 
-void Lacewing::Server::Unhost()
+void Server::Unhost ()
 {
-    if(!Hosting())
+    if(!Hosting ())
         return;
 
-    ServerInternal &Internal = *((ServerInternal *) InternalTag);
-
-    close(Internal.Socket);
-    Internal.Socket = -1;
+    close (internal->Socket);
+    internal->Socket = -1;
 }
 
-bool Lacewing::Server::Hosting()
+bool Server::Hosting ()
 {
-    ServerInternal &Internal = *((ServerInternal *) InternalTag);
-
-    return Internal.Socket != -1;
+    return internal->Socket != -1;
 }
 
-int Lacewing::Server::ClientCount()
+int Server::ClientCount ()
 {
-    return ((ServerInternal *) InternalTag)->Clients.Size;
+    return internal->Clients.Size;
 }
 
-lw_i64 Lacewing::Server::BytesSent()
+lw_i64 Server::BytesSent ()
 {
-    ServerInternal &Internal = *(ServerInternal *) InternalTag;
-
     return 0; /* TODO */
 }
 
-lw_i64 Lacewing::Server::BytesReceived()
+lw_i64 Server::BytesReceived ()
 {
-    ServerInternal &Internal = *(ServerInternal *) InternalTag;
-
-    return Internal.BytesReceived;
+    return internal->BytesReceived;
 }
 
-void Lacewing::Server::DisableNagling()
+void Server::DisableNagling ()
 {
-    ServerInternal &Internal = *(ServerInternal *) InternalTag;
-
-    if(Internal.Socket != -1)
+    if (internal->Socket != -1)
     {
-        Lacewing::Error Error;
+        Error Error;
         Error.Add("DisableNagling() can only be called when the server is not hosting");
 
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (*this, Error);
 
         return;
     }
 
-    Internal.Nagle = false;
+    internal->Nagle = false;
 }
 
-int Lacewing::Server::Port()
+int Server::Port ()
 {
-    ServerInternal &Internal = *((ServerInternal *) InternalTag);
-
-    if(!Hosting())
-        return 0;
-
-    return Internal.Port;
+    return GetSocketPort (internal->Socket);
 }
 
-bool Lacewing::Server::CertificateLoaded()
+bool Server::CertificateLoaded ()
 {
-    return ((ServerInternal *) InternalTag)->Context != 0;
+    return internal->Context != 0;
 }
 
-int PasswordCallback(char * Buffer, int, int, void * InternalTag)
+static int PasswordCallback (char * Buffer, int, int, void * Tag)
 {
-    ServerInternal &Internal = *((ServerInternal *) InternalTag);
+    Server::Internal * internal = (Server::Internal *) Tag;
 
-    strcpy(Buffer, Internal.Passphrase);
-    return strlen(Internal.Passphrase);
+    strcpy (Buffer, internal->Passphrase);
+    return strlen (internal->Passphrase);
 }
 
-bool Lacewing::Server::LoadCertificateFile(const char * Filename, const char * Passphrase)
+bool Server::LoadCertificateFile (const char * Filename, const char * Passphrase)
 {
-    ServerInternal &Internal = *((ServerInternal *) InternalTag);
-  
     SSL_load_error_strings();
 
-    Internal.Context = SSL_CTX_new(SSLv23_server_method());
+    internal->Context = SSL_CTX_new (SSLv23_server_method ());
 
-    strcpy(Internal.Passphrase, Passphrase);
+    strcpy (internal->Passphrase, Passphrase);
 
-    SSL_CTX_set_mode(Internal.Context, 
+    SSL_CTX_set_mode (internal->Context, 
         SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER
             
         #if HAVE_DECL_SSL_MODE_RELEASE_BUFFERS
@@ -618,44 +571,42 @@ bool Lacewing::Server::LoadCertificateFile(const char * Filename, const char * P
         #endif
     );
 
-    SSL_CTX_set_quiet_shutdown (Internal.Context, 1);
+    SSL_CTX_set_quiet_shutdown (internal->Context, 1);
 
-    SSL_CTX_set_default_passwd_cb(Internal.Context, PasswordCallback);
-    SSL_CTX_set_default_passwd_cb_userdata(Internal.Context, &Internal);
+    SSL_CTX_set_default_passwd_cb (internal->Context, PasswordCallback);
+    SSL_CTX_set_default_passwd_cb_userdata (internal->Context, internal);
 
-    if(SSL_CTX_use_certificate_chain_file(Internal.Context, Filename) != 1)
+    if (SSL_CTX_use_certificate_chain_file (internal->Context, Filename) != 1)
     {
         DebugOut("Failed to load certificate chain file: %s", ERR_error_string(ERR_get_error(), 0));
 
-        Internal.Context = 0;
+        internal->Context = 0;
         return false;
     }
 
-    if(SSL_CTX_use_PrivateKey_file(Internal.Context, Filename, SSL_FILETYPE_PEM) != 1)
+    if (SSL_CTX_use_PrivateKey_file (internal->Context, Filename, SSL_FILETYPE_PEM) != 1)
     {
         DebugOut("Failed to load private key file: %s", ERR_error_string(ERR_get_error(), 0));
 
-        Internal.Context = 0;
+        internal->Context = 0;
         return false;
     }
 
     return true;
 }
 
-bool Lacewing::Server::LoadSystemCertificate(const char * StoreName, const char * CommonName, const char * Location)
+bool Server::LoadSystemCertificate (const char * StoreName, const char * CommonName, const char * Location)
 {
-    ServerInternal &Internal = *((ServerInternal *) InternalTag);
-
-    Lacewing::Error Error;
+    Error Error;
     Error.Add("System certificates are only supported on Windows");
 
-    if(Internal.HandlerError)
-        Internal.HandlerError(*this, Error);
+    if (internal->Handlers.Error)
+        internal->Handlers.Error (*this, Error);
 
     return false;
 }
 
-bool ServerClientInternal::Send(QueuedSend * Queued, const char * Buffer, int Size)
+bool Server::Client::Internal::Send (QueuedSend * Queued, const char * Buffer, int Size)
 {
     if(Size == -1)
         Size = strlen(Buffer);
@@ -749,19 +700,19 @@ bool ServerClientInternal::Send(QueuedSend * Queued, const char * Buffer, int Si
     return true;
 }
 
-void Lacewing::Server::Client::Send(const char * Buffer, int Size)
+void Server::Client::Send (const char * Buffer, int Size)
 {
-    ((ServerClientInternal *) InternalTag)->Send(0, Buffer, Size);
+    internal->Send (0, Buffer, Size);
 }
 
-void Lacewing::Server::Client::SendWritable(char * Buffer, int Size)
+void Server::Client::SendWritable (char * Buffer, int Size)
 {
     /* This only differs for Windows */
 
-    ((ServerClientInternal *) InternalTag)->Send(0, Buffer, Size);
+    internal->Send (0, Buffer, Size);
 }
 
-bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, lw_i64 Offset, lw_i64 Size)
+bool Server::Client::Internal::SendFile (bool AllowQueue, const char * Filename, lw_i64 Offset, lw_i64 Size)
 {   
     if(AllowQueue && (QueuedSends.First || Transfer))
     {        
@@ -804,7 +755,7 @@ bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, lw_i
         
         Transfer = new SSLFileTransfer(File, Context, Size);
 
-        if(!Transfer->WriteReady())
+        if(!Transfer->WriteReady ())
         {
             /* Either completed immediately or failed */
 
@@ -844,83 +795,75 @@ bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, lw_i
     return true;
 }
 
-void Lacewing::Server::Client::SendFile(const char * Filename, lw_i64 Offset, lw_i64 Size)
+void Server::Client::SendFile (const char * Filename, lw_i64 Offset, lw_i64 Size)
 {
-    ((ServerClientInternal *) InternalTag)->SendFile(true, Filename, Offset, Size);
+    internal->SendFile (true, Filename, Offset, Size);
 }
 
-bool Lacewing::Server::Client::CheapBuffering()
+bool Server::Client::CheapBuffering ()
 {
     return true;
 }
 
-void Lacewing::Server::Client::StartBuffering()
+void Server::Client::StartBuffering ()
 {
-    ServerClientInternal &Internal = *(ServerClientInternal *) InternalTag;
-
-    if(Internal.Context)
+    if (internal->Context)
         return;
 
     #ifdef LacewingAllowCork
         int Enabled = 1;
-        setsockopt(Internal.Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof(Enabled));
+        setsockopt (internal->Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof (Enabled));
     #endif
 }
 
-void Lacewing::Server::Client::Flush()
+void Server::Client::Flush ()
 {
-    ServerClientInternal &Internal = *(ServerClientInternal *) InternalTag;
-
-    if(Internal.Context)
+    if (internal->Context)
         return;
 
     #ifdef LacewingAllowCork
         int Enabled = 0;
-        setsockopt(Internal.Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof(Enabled));
+        setsockopt (internal->Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof (Enabled));
     #endif
 }
 
-void Lacewing::Server::Client::Disconnect()
+void Server::Client::Disconnect ()
 {
     /* TODO : Is it safe to remove the client immediately in multithreaded mode? */
 
-    ServerClientInternal &Internal = *((ServerClientInternal *) InternalTag);
-
-    if (Internal.QueuedSends.First || Internal.Transfer)
+    if (internal->QueuedSends.First || internal->Transfer)
     {
-        Internal.QueuedSends.Add (new QueuedSend (QueuedSendType::Disconnect));
+        internal->QueuedSends.Add (new QueuedSend (QueuedSendType::Disconnect));
         return;
     }
     else
     {
-        if (Internal.Context)
-            SSL_shutdown (Internal.Context);
+        if (internal->Context)
+            SSL_shutdown (internal->Context);
         else
-            shutdown (Internal.Socket, SHUT_RD);
+            shutdown (internal->Socket, SHUT_RD);
     }
 }
 
-Lacewing::Address &Lacewing::Server::Client::GetAddress()
+Address &Server::Client::GetAddress ()
 {
-    ServerClientInternal &Internal = *(ServerClientInternal *) InternalTag;
-    
-    return *Internal.Address;
+    return internal->Address;
 }
 
-Lacewing::Server::Client * Lacewing::Server::Client::Next ()
+Server::Client * Server::Client::Next ()
 {
-    return ((ServerClientInternal *) InternalTag)->Element->Next ?
-        &(** ((ServerClientInternal *) InternalTag)->Element->Next)->Public : 0;
+    return internal->Element->Next ?
+        &(** internal->Element->Next)->Public : 0;
 }
 
-Lacewing::Server::Client * Lacewing::Server::FirstClient ()
+Server::Client * Server::FirstClient ()
 {
-    return ((ServerInternal *) InternalTag)->Clients.First ?
-            &(** ((ServerInternal *) InternalTag)->Clients.First)->Public : 0;
+    return internal->Clients.First ?
+            &(** internal->Clients.First)->Public : 0;
 }
 
-AutoHandlerFunctions(Lacewing::Server, ServerInternal, Connect)
-AutoHandlerFunctions(Lacewing::Server, ServerInternal, Disconnect)
-AutoHandlerFunctions(Lacewing::Server, ServerInternal, Receive)
-AutoHandlerFunctions(Lacewing::Server, ServerInternal, Error)
+AutoHandlerFunctions (Server, Connect)
+AutoHandlerFunctions (Server, Disconnect)
+AutoHandlerFunctions (Server, Receive)
+AutoHandlerFunctions (Server, Error)
 

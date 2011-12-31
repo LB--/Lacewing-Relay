@@ -14,8 +14,7 @@ REAL_NAME = liblacewing.@SO_EXT@.0.3.0
 
 COMMONDEPS = src/Common.h src/Backlog.h src/MessageBuilder.h src/MessageReader.h \
 				src/QueuedSend.h src/ReceiveBuffer.h src/TimeHelper.h src/Utility.h \
-				src/unix/EventPump.h src/unix/Pump.h src/unix/SendFile.h src/webserver/Common.h \
-				src/webserver/Map.h src/webserver/http/HTTP.h
+				src/unix/SendFile.h src/webserver/Common.h src/webserver/Map.h src/webserver/http/HTTP.h
 
 OBJECTS = build/Global.o build/Sync.o build/SpinSync.o build/Filter.o build/Address.o build/Thread.o \
 				build/Error.o build/RelayServer.o build/RelayClient.o build/Webserver.o build/HTTP.o \
@@ -23,7 +22,8 @@ OBJECTS = build/Global.o build/Sync.o build/SpinSync.o build/Filter.o build/Addr
 				build/Server.o build/Timer.o build/UDP.o build/Client.o build/Pump.o build/addr_flat.o \
 				build/eventpump_flat.o build/global_flat.o build/server_flat.o build/timer_flat.o \
 				build/webserver_flat.o build/filter_flat.o build/udp_flat.o build/client_flat.o \
-				build/error_flat.o build/sync_flat.o build/ssync_flat.o build/thread_flat.o build/FlashPolicy.o
+				build/error_flat.o build/sync_flat.o build/ssync_flat.o build/thread_flat.o build/FlashPolicy.o \
+				build/Thread.o
 
 ###########
 
@@ -47,8 +47,8 @@ build/Filter.o: src/Filter.cc $(COMMONDEPS)
 	$(CC) $(CXXFLAGS) -c -o $@ src/Filter.cc
 build/Address.o: src/Address.cc $(COMMONDEPS)
 	$(CC) $(CXXFLAGS) -c -o $@ src/Address.cc
-build/Thread.o: src/Thread.cc $(COMMONDEPS)
-	$(CC) $(CXXFLAGS) -c -o $@ src/Thread.cc
+build/Pump.o: src/Pump.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/Pump.cc
 build/Error.o: src/Error.cc $(COMMONDEPS)
 	$(CC) $(CXXFLAGS) -c -o $@ src/Error.cc
 build/RelayServer.o: src/relay/RelayServer.cc $(COMMONDEPS) src/relay/FrameReader.h src/relay/IDPool.h
@@ -77,10 +77,10 @@ build/Timer.o: src/unix/Timer.cc $(COMMONDEPS)
 	$(CC) $(CXXFLAGS) -c -o $@ src/unix/Timer.cc
 build/UDP.o: src/unix/UDP.cc $(COMMONDEPS)
 	$(CC) $(CXXFLAGS) -c -o $@ src/unix/UDP.cc
+build/Thread.o: src/unix/Thread.cc $(COMMONDEPS)
+	$(CC) $(CXXFLAGS) -c -o $@ src/unix/Thread.cc
 build/Client.o: src/unix/Client.cc $(COMMONDEPS)
 	$(CC) $(CXXFLAGS) -c -o $@ src/unix/Client.cc
-build/Pump.o: src/unix/Pump.cc $(COMMONDEPS)
-	$(CC) $(CXXFLAGS) -c -o $@ src/unix/Pump.cc
 build/FlashPolicy.o: src/FlashPolicy.cc $(COMMONDEPS)
 	$(CC) $(CXXFLAGS) -c -o $@ src/FlashPolicy.cc
 build/addr_flat.o: src/c/addr_flat.cc $(COMMONDEPS)

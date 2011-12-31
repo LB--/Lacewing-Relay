@@ -139,16 +139,7 @@ inline time_t ParseTimeString(const char * StringC)
         #ifndef __MINGW_H
             return _mkgmtime64 (&TM);
         #else
-
-            /* _mkgmtime is missing from MinGW.  Argghh! */
-
-            static HINSTANCE MSVCRT = LoadLibraryA ("msvcrt.dll");
-
-            static __time64_t (__stdcall * fn) (tm *) =
-                (__time64_t (__stdcall *) (tm *)) GetProcAddress (MSVCRT, "_mkgmtime64");
-
-            return fn (&TM);
-
+            return Compat::_mkgmtime64 () (&TM);
         #endif
     #else
         #if HAVE_TIMEGM

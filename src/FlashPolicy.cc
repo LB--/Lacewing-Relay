@@ -29,35 +29,40 @@
 
 #include "Common.h"
 
-struct FlashPolicyInternal
+struct FlashPolicy::Internal
 {
     char * Buffer;
     size_t Size;
 
-    Lacewing::FlashPolicy &Public;
-    Lacewing::Server Socket;
+    FlashPolicy &Public;
+    Server Socket;
 
-    Lacewing::FlashPolicy::HandlerError HandlerError;
-
-    FlashPolicyInternal(Lacewing::FlashPolicy &_Public, Lacewing::Pump &_Pump)
-            : Public(_Public), Socket(_Pump)
+    struct
     {
+        HandlerError Error;
+
+    } Handlers;
+
+    Internal (FlashPolicy &_Public, Pump &_Pump)
+            : Public (_Public), Socket (_Pump)
+    {
+        memset (&Handlers, 0, sizeof (Handlers));
+
         Socket.Tag = this;
 
-        Buffer        = 0;
-        HandlerError  = 0;
+        Buffer = 0;
     }
 };
 
-void SocketReceive(Lacewing::Server &Socket, Lacewing::Server::Client &Client, char * Buffer, int Size)
+void SocketReceive (Server &Socket, Server::Client &Client, char * Buffer, int Size)
 {
-    FlashPolicyInternal &Internal = *(FlashPolicyInternal *) Socket.Tag;
+    FlashPolicy::Internal * internal = (FlashPolicy::Internal *) Socket.Tag;
 
     for(int i = 0; i < Size; ++i)
     {
-        if(!Buffer[i])
+        if(!Buffer [i])
         {
-            Client.Send(Internal.Buffer, Internal.Size);
+            Client.Send(internal->Buffer, internal->Size);
             Client.Send("\0", 1);
 
             return;
@@ -65,48 +70,45 @@ void SocketReceive(Lacewing::Server &Socket, Lacewing::Server::Client &Client, c
     }
 }
 
-void SocketError(Lacewing::Server &Socket, Lacewing::Error &Error)
+void SocketError (Server &Socket, Error &Error)
 {
-    FlashPolicyInternal &Internal = *(FlashPolicyInternal *) Socket.Tag;
+    FlashPolicy::Internal * internal = (FlashPolicy::Internal *) Socket.Tag;
 
     Error.Add("Socket error");
     
-    if(Internal.HandlerError)
-        Internal.HandlerError(Internal.Public, Error);
+    if (internal->Handlers.Error)
+        internal->Handlers.Error (internal->Public, Error);
 }
 
-Lacewing::FlashPolicy::FlashPolicy(Lacewing::Pump &Pump)
+FlashPolicy::FlashPolicy (Pump &Pump)
 {
-    FlashPolicyInternal &Internal = *(FlashPolicyInternal *)
-            (InternalTag = new FlashPolicyInternal(*this, Pump));
+    internal = new FlashPolicy::Internal (*this, Pump);
 
-    Internal.Socket.onError   (SocketError);
-    Internal.Socket.onReceive (SocketReceive);
+    internal->Socket.onError   (SocketError);
+    internal->Socket.onReceive (SocketReceive);
 }
 
-Lacewing::FlashPolicy::~FlashPolicy()
+FlashPolicy::~FlashPolicy ()
 {
     Unhost();
     
-    delete ((FlashPolicyInternal *) InternalTag);
+    delete internal;
 }
 
-void Lacewing::FlashPolicy::Host(const char * Filename, int Port)
+void FlashPolicy::Host (const char * Filename, int Port)
 {
-    Lacewing::Filter Filter;
-    Filter.LocalPort(Port);
+    Filter Filter;
+    Filter.LocalPort (Port);
 
     Host(Filename, Filter);
 }
 
-void Lacewing::FlashPolicy::Host(const char * Filename, Lacewing::Filter &Filter)
+void FlashPolicy::Host (const char * Filename, Filter &Filter)
 {
     Unhost();
 
-    if(!Filter.LocalPort())
+    if (!Filter.LocalPort())
         Filter.LocalPort(843);
-    
-    FlashPolicyInternal &Internal = *(FlashPolicyInternal *) InternalTag;
     
     {   FILE * File = fopen(Filename, "r");
 
@@ -117,24 +119,24 @@ void Lacewing::FlashPolicy::Host(const char * Filename, Lacewing::Filter &Filter
             Error.Add (LacewingGetLastError());
             Error.Add ("Error opening file: %s", Filename);
                 
-            if(Internal.HandlerError)
-                Internal.HandlerError(*this, Error);
+            if (internal->Handlers.Error)
+                internal->Handlers.Error(*this, Error);
 
             return;
         }
 
         fseek(File, 0, SEEK_END);
 
-        Internal.Size = ftell(File);
-        Internal.Buffer = (char *) malloc(Internal.Size);
+        internal->Size = ftell(File);
+        internal->Buffer = (char *) malloc(internal->Size);
         
         fseek(File, 0, SEEK_SET);
 
-        int bytes = fread (Internal.Buffer, 1, Internal.Size, File);
+        int bytes = fread (internal->Buffer, 1, internal->Size, File);
         
-        if (bytes != Internal.Size)
+        if (bytes != internal->Size)
         {
-            Internal.Size = bytes;
+            internal->Size = bytes;
 
             if (ferror (File))
             {
@@ -143,11 +145,11 @@ void Lacewing::FlashPolicy::Host(const char * Filename, Lacewing::Filter &Filter
                 Error.Add (LacewingGetLastError());
                 Error.Add ("Error reading file: %s", Filename);
 
-                if(Internal.HandlerError)
-                    Internal.HandlerError(*this, Error);
+                if (internal->Handlers.Error)
+                    internal->Handlers.Error (*this, Error);
 
-                free (Internal.Buffer);
-                Internal.Buffer = 0;
+                free (internal->Buffer);
+                internal->Buffer = 0;
         
                 fclose (File);
                 
@@ -155,26 +157,24 @@ void Lacewing::FlashPolicy::Host(const char * Filename, Lacewing::Filter &Filter
             }
         }
 
-        fclose(File);
+        fclose (File);
     }
 
-    Internal.Socket.Host(Filter);
+    internal->Socket.Host (Filter);
 }
 
-void Lacewing::FlashPolicy::Unhost()
+void FlashPolicy::Unhost ()
 {
-    FlashPolicyInternal &Internal = *(FlashPolicyInternal *) InternalTag;
-   
-    Internal.Socket.Unhost ();
+    internal->Socket.Unhost ();
 
-    free (Internal.Buffer);
-    Internal.Buffer = 0;
+    free (internal->Buffer);
+    internal->Buffer = 0;
 }
 
-bool Lacewing::FlashPolicy::Hosting()
+bool FlashPolicy::Hosting ()
 {
-    return ((FlashPolicyInternal *) InternalTag)->Socket.Hosting();
+    return internal->Socket.Hosting ();
 }
 
-AutoHandlerFunctions(Lacewing::FlashPolicy, FlashPolicyInternal, Error);
+AutoHandlerFunctions (FlashPolicy, Error);
 

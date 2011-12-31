@@ -30,14 +30,7 @@
 #include "../Common.h"
 #include "../QueuedSend.h"
 
-#ifndef CERT_STORE_READONLY_FLAG
-    #define CERT_STORE_READONLY_FLAG                        0x00008000
-    #define CERT_STORE_OPEN_EXISTING_FLAG                   0x00004000
-#endif
-
 const int IdealPendingAcceptCount = 16;
-
-struct ServerInternal;
 
 namespace OverlappedType
 {
@@ -58,19 +51,17 @@ struct ServerOverlapped
     OverlappedType::Type Type;
     void * Tag;
 
-    ServerOverlapped(ServerInternal &)
+    ServerOverlapped (Server::Internal &)
     {
         memset(&Overlapped, 0, sizeof(OVERLAPPED));
     }
 };
 
-struct ServerClientInternal;
-
 struct SecureClientInternal
 {
-    ServerClientInternal &Client;
+    Server::Client::Internal &Client;
 
-    SecureClientInternal(ServerClientInternal &_Client) : Client(_Client)
+    SecureClientInternal (Server::Client::Internal &_Client) : Client (_Client)
     {
         Status = SEC_I_CONTINUE_NEEDED;
 
@@ -94,7 +85,7 @@ struct SecureClientInternal
 
 struct ManualFileSendInformation
 {
-    ServerClientInternal &Client;
+    Server::Client::Internal &Client;
     HANDLE File;
 
     char * Buffer;
@@ -103,7 +94,8 @@ struct ManualFileSendInformation
     __int64 Offset;
     __int64 Size;
 
-    ManualFileSendInformation(ServerClientInternal &_Client) : Client(_Client)
+    ManualFileSendInformation (Server::Client::Internal &_Client)
+        : Client (_Client)
     {
     }
 
@@ -113,7 +105,7 @@ struct ManualFileSendInformation
     }
 };
 
-struct ServerClientInternal
+struct Server::Client::Internal
 {
     /* Only one receive ever takes place on the same client at a time, so it's safe
        to just have one overlapped structure and reuse it */
@@ -128,18 +120,15 @@ struct ServerClientInternal
 
     SOCKET Socket;
 
-    __int64 BytesSent;
-    __int64 BytesReceived;
+    __int64 BytesSent, BytesReceived;
 
-    bool Accepted;
-    bool Connecting;
-    bool Disconnecting;
+    bool Accepted, Connecting, Disconnecting;
 
     WSABUF Buffer;
 
-    Lacewing::Address * Address;
+    AddressWrapper Address;
 
-    ServerInternal &Server;
+    Lacewing::Server::Internal &Server;
 
     /* TODO : Replace with a ReceiveBuffer object */
     char ReceiveBuffer[1024 * 32];
@@ -147,11 +136,11 @@ struct ServerClientInternal
     MessageBuilder OutputBuffer;
     bool BufferingOutput;
 
-     ServerClientInternal(ServerInternal &_Server);
-    ~ServerClientInternal();
+    Internal (Lacewing::Server::Internal &);
+    ~ Internal ();
 
     bool SendingFile;
-    Lacewing::Sync Sync_SendingFile;
+    Sync Sync_SendingFile;
 
     QueuedSendManager QueuedSends;
     
@@ -163,19 +152,19 @@ struct ServerClientInternal
     bool SendFile      (bool AllowQueue, const char * Filename, __int64 Offset, __int64 Size);
     bool SendWritable  (bool AllowQueue, char * Data, int Size);
 
-    List <ServerClientInternal *>::Element * Element;
+    List <Server::Client::Internal *>::Element * Element;
 };
 
-void ServerClientInternal::PostReceive()
+void Server::Client::Internal::PostReceive ()
 {
-    memset(&ReceiveOverlapped, 0, sizeof(ServerOverlapped));
+    memset(&ReceiveOverlapped, 0, sizeof (ServerOverlapped));
 
     ReceiveOverlapped.Tag = this;
     ReceiveOverlapped.Type = OverlappedType::Receive;
 
     DWORD Flags = 0;
 
-    if(WSARecv(Socket, &Buffer, 1, 0, &Flags, (OVERLAPPED *) &ReceiveOverlapped, 0) == SOCKET_ERROR)
+    if (WSARecv (Socket, &Buffer, 1, 0, &Flags, (OVERLAPPED *) &ReceiveOverlapped, 0) == -1)
     {
         int Error = WSAGetLastError();
 
@@ -188,52 +177,40 @@ void ServerClientInternal::PostReceive()
 
 struct SendInformation
 {
-    ServerClientInternal &Client;
+    Server::Client::Internal &Client;
     
-    SendInformation(ServerClientInternal &_Client) : Client(_Client)
+    SendInformation (Server::Client::Internal &_Client) : Client (_Client)
     {
     }
 };
 
 struct SendFileInformation
 {
-    ServerClientInternal &Client;
+    Server::Client::Internal &Client;
     HANDLE File;
 
-    SendFileInformation(ServerClientInternal &_Client) : Client(_Client)
+    SendFileInformation (Server::Client::Internal &_Client) : Client (_Client)
     {
     }
 };
 
-struct ServerInternal
+struct Server::Internal
 {
-    EventPumpInternal &EventPump;
+    Lacewing::Pump &Pump;
 
-    int Port;
-
-    __int64 BytesSent;
-    __int64 BytesReceived;
+    __int64 BytesSent, BytesReceived;
 
     Lacewing::Server &Public;
 
     SOCKET Socket;
 
-    List <ServerClientInternal *> Clients;
+    List <Server::Client::Internal *> Clients;
 
-    Backlog<ServerInternal, ServerClientInternal>
-        ClientStructureBacklog;
-
-    Backlog<ServerInternal, ServerOverlapped>
-        OverlappedBacklog;
-
-    Backlog<ServerClientInternal, SendInformation>
-        SendInformationBacklog;
-
-    Backlog<ServerClientInternal, SendFileInformation>
-        SendFileInformationBacklog;
-
-    Backlog<ServerClientInternal, ManualFileSendInformation>
-        ManualFileSendInformationBacklog;
+    Backlog <Server::Client::Internal>   ClientStructureBacklog;
+    Backlog <ServerOverlapped>           OverlappedBacklog;
+    Backlog <SendInformation>            SendInformationBacklog;
+    Backlog <SendFileInformation>        SendFileInformationBacklog;
+    Backlog <ManualFileSendInformation>  ManualFileSendInformationBacklog;
     
     bool PostAccept();
     volatile long AcceptsPosted;
@@ -244,12 +221,14 @@ struct ServerInternal
     bool CertificateLoaded;
     CredHandle ServerCreds;
 
-    ServerInternal(Lacewing::Server &_Public, EventPumpInternal &_EventPump)
-            : Public(_Public), EventPump(_EventPump)
+    Internal (Server &_Public, Lacewing::Pump &_Pump)
+            : Public (_Public), Pump (_Pump)
     {
+        memset (&Handlers, 0, sizeof (Handlers));
+
         AcceptsPosted = 0;
 
-        Socket = SOCKET_ERROR;
+        Socket = -1;
 
         BytesSent = 0;
         BytesReceived = 0;
@@ -257,43 +236,43 @@ struct ServerInternal
         CertificateLoaded = false;
         ClientSpeaksFirst = false;
 
-        HandlerConnect    = 0;
-        HandlerDisconnect = 0;
-        HandlerReceive    = 0;
-        HandlerError      = 0;
-
         Nagle = true;
     }
 
-    Lacewing::Server::HandlerConnect    HandlerConnect;
-    Lacewing::Server::HandlerDisconnect HandlerDisconnect;
-    Lacewing::Server::HandlerReceive    HandlerReceive;
-    Lacewing::Server::HandlerError      HandlerError;
+    struct
+    {
+        HandlerConnect    Connect;
+        HandlerDisconnect Disconnect;
+        HandlerReceive    Receive;
+        HandlerError      Error;
+
+    } Handlers;
 
     bool Tick(bool Block);
 };
 
-ServerClientInternal::ServerClientInternal(ServerInternal &_Server)
-    : Server(_Server), ReceiveOverlapped(_Server)
+Server::Client::Internal::Internal (Server::Internal &_Server)
+    : Server (_Server), ReceiveOverlapped (_Server)
 {
     RemoveKey = 0;
 
-    Public.InternalTag  = this;
-    Public.Tag          = 0;
+    Public.internal = this;
+    Public.Tag = 0;
 
     Buffer.len = sizeof(ReceiveBuffer);
     Buffer.buf = ReceiveBuffer;
 
-    memset(&ReceiveOverlapped, 0, sizeof(OVERLAPPED));
+    memset (&ReceiveOverlapped, 0, sizeof (OVERLAPPED));
 
-    Socket   = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    DisableIPV6Only
+        (Socket = socket (AF_INET6, SOCK_STREAM, IPPROTO_TCP));
+
     Accepted = false;
 
     if(!Server.Nagle)
         ::DisableNagling(Socket);
 
-    Address   = 0;
-    Element   = 0;
+    Element = 0;
 
     Disconnecting   = false;
     SendingFile     = false;
@@ -302,28 +281,27 @@ ServerClientInternal::ServerClientInternal(ServerInternal &_Server)
     Secure = Server.Public.CertificateLoaded() ? new SecureClientInternal(*this) : 0;
 }
 
-ServerClientInternal::~ServerClientInternal()
+Server::Client::Internal::~ Internal ()
 {
     LacewingCloseSocket(Socket);
 
     delete Secure;
-    delete Address;
 
-    if(RemoveKey)
-        Server.EventPump.Remove(RemoveKey);
+    if (RemoveKey)
+        Server.Pump.Remove (RemoveKey);
 }
 
-bool ServerInternal::PostAccept()
+bool Server::Internal::PostAccept ()
 {
-    ServerClientInternal &Client = ClientStructureBacklog.Borrow(*this);
+    Server::Client::Internal &Client = ClientStructureBacklog.Borrow (*this);
 
     Client.ReceiveOverlapped.Tag = &Client;
 
     DWORD BytesReceived; /* Not used, but MSDN doesn't say the parameter can be NULL */
 
-    if(!AcceptEx(Socket, Client.Socket, Client.Buffer.buf,
-        Client.Server.ClientSpeaksFirst ? (Client.Buffer.len - ((sizeof(sockaddr_in) + 16) * 2)) : 0,
-        sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &BytesReceived, (OVERLAPPED *) &Client.ReceiveOverlapped))
+    if (!AcceptEx (Socket, Client.Socket, Client.Buffer.buf,
+        Client.Server.ClientSpeaksFirst ? (Client.Buffer.len - ((sizeof (sockaddr_storage) + 16) * 2)) : 0,
+        sizeof (sockaddr_storage) + 16, sizeof (sockaddr_storage) + 16, &BytesReceived, (OVERLAPPED *) &Client.ReceiveOverlapped))
     {
         int Error = WSAGetLastError();
 
@@ -338,9 +316,9 @@ bool ServerInternal::PostAccept()
     return true;
 }
 
-void ServerClientInternal::EndFileSend(ServerOverlapped &Overlapped, ManualFileSendInformation &Send)
+void Server::Client::Internal::EndFileSend (ServerOverlapped &Overlapped, ManualFileSendInformation &Send)
 {
-    Lacewing::Sync::Lock Lock(Send.Client.Sync_SendingFile);
+    Sync::Lock Lock (Send.Client.Sync_SendingFile);
 
     delete [] Send.Buffer;
     CloseHandle(Send.File);
@@ -394,57 +372,54 @@ void ServerClientInternal::EndFileSend(ServerOverlapped &Overlapped, ManualFileS
     Server.ManualFileSendInformationBacklog.Return(Send);
 }
 
-void Disconnecter(ServerClientInternal &Client)
+static void Disconnecter (Server::Client::Internal &Client)
 {
-    ServerInternal &Internal = Client.Server;
+    Server::Internal &Server = Client.Server;
 
-    LacewingCloseSocket(Client.Socket);
-    Client.Socket = SOCKET_ERROR;
+    LacewingCloseSocket (Client.Socket);
+    Client.Socket = -1;
 
-    Internal.Clients.Erase (Client.Element);
+    Server.Clients.Erase (Client.Element);
     
-    if(Internal.HandlerDisconnect)
-        Internal.HandlerDisconnect(Internal.Public, Client.Public);
+    if (Server.Handlers.Disconnect)
+        Server.Handlers.Disconnect (Server.Public, Client.Public);
 
     if(Client.Secure)
     {
         DeleteSecurityContext(&Client.Secure->Context);
     }
 
-    Internal.ClientStructureBacklog.Return(Client);
+    Server.ClientStructureBacklog.Return(Client);
 }
 
-void Lacewing::Server::Client::Disconnect()
+void Server::Client::Disconnect ()
 {
-    ServerClientInternal &Client   = *(ServerClientInternal *) InternalTag;
-    ServerInternal       &Internal = Client.Server;
-
-    if(Client.Disconnecting)
+    if (internal->Disconnecting)
         return;
 
-    Client.Disconnecting = true;
+    internal->Disconnecting = true;
 
-    shutdown (Client.Socket, SD_RECEIVE);
+    shutdown (internal->Socket, SD_RECEIVE);
     
     /* Don't post anything if the connect is still being processed - the thread that called
        the connect handler will go on to handle the disconnect if Disconnecting = true */
 
-    if(Client.Connecting)
+    if (internal->Connecting)
         return;
 
-    Internal.EventPump.Pump.Post ((void *) Disconnecter, &Client);
+    internal->Server.Pump.Post ((void *) Disconnecter, internal);
 }
 
-void ClientSocketCompletion(ServerClientInternal &Client, ServerOverlapped &Overlapped, unsigned int BytesTransferred, int Error)
+static void ClientSocketCompletion (Server::Client::Internal &Client, ServerOverlapped &Overlapped, unsigned int BytesTransferred, int Error)
 {
-    ServerInternal &Internal = Client.Server;
+    Server::Internal * internal = &Client.Server;
 
     if(Overlapped.Type == OverlappedType::Send)
     {
         SendInformation &Send = *(SendInformation *) Overlapped.Tag;
 
-        Internal.OverlappedBacklog.Return(Overlapped);
-        Internal.SendInformationBacklog.Return(Send);
+        internal->OverlappedBacklog.Return (Overlapped);
+        internal->SendInformationBacklog.Return (Send);
 
         return;
     }
@@ -455,8 +430,8 @@ void ClientSocketCompletion(ServerClientInternal &Client, ServerOverlapped &Over
 
         CloseHandle(Send.File);
 
-        Internal.OverlappedBacklog.Return(Overlapped);
-        Internal.SendFileInformationBacklog.Return(Send);
+        internal->OverlappedBacklog.Return (Overlapped);
+        internal->SendFileInformationBacklog.Return (Send);
 
         return;
     }
@@ -472,7 +447,7 @@ void ClientSocketCompletion(ServerClientInternal &Client, ServerOverlapped &Over
             return;
         }
 
-        Internal.BytesReceived += BytesTransferred;
+        internal->BytesReceived += BytesTransferred;
 
         char * ReceivedBuffer = Client.Buffer.buf;
 
@@ -507,8 +482,9 @@ void ClientSocketCompletion(ServerClientInternal &Client, ServerOverlapped &Over
 
         ReceivedBuffer[BytesTransferred] = 0;
 
-        if(Internal.HandlerReceive)
-            Internal.HandlerReceive(Internal.Public, Client.Public, ReceivedBuffer, BytesTransferred);
+        if (internal->Handlers.Receive)
+            internal->Handlers.Receive
+                (internal->Public, Client.Public, ReceivedBuffer, BytesTransferred);
 
         /* Move any extra data back to the beginning of the secure buffer, and process it again.
            BytesTransferred == 0 means that ProcessMessageData won't access ReceivedBuffer, but
@@ -538,17 +514,17 @@ void ClientSocketCompletion(ServerClientInternal &Client, ServerOverlapped &Over
     }
 }
 
-void ListenSocketCompletion(ServerInternal &Internal, ServerOverlapped &Overlapped, int BytesTransferred, int ErrorCode)
+void ListenSocketCompletion (Server::Internal * internal, ServerOverlapped &Overlapped, int BytesTransferred, int ErrorCode)
 {
-    ServerClientInternal &Client = *(ServerClientInternal *) Overlapped.Tag;
+    Server::Client::Internal &Client = *(Server::Client::Internal *) Overlapped.Tag;
 
-    InterlockedDecrement(&Internal.AcceptsPosted);
+    InterlockedDecrement (&internal->AcceptsPosted);
 
     if(ErrorCode)
     {
-        Internal.ClientStructureBacklog.Return(Client);
+        internal->ClientStructureBacklog.Return (Client);
 
-        if(Internal.Socket == SOCKET_ERROR)
+        if (internal->Socket == -1)
         {
             /* AcceptEx failed because we stopped hosting */
             return;
@@ -559,34 +535,45 @@ void ListenSocketCompletion(ServerInternal &Internal, ServerOverlapped &Overlapp
         Error.Add (ErrorCode);
         Error.Add ("Error accepting");
 
-        if(Internal.HandlerError)
-            Internal.HandlerError(Internal.Public, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (internal->Public, Error);
 
         return;
     }
 
-    while(Internal.AcceptsPosted < IdealPendingAcceptCount)
-        if(!Internal.PostAccept())
+    while (internal->AcceptsPosted < IdealPendingAcceptCount)
+        if (!internal->PostAccept ())
             break;
 
     Client.Accepted = true;
 
-    sockaddr_in * LocalAddress;
-    sockaddr_in * RemoteAddress;
+    sockaddr_storage * LocalAddress, * RemoteAddress;
+    int LocalAddressLength, RemoteAddressLength;
 
-    int LocalAddressLength;
-    int RemoteAddressLength;
+    GetAcceptExSockaddrs
+    (
+        Client.Buffer.buf,
+        
+        Client.Server.ClientSpeaksFirst ?
+            (Client.Buffer.len - ((sizeof (sockaddr_storage) + 16) * 2)) : 0,
 
-    GetAcceptExSockaddrs(Client.Buffer.buf, Client.Server.ClientSpeaksFirst ? (Client.Buffer.len - ((sizeof(sockaddr_in) + 16) * 2)) : 0,
-                            sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, (sockaddr **) &LocalAddress,
-                            &LocalAddressLength, (sockaddr **) &RemoteAddress, &RemoteAddressLength);
+         sizeof (sockaddr_storage) + 16,
+         sizeof (sockaddr_storage) + 16,
 
-    Client.Address = new Lacewing::Address(RemoteAddress->sin_addr.S_un.S_addr, ntohs(RemoteAddress->sin_port));
+         (sockaddr **) &LocalAddress,
+         &LocalAddressLength,
 
-    setsockopt(Client.Socket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *) &Internal.Socket, sizeof(Internal.Socket));
+         (sockaddr **) &RemoteAddress,
+         &RemoteAddressLength
+    );
 
-    if(Internal.HandlerConnect)
-        Internal.HandlerConnect(Internal.Public, Client.Public);
+    Client.Address.Set (RemoteAddress);
+
+    setsockopt (Client.Socket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
+                    (char *) &internal->Socket, sizeof (internal->Socket));
+
+    if (internal->Handlers.Connect)
+        internal->Handlers.Connect (internal->Public, Client.Public);
 
     /* Connect handler might have called Disconnect() */
 
@@ -595,8 +582,10 @@ void ListenSocketCompletion(ServerInternal &Internal, ServerOverlapped &Overlapp
         Client.ReceiveOverlapped.Type = OverlappedType::Receive;
         Client.Connecting = false;
 
-        Client.Element = Internal.Clients.Push (&Client);
-        Client.RemoveKey = Internal.EventPump.Add((HANDLE) Client.Socket, (void *) &Client, (void *) ClientSocketCompletion);
+        Client.Element = internal->Clients.Push (&Client);
+
+        Client.RemoveKey = internal->Pump.Add
+            ((HANDLE) Client.Socket, (void *) &Client, (Pump::Callback) ClientSocketCompletion);
 
         if(BytesTransferred > 0)
         {
@@ -621,7 +610,7 @@ void ListenSocketCompletion(ServerInternal &Internal, ServerOverlapped &Overlapp
     }
 }
 
-void ManualFileSendReadCompletion(ServerClientInternal &Client, ServerOverlapped &Overlapped, int BytesTransferred, int Error)
+void ManualFileSendReadCompletion (Server::Client::Internal &Client, ServerOverlapped &Overlapped, int BytesTransferred, int Error)
 {
     ManualFileSendInformation &Send = *(ManualFileSendInformation *) Overlapped.Tag;
 
@@ -644,7 +633,7 @@ void ManualFileSendReadCompletion(ServerClientInternal &Client, ServerOverlapped
     Send.Offset += BytesTransferred;
     Send.Size -= BytesTransferred;
 
-    memset(&Overlapped.Overlapped, 0, sizeof(OVERLAPPED));
+    memset(&Overlapped.Overlapped, 0, sizeof (OVERLAPPED));
 
     {   LARGE_INTEGER Offset;
 
@@ -677,110 +666,86 @@ void ManualFileSendReadCompletion(ServerClientInternal &Client, ServerOverlapped
     }
 }
 
-Lacewing::Server::Server(Lacewing::EventPump &EventPump)
+Server::Server (Lacewing::Pump &Pump)
 {
     LacewingInitialise();
-    InternalTag = new ServerInternal(*this, *(EventPumpInternal *) EventPump.InternalTag);    
+    internal = new Server::Internal (*this, Pump);    
 }
 
-Lacewing::Server::~Server()
+Server::~Server ()
 {
-    delete ((ServerInternal *) InternalTag);
+    delete internal;
 }
 
-void Lacewing::Server::Host(int Port, bool ClientSpeaksFirst)
+void Server::Host (int Port, bool ClientSpeaksFirst)
 {
-    Lacewing::Filter Filter;
-    Filter.LocalPort(Port);
+    Filter Filter;
+    Filter.LocalPort (Port);
 
     Host(Filter, ClientSpeaksFirst);
 }
 
-void Lacewing::Server::Host(Lacewing::Filter &Filter, bool ClientSpeaksFirst)
+void Server::Host (Filter &Filter, bool ClientSpeaksFirst)
 {
     Unhost();
 
-    ServerInternal &Internal = *(ServerInternal *) InternalTag;
+    internal->ClientSpeaksFirst = ClientSpeaksFirst;
+    
+    {   Lacewing::Error Error;
 
-    Internal.ClientSpeaksFirst = ClientSpeaksFirst;
-    Internal.Socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);
+        if ((internal->Socket = CreateServerSocket
+                 (Filter, SOCK_STREAM, IPPROTO_TCP, Error)) == -1)
+        {
+            if (internal->Handlers.Error)
+                internal->Handlers.Error (*this, Error);
 
-    sockaddr_in Address;
-    memset(&Address, 0, sizeof(Address));
-
-    Address.sin_family = AF_INET;
-    Address.sin_port = htons(Filter.LocalPort() ? Filter.LocalPort() : 0);
-    Address.sin_addr.s_addr = Filter.LocalIP() ? Filter.LocalIP() : htonl(INADDR_ANY);
-        
-    {   int reuse = Filter.Reuse() ? 1 : 0;
-        setsockopt(Internal.Socket, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof(reuse));
+            return;
+        }
     }
 
-    if(bind(Internal.Socket, (LPSOCKADDR) &Address, sizeof(Address)) == SOCKET_ERROR)
+    if (listen (internal->Socket, SOMAXCONN) == -1)
     {
         Lacewing::Error Error;
         
-        Error.Add(WSAGetLastError());
-        Error.Add("Error binding port %d", Filter.LocalPort());
-     
-        LacewingCloseSocket(Internal.Socket);
-        Internal.Socket = SOCKET_ERROR;
-   
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
-
-        return;
-    }
-
-    if(listen(Internal.Socket, SOMAXCONN) == SOCKET_ERROR)
-    {
-        Lacewing::Error Error;
-        
-        Error.Add(WSAGetLastError());
+        Error.Add(WSAGetLastError ());
         Error.Add("Error listening");
 
-        LacewingCloseSocket(Internal.Socket);
-        Internal.Socket = SOCKET_ERROR;
+        LacewingCloseSocket (internal->Socket);
+        internal->Socket = -1;
 
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (*this, Error);
 
         return;
     }
 
-    socklen_t AddressLength = sizeof(sockaddr_in);
-    getsockname(Internal.Socket, (sockaddr *) &Address, &AddressLength);
+    internal->Pump.Add
+        ((HANDLE) internal->Socket, internal, (Pump::Callback) ListenSocketCompletion);
 
-    Internal.Port = ntohs(Address.sin_port);
-
-    Internal.EventPump.Add((HANDLE) Internal.Socket, &Internal, (void *) ListenSocketCompletion);
-
-    while(Internal.AcceptsPosted < IdealPendingAcceptCount)
-        if(!Internal.PostAccept())
+    while (internal->AcceptsPosted < IdealPendingAcceptCount)
+        if (!internal->PostAccept ())
             break;
 }
 
-void Lacewing::Server::Unhost()
+void Server::Unhost ()
 {
     if(!Hosting())
         return;
 
-    ServerInternal &Internal = *(ServerInternal *) InternalTag;
-
-    for (List <ServerClientInternal *>::Element * E = Internal.Clients.First;
+    for (List <Server::Client::Internal *>::Element * E = internal->Clients.First;
             E; E = E->Next)
     {
         (** E)->Public.Disconnect ();
     }
 
-    LacewingCloseSocket (Internal.Socket);
-    Internal.Socket = SOCKET_ERROR;
+    LacewingCloseSocket (internal->Socket);
+    internal->Socket = -1;
 }
 
-bool ServerClientInternal::SendWritable(bool AllowQueue, char * Data, int Size)
+bool Server::Client::Internal::SendWritable (bool AllowQueue, char * Data, int Size)
 {
-    if(!Secure || !Secure->HandshakeComplete)
-        return Send(AllowQueue, Data, Size);
+    if (!Secure || !Secure->HandshakeComplete)
+        return Send (AllowQueue, Data, Size);
 
     if(!Size)
         return true;
@@ -796,7 +761,7 @@ bool ServerClientInternal::SendWritable(bool AllowQueue, char * Data, int Size)
         }
     }
             
-    Lacewing::Sync::Lock Lock(Sync_SendingFile);
+    Sync::Lock Lock (Sync_SendingFile);
     
     if(AllowQueue)
     {
@@ -854,7 +819,7 @@ bool ServerClientInternal::SendWritable(bool AllowQueue, char * Data, int Size)
     Overlapped.Type = OverlappedType::Send;
     Overlapped.Tag  = &Server.SendInformationBacklog.Borrow(*this);
 
-    if(WSASend(Socket, WSABuffers, 4, 0, 0, (OVERLAPPED *) &Overlapped, 0) == SOCKET_ERROR)
+    if(WSASend (Socket, WSABuffers, 4, 0, 0, (OVERLAPPED *) &Overlapped, 0) == -1)
     {
         int Error = WSAGetLastError();
 
@@ -865,12 +830,12 @@ bool ServerClientInternal::SendWritable(bool AllowQueue, char * Data, int Size)
     return true;
 }
 
-void Lacewing::Server::Client::SendWritable(char * Data, int Size)
+void Server::Client::SendWritable (char * Data, int Size)
 {
-    ((ServerClientInternal *) InternalTag)->SendWritable(true, Data, Size);
+    ((Server::Client::Internal *) internal)->SendWritable (true, Data, Size);
 }
 
-bool ServerClientInternal::Send(bool AllowQueue, const char * Data, int Size)
+bool Server::Client::Internal::Send (bool AllowQueue, const char * Data, int Size)
 {
     if(Size == -1)
         Size = strlen(Data);
@@ -878,7 +843,7 @@ bool ServerClientInternal::Send(bool AllowQueue, const char * Data, int Size)
     if(!Size)
         return true;
         
-    Lacewing::Sync::Lock Lock(Sync_SendingFile);
+    Sync::Lock Lock (Sync_SendingFile);
     
     if(AllowQueue)
     {
@@ -900,7 +865,7 @@ bool ServerClientInternal::Send(bool AllowQueue, const char * Data, int Size)
         Overlapped.Type = OverlappedType::Send;
         Overlapped.Tag = &Server.SendInformationBacklog.Borrow(*this);
 
-        if(WSASend(Socket, &Buffer, 1, 0, 0, (OVERLAPPED *) &Overlapped, 0) == SOCKET_ERROR)
+        if (WSASend (Socket, &Buffer, 1, 0, 0, (OVERLAPPED *) &Overlapped, 0) == -1)
         {
             int Error = WSAGetLastError();
 
@@ -927,20 +892,20 @@ bool ServerClientInternal::Send(bool AllowQueue, const char * Data, int Size)
     return true;
 }
 
-void Lacewing::Server::Client::Send(const char * Data, int Size)
+void Server::Client::Send (const char * Data, int Size)
 {
-    ((ServerClientInternal *) InternalTag)->Send(true, Data, Size);
+    ((Server::Client::Internal *) internal)->Send (true, Data, Size);
 }
 
 
 /* False means the next queued data won't be sent, either because the transfer failed or we were able to use TransmitFile */
 
-bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, __int64 Offset, __int64 Size)
+bool Server::Client::Internal::SendFile (bool AllowQueue, const char * Filename, __int64 Offset, __int64 Size)
 {   
     if (Size == 0)
         return false;
 
-    Lacewing::Sync::Lock Lock(Sync_SendingFile);
+    Sync::Lock Lock (Sync_SendingFile);
     
     if(AllowQueue)
     {
@@ -961,7 +926,7 @@ bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, __in
     {
         LARGE_INTEGER FileSize;
 
-        if(!GetFileSizeEx(File, &FileSize))
+        if (!Compat::GetFileSizeEx () (File, &FileSize))
         {
             CloseHandle(File);
             return false;
@@ -1039,7 +1004,7 @@ bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, __in
 
     /* Add the file handle to the event pump */
 
-    Server.EventPump.Add(File, (void *) this, (void *) ManualFileSendReadCompletion);
+    Server.Pump.Add (File, (void *) this, (Pump::Callback) ManualFileSendReadCompletion);
 
     ManualFileSendInformation &Send = Server.ManualFileSendInformationBacklog.Borrow(*this);
     ServerOverlapped &Overlapped = Server.OverlappedBacklog.Borrow(Server);
@@ -1072,72 +1037,61 @@ bool ServerClientInternal::SendFile(bool AllowQueue, const char * Filename, __in
     return true;
 }
 
-void Lacewing::Server::Client::SendFile(const char * Filename, __int64 Offset, __int64 Size)
+void Server::Client::SendFile (const char * Filename, __int64 Offset, __int64 Size)
 {
-    ((ServerClientInternal *) InternalTag)->SendFile(true, Filename, Offset, Size);
+    ((Server::Client::Internal *) internal)->SendFile (true, Filename, Offset, Size);
 }
 
-bool Lacewing::Server::Client::CheapBuffering()
+bool Server::Client::CheapBuffering ()
 {
     /* No TCP_CORK or TCP_NOPUSH on Windows */
 
     return false;
 }
 
-void Lacewing::Server::Client::StartBuffering()
+void Server::Client::StartBuffering ()
 {
-    ServerClientInternal &Internal = *(ServerClientInternal *) InternalTag;
-
-    if(Internal.BufferingOutput)
+    if (internal->BufferingOutput)
         return;
 
-    Internal.BufferingOutput = true;
+    internal->BufferingOutput = true;
 }
 
-void Lacewing::Server::Client::Flush()
+void Server::Client::Flush ()
 {
-    ServerClientInternal &Internal = *(ServerClientInternal *) InternalTag;
-
-    if(!Internal.BufferingOutput)
+    if (!internal->BufferingOutput)
         return;
 
-    Internal.BufferingOutput = false;
-    Send(Internal.OutputBuffer.Buffer, Internal.OutputBuffer.Size);
+    internal->BufferingOutput = false;
+    Send (internal->OutputBuffer.Buffer, internal->OutputBuffer.Size);
 
-    Internal.OutputBuffer.Reset();
+    internal->OutputBuffer.Reset ();
 }
 
-Lacewing::Address &Lacewing::Server::Client::GetAddress()
+Address &Server::Client::GetAddress ()
 {
-    return *((ServerClientInternal *) InternalTag)->Address;
+    return internal->Address;
 }
 
-bool Lacewing::Server::Hosting()
+bool Server::Hosting ()
 {
-    ServerInternal &Internal = *(ServerInternal *) InternalTag;
-
-    return Internal.Socket != SOCKET_ERROR;
+    return internal->Socket != -1;
 }
 
-int Lacewing::Server::Port()
+int Server::Port ()
 {
-    if(!Hosting())
-        return 0;
-
-    return ((ServerInternal *) InternalTag)->Port;
+    return GetSocketPort (internal->Socket);
 }
 
-bool Lacewing::Server::LoadSystemCertificate(const char * StoreName, const char * CommonName, const char * Location)
+bool Server::LoadSystemCertificate (const char * StoreName, const char * CommonName, const char * Location)
 {
-    ServerInternal &Internal = *(ServerInternal *) InternalTag;
-
-    if(Hosting() || CertificateLoaded())
+    if (Hosting () || CertificateLoaded ())
     {
         Lacewing::Error Error;
         Error.Add("Either the server is already hosting, or a certificate has already been loaded");
         
-        if(Internal.HandlerError)
-            Internal.HandlerError(Internal.Public, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (internal->Public, Error);
 
         return false;
     }
@@ -1209,8 +1163,8 @@ bool Lacewing::Server::LoadSystemCertificate(const char * StoreName, const char 
         Error.Add("Unknown certificate location: %s", Location);
         Error.Add("Error loading certificate");
         
-        if(Internal.HandlerError)
-            Internal.HandlerError(Internal.Public, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (internal->Public, Error);
 
         return false;
     }
@@ -1222,11 +1176,11 @@ bool Lacewing::Server::LoadSystemCertificate(const char * StoreName, const char 
     {
         Lacewing::Error Error;
 
-        Error.Add(LacewingGetLastError());
+        Error.Add(LacewingGetLastError ());
         Error.Add("Error loading certificate");
 
-        if(Internal.HandlerError)
-            Internal.HandlerError(Internal.Public, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (internal->Public, Error);
 
         return false;
     }
@@ -1246,8 +1200,8 @@ bool Lacewing::Server::LoadSystemCertificate(const char * StoreName, const char 
             Error.Add(Code);
             Error.Add("Error finding certificate in store");
 
-            if(Internal.HandlerError)
-                Internal.HandlerError(Internal.Public, Error);
+            if (internal->Handlers.Error)
+                internal->Handlers.Error (internal->Public, Error);
 
             return false;
         }
@@ -1255,7 +1209,7 @@ bool Lacewing::Server::LoadSystemCertificate(const char * StoreName, const char 
 
     SCHANNEL_CRED Creds;
 
-    memset(&Creds, 0, sizeof(Creds));
+    memset(&Creds, 0, sizeof (Creds));
 
     Creds.dwVersion = SCHANNEL_CRED_VERSION;
     Creds.cCreds = 1;
@@ -1265,7 +1219,7 @@ bool Lacewing::Server::LoadSystemCertificate(const char * StoreName, const char 
     {   TimeStamp ExpiryTime;
 
         int Result = AcquireCredentialsHandleA (0, (SEC_CHAR *) UNISP_NAME_A, SECPKG_CRED_INBOUND, 0, &Creds, 0, 0,
-                                                    &Internal.ServerCreds, &ExpiryTime);
+                                                    &internal->ServerCreds, &ExpiryTime);
 
         if(Result != SEC_E_OK)
         {
@@ -1274,42 +1228,40 @@ bool Lacewing::Server::LoadSystemCertificate(const char * StoreName, const char 
             Error.Add(Result);
             Error.Add("Error acquiring credentials handle");
 
-            if(Internal.HandlerError)
-                Internal.HandlerError(Internal.Public, Error);
+            if (internal->Handlers.Error)
+                internal->Handlers.Error (internal->Public, Error);
 
             return false;
         }
 
     }
 
-    Internal.CertificateLoaded = true;
+    internal->CertificateLoaded = true;
     return true;
 }
 
-bool Lacewing::Server::LoadCertificateFile(const char * Filename, const char * CommonName)
+bool Server::LoadCertificateFile (const char * Filename, const char * CommonName)
 {
-    ServerInternal &Internal = *(ServerInternal *) InternalTag;
-
-    if(!Lacewing::FileExists(Filename))
+    if (!FileExists (Filename))
     {
         Lacewing::Error Error;
         
         Error.Add("File not found: %s", Filename);
         Error.Add("Error loading certificate");
 
-        if(Internal.HandlerError)
-            Internal.HandlerError(Internal.Public, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (internal->Public, Error);
 
         return false;
     }
 
-    if(Hosting())
-        Unhost();
+    if (Hosting ())
+        Unhost ();
 
     if(CertificateLoaded())
     {
-        FreeCredentialsHandle(&((ServerInternal *)InternalTag)->ServerCreds);
-        ((ServerInternal *)InternalTag)->CertificateLoaded = false;
+        FreeCredentialsHandle (&internal->ServerCreds);
+        internal->CertificateLoaded = false;
     }
 
     HCERTSTORE CertStore = CertOpenStore ((LPCSTR) 7 /* CERT_STORE_PROV_FILENAME_A */, X509_ASN_ENCODING, 0,
@@ -1328,11 +1280,11 @@ bool Lacewing::Server::LoadCertificateFile(const char * Filename, const char * C
         {
             Lacewing::Error Error;
             
-            Error.Add(GetLastError());
+            Error.Add(GetLastError ());
             Error.Add("Error opening certificate file : %s", Filename);
 
-            if(Internal.HandlerError)
-                Internal.HandlerError(Internal.Public, Error);
+            if (internal->Handlers.Error)
+                internal->Handlers.Error (internal->Public, Error);
 
             return false;
         }
@@ -1355,8 +1307,8 @@ bool Lacewing::Server::LoadCertificateFile(const char * Filename, const char * C
             Error.Add(Code);
             Error.Add("Error finding certificate in store");
 
-            if(Internal.HandlerError)
-                Internal.HandlerError(Internal.Public, Error);
+            if (internal->Handlers.Error)
+                internal->Handlers.Error (internal->Public, Error);
 
             return false;
         }
@@ -1364,7 +1316,7 @@ bool Lacewing::Server::LoadCertificateFile(const char * Filename, const char * C
 
     SCHANNEL_CRED Creds;
 
-    memset(&Creds, 0, sizeof(Creds));
+    memset(&Creds, 0, sizeof (Creds));
 
     Creds.dwVersion = SCHANNEL_CRED_VERSION;
     Creds.cCreds = 1;
@@ -1374,7 +1326,7 @@ bool Lacewing::Server::LoadCertificateFile(const char * Filename, const char * C
     {   TimeStamp ExpiryTime;
 
         int Result = AcquireCredentialsHandleA (0, (SEC_CHAR *) UNISP_NAME_A, SECPKG_CRED_INBOUND, 0, &Creds,
-                                                   0, 0, &Internal.ServerCreds, &ExpiryTime);
+                                                   0, 0, &internal->ServerCreds, &ExpiryTime);
 
         if(Result != SEC_E_OK)
         {
@@ -1383,25 +1335,25 @@ bool Lacewing::Server::LoadCertificateFile(const char * Filename, const char * C
             Error.Add(Result);
             Error.Add("Error acquiring credentials handle");
 
-            if(Internal.HandlerError)
-                Internal.HandlerError(Internal.Public, Error);
+            if (internal->Handlers.Error)
+                internal->Handlers.Error (internal->Public, Error);
 
             return false;
         }
 
     }
 
-    Internal.CertificateLoaded = true;
+    internal->CertificateLoaded = true;
 
     return true;
 }
 
-bool Lacewing::Server::CertificateLoaded()
+bool Server::CertificateLoaded ()
 {
-    return ((ServerInternal *) InternalTag)->CertificateLoaded;   
+    return internal->CertificateLoaded;   
 }
 
-void SecureClientInternal::ProcessMessageData(char * &Buffer, unsigned int &Size, char * &Extra, unsigned int &ExtraSize)
+void SecureClientInternal::ProcessMessageData (char * &Buffer, unsigned int &Size, char * &Extra, unsigned int &ExtraSize)
 {
     /* TODO : Currently copying everything before trying DecryptMessage.  Packets certainly aren't
         *always* fragmented, so it might be best to try a DecryptMessage on the buffer first? */
@@ -1552,7 +1504,7 @@ void SecureClientInternal::ProcessHandshakeData(char * Buffer, unsigned int &Siz
 
     GotContext = true;
     
-    if(FAILED(Status))
+    if(FAILED (Status))
     {
         /* AcceptSecurityContext failed */
 
@@ -1560,11 +1512,11 @@ void SecureClientInternal::ProcessHandshakeData(char * Buffer, unsigned int &Siz
         {
             Lacewing::Error Error;
             
-            Error.Add(WSAGetLastError());
+            Error.Add(WSAGetLastError ());
             Error.Add("Secure handshake failure");
             
-            if(Client.Server.HandlerError)
-                Client.Server.HandlerError(Client.Server.Public, Error);
+            if (Client.Server.Handlers.Error)
+                Client.Server.Handlers.Error(Client.Server.Public, Error);
 
             Client.Public.Disconnect();
 
@@ -1572,7 +1524,7 @@ void SecureClientInternal::ProcessHandshakeData(char * Buffer, unsigned int &Siz
         }
     }
 
-    if(Status == SEC_E_OK || Status == SEC_I_CONTINUE_NEEDED)
+    if (Status == SEC_E_OK || Status == SEC_I_CONTINUE_NEEDED)
     {
         /* Did AcceptSecurityContext give us back a response to send? */
 
@@ -1580,14 +1532,14 @@ void SecureClientInternal::ProcessHandshakeData(char * Buffer, unsigned int &Siz
         {
             /* Send the response to the client and free it */
             
-            Client.Public.Send((char *) OutBuffers[0].pvBuffer, OutBuffers[0].cbBuffer);
-            FreeContextBuffer(OutBuffers[0].pvBuffer);
+            Client.Public.Send ((char *) OutBuffers [0].pvBuffer, OutBuffers [0].cbBuffer);
+            FreeContextBuffer (OutBuffers [0].pvBuffer);
         }
 
         if(InBuffers[1].BufferType == SECBUFFER_EXTRA)
         {
-            Size = InBuffers[1].cbBuffer;
-            memmove(Buffer, this->Buffer.Buffer + (this->Buffer.Size - Size), Size);
+            Size = InBuffers [1].cbBuffer;
+            memmove (Buffer, this->Buffer.Buffer + (this->Buffer.Size - Size), Size);
         }
         else
             Size = 0;
@@ -1604,11 +1556,11 @@ void SecureClientInternal::ProcessHandshakeData(char * Buffer, unsigned int &Siz
             {
                 Lacewing::Error Error;
                 
-                Error.Add(WSAGetLastError());
+                Error.Add(WSAGetLastError ());
                 Error.Add("Secure handshake failure");
 
-                if(Client.Server.HandlerError)
-                    Client.Server.HandlerError(Client.Server.Public, Error);
+                if (Client.Server.Handlers.Error)
+                    Client.Server.Handlers.Error (Client.Server.Public, Error);
 
                 Client.Public.Disconnect();
             }
@@ -1619,57 +1571,50 @@ void SecureClientInternal::ProcessHandshakeData(char * Buffer, unsigned int &Siz
 
 }
 
-int Lacewing::Server::ClientCount()
+int Server::ClientCount ()
 {
-    return ((ServerInternal *) InternalTag)->Clients.Size;
+    return internal->Clients.Size;
 }
 
-lw_i64 Lacewing::Server::BytesSent()
+lw_i64 Server::BytesSent ()
 {
-    ServerInternal &Internal = *(ServerInternal *) InternalTag;
-
-    return Internal.BytesSent;
+    return internal->BytesSent;
 }
 
-lw_i64 Lacewing::Server::BytesReceived()
+lw_i64 Server::BytesReceived ()
 {
-    ServerInternal &Internal = *(ServerInternal *) InternalTag;
-
-    return Internal.BytesReceived;
+    return internal->BytesReceived;
 }
 
-void Lacewing::Server::DisableNagling()
+void Server::DisableNagling ()
 {
-    ServerInternal &Internal = *(ServerInternal *) InternalTag;
-
-    if(Internal.Socket != SOCKET_ERROR)
+    if (internal->Socket != -1)
     {
         Lacewing::Error Error;
-        Error.Add("DisableNagling() can only be called when the server is not hosting");
+        Error.Add ("DisableNagling() can only be called when the server is not hosting");
 
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (*this, Error);
 
         return;
     }
 
-    Internal.Nagle = false;
+    internal->Nagle = false;
 }
 
-Lacewing::Server::Client * Lacewing::Server::Client::Next ()
+Server::Client * Server::Client::Next ()
 {
-    return ((ServerClientInternal *) InternalTag)->Element->Next ?
-        &(** ((ServerClientInternal *) InternalTag)->Element->Next)->Public : 0;
+    return internal->Element->Next ? &(** internal->Element->Next)->Public : 0;
 }
 
-Lacewing::Server::Client * Lacewing::Server::FirstClient ()
+Server::Client * Server::FirstClient ()
 {
-    return ((ServerInternal *) InternalTag)->Clients.First ?
-            &(** ((ServerInternal *) InternalTag)->Clients.First)->Public : 0;
+    return internal->Clients.First ?
+            &(** internal->Clients.First)->Public : 0;
 }
 
-AutoHandlerFunctions(Lacewing::Server, ServerInternal, Connect)
-AutoHandlerFunctions(Lacewing::Server, ServerInternal, Disconnect)
-AutoHandlerFunctions(Lacewing::Server, ServerInternal, Receive)
-AutoHandlerFunctions(Lacewing::Server, ServerInternal, Error)
+AutoHandlerFunctions (Server, Connect)
+AutoHandlerFunctions (Server, Disconnect)
+AutoHandlerFunctions (Server, Receive)
+AutoHandlerFunctions (Server, Error)
 

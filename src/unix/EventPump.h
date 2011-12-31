@@ -27,26 +27,29 @@
  * SUCH DAMAGE.
  */
 
-#ifndef LacewingEventPump
-#define LacewingEventPump
-
-struct EventPumpInternal
+struct EventPump::Internal
 {  
     Lacewing::EventPump &EventPump;
 
     int Queue;
 
-    EventPumpInternal(Lacewing::EventPump &_EventPump, int MaxHint) : EventPump(_EventPump)
-    {
-        #ifdef LacewingUseEPoll
-            Queue = epoll_create(MaxHint);
-        #endif
+    Internal (Lacewing::EventPump &_EventPump, int MaxHint);
 
-        #ifdef LacewingUseKQueue
-            Queue = kqueue();
-        #endif
-    }
+    struct Event
+    {
+        Pump::Callback ReadReady, WriteReady;
+
+        void * Tag;
+    };
+
+    Backlog <Event> EventBacklog;
+
+    bool Ready (struct Event * Event, bool ReadReady, bool WriteReady);
+
+    Lacewing::Sync Sync_Signals;
+
+    int SignalPipe_Read, SignalPipe_Write;
+    List <void *> SignalParams;
 };
 
-#endif
 

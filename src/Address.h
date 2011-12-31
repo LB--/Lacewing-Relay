@@ -27,21 +27,69 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+struct Address::Internal
+{
+    Thread ResolverThread;
 
-lw_thread * lw_thread_new (const char * name, void * function)
-    { return (lw_thread *) new Thread (name, function);
+    Internal ();
+    ~ Internal ();
+
+    void Init (const char * Hostname, const char * Service, int Hints);
+
+    char * Hostname, * HostnameToFree;
+    char Service [64]; /* port or service name */
+
+    int Hints;
+
+    addrinfo * InfoList, * Info, * InfoToFree;
+
+    Lacewing::Error * Error;
+
+    inline void SetError (Lacewing::Error * Error)
+    {
+        delete this->Error;
+        this->Error = Error;
     }
-void lw_thread_delete (lw_thread * thread)
-    { delete (Thread *) thread;
+
+    char Buffer [64];
+    const char * ToString ();
+};
+
+
+/* Used internally to wrap a sockaddr into an Address, without any dynamic memory allocation */
+
+struct AddressWrapper : public Address::Internal
+{
+    Lacewing::Address * Address;
+    char AddressBytes [sizeof (Lacewing::Address)];
+
+    addrinfo info;
+
+    inline AddressWrapper ()
+    {
+        Address = (Lacewing::Address *) AddressBytes;
+
+        Address->Tag = 0;
+        Address->internal = this;
+
+        memset (&info, 0, sizeof (info));
+
+        Info = &info;
     }
-void lw_thread_start (lw_thread * thread, void * parameter)
-    { ((Thread *) thread)->Start (parameter);
+
+    inline void Set (sockaddr_storage * s)
+    {
+        info.ai_addr = (sockaddr *) s;
+        
+        if ((info.ai_family = s->ss_family) == AF_INET6)
+            info.ai_addrlen = sizeof (sockaddr_in6);
+        else
+            info.ai_addrlen = sizeof (sockaddr_in);
     }
-lw_bool lw_thread_started (lw_thread * thread)
-    { return ((Thread *) thread)->Started ();
+
+    inline operator Lacewing::Address & ()
+    {
+        return *Address;
     }
-long lw_thread_join (lw_thread * thread)
-    { return ((Thread *) thread)->Join ();
-    }
+};
 

@@ -29,19 +29,73 @@
 
 #include "../Common.h"
 
-lw_thread * lw_thread_new (const char * name, void * function)
-    { return (lw_thread *) new Thread (name, function);
+struct Thread::Internal
+{
+    void * Function, * Parameter;
+    String Name;
+
+    pthread_t Thread;
+    bool Started;
+
+    Internal (const char * _Name, void * _Function)
+        : Function (_Function), Name (_Name)
+    {
+        Started = false;
     }
-void lw_thread_delete (lw_thread * thread)
-    { delete (Thread *) thread;
-    }
-void lw_thread_start (lw_thread * thread, void * parameter)
-    { ((Thread *) thread)->Start (parameter);
-    }
-lw_bool lw_thread_started (lw_thread * thread)
-    { return ((Thread *) thread)->Started ();
-    }
-long lw_thread_join (lw_thread * thread)
-    { return ((Thread *) thread)->Join ();
-    }
+};
+
+Thread::Thread (const char * Name, void * Function)
+{
+    internal = new Internal (Name, Function);
+}
+
+Thread::~Thread ()
+{
+    Join ();
+
+    delete internal;
+}
+
+static int ThreadWrapper (Thread::Internal * internal)
+{
+    #if HAVE_DECL_PR_SET_NAME != 0
+        prctl (PR_SET_NAME, (unsigned long) (const char *) internal->Name, 0, 0, 0);
+    #endif
+    
+    int ExitCode = ((int (*) (void *)) internal->Function) (internal->Parameter);
+
+    internal->Started = false;
+
+    return ExitCode;
+}
+
+void Thread::Start (void * Parameter)
+{
+    if (Started ())
+        return;
+
+    internal->Parameter = Parameter;
+    
+    internal->Started = pthread_create
+        (&internal->Thread, 0, (void * (*) (void *)) ThreadWrapper, internal);
+}
+
+bool Thread::Started ()
+{
+    return internal->Started;
+}
+
+int Thread::Join ()
+{
+    if (!Started ())
+        return -1;
+
+    void * ExitCode;
+
+    if (pthread_join (internal->Thread, &ExitCode))
+        return -1;
+        
+    return (int) (lw_iptr) ExitCode;
+}
+
 

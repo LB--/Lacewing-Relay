@@ -30,28 +30,28 @@
 #include "../Common.h"
 
 lw_ssync * lw_ssync_new ()
-    { return (lw_ssync *) new Lacewing::SpinSync();
+    { return (lw_ssync *) new SpinSync ();
     }
 void lw_ssync_delete (lw_ssync * sync)
-    { delete (Lacewing::SpinSync *) sync;
+    { delete (SpinSync *) sync;
     }
 lw_ssync_wlock * lw_ssync_wlock_new (lw_ssync * sync)
-    { return (lw_ssync_wlock *) new Lacewing::SpinSync::WriteLock(*(Lacewing::SpinSync *) sync);
+    { return (lw_ssync_wlock *) new SpinSync::WriteLock (*(SpinSync *) sync);
     }
 void lw_ssync_wlock_delete (lw_ssync_wlock * lock)
-    { delete (Lacewing::SpinSync::WriteLock *) lock;
+    { delete (SpinSync::WriteLock *) lock;
     }
 void lw_ssync_wlock_release (lw_ssync_wlock * lock)
-    { ((Lacewing::SpinSync::WriteLock *) lock)->Release();
+    { ((SpinSync::WriteLock *) lock)->Release ();
     }
 lw_ssync_rlock * lw_ssync_rlock_new (lw_ssync * sync)
-    { return (lw_ssync_rlock *) new Lacewing::SpinSync::ReadLock(*(Lacewing::SpinSync *) sync);
+    { return (lw_ssync_rlock *) new SpinSync::ReadLock (*(SpinSync *) sync);
     }
 void lw_ssync_rlock_delete (lw_ssync_rlock * lock)
-    { delete (Lacewing::SpinSync::ReadLock *) lock;
+    { delete (SpinSync::ReadLock *) lock;
     }
 void lw_ssync_rlock_release (lw_ssync_rlock * lock)
-    { ((Lacewing::SpinSync::ReadLock *) lock)->Release();
+    { ((SpinSync::ReadLock *) lock)->Release ();
     }
 
 

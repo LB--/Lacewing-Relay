@@ -29,131 +29,80 @@
 
 #include "../Common.h"
 
-struct EventInternal
+struct Event::Internal
 {
-    
-    volatile long Signalled;
-    
-    #ifdef LacewingUseMPSemaphore
+    Lacewing::Event &Event;
 
-        MPSemaphoreID Semaphore;
-        volatile long WaiterCount;
-        
-        EventInternal()
-        {
-            Signalled = 0;
-            WaiterCount = 0;
-            
-            MPCreateSemaphore(1, 0, &Semaphore);
-        }
-    
-        ~EventInternal()
-        {
-            MPDeleteSemaphore(Semaphore);
-            Signalled = 1;
-        }
-        
-    #else
-        
-        sem_t Semaphore;
-        
-        EventInternal()
-        {
-            Signalled = 0;
-            sem_init(&Semaphore, 0, 0);
-        }
-        
-        ~EventInternal()
-        {
-            sem_destroy(&Semaphore);
-            Signalled = 1;
-        }
+    int PipeR, PipeW;
 
-    #endif
+    Internal (Lacewing::Event &_Event)
+        : Event (_Event)
+    {
+        int Pipe [2];
+        pipe (Pipe);
 
+        PipeR = Pipe [0];
+        PipeW = Pipe [1];
+        
+        fcntl (PipeR, F_SETFL, fcntl (PipeR, F_GETFL, 0) | O_NONBLOCK);
+    }
+
+    ~ Internal ()
+    {
+        close (PipeW);
+        close (PipeR);
+    }
 };
 
-Lacewing::Event::Event()
+Event::Event ()
 {
-    LacewingInitialise();
-
+    internal = new Internal (*this);
     Tag = 0;
-    InternalTag = new EventInternal;
 }
 
-Lacewing::Event::~Event()
+Event::~Event ()
 {
-    delete ((EventInternal *) InternalTag);
+    delete internal;
 }
 
-bool Lacewing::Event::Signalled()
+bool Event::Signalled ()
 {
-    return ((EventInternal *) InternalTag)->Signalled != 0;
+    fd_set Set;
+
+    FD_ZERO (&Set);
+    FD_SET (internal->PipeR, &Set);
+
+    timeval Timeout = { 0 };
+
+    return select (internal->PipeR + 1, &Set, 0, 0, &Timeout) > 0;
 }
 
-void Lacewing::Event::Signal()
+void Event::Signal ()
 {
-    LacewingSyncExchange(&((EventInternal *) InternalTag)->Signalled, 1);
-    
-    #ifdef LacewingUseMPSemaphore
-    
-        long CurrentWaiterCount = ((EventInternal *) InternalTag)->WaiterCount;
-        
-        for(int i = 0; i < CurrentWaiterCount; ++ i)
-            MPSignalSemaphore(((EventInternal *) InternalTag)->Semaphore);
-            
-    #else
-        sem_post(&((EventInternal *) InternalTag)->Semaphore);
-    #endif
+    write (internal->PipeW, "", 1);
 }
 
-void Lacewing::Event::Unsignal()
+void Event::Unsignal ()
 {
-    LacewingSyncExchange(&((EventInternal *) InternalTag)->Signalled, 0);
+    char buf [16];
+
+    while (read (internal->PipeR, buf, sizeof (buf)) != -1)
+    {
+    }
 }
 
-void Lacewing::Event::Wait(int Timeout)
-{
-    if(Signalled())
-        return;
-        
-    #ifdef LacewingUseMPSemaphore
-    
-        LacewingSyncIncrement(&((EventInternal *) InternalTag)->WaiterCount);
-    
-        if(Timeout == -1)
-        {
-            while(((EventInternal *) InternalTag)->Signalled == 0)
-                MPWaitOnSemaphore(((EventInternal *) InternalTag)->Semaphore, kDurationForever);
-        }
-        else
-            MPWaitOnSemaphore(((EventInternal *) InternalTag)->Semaphore, kDurationMillisecond * Timeout);
-        
-        LacewingSyncDecrement(&((EventInternal *) InternalTag)->WaiterCount);
-        
-    #else
+bool Event::Wait (int Timeout)
+{      
+    fd_set Set;
 
-        if(Timeout == -1)
-        {
-            while(((EventInternal *) InternalTag)->Signalled == 0)
-                sem_wait(&((EventInternal *) InternalTag)->Semaphore);
-        
-            return;
-        }
+    FD_ZERO (&Set);
+    FD_SET (internal->PipeR, &Set);
 
-        timespec Time;
+    timeval tv;
 
-        #ifdef HAVE_CLOCK_GETTIME
-            clock_gettime(CLOCK_REALTIME, &Time);
-        #else
+    tv.tv_sec = Timeout / 1000;
+    tv.tv_usec = (Timeout % 1000) * 1000;
 
-        #endif
-
-        Time.tv_sec += Timeout / 1000;
-        Time.tv_nsec += (Timeout % 1000) * 1000000;
-
-        sem_timedwait(&((EventInternal *) InternalTag)->Semaphore, &Time);
-    
-    #endif
+    return select (internal->PipeR + 1, &Set, 0, 0, &tv) > 0;
 }
 

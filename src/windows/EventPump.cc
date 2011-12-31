@@ -29,67 +29,138 @@
 
 #include "../Common.h"
 
-Lacewing::EventPump::EventPump(int)
-{
-    InternalTag = new EventPumpInternal(*this);
-    Tag         = 0;
-}
+#define SigExitEventLoop     ((OVERLAPPED *) 1)
+#define SigRemove            ((OVERLAPPED *) 2)
+#define SigEndWatcherThread  ((OVERLAPPED *) 3)
 
-Lacewing::EventPump::~EventPump()
-{
-    EventPumpInternal &Internal = *((EventPumpInternal *) InternalTag);
+struct EventPump::Internal
+{  
+    Lacewing::EventPump &Pump;
+    Lacewing::Thread WatcherThread;
 
-    if(Internal.WatcherThread.Started())
+    HANDLE CompletionPort;
+
+    Internal (Lacewing::EventPump &_Pump)
+        : Pump (_Pump), WatcherThread ("Watcher", (void *) Watcher)
     {
-        Post (SigEndWatcherThread, 0);
-
-        Internal.WatcherResumeEvent.Signal ();
-        Internal.WatcherThread.Join ();
+        CompletionPort     = CreateIoCompletionPort (INVALID_HANDLE_VALUE, 0, 4, 0);
+        HandlerTickNeeded  = 0;
     }
 
-    delete ((EventPumpInternal *) InternalTag);
+    struct Event
+    {
+        void * Tag;
+
+        Pump::Callback Callback;
+    };
+
+    Backlog <Event> EventBacklog;
+
+    void (LacewingHandler * HandlerTickNeeded) (Lacewing::EventPump &EventPump);
+
+    static bool Process (EventPump::Internal * internal, OVERLAPPED * Overlapped,
+                            unsigned int BytesTransferred, EventPump::Internal::Event * Event, int Error)
+    {
+        if (BytesTransferred == 0xFFFFFFFF)
+        {
+            /* See Post () */
+
+            ((void * (*) (void *)) Event) (Overlapped);
+
+            return true;
+        }
+
+        if (Overlapped == SigRemove)
+        {
+            internal->EventBacklog.Return (*Event);
+            internal->Pump.RemoveUser ();
+
+            return true;
+        }
+
+        if (Overlapped == SigExitEventLoop)
+            return false;
+
+        if (Event->Callback)
+            Event->Callback (Event->Tag, Overlapped, BytesTransferred, Error);
+
+        return true;
+    }
+    
+    OVERLAPPED * WatcherOverlapped;
+    unsigned int WatcherBytesTransferred;
+    EventPump::Internal::Event * WatcherEvent;
+    Lacewing::Event WatcherResumeEvent;
+    int WatcherError;
+
+    static void Watcher (EventPump::Internal * internal)
+    {
+        for (;;)
+        {
+            internal->WatcherError = 0;
+
+            if (!GetQueuedCompletionStatus (internal->CompletionPort, (DWORD *) &internal->WatcherBytesTransferred,
+                     (PULONG_PTR) &internal->WatcherEvent, &internal->WatcherOverlapped, INFINITE))
+            {
+                if ((internal->WatcherError = GetLastError ()) == WAIT_TIMEOUT)
+                    break;
+
+                if (!internal->WatcherOverlapped)
+                    break;
+
+                internal->WatcherBytesTransferred = 0;
+            }
+
+            if (internal->WatcherOverlapped == SigEndWatcherThread)
+                break;
+
+            internal->HandlerTickNeeded (internal->Pump);
+
+            internal->WatcherResumeEvent.Wait ();
+            internal->WatcherResumeEvent.Unsignal ();
+        }
+    }
+};
+
+EventPump::EventPump (int)
+{
+    internal = new EventPump::Internal (*this);
+    Tag = 0;
 }
 
-inline void Process(EventPumpInternal &Internal, OVERLAPPED * Overlapped, unsigned int BytesTransferred, EventPumpInternal::Event &Event, int Error)
+EventPump::~EventPump ()
 {
-    if(Event.Callback == SigRemoveClient)
-        Internal.EventBacklog.Return(*(EventPumpInternal::Event *) Event.Tag);
-    else
+    if (internal->WatcherThread.Started ())
     {
-        if(!Event.Removing)
-            ((void (*) (void *, OVERLAPPED *, unsigned int, int)) Event.Callback) (Event.Tag, Overlapped, BytesTransferred, Error);
+        PostQueuedCompletionStatus (internal->CompletionPort, 0, 0, SigEndWatcherThread);
+
+        internal->WatcherResumeEvent.Signal ();
+        internal->WatcherThread.Join ();
     }
 
-    if(Overlapped == (OVERLAPPED *) 1)
-    {
-        /* Event was created by Post() */
-
-        Internal.EventBacklog.Return(Event);
-    }
+    delete internal;
 }
 
-Lacewing::Error * Lacewing::EventPump::Tick()
+Error * EventPump::Tick ()
 {
-    EventPumpInternal &Internal = *((EventPumpInternal *) InternalTag);
-
-    if(Internal.HandlerTickNeeded)
+    if (internal->HandlerTickNeeded)
     {
         /* Process whatever the watcher thread dequeued before telling the caller to tick */
 
-        Process(Internal, Internal.WatcherOverlapped, Internal.WatcherBytesTransferred,
-                    *Internal.WatcherEvent, Internal.WatcherError); 
+        Internal::Process (internal, internal->WatcherOverlapped, internal->WatcherBytesTransferred,
+                            internal->WatcherEvent, internal->WatcherError); 
     }
 
     OVERLAPPED * Overlapped;
     unsigned int BytesTransferred;
     
-    EventPumpInternal::Event * Event;
+    EventPump::Internal::Event * Event;
 
     for(;;)
     {
         int Error = 0;
 
-        if(!GetQueuedCompletionStatus(Internal.CompletionPort, (DWORD *) &BytesTransferred,
+        if (!GetQueuedCompletionStatus (internal->CompletionPort, (DWORD *) &BytesTransferred,
                  (PULONG_PTR) &Event, &Overlapped, 0))
         {
             Error = GetLastError();
@@ -101,23 +172,21 @@ Lacewing::Error * Lacewing::EventPump::Tick()
                 break;
         }
 
-        Process(Internal, Overlapped, BytesTransferred, *Event, Error);
+        Internal::Process (internal, Overlapped, BytesTransferred, Event, Error);
     }
  
-    if(Internal.HandlerTickNeeded)
-        Internal.WatcherResumeEvent.Signal();
+    if (internal->HandlerTickNeeded)
+        internal->WatcherResumeEvent.Signal ();
 
     return 0;
 }
 
-Lacewing::Error * Lacewing::EventPump::StartEventLoop()
+Error * EventPump::StartEventLoop ()
 {
-    EventPumpInternal &Internal = *((EventPumpInternal *) InternalTag);
-
     OVERLAPPED * Overlapped;
     unsigned int BytesTransferred;
     
-    EventPumpInternal::Event * Event;
+    EventPump::Internal::Event * Event;
     bool Exit = false;
 
     for(;;)
@@ -126,7 +195,7 @@ Lacewing::Error * Lacewing::EventPump::StartEventLoop()
 
         int Error = 0;
 
-        if(!GetQueuedCompletionStatus(Internal.CompletionPort, (DWORD *) &BytesTransferred,
+        if (!GetQueuedCompletionStatus (internal->CompletionPort, (DWORD *) &BytesTransferred,
                  (PULONG_PTR) &Event, &Overlapped, INFINITE))
         {
             Error = GetLastError();
@@ -135,81 +204,63 @@ Lacewing::Error * Lacewing::EventPump::StartEventLoop()
                 continue;
         }
 
-        if(Event->Callback == SigExitEventLoop)
-        {
-            Internal.EventBacklog.Return(*Event);
+        if (!Internal::Process (internal, Overlapped, BytesTransferred, Event, Error))
             break;
-        }
- 
-        Process(Internal, Overlapped, BytesTransferred, *Event, Error);
     }
         
     return 0;
 }
 
-void Lacewing::EventPump::Post(void * Function, void * Parameter)
+void EventPump::PostEventLoopExit ()
 {
-    EventPumpInternal &Internal = *((EventPumpInternal *) InternalTag);
-
-    EventPumpInternal::Event &Event = Internal.EventBacklog.Borrow(Internal);
-
-    Event.Callback  = Function;
-    Event.Tag       = Parameter;
-    Event.Removing  = false;
-
-    PostQueuedCompletionStatus(Internal.CompletionPort, 0, (ULONG_PTR) &Event, (OVERLAPPED *) 1);
+    PostQueuedCompletionStatus (internal->CompletionPort, 0, 0, SigExitEventLoop);
 }
 
-void Lacewing::EventPump::PostEventLoopExit ()
+Error * EventPump::StartSleepyTicking (void (LacewingHandler * onTickNeeded) (EventPump &EventPump))
 {
-    Post (SigExitEventLoop, 0);
-}
-
-void Watcher (EventPumpInternal &Internal)
-{
-    for(;;)
-    {
-        Internal.WatcherError = 0;
-
-        if(!GetQueuedCompletionStatus(Internal.CompletionPort, (DWORD *) &Internal.WatcherBytesTransferred,
-                 (PULONG_PTR) &Internal.WatcherEvent, &Internal.WatcherOverlapped, INFINITE))
-        {
-            if((Internal.WatcherError = GetLastError()) == WAIT_TIMEOUT)
-                break;
-
-            if(!Internal.WatcherOverlapped)
-                break;
-
-            Internal.WatcherBytesTransferred = 0;
-        }
-
-        if(Internal.WatcherEvent->Callback == SigEndWatcherThread)
-            break;
-
-        Internal.HandlerTickNeeded(Internal.Pump);
-
-        Internal.WatcherResumeEvent.Wait();
-        Internal.WatcherResumeEvent.Unsignal();
-    }
-}
-
-Lacewing::Error * Lacewing::EventPump::StartSleepyTicking(void (LacewingHandler * onTickNeeded) (Lacewing::EventPump &EventPump))
-{
-    EventPumpInternal &Internal = *((EventPumpInternal *) InternalTag);
-
-    Internal.HandlerTickNeeded = onTickNeeded;    
-    Internal.WatcherThread.Start(&Internal);
+    internal->HandlerTickNeeded = onTickNeeded;    
+    internal->WatcherThread.Start (internal);
 
     return 0;
 }
 
-bool Lacewing::EventPump::InUse ()
+void * EventPump::Add (HANDLE Handle, void * Tag, Pump::Callback Callback)
 {
-    return ((EventPumpInternal *) InternalTag)->InUse;
+    LacewingAssert (Callback != 0);
+
+    Internal::Event &E = internal->EventBacklog.Borrow ();
+
+    E.Callback = Callback;
+    E.Tag = Tag;
+
+    if (CreateIoCompletionPort (Handle,
+            internal->CompletionPort, (ULONG_PTR) &E, 0) != 0)
+    {
+        /* success */
+    }
+    
+    AddUser ();
+
+    return &E;
 }
 
-void Lacewing::EventPump::InUse (bool InUse)
+void EventPump::Remove (void * Key)
 {
-    ((EventPumpInternal *) InternalTag)->InUse = InUse;
+    ((Internal::Event *) Key)->Callback = 0;
+
+    PostQueuedCompletionStatus
+        (internal->CompletionPort, 0, (ULONG_PTR) Key, SigRemove);
+}
+
+bool EventPump::IsEventPump ()
+{
+    return true;
+}
+
+void EventPump::Post (void * Function, void * Parameter)
+{
+    PostQueuedCompletionStatus
+        (internal->CompletionPort, 0xFFFFFFFF,
+            (ULONG_PTR) Function, (OVERLAPPED *) Parameter);
 }
 

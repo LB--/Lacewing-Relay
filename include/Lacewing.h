@@ -45,7 +45,6 @@
     #define lw_i32   int32_t
     #define lw_i16   int16_t
     #define lw_i8    int8_t
-
     
 #else
 
@@ -71,15 +70,24 @@
         #define LacewingFunction
     #endif
 #else
+
+    /* For the definition of HANDLE and OVERLAPPED (for Pump) */
+
+    #ifndef _INC_WINDOWS
+        #include <winsock2.h>
+        #include <windows.h>
+    #endif
+
     #define LacewingHandler __cdecl
+
 #endif
 
 #ifndef LacewingFunction
 
-    #define LacewingFunction __declspec(dllimport)
+    #define LacewingFunction __declspec (dllimport)
 
     #ifndef Lacewing_NoAutoLink
-        #pragma comment(lib, "Lacewing.lib")
+        #pragma comment (lib, "Lacewing.lib")
     #endif
 
 #endif
@@ -126,17 +134,37 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
 
   LacewingFlat (lw_addr);
 
-  LacewingFunction        lw_addr* lw_addr_new       ();
-  LacewingFunction        lw_addr* lw_addr_new_ip    (long ip, long port);
-  LacewingFunction        lw_addr* lw_addr_new_name  (const char * hostname, long port, lw_bool blocking);
-  LacewingFunction        lw_addr* lw_addr_copy      (lw_addr *);
-  LacewingFunction           void  lw_addr_delete    (lw_addr *);
-  LacewingFunction           long  lw_addr_port      (lw_addr *);
-  LacewingFunction           void  lw_addr_set_port  (lw_addr *, long port);
-  LacewingFunction        lw_bool  lw_addr_is_ready  (lw_addr *);
-  LacewingFunction           long  lw_addr_ip        (lw_addr *);
-  LacewingFunction  unsigned char  lw_addr_ip_byte   (lw_addr *, long index);
-  LacewingFunction     const char* lw_addr_tostring  (lw_addr *);
+  LacewingFunction        lw_addr* lw_addr_new          (const char * hostname, const char * service);
+  LacewingFunction        lw_addr* lw_addr_new_port     (const char * hostname, long port);
+  LacewingFunction        lw_addr* lw_addr_new_ex       (const char * hostname, const char * service, long hints);
+  LacewingFunction        lw_addr* lw_addr_new_port_ex  (const char * hostname, long port, long hints);
+  LacewingFunction        lw_addr* lw_addr_copy         (lw_addr *);
+  LacewingFunction           void  lw_addr_delete       (lw_addr *);
+  LacewingFunction           long  lw_addr_port         (lw_addr *);
+  LacewingFunction           void  lw_addr_set_port     (lw_addr *, long port);
+  LacewingFunction        lw_bool  lw_addr_is_ready     (lw_addr *);
+  LacewingFunction        lw_bool  lw_addr_is_ipv6      (lw_addr *);
+  LacewingFunction        lw_bool  lw_addr_is_equal     (lw_addr *, lw_addr *);
+  LacewingFunction     const char* lw_addr_tostring     (lw_addr *);
+
+/* Filter */
+
+  LacewingFlat (lw_filter);
+
+  LacewingFunction      lw_filter* lw_filter_new                ();
+  LacewingFunction           void  lw_filter_delete             (lw_filter *);
+  LacewingFunction      lw_filter* lw_filter_copy               (lw_filter *);
+  LacewingFunction           void  lw_filter_set_remote         (lw_filter *, lw_addr *);
+  LacewingFunction        lw_addr* lw_filter_get_remote         (lw_filter *);
+  LacewingFunction           void  lw_filter_set_local          (lw_filter *, lw_addr *);
+  LacewingFunction        lw_addr* lw_filter_get_local          (lw_filter *);
+  LacewingFunction           void  lw_filter_set_local_port     (lw_filter *, long port);
+  LacewingFunction           long  lw_filter_get_local_port     (lw_filter *);
+  LacewingFunction           void  lw_filter_set_remote_port    (lw_filter *, long port);
+  LacewingFunction           long  lw_filter_get_remote_port    (lw_filter *);
+  LacewingFunction           void  lw_filter_set_reuse          (lw_filter *);
+  LacewingFunction        lw_bool  lw_filter_is_reuse_set       (lw_filter *);
+  LacewingFunction        lw_bool  lw_filter_is_ipv6            (lw_filter *);
 
 /* EventPump */
 
@@ -149,7 +177,6 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFunction           void  lw_eventpump_start_sleepy_ticking (lw_eventpump *, void (LacewingHandler * on_tick_needed) (lw_eventpump *));
   LacewingFunction           void  lw_eventpump_post_eventloop_exit  (lw_eventpump *);
   LacewingFunction        lw_bool  lw_eventpump_in_use               (lw_eventpump *);
-  LacewingFunction           void  lw_eventpump_set_in_use           (lw_eventpump *, lw_bool);
 
 /* Timer */
 
@@ -201,23 +228,6 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   LacewingFunction           void  lw_event_unsignal            (lw_event *);
   LacewingFunction        lw_bool  lw_event_signalled           (lw_event *);
   LacewingFunction           void  lw_event_wait                (lw_event *, long milliseconds);
-
-/* Filter */
-
-  LacewingFlat (lw_filter);
-
-  LacewingFunction      lw_filter* lw_filter_new                ();
-  LacewingFunction           void  lw_filter_delete             (lw_filter *);
-  LacewingFunction           void  lw_filter_set_local_ip       (lw_filter *, long ip);
-  LacewingFunction           long  lw_filter_get_local_ip       (lw_filter *);
-  LacewingFunction           void  lw_filter_set_local          (lw_filter *, const char * name);
-  LacewingFunction           void  lw_filter_set_remote_addr    (lw_filter *, lw_addr *);
-  LacewingFunction        lw_addr* lw_filter_get_remote_addr    (lw_filter *);
-  LacewingFunction           void  lw_filter_set_remote         (lw_filter *, const char * name);
-  LacewingFunction           void  lw_filter_set_local_port     (lw_filter *, long port);
-  LacewingFunction           long  lw_filter_get_local_port     (lw_filter *);
-  LacewingFunction           void  lw_filter_set_reuse          (lw_filter *);
-  LacewingFunction        lw_bool  lw_filter_is_reuse_set       (lw_filter *);
 
 /* Error */
 
@@ -453,19 +463,22 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
   typedef void (LacewingHandler * lw_ws_handler_upload_done) (lw_ws *, lw_ws_req *, lw_ws_upload *);
   LacewingFunction void lw_ws_onuploaddone (lw_ws *, lw_ws_handler_upload_done);
 
-  typedef void (LacewingHandler * lw_ws_handler_upload_post) (lw_ws *, lw_ws_req *, lw_ws_upload * uploads[], long upload_count);
+  typedef void (LacewingHandler * lw_ws_handler_upload_post) (lw_ws *, lw_ws_req *, lw_ws_upload * uploads [], long upload_count);
   LacewingFunction void lw_ws_onuploadpost (lw_ws *, lw_ws_handler_upload_post);
 
 
 #ifdef __cplusplus
 }
 
+#define LacewingClass \
+    struct Internal;  Internal * internal;  void * Tag;
+
 /* TODO : Other types? */
 
 #define LacewingStream(C, F)                                \
         inline C & operator << (lw_i64 V)                   \
-        {   char Buffer[64];                                \
-            Int64ToString(V, Buffer);                       \
+        {   char Buffer [64];                                \
+            Int64ToString (V, Buffer);                      \
             (*this) << Buffer;                              \
             return *this;                                   \
         }                                                   \
@@ -498,106 +511,115 @@ LacewingFunction         void  SHA1_Hex                (char * Output, const cha
 
 struct Error
 {
-    void * InternalTag, * Tag;
+    LacewingClass;
 
-    LacewingFunction  Error();
-    LacewingFunction ~Error();
+    LacewingFunction  Error ();
+    LacewingFunction ~Error ();
     
     LacewingFunction void Add (const char * Format, ...);
     LacewingFunction void Add (int);
     LacewingFunction void Add (const char * Format, va_list);
 
+    LacewingFunction int Size ();
+
     LacewingFunction const char * ToString ();
     LacewingFunction operator const char * ();
 
-    LacewingFunction Lacewing::Error * Clone();
+    LacewingFunction Lacewing::Error * Clone ();
 };
 
-/* On Windows, there's only Lacewing::EventPump, of which Lacewing::Pump is a typedef.
+struct Event
+{
+    LacewingClass;
 
-   On *nix, Lacewing::EventPump derives from Lacewing::Pump, which is a virtual class for
-   watching FDs.  It is therefore possible to bypass Lacewing::EventPump entirely and use a custom
-   class deriving from Lacewing::Pump, allowing Lacewing to be used in situations where
-   EventPump is not practical (ie. when some form of event watcher already exists). */
+    LacewingFunction Event ();
+    LacewingFunction ~Event ();
 
-#ifndef _WIN32
-
-    struct Pump
-    {
-        void * InternalTag, * Tag;
-
-        LacewingFunction  Pump ();
-        LacewingFunction ~Pump ();
+    LacewingFunction void Signal ();
+    LacewingFunction void Unsignal ();
     
-        LacewingFunction void Post (void * Function, void * Parameter);
-        LacewingFunction virtual bool IsEventPump ();
-        LacewingFunction void PostEventLoopExit ();
-        LacewingFunction bool InUse ();
-        LacewingFunction void InUse (bool);
+    LacewingFunction bool Signalled ();
 
-        #ifdef LacewingInternal
-            friend struct ::PumpInternal;
-        #endif
+    LacewingFunction bool Wait (int Timeout = -1);
+};
 
-    protected:
+struct Pump
+{
+private:
 
-        LacewingFunction bool Ready (void * Tag, bool CanRead, bool CanWrite);
+    LacewingClass;
 
-        virtual void * AddRead (int FD, void * Tag) = 0;
-        virtual void * AddReadWrite (int FD, void * Tag) = 0;
+public:
 
-        /* AddRead/AddReadWrite may return a pointer-sized key, which will be passed
-           to Gone() when the FD is dead.  EventPump doesn't use this mechanism, but
-           it may be useful for a custom Pump. */
+    LacewingFunction  Pump ();
+    LacewingFunction ~Pump ();
 
-        LacewingFunction virtual void Gone (void *);
-    };
+    LacewingFunction void AddUser ();
+    LacewingFunction void RemoveUser ();
 
-    struct EventPump : public Pump
-    {
-        void * EPInternalTag, * EPTag;
+    LacewingFunction bool InUse ();
 
-        LacewingFunction  EventPump (int MaxHint = 1024);
-        LacewingFunction ~EventPump ();
+    #ifdef _WIN32
 
-        LacewingFunction Lacewing::Error * Tick();
-        LacewingFunction Lacewing::Error * StartEventLoop();
-        LacewingFunction Lacewing::Error * StartSleepyTicking(void (LacewingHandler * onTickNeeded) (Lacewing::EventPump &EventPump));
-    
-        LacewingFunction bool IsEventPump ();
+        typedef void (* Callback)
+            (void * Tag, OVERLAPPED *, unsigned int BytesTransferred, int Error);
 
-    private:
+        virtual void * Add (HANDLE, void * Tag, Callback) = 0;
 
-        LacewingFunction void * AddRead (int FD, void * Tag);
-        LacewingFunction void * AddReadWrite (int FD, void * Tag);
-    };
+    #else
 
-#else
+        typedef void (* Callback) (void * Tag);
 
-    struct EventPump
-    {
-        void * InternalTag, * Tag;
+        virtual void * Add
+            (int FD, void * Tag, Callback ReadReady,
+                Callback WriteReady = 0, bool EdgeTriggered = true) = 0;
 
-        LacewingFunction  EventPump (int MaxHint = 1024);
-        LacewingFunction ~EventPump ();
+    #endif
+ 
+    virtual void Remove (void * Key) = 0;
 
-        LacewingFunction Lacewing::Error * Tick();
-        LacewingFunction Lacewing::Error * StartEventLoop();
-        LacewingFunction Lacewing::Error * StartSleepyTicking(void (LacewingHandler * onTickNeeded) (Lacewing::EventPump &EventPump));
-    
-        LacewingFunction void Post (void * Function, void * Parameter);
-        LacewingFunction void PostEventLoopExit ();
-        LacewingFunction bool InUse ();
-        LacewingFunction void InUse (bool);
-    };
+    virtual void Post (void * Function, void * Parameter = 0) = 0;   
 
-    typedef EventPump Pump;
+    LacewingFunction virtual bool IsEventPump ();
+};
 
-#endif
+struct EventPump : public Pump
+{
+    LacewingClass;
+
+    LacewingFunction  EventPump (int MaxHint = 1024);
+    LacewingFunction ~EventPump ();
+
+    LacewingFunction Lacewing::Error * Tick ();
+    LacewingFunction Lacewing::Error * StartEventLoop ();
+
+    LacewingFunction Lacewing::Error * StartSleepyTicking
+        (void (LacewingHandler * onTickNeeded) (Lacewing::EventPump &EventPump));
+
+    LacewingFunction void PostEventLoopExit ();
+
+    #ifdef _WIN32
+
+        LacewingFunction void * Add (HANDLE, void * Tag, Callback);
+
+    #else
+
+        LacewingFunction void * Add
+            (int FD, void * Tag, Callback ReadReady,
+                Callback WriteReady = 0, bool EdgeTriggered = true);
+
+    #endif
+
+    LacewingFunction void Remove (void * Key);
+
+    LacewingFunction void Post (void * Function, void * Parameter = 0);
+
+    LacewingFunction bool IsEventPump ();
+};
 
 struct Thread
 {
-    void * InternalTag, * Tag;
+    LacewingClass;
 
     LacewingFunction   Thread (const char * Name, void * Function);
     LacewingFunction ~ Thread ();
@@ -610,7 +632,7 @@ struct Thread
 
 struct Timer
 {
-    void * InternalTag, * Tag;
+    LacewingClass;
 
     LacewingFunction  Timer (Pump &);
     LacewingFunction ~Timer ();
@@ -627,155 +649,132 @@ struct Timer
 
 struct Sync
 {
-    void * InternalTag, * Tag;
+    LacewingClass;
 
     LacewingFunction  Sync ();
     LacewingFunction ~Sync ();
 
     struct Lock
     {
-        void * InternalTag;
+        void * internal;
 
-        LacewingFunction  Lock(Lacewing::Sync &);
-        LacewingFunction ~Lock();
+        LacewingFunction  Lock (Lacewing::Sync &);
+        LacewingFunction ~Lock ();
         
-        LacewingFunction void Release();
+        LacewingFunction void Release ();
     };
 };
 
 struct SpinSync
 {
-    void * InternalTag, * Tag;
+    LacewingClass;
 
     LacewingFunction  SpinSync ();
     LacewingFunction ~SpinSync ();
 
     struct WriteLock
     {
-        void * InternalTag;
+        SpinSync::Internal * internal;
 
-        LacewingFunction  WriteLock(Lacewing::SpinSync &);
-        LacewingFunction ~WriteLock();
+        LacewingFunction  WriteLock (Lacewing::SpinSync &);
+        LacewingFunction ~WriteLock ();
         
-        LacewingFunction void Release();
+        LacewingFunction void Release ();
     };
 
     struct ReadLock
     {
-        void * InternalTag;
+        SpinSync::Internal * internal;
 
-        LacewingFunction  ReadLock(Lacewing::SpinSync &);
-        LacewingFunction ~ReadLock();
+        LacewingFunction  ReadLock (Lacewing::SpinSync &);
+        LacewingFunction ~ReadLock ();
 
-        LacewingFunction void Release();
+        LacewingFunction void Release ();
     };
 };
 
-struct Event
-{
-    void * InternalTag, * Tag;
-
-    LacewingFunction Event();
-    LacewingFunction ~Event();
-
-    LacewingFunction void Signal();
-    LacewingFunction void Unsignal();
-    
-    LacewingFunction bool Signalled();
-
-    LacewingFunction void Wait(int Timeout = -1);
-};
-
 struct Address
-{
-    void * InternalTag, * Tag;
+{  
+    LacewingClass;
 
-    LacewingFunction Address(const Address &);
-    LacewingFunction ~Address();
+    const static int HINT_TCP   = 1;
+    const static int HINT_UDP   = 2;
+    const static int HINT_IPv4  = 4;
 
-    LacewingFunction Address();
-    LacewingFunction Address(unsigned int IP, int Port = 0);
-    LacewingFunction Address(unsigned char, unsigned char, unsigned char, unsigned char, int Port = 0);
+    LacewingFunction Address (Address &);
+    LacewingFunction Address (const char * Hostname, int Port = 0, int Hints = 0);
+    LacewingFunction Address (const char * Hostname, const char * Service, int Hints = 0);
 
-    /* Hostname accepts formats:
+    LacewingFunction ~ Address ();
 
-          lacewing-project.org
-          127.0.0.1
-          lacewing-project.org:6121
-          127.0.0.1:6121
-          http://lacewing-project.org
-          http://127.0.0.1
+    LacewingFunction  int Port ();
+    LacewingFunction void Port (int);
+    
+    LacewingFunction bool IPv6 ();
 
-       Port used (in order of precedence):
-     
-          The port after the ":"
-          The port of the service (eg 80 for http://)
-          The "Port" argument
-    */
+    LacewingFunction bool Ready ();
+    LacewingFunction Lacewing::Error * Resolve ();
 
-    LacewingFunction Address(const char * Hostname, int Port = 0, bool Blocking = false);
- 
-    LacewingFunction  int Port () const;  
-    LacewingFunction void Port (int Port);
+    LacewingFunction const char * ToString  ();
+    LacewingFunction operator const char *  ();
 
-    LacewingFunction         bool   Ready   () const;
-    LacewingFunction unsigned int   IP      () const;
-    LacewingFunction unsigned char  IP_Byte (int Index) const;
-
-    LacewingFunction const char * ToString  () const;
-    LacewingFunction operator const char *  () const;
+    LacewingFunction bool operator == (Address &);
+    LacewingFunction bool operator != (Address &);
 };
 
 struct Filter
 {
-    void * InternalTag, * Tag;
+    LacewingClass;
 
     LacewingFunction Filter ();
-    LacewingFunction Filter (const Filter &);
+    LacewingFunction Filter (Filter &);
 
     LacewingFunction ~Filter ();
-    
-    LacewingFunction void LocalIP(int IP);
-    LacewingFunction  int LocalIP() const;
 
-    LacewingFunction void LocalPort(int Port);
-    LacewingFunction  int LocalPort() const;
+    LacewingFunction void Local (Lacewing::Address *);    
+    LacewingFunction void Remote (Lacewing::Address *);
 
-    LacewingFunction void Local (const char *);
-    
-    LacewingFunction void Remote (const char *);
-    LacewingFunction void Remote (const Address &);
-    LacewingFunction Address &Remote () const;
+    LacewingFunction Lacewing::Address * Local ();    
+    LacewingFunction Lacewing::Address * Remote (); 
 
-    LacewingFunction void Reuse(bool Enabled);
-    LacewingFunction bool Reuse() const;
+    LacewingFunction void LocalPort (int Port);   
+    LacewingFunction  int LocalPort ();    
+
+    LacewingFunction void RemotePort (int Port);   
+    LacewingFunction  int RemotePort ();    
+
+    LacewingFunction void Reuse (bool Enabled);
+    LacewingFunction bool Reuse ();
+
+    LacewingFunction void IPv6 (bool Enabled);
+    LacewingFunction bool IPv6 ();
 };
 
 struct Client
 {
-    void * InternalTag, * Tag;
+    LacewingClass;
 
-    LacewingFunction  Client(Pump &);
-    LacewingFunction ~Client();
+    LacewingFunction  Client (Pump &);
+    LacewingFunction ~Client ();
 
-    LacewingFunction void Connect(const char * Host, int Port);
-    LacewingFunction void Connect(Address &);
+    LacewingFunction void Connect (const char * Host, int Port);
+    LacewingFunction void Connect (Address &);
 
-    LacewingFunction void Disconnect();
+    LacewingFunction void Disconnect ();
 
-    LacewingFunction bool Connected();
-    LacewingFunction bool Connecting();
+    LacewingFunction bool Connected ();
+    LacewingFunction bool Connecting ();
     
-    LacewingFunction Lacewing::Address &ServerAddress();
+    LacewingFunction Lacewing::Address &ServerAddress ();
 
     LacewingFunction void Send (const char * Data, int Size = -1);
     LacewingStream             (Client, Send);
 
-    LacewingFunction void DisableNagling();
+    LacewingFunction void DisableNagling ();
     
     LacewingFunction bool CheapBuffering ();
-    LacewingFunction void StartBuffering();
-    LacewingFunction void Flush();    
+    LacewingFunction void StartBuffering ();
+    LacewingFunction void Flush ();    
 
     typedef void (LacewingHandler * HandlerConnect)         (Lacewing::Client &Client);
     typedef void (LacewingHandler * HandlerDisconnect)      (Lacewing::Client &Client);
@@ -790,10 +789,10 @@ struct Client
 
 struct Server
 {
-    void * InternalTag, * Tag;
+    LacewingClass;
 
-    LacewingFunction  Server(Pump &);
-    LacewingFunction ~Server();
+    LacewingFunction  Server (Pump &);
+    LacewingFunction ~Server ();
 
     LacewingFunction void Host    (int Port, bool ClientSpeaksFirst = false);
     LacewingFunction void Host    (Lacewing::Filter &Filter, bool ClientSpeaksFirst = false);
@@ -806,16 +805,16 @@ struct Server
     LacewingFunction bool LoadSystemCertificate (const char * StoreName, const char * CommonName, const char * Location = "CurrentUser");
     LacewingFunction bool CertificateLoaded     ();
 
-    LacewingFunction lw_i64 BytesSent();
-    LacewingFunction lw_i64 BytesReceived();
+    LacewingFunction lw_i64 BytesSent ();
+    LacewingFunction lw_i64 BytesReceived ();
     
     LacewingFunction void DisableNagling ();
 
     struct Client
     {
-        void * InternalTag, * Tag;
+        LacewingClass;
 
-        LacewingFunction Lacewing::Address &GetAddress();
+        LacewingFunction Lacewing::Address &GetAddress ();
 
         LacewingFunction void Send          (const char * Data, int Size = -1);
         LacewingFunction void SendFile      (const char * Filename, lw_i64 Offset = 0, lw_i64 Size = -1);
@@ -827,12 +826,12 @@ struct Server
 
         LacewingStream (Client, Send);
 
-        LacewingFunction void Disconnect();
+        LacewingFunction void Disconnect ();
 
         LacewingFunction Client * Next ();
     };
 
-    LacewingFunction int ClientCount();
+    LacewingFunction int ClientCount ();
     LacewingFunction Client * FirstClient ();
 
     typedef void (LacewingHandler * HandlerConnect)     (Lacewing::Server &Server, Lacewing::Server::Client &Client);
@@ -848,38 +847,38 @@ struct Server
 
 struct UDP
 {
-    void * InternalTag, * Tag;
+    LacewingClass;
 
     LacewingFunction  UDP (Pump &);
     LacewingFunction ~UDP ();
 
     LacewingFunction void Host (int Port);
     LacewingFunction void Host (Lacewing::Filter &Filter);
-    LacewingFunction void Host (Address &); /* Use Port() afterwards to get the port number */
+    LacewingFunction void Host (Address &); /* Use Port () afterwards to get the port number */
 
     LacewingFunction bool Hosting ();
     LacewingFunction void Unhost ();
 
     LacewingFunction int Port ();
 
-    LacewingFunction lw_i64 BytesSent();
-    LacewingFunction lw_i64 BytesReceived();
+    LacewingFunction lw_i64 BytesSent ();
+    LacewingFunction lw_i64 BytesReceived ();
 
-    LacewingFunction void Send(Lacewing::Address &Address, const char * Data, int Size = -1);
+    LacewingFunction void Send (Lacewing::Address &Address, const char * Data, int Size = -1);
 
     typedef void (LacewingHandler * HandlerReceive)          (Lacewing::UDP &UDP, Lacewing::Address &From, char * Data, int Size);
     typedef void (LacewingHandler * HandlerError)            (Lacewing::UDP &UDP, Lacewing::Error &);
     
-    LacewingFunction void onReceive(HandlerReceive);
+    LacewingFunction void onReceive (HandlerReceive);
     LacewingFunction void onError  (HandlerError);
 };
 
 struct Webserver
 {
-    void * InternalTag, * Tag;
+    LacewingClass;
 
-    LacewingFunction  Webserver(Pump &);
-    LacewingFunction ~Webserver();
+    LacewingFunction  Webserver (Pump &);
+    LacewingFunction ~Webserver ();
 
     LacewingFunction void Host         (int Port = 80);
     LacewingFunction void HostSecure   (int Port = 443);
@@ -900,8 +899,8 @@ struct Webserver
     LacewingFunction bool LoadSystemCertificate (const char * StoreName, const char * CommonName, const char * Location = "CurrentUser");
     LacewingFunction bool CertificateLoaded     ();
 
-    LacewingFunction lw_i64 BytesSent();
-    LacewingFunction lw_i64 BytesReceived();
+    LacewingFunction lw_i64 BytesSent ();
+    LacewingFunction lw_i64 BytesReceived ();
 
     LacewingFunction void EnableManualRequestFinish ();
 
@@ -910,28 +909,28 @@ struct Webserver
 
     struct Request
     {
-        void * InternalTag, * Tag;
+        LacewingClass;
 
-        LacewingFunction Lacewing::Address &GetAddress();
+        LacewingFunction Lacewing::Address &GetAddress ();
 
         LacewingFunction bool Secure ();
 
-        LacewingFunction const char * URL();
-        LacewingFunction const char * Hostname();
+        LacewingFunction const char * URL ();
+        LacewingFunction const char * Hostname ();
         
-        LacewingFunction void Disconnect();
+        LacewingFunction void Disconnect ();
 
         LacewingFunction void SetRedirect (const char * URL);
         LacewingFunction void Status (int Code, const char * Message);
 
-        LacewingFunction void SetMimeType(const char * MimeType, const char * Charset = "UTF-8");
-        LacewingFunction void GuessMimeType(const char * Filename);
+        LacewingFunction void SetMimeType (const char * MimeType, const char * Charset = "UTF-8");
+        LacewingFunction void GuessMimeType (const char * Filename);
 
         LacewingFunction void Send          (const char * Data, int Size = -1);
         LacewingFunction void SendFile      (const char * Filename, lw_i64 Offset = 0, lw_i64 Size = -1);
         LacewingFunction void SendConstant  (const char * Data, int Size = -1);
 
-        LacewingStream(Request, Send);
+        LacewingStream (Request, Send);
 
         LacewingFunction void Reset ();
         LacewingFunction void Finish ();
@@ -943,12 +942,12 @@ struct Webserver
         LacewingFunction void   LastModified  (lw_i64 Time);
         LacewingFunction void   SetUnmodified ();
     
-        LacewingFunction void DisableCache();
+        LacewingFunction void DisableCache ();
 
-        LacewingFunction void   EnableDownloadResuming();
-        LacewingFunction lw_i64 RequestedRangeBegin();
-        LacewingFunction lw_i64 RequestedRangeEnd();
-        LacewingFunction void   SetOutgoingRange(lw_i64 Begin, lw_i64 End);
+        LacewingFunction void   EnableDownloadResuming ();
+        LacewingFunction lw_i64 RequestedRangeBegin ();
+        LacewingFunction lw_i64 RequestedRangeEnd ();
+        LacewingFunction void   SetOutgoingRange (lw_i64 Begin, lw_i64 End);
         
 
         /** Headers **/
@@ -1000,7 +999,7 @@ struct Webserver
         LacewingFunction const char * Session (const char * Key);
         LacewingFunction void         Session (const char * Key, const char * Value);
 
-        LacewingFunction void  CloseSession();
+        LacewingFunction void  CloseSession ();
 
             
         /** GET/POST data **/
@@ -1020,16 +1019,16 @@ struct Webserver
         LacewingFunction const char * POST (const char * Name);
     };
 
-    LacewingFunction void CloseSession(const char * ID);
+    LacewingFunction void CloseSession (const char * ID);
 
     struct Upload
     {
-        void * InternalTag, * Tag;
+        LacewingClass;
 
-        LacewingFunction const char * FormElementName();
-        LacewingFunction const char * Filename();
-        LacewingFunction void         SetAutoSave();
-        LacewingFunction const char * GetAutoSaveFilename();
+        LacewingFunction const char * FormElementName ();
+        LacewingFunction const char * Filename ();
+        LacewingFunction void         SetAutoSave ();
+        LacewingFunction const char * GetAutoSaveFilename ();
 
         LacewingFunction const char * Header (const char * Name);
         
@@ -1060,7 +1059,7 @@ struct Webserver
                                                                     Lacewing::Webserver::Upload &Upload);
 
     typedef void (LacewingHandler * HandlerUploadPost)             (Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request,
-                                                                    Lacewing::Webserver::Upload * Uploads[], int UploadCount);
+                                                                    Lacewing::Webserver::Upload * Uploads [], int UploadCount);
 
     LacewingFunction void onGet              (HandlerGet);
     LacewingFunction void onUploadStart      (HandlerUploadStart);
@@ -1075,9 +1074,7 @@ struct Webserver
     
 struct RelayClient
 {
-public:
-
-    void * InternalTag, * Tag;
+    LacewingClass;
 
     LacewingFunction  RelayClient (Pump &);
     LacewingFunction ~RelayClient ();
@@ -1090,7 +1087,7 @@ public:
 
     LacewingFunction void Disconnect ();
 
-    LacewingFunction Lacewing::Address &ServerAddress();
+    LacewingFunction Lacewing::Address &ServerAddress ();
 
     LacewingFunction int ID ();
 
@@ -1099,11 +1096,11 @@ public:
 
     LacewingFunction const char * WelcomeMessage ();
 
-    LacewingFunction void ListChannels();
+    LacewingFunction void ListChannels ();
 
     struct ChannelListing
     {
-        void * InternalTag, * Tag;
+        LacewingClass;
 
         short PeerCount;
         const char * Name;
@@ -1114,45 +1111,45 @@ public:
     LacewingFunction int ChannelListingCount ();
     LacewingFunction ChannelListing * FirstChannelListing ();
 
-    LacewingFunction void Join(const char * Channel, bool Hidden = false, bool AutoClose = false);
+    LacewingFunction void Join (const char * Channel, bool Hidden = false, bool AutoClose = false);
 
-    LacewingFunction void SendServer(int Subchannel, const char * Data, int Size = -1, int Type = 0);
-    LacewingFunction void BlastServer(int Subchannel, const char * Data, int Size = -1, int Type = 0);
+    LacewingFunction void SendServer (int Subchannel, const char * Data, int Size = -1, int Type = 0);
+    LacewingFunction void BlastServer (int Subchannel, const char * Data, int Size = -1, int Type = 0);
 
     struct Channel
     {
-        void * InternalTag, * Tag;
+        LacewingClass;
 
-        LacewingFunction const char * Name();
-        LacewingFunction bool IsChannelMaster();
+        LacewingFunction const char * Name ();
+        LacewingFunction bool IsChannelMaster ();
 
-        LacewingFunction void Send(int Subchannel, const char * Data, int Size = -1, int Type = 0);
-        LacewingFunction void Blast(int Subchannel, const char * Data, int Size = -1, int Type = 0);
+        LacewingFunction void Send (int Subchannel, const char * Data, int Size = -1, int Type = 0);
+        LacewingFunction void Blast (int Subchannel, const char * Data, int Size = -1, int Type = 0);
 
         struct Peer
         {
-            void * InternalTag, * Tag;
+            LacewingClass;
 
-            int  ID();
-            bool IsChannelMaster();
+            int  ID ();
+            bool IsChannelMaster ();
 
-            LacewingFunction void Send(int Subchannel, const char * Data, int Size = -1, int Type = 0);
-            LacewingFunction void Blast(int Subchannel, const char * Data, int Size = -1, int Type = 0);
+            LacewingFunction void Send (int Subchannel, const char * Data, int Size = -1, int Type = 0);
+            LacewingFunction void Blast (int Subchannel, const char * Data, int Size = -1, int Type = 0);
 
-            LacewingFunction const char * Name();
+            LacewingFunction const char * Name ();
 
             LacewingFunction Peer * Next ();
         };
 
-        LacewingFunction int PeerCount();
+        LacewingFunction int PeerCount ();
         LacewingFunction Peer * FirstPeer ();
 
-        LacewingFunction void Leave();
+        LacewingFunction void Leave ();
 
         LacewingFunction Channel * Next ();
     };
 
-    LacewingFunction int ChannelCount();
+    LacewingFunction int ChannelCount ();
     LacewingFunction Channel * FirstChannel ();
 
     typedef void (LacewingHandler * HandlerConnect)                  (Lacewing::RelayClient &Client);
@@ -1206,22 +1203,14 @@ public:
     LacewingFunction void onPeerDisconnect        (HandlerPeerDisconnect);
     LacewingFunction void onPeerChangeName        (HandlerPeerChangeName);
     LacewingFunction void onChannelListReceived   (HandlerChannelListReceived);
-
-private:
-
-    Lacewing::Client Socket;
-    Lacewing::UDP    UDP;
 };
 
 struct RelayServer
 {
-    void * InternalTag, * Tag;
+    LacewingClass;
 
-    Lacewing::Server Socket;
-    Lacewing::UDP UDP;
-
-    LacewingFunction  RelayServer(Pump &);
-    LacewingFunction ~RelayServer();
+    LacewingFunction  RelayServer (Pump &);
+    LacewingFunction ~RelayServer ();
 
     LacewingFunction void Host (int Port = 6121);
     LacewingFunction void Host (Lacewing::Filter &Filter);
@@ -1230,25 +1219,25 @@ struct RelayServer
     LacewingFunction bool Hosting ();
     LacewingFunction int Port ();
 
-    LacewingFunction void SetWelcomeMessage(const char * Message);
-    LacewingFunction void SetChannelListing(bool Enabled);
+    LacewingFunction void SetWelcomeMessage (const char * Message);
+    LacewingFunction void SetChannelListing (bool Enabled);
 
     struct Client;
 
     struct Channel
     {
-        void * InternalTag, * Tag;
+        LacewingClass;
 
-        LacewingFunction int ID();
+        LacewingFunction int ID ();
 
-        LacewingFunction Client * ChannelMaster();
+        LacewingFunction Client * ChannelMaster ();
 
         LacewingFunction const char * Name ();
         LacewingFunction void Name (const char *);
 
-        LacewingFunction bool Hidden();
-        LacewingFunction bool AutoCloseEnabled();
-        LacewingFunction void Close();
+        LacewingFunction bool Hidden ();
+        LacewingFunction bool AutoCloseEnabled ();
+        LacewingFunction void Close ();
         
         LacewingFunction void Send (int Subchannel, const char * Data, int Size = -1, int Variant = 0);
         LacewingFunction void Blast (int Subchannel, const char * Data, int Size = -1, int Variant = 0);
@@ -1257,7 +1246,7 @@ struct RelayServer
 
         struct ClientIterator
         {
-            void * InternalTag;
+            void * internal;
         
             LacewingFunction ClientIterator (Channel &);
             LacewingFunction Client * Next ();
@@ -1266,30 +1255,30 @@ struct RelayServer
         LacewingFunction Channel * Next ();
     };
 
-    LacewingFunction int ChannelCount();
+    LacewingFunction int ChannelCount ();
     LacewingFunction Channel * FirstChannel ();
     
     struct Client
     {
-        void * InternalTag, * Tag;
+        LacewingClass;
 
-        LacewingFunction int ID();
+        LacewingFunction int ID ();
 
-        LacewingFunction Lacewing::Address &GetAddress();
+        LacewingFunction Lacewing::Address &GetAddress ();
 
-        LacewingFunction void Disconnect();
+        LacewingFunction void Disconnect ();
 
-        LacewingFunction void Send(int Subchannel, const char * Data, int Size = -1, int Variant = 0);
-        LacewingFunction void Blast(int Subchannel, const char * Data, int Size = -1, int Variant = 0);
+        LacewingFunction void Send (int Subchannel, const char * Data, int Size = -1, int Variant = 0);
+        LacewingFunction void Blast (int Subchannel, const char * Data, int Size = -1, int Variant = 0);
 
         LacewingFunction const char * Name ();
         LacewingFunction void Name (const char *);
         
-        LacewingFunction int ChannelCount();
+        LacewingFunction int ChannelCount ();
         
         struct ChannelIterator
         {
-            void * InternalTag;
+            void * internal;
 
             LacewingFunction ChannelIterator (Client &);
             LacewingFunction Channel * Next ();
@@ -1340,7 +1329,7 @@ struct RelayServer
 
 struct FlashPolicy
 {
-    void * InternalTag, * Tag;
+    LacewingClass;
 
     LacewingFunction  FlashPolicy (Pump &);
     LacewingFunction ~FlashPolicy ();

@@ -29,7 +29,7 @@
 
 class HTTPClient : public WebserverClient
 {
-    RequestInternal Request; /* HTTP is one request at a time, so this is just reused */
+    Webserver::Request::Internal Request; /* HTTP is one request at a time, so this is just reused */
 
     MessageBuilder Buffer;
     lw_i64 BodyRemaining;
@@ -45,18 +45,18 @@ class HTTPClient : public WebserverClient
     
 public:
 
-    HTTPClient (WebserverInternal &, Lacewing::Server::Client &, bool Secure);
+    HTTPClient (Webserver::Internal &, Lacewing::Server::Client &, bool Secure);
     ~ HTTPClient ();
 
     void Process (char * Buffer, int Size);
-    void Respond (RequestInternal &);
+    void Respond (Webserver::Request::Internal &);
     void Dead ();
 
     void Tick ();
 
     bool IsSPDY ();
 
-    struct HTTPUpload : public UploadInternal
+    struct HTTPUpload : public Webserver::Upload::Internal
     {
         const char * Header (const char * Name);
     };

@@ -29,46 +29,48 @@
 
 #include "../Common.h"
 
-struct TimerInternal;
+static void TimerThread (Timer::Internal *);
 
-void TimerThread (TimerInternal &Internal);
-
-struct TimerInternal
+struct Timer::Internal
 {
-    EventPumpInternal &EventPump;
-    Lacewing::Timer   &Timer;
+    Lacewing::Pump &Pump;
+    Lacewing::Timer &Timer;
     
-    Lacewing::Thread TimerThread;
+    Thread TimerThread;
 
     HANDLE TimerHandle;
     HANDLE ShutdownEvent;
 
     bool Started;
 
-    Lacewing::Timer::HandlerTick HandlerTick;
+    struct
+    {
+        HandlerTick Tick;
 
-    TimerInternal(Lacewing::Timer &_Timer, EventPumpInternal &_EventPump)
-                : Timer(_Timer), EventPump(_EventPump),
+    } Handlers;
+
+    Internal (Lacewing::Timer &_Timer, Lacewing::Pump &_Pump)
+                : Timer (_Timer), Pump (_Pump),
                     TimerThread ("Timer", (void *) ::TimerThread)
     {
         ShutdownEvent = CreateEvent         (0, TRUE, FALSE, 0);
         TimerHandle   = CreateWaitableTimer (0, FALSE, 0);
 
-        HandlerTick = 0;
+        memset (&Handlers, 0, sizeof (Handlers));
 
         Started = false;
     }
 };
 
-void TimerCompletion(TimerInternal &Internal)
+static void TimerCompletion (Timer::Internal * internal)
 {
-    if(Internal.HandlerTick)
-        Internal.HandlerTick(Internal.Timer);
+    if (internal->Handlers.Tick)
+        internal->Handlers.Tick (internal->Timer);
 }
 
-void TimerThread (TimerInternal &Internal)
+void TimerThread (Timer::Internal * internal)
 {
-    HANDLE Events[2] = { Internal.TimerHandle, Internal.ShutdownEvent };
+    HANDLE Events[2] = { internal->TimerHandle, internal->ShutdownEvent };
 
     for(;;)
     {
@@ -80,67 +82,66 @@ void TimerThread (TimerInternal &Internal)
             break;
         }
 
-        Internal.EventPump.Pump.Post((void *) TimerCompletion, &Internal);
+        internal->Pump.Post ((void *) TimerCompletion, internal);
     }
 }
 
-Lacewing::Timer::Timer(Lacewing::EventPump &EventPump)
+Timer::Timer (Lacewing::Pump &Pump)
 {
-    InternalTag = new TimerInternal(*this, *(EventPumpInternal *) EventPump.InternalTag);
-    Tag         = 0;
+    internal = new Internal (*this, Pump);
+    Tag = 0;
 
-    EventPump.InUse (true);
-
-    ((TimerInternal *) InternalTag)->TimerThread.Start(InternalTag);
+    internal->TimerThread.Start (internal);
 }
 
-Lacewing::Timer::~Timer()
+Timer::~Timer ()
 {
-    TimerInternal &Internal = *((TimerInternal *) InternalTag);
-     
-    SetEvent (Internal.ShutdownEvent);
-    Internal.TimerThread.Join ();
+    SetEvent (internal->ShutdownEvent);
 
-    delete &Internal;
+    Stop ();
+
+    internal->TimerThread.Join ();
+
+    delete internal;
 }
 
-void Lacewing::Timer::Start(int Interval)
+void Timer::Start (int Interval)
 {
-    Stop();
-
-    TimerInternal &Internal = *((TimerInternal *) InternalTag);
+    Stop ();
 
     LARGE_INTEGER DueTime;
     DueTime.QuadPart = 0 - (Interval * 1000 * 10);
 
-    if(!SetWaitableTimer(Internal.TimerHandle, &DueTime, Interval, 0, 0, 0))
+    if (!SetWaitableTimer (internal->TimerHandle, &DueTime, Interval, 0, 0, 0))
     {
-        LacewingAssert(false);
+        LacewingAssert (false);
     }
 
-    Internal.Started = true;
+    internal->Started = true;
+    internal->Pump.AddUser ();
 }
 
-void Lacewing::Timer::Stop()
+void Timer::Stop ()
 {
-    TimerInternal &Internal = *((TimerInternal *) InternalTag);
+    if (!Started ())
+        return;
 
-    CancelWaitableTimer(Internal.TimerHandle);
-    Internal.Started = false;
+    CancelWaitableTimer (internal->TimerHandle);
+
+    internal->Started = false;
+    internal->Pump.RemoveUser ();
 }
 
-bool Lacewing::Timer::Started ()
+bool Timer::Started ()
 {
-    return ((TimerInternal *) InternalTag)->Started;
+    return internal->Started;
 }
 
-void Lacewing::Timer::ForceTick()
+void Timer::ForceTick ()
 {
-    TimerInternal &Internal = *((TimerInternal *) InternalTag);
-
-    if(Internal.HandlerTick)
-        Internal.HandlerTick(*this);
+    if (internal->Handlers.Tick)
+        internal->Handlers.Tick (*this);
 }
 
-AutoHandlerFunctions(Lacewing::Timer, TimerInternal, Tick)
+AutoHandlerFunctions (Timer, Tick)
 

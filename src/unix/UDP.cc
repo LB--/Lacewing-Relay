@@ -29,165 +29,126 @@
 
 #include "../Common.h"
 
-struct UDPInternal
+struct UDP::Internal
 {
-    PumpInternal &EventPump;
+    Lacewing::Pump &Pump;
 
-    Lacewing::UDP &Public;
+    UDP &Public;
     
-    UDPInternal(Lacewing::UDP &_Public, PumpInternal &_EventPump)
-            : Public(_Public), EventPump(_EventPump)
+    Internal (UDP &_Public, Lacewing::Pump &_Pump)
+              : Public (_Public), Pump (_Pump)
     {
-        RemoteIP       = 0;
-
-        HandlerReceive = 0;
-        HandlerError   = 0;
-
         Socket = -1;
+
+        memset (&Handlers, 0, sizeof (Handlers));
     }
 
-    Lacewing::UDP::HandlerReceive  HandlerReceive;
-    Lacewing::UDP::HandlerError    HandlerError;
+    struct
+    {
+        HandlerReceive Receive;
+        HandlerError Error;
 
-    int RemoteIP;
-    int Port;
+    } Handlers;
+
+    Lacewing::Filter Filter;
 
     int Socket;
 
-    lw_i64 BytesSent;
-    lw_i64 BytesReceived;
+    lw_i64 BytesSent, BytesReceived;
 };
 
-void UDPSocketCompletion(UDPInternal &Internal, bool)
+static void ReadReady (UDP::Internal * internal, bool)
 {
-    sockaddr_in From;
-    socklen_t FromSize = sizeof(From);
+    sockaddr_storage From;
+    socklen_t FromSize = sizeof (From);
 
     char Buffer[256 * 1024];
     
     for(;;)
     {
-        int Bytes = recvfrom(Internal.Socket, Buffer, sizeof(Buffer), 0, (sockaddr *) &From, &FromSize);
+        int Bytes = recvfrom (internal->Socket, Buffer, sizeof (Buffer), 0, (sockaddr *) &From, &FromSize);
 
         if(Bytes == -1)
             break;
 
-        if(Internal.RemoteIP && From.sin_addr.s_addr != Internal.RemoteIP)
+        AddressWrapper Address;                
+        Address.Set (&From);
+
+        Lacewing::Address * FilterAddress = internal->Filter.Remote ();
+
+        if (FilterAddress && ((Lacewing::Address) Address) != *FilterAddress)
             break;
 
-        Lacewing::Address Address(From.sin_addr.s_addr, ntohs(From.sin_port));
         Buffer[Bytes] = 0;
 
-        if(Internal.HandlerReceive)
-            Internal.HandlerReceive(Internal.Public, Address, Buffer, Bytes);
+        if (internal->Handlers.Receive)
+            internal->Handlers.Receive (internal->Public, Address, Buffer, Bytes);
     }
 }
 
-void Lacewing::UDP::Host(int Port)
+void UDP::Host (int Port)
 {
-    Lacewing::Filter Filter;
+    Filter Filter;
     Filter.LocalPort(Port);
 
     Host(Filter);
 }
 
-void Lacewing::UDP::Host(Lacewing::Address &Address)
+void UDP::Host (Address &Address)
 {
-    Lacewing::Filter Filter;
-    Filter.Remote(Address);
+    Filter Filter;
+    Filter.Remote(&Address);
 
     Host(Filter);
 }
 
-void Lacewing::UDP::Host(Lacewing::Filter &Filter)
+void UDP::Host (Filter &Filter)
 {
-    Unhost();
+    Unhost ();
 
-    UDPInternal &Internal = *((UDPInternal *) InternalTag);
+    {   Lacewing::Error Error;
 
-    if(Internal.Socket != -1)
-    {
-        Lacewing::Error Error;
-        Error.Add("Already hosting");
-        
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
+        if ((internal->Socket = CreateServerSocket (Filter, SOCK_DGRAM, IPPROTO_UDP, Error)) == -1)
+        {
+            if (internal->Handlers.Error)
+                internal->Handlers.Error (*this, Error);
 
-        return;    
+            return;    
+        }
     }
 
-    Internal.Socket   = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    Internal.RemoteIP = Filter.Remote().IP();
-
-    DisableSigPipe (Internal.Socket);
-
-    fcntl(Internal.Socket, F_SETFL, fcntl(Internal.Socket, F_GETFL, 0) | O_NONBLOCK);
-
-    Internal.EventPump.AddRead(Internal.Socket, &Internal, (void *) UDPSocketCompletion);
-
-    sockaddr_in SocketAddress;
-
-    memset(&SocketAddress, 0, sizeof(Address));
-
-    SocketAddress.sin_family = AF_INET;
-    SocketAddress.sin_port = htons(Filter.LocalPort() ? Filter.LocalPort() : 0);
-    SocketAddress.sin_addr.s_addr = Filter.LocalIP() ? Filter.LocalIP() : INADDR_ANY;
-
-    if(bind(Internal.Socket, (sockaddr *) &SocketAddress, sizeof(sockaddr_in)) == -1)
-    {
-        close (Internal.Socket);
-        Internal.Socket = -1;
-
-        Lacewing::Error Error;
-        
-        Error.Add(errno);
-        Error.Add("Error binding port");
-
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
-
-        return;
-    }
-
-    socklen_t AddressLength = sizeof(sockaddr_in);
-    getsockname(Internal.Socket, (sockaddr *) &SocketAddress, &AddressLength);
-
-    Internal.Port = ntohs(SocketAddress.sin_port);
+    internal->Pump.Add (internal->Socket, internal, (Pump::Callback) ReadReady);
 }
 
-bool Lacewing::UDP::Hosting ()
+bool UDP::Hosting ()
 {
-    return ((UDPInternal *) InternalTag)->Socket != -1;
+    return internal->Socket != -1;
 }
 
-int Lacewing::UDP::Port()
+int UDP::Port ()
 {
-    return ((UDPInternal *) InternalTag)->Port;
+    return GetSocketPort (internal->Socket);
 }
 
-void Lacewing::UDP::Unhost()
+void UDP::Unhost ()
 {
-    UDPInternal &Internal = *((UDPInternal *) InternalTag);
-
-    LacewingCloseSocket(Internal.Socket);
-    Internal.Socket = -1;
+    LacewingCloseSocket (internal->Socket);
+    internal->Socket = -1;
 }
 
-Lacewing::UDP::UDP(Lacewing::Pump &Pump)
+UDP::UDP (Lacewing::Pump &Pump)
 {
-    LacewingInitialise();  
-    InternalTag = new UDPInternal(*this, *(PumpInternal *) Pump.InternalTag);
+    LacewingInitialise ();  
+    internal = new UDP::Internal (*this, Pump);
 }
 
-Lacewing::UDP::~UDP()
+UDP::~UDP ()
 {
-    delete ((UDPInternal *) InternalTag);
+    delete internal;
 }
 
-void Lacewing::UDP::Send(Lacewing::Address &Address, const char * Data, int Size)
+void UDP::Send (Address &Address, const char * Data, int Size)
 {
-    UDPInternal &Internal = *(UDPInternal *) InternalTag;
-
     if(!Address.Ready())
     {
         Lacewing::Error Error;
@@ -195,8 +156,8 @@ void Lacewing::UDP::Send(Lacewing::Address &Address, const char * Data, int Size
         Error.Add("The address object passed to Send() wasn't ready");
         Error.Add("Error sending");
 
-        if(Internal.HandlerError)
-            Internal.HandlerError(Internal.Public, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (internal->Public, Error);
 
         return;
     }
@@ -204,33 +165,36 @@ void Lacewing::UDP::Send(Lacewing::Address &Address, const char * Data, int Size
     if(Size == -1)
         Size = strlen(Data);
 
-    sockaddr_in To;
-    GetSockaddr(Address, To);
+    addrinfo * Info = Address.internal->Info;
 
-    if(sendto(Internal.Socket, Data, Size, 0, (sockaddr *) &To, sizeof(To)) == -1)
+    if (!Info)
+        return;
+
+    if (sendto (internal->Socket, Data, Size, 0,
+                    (sockaddr *) Info->ai_addr, Info->ai_addrlen) == -1)
     {
         Lacewing::Error Error;
 
-        Error.Add(errno);            
-        Error.Add("Error sending");
+        Error.Add (errno);            
+        Error.Add ("Error sending");
 
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (*this, Error);
 
         return;
     }
 }
 
-lw_i64 Lacewing::UDP::BytesReceived()
+lw_i64 UDP::BytesReceived ()
 {
-    return ((UDPInternal *) InternalTag)->BytesReceived;
+    return internal->BytesReceived;
 }
 
-lw_i64 Lacewing::UDP::BytesSent()
+lw_i64 UDP::BytesSent ()
 {
-    return ((UDPInternal *) InternalTag)->BytesSent;
+    return internal->BytesSent;
 }
 
-AutoHandlerFunctions(Lacewing::UDP, UDPInternal, Error)
-AutoHandlerFunctions(Lacewing::UDP, UDPInternal, Receive)
+AutoHandlerFunctions (UDP, Error)
+AutoHandlerFunctions (UDP, Receive)
 

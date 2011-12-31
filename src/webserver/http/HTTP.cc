@@ -29,7 +29,7 @@
 
 #include "../Common.h"
 
-HTTPClient::HTTPClient (WebserverInternal &_Server, Lacewing::Server::Client &_Socket, bool Secure)
+HTTPClient::HTTPClient (Webserver::Internal &_Server, Server::Client &_Socket, bool Secure)
     : Request (_Server, *this), WebserverClient (_Server, _Socket, Secure)
 {
     Multipart = 0;
@@ -345,7 +345,7 @@ void HTTPClient::ProcessHeader(char * Line)
     Request.ProcessHeader (Name, Line);
 }
 
-void HTTPClient::Respond(RequestInternal &) /* request parameter ignored - HTTP only ever has one request object per client */
+void HTTPClient::Respond (Webserver::Request::Internal &) /* request parameter ignored - HTTP only ever has one request object per client */
 {
     LastActivityTime = time (0);
     
@@ -384,7 +384,7 @@ void HTTPClient::Respond(RequestInternal &) /* request parameter ignored - HTTP 
 
     for (int Offset = 0 ;;)
     {
-        RequestInternal::File * File = Request.FirstFile;
+        Webserver::Request::Internal::File * File = Request.FirstFile;
 
         if (File)
         {
@@ -426,8 +426,8 @@ void HTTPClient::Dead ()
         return;
     }
 
-    if (Server.HandlerDisconnect)
-        Server.HandlerDisconnect (Server.Webserver, Request.Public);
+    if (Server.Handlers.Disconnect)
+        Server.Handlers.Disconnect (Server.Webserver, Request.Public);
 }
 
 bool HTTPClient::IsSPDY ()

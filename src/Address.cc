@@ -29,242 +29,340 @@
 
 #include "Common.h"
 
-#ifdef HAVE_NETDB_H
-    #include <netdb.h>
-#endif
+static void Resolver (Address::Internal *);
 
-lw_iptr Ports [] =
+Address::Internal::Internal () : ResolverThread ("Resolver", (void *) ::Resolver)
 {
-    (lw_iptr) "http://",       80,
-    (lw_iptr) "ftp://",        21,
-
-    0
-};
-
-struct AddressInternal;
-
-void Resolver (AddressInternal &);
-
-struct AddressInternal
-{
-    Lacewing::Thread ResolverThread;
-
-    char * Hostname;
-    int Port;
+    Error = 0;
+    *Buffer = 0;
     
-    union
-    {
-        int IP;
-        unsigned char Bytes[4];
-    };
-
-    AddressInternal (int _Port)
-        : Port (_Port), ResolverThread ("Resolver", (void *) Resolver)
-    {
-        *StringIP = 0;
-        IP = 0;
-    }
-
-    ~AddressInternal()
-    {
-        ResolverThread.Join();
-    }
-
-    char StringIP[32];
-
-    void MakeStringIP()
-    {
-        if(!IP)
-        {
-            *StringIP = 0;
-            return;
-        }
-
-        sprintf(StringIP, "%d.%d.%d.%d", Bytes[0], Bytes[1], Bytes[2], Bytes[3]);
-    }
-
-};
-
-void Resolver (AddressInternal &Internal)
-{
-    hostent * Host;
-
-    if(!(Host = gethostbyname(Internal.Hostname)))
-    {
-        Internal.IP = 0;
-        free(Internal.Hostname);
-
-        return;
-    }
-
-    Internal.IP = ((in_addr *) (Host->h_addr))->s_addr;
-    Internal.MakeStringIP();
+    Hostname = HostnameToFree = 0;
+    Info = InfoList = InfoToFree = 0;
 }
 
-Lacewing::Address::Address()
+Address::Internal::~ Internal ()
 {
-    InternalTag = new AddressInternal(0);
-    Tag = 0;
+    ResolverThread.Join ();
 
-    AddressInternal &Internal = *(AddressInternal *) InternalTag;
+    free (HostnameToFree);
 
-    Internal.IP = 0;
-    Internal.MakeStringIP();
-}
+    delete Error;
 
-Lacewing::Address::Address(const char * Hostname, int Port, bool Blocking)
-{
-    if(!*Hostname)
-        Blocking = true;
-
-    InternalTag = new AddressInternal(Port);
-    Tag = 0;
-
-    AddressInternal &Internal = *((AddressInternal *) InternalTag);
-
-    char * Trimmed;
-    Trim(Internal.Hostname = strdup(Hostname), Trimmed);
-
-    if(!*Trimmed)
+    if (InfoList)
     {
-        free(Internal.Hostname);
-        return;
+        #ifdef LacewingWindows
+            Compat::fn_freeaddrinfo freeaddrinfo = Compat::freeaddrinfo ();
+        #endif
+
+        freeaddrinfo (InfoList);
     }
 
-    for(lw_iptr * i = Ports; *i; i += 2)
+    if (InfoToFree)
     {
-        if(BeginsWith(Trimmed, (const char *) *i))
-        {
-            Internal.Port = i[1];
-            Trimmed += strlen((const char *) *i);
+        free (InfoToFree->ai_addr);
+        free (InfoToFree);
+    }
+}
+
+const char * Address::Internal::ToString ()
+{
+    if (*Buffer)
+        return Buffer;
+
+    if ((!Info) || (!Info->ai_addr))
+        return "";
+
+    switch (Info->ai_family)
+    {
+        case AF_INET:
+
+            lw_snprintf (Buffer, sizeof (Buffer), "%s:%d",
+                                inet_ntoa (((sockaddr_in *) Info->ai_addr)->sin_addr),
+                                        ntohs (((sockaddr_in *) Info->ai_addr)->sin_port));
+
+            break;
+
+        case AF_INET6:
+        {             
+            int Length = sizeof (Buffer) - 1;
+
+            #ifdef LacewingWindows
+
+                WSAAddressToString
+                    ((LPSOCKADDR) Info->ai_addr, (DWORD) Info->ai_addrlen, 0, Buffer,
+                            (LPDWORD) &Length);
+
+            #else
+
+                inet_ntop
+                    (AF_INET6, &((sockaddr_in6 *) Info->ai_addr)->sin6_addr, Buffer, Length);
+
+            #endif
+
+            lw_snprintf (Buffer + strlen (Buffer) - 1,
+                sizeof (Buffer) - strlen (Buffer), ":%d",
+                    ntohs (((sockaddr_in6 *) Info->ai_addr)->sin6_port));
 
             break;
         }
-    }
+    };
 
-    for(char * Iterator = Trimmed; *Iterator; ++ Iterator)
+    return Buffer ? Buffer: "";
+}
+
+void Resolver (Address::Internal * internal)
+{
+    addrinfo Hints;
+    memset (&Hints, 0, sizeof (Hints));
+
+    if (internal->Hints & Address::HINT_TCP)
     {
-        if(*Iterator != ':')
-            continue;
-
-        Internal.Port = atoi(Iterator + 1);
-        *Iterator = 0;
-
-        break;
-    }
-
-    if((Internal.IP = inet_addr(Trimmed)) != INADDR_NONE)
-    {   
-        Internal.MakeStringIP();
-        free(Internal.Hostname);
+        if (!(internal->Hints & Address::HINT_UDP))
+            Hints.ai_socktype = SOCK_STREAM;
     }
     else
     {
-        Internal.IP = 0;
+        if (internal->Hints & Address::HINT_UDP)
+            Hints.ai_socktype = SOCK_DGRAM;
+    }
 
-        if(Blocking)
+    Hints.ai_protocol  =  0;
+    Hints.ai_flags     =  AI_V4MAPPED | AI_ADDRCONFIG;
+
+    if (internal->Hints & Address::HINT_IPv4)
+        Hints.ai_family = AF_INET;
+    else
+        Hints.ai_family = AF_INET6;
+
+    #ifdef LacewingWindows
+        Compat::fn_getaddrinfo getaddrinfo = Compat::getaddrinfo ();
+    #endif
+
+    int result = getaddrinfo
+        (internal->Hostname, internal->Service, &Hints, &internal->InfoList);
+
+    if (result != 0)
+    {
+        Lacewing::Error * Error = new Lacewing::Error;
+
+        Error->Add ("%s", gai_strerror (result));
+        Error->Add ("getaddrinfo error");
+
+        internal->SetError (Error);
+
+        return;
+    }
+
+    for (addrinfo * Info = internal->InfoList; Info; Info = Info->ai_next)
+    {
+        if (Info->ai_family == AF_INET6)
         {
-            Resolver (Internal);
-            return;
+            internal->Info = Info;
+            break;
         }
 
-        Internal.ResolverThread.Start (&Internal);
+        if (Info->ai_family == AF_INET)
+        {
+            internal->Info = Info;
+            break;
+        }
     }
 }
 
-Lacewing::Address::Address(unsigned int IP, int Port)
+Address::Address (const char * Hostname, int Port, int Hints)
 {
-    InternalTag = new AddressInternal(Port);
+    internal = new Internal;
+
     Tag = 0;
 
-    AddressInternal &Internal = *(AddressInternal *) InternalTag;
+    char Service [64];
+    lw_snprintf (Service, sizeof (Service), "%d", Port);
 
-    Internal.IP = IP;
-    Internal.MakeStringIP();
+    internal->Init (Hostname, Service, Hints);
 }
 
-Lacewing::Address::Address(unsigned char IP_Byte1, unsigned char IP_Byte2,
-                            unsigned char IP_Byte3, unsigned char IP_Byte4, int Port)
+Address::Address (const char * Hostname, const char * Service, int Hints)
 {
-    InternalTag = new AddressInternal(Port);
+    internal = new Internal;
+
     Tag = 0;
 
-    AddressInternal &Internal = *(AddressInternal *) InternalTag;
-
-    Internal.Bytes[0] = IP_Byte1;
-    Internal.Bytes[1] = IP_Byte2;
-    Internal.Bytes[2] = IP_Byte3;
-    Internal.Bytes[3] = IP_Byte4;
-    
-    Internal.MakeStringIP();
+    internal->Init (Hostname, Service, Hints);
 }
 
-Lacewing::Address::Address(const Lacewing::Address &Address)
+void Address::Internal::Init (const char * _Hostname, const char * Service, int Hints)
 {
-    while(!Address.Ready())
-        LacewingYield();
+    this->Hints = Hints;
 
-    InternalTag = new AddressInternal(Address.Port());
+    HostnameToFree = Hostname = Trim (_Hostname);
+
+    for (char * it = Hostname; *it; ++ it)
+    {
+        if (it [0] == ':' && it [1] == '/' && it [2] == '/')
+        {
+            *it = 0;
+
+            Service = Hostname;
+            Hostname = it + 3;
+        }
+
+        if (*it == ':')
+        {
+            /* An explicit port overrides the service name */
+
+            Service = it + 1;
+            *it = 0;
+        }
+    }
+
+    strncpy (this->Service, Service, sizeof (this->Service)); 
+
+    ResolverThread.Join (); /* block if the thread is already running */
+    ResolverThread.Start (this);
+}
+
+Address::Address (Address &Address)
+{
+    internal = new Internal;
+
     Tag = 0;
 
-    AddressInternal &Internal = *(AddressInternal *) InternalTag;
+    {   Error * Error = Address.Resolve ();
 
-    Internal.IP = Address.IP();
-    Internal.MakeStringIP();
-}
+        if (Error)
+        {
+            internal->SetError (Error->Clone ());
+            return;
+        }
+    }
 
-Lacewing::Address::~Address()
-{
-    delete ((AddressInternal *) InternalTag);
-}
+    addrinfo * info = Address.internal->Info;
 
-int Lacewing::Address::Port() const
-{
-    if(!Ready())
-        return -1;
-
-    return ((AddressInternal *) InternalTag)->Port;
-}
-
-void Lacewing::Address::Port(int Port)
-{
-    if(!Ready())
+    if (!info)
         return;
 
-    ((AddressInternal *) InternalTag)->Port = Port;
+    addrinfo * new_info = (addrinfo *) malloc (sizeof (addrinfo));
+    memcpy (new_info, info, sizeof (addrinfo));
+
+    new_info->ai_next = 0;
+    new_info->ai_addr = (sockaddr *) malloc (info->ai_addrlen);
+
+    memcpy (new_info->ai_addr, info->ai_addr, info->ai_addrlen);
+
+    internal->Info = internal->InfoToFree = info;
 }
 
-bool Lacewing::Address::Ready() const
+Address::~Address ()
 {
-    return !((AddressInternal *) InternalTag)->ResolverThread.Started ();
+    delete internal;
 }
 
-unsigned int Lacewing::Address::IP() const
+bool Address::Ready ()
 {
-    if(!Ready())
-        return 0;
-
-    return ((AddressInternal *) InternalTag)->IP;
+    return !internal->ResolverThread.Started ();
 }
 
-unsigned char Lacewing::Address::IP_Byte(int Index) const
+const char * Address::ToString ()
 {
-    if((!Ready()) || Index > 3 || Index < 0)
-        return 0;
-
-    return ((AddressInternal *) InternalTag)->Bytes[Index];
-}
-
-const char * Lacewing::Address::ToString() const
-{
-    if(!Ready())
+    if (!Ready ())
         return "";
 
-    return ((AddressInternal *) InternalTag)->StringIP;
+    return internal->ToString ();
 }
 
-Lacewing::Address::operator const char * () const
+Address::operator const char * ()
 {
-    return ToString();
+    return ToString ();
+}
+
+int Address::Port ()
+{
+    if ((!Ready ()) || !internal->Info || !internal->Info->ai_addr)
+        return 0;
+
+    return ntohs (internal->Info->ai_family == AF_INET6 ?
+        ((sockaddr_in6 *) internal->Info->ai_addr)->sin6_port :
+            ((sockaddr_in *) internal->Info->ai_addr)->sin_port);
+}
+
+void Address::Port (int Port)
+{
+    if ((!Ready ()) || !internal->Info || !internal->Info->ai_addr)
+        return;
+
+    *internal->Buffer = 0;
+
+    if (internal->Info->ai_family == AF_INET6)
+        ((sockaddr_in6 *) internal->Info->ai_addr)->sin6_port = htons (Port);
+    else
+        ((sockaddr_in *) internal->Info->ai_addr)->sin_port = htons (Port);
+}
+
+Error * Address::Resolve ()
+{
+    internal->ResolverThread.Join ();
+
+    if (internal->Error)
+    {
+        Error * Error = internal->Error;
+        internal->Error = 0;
+
+        return Error;
+    }
+
+    return 0;
+}
+
+static bool SockaddrEqual (sockaddr * a, sockaddr * b)
+{
+    if ((!a) || (!b))
+        return false;
+
+    if (a->sa_family == AF_INET6)
+    {
+        if (b->sa_family != AF_INET6)
+            return false;
+        
+        return !memcmp (&((sockaddr_in6 *) a)->sin6_addr,
+                        &((sockaddr_in6 *) b)->sin6_addr,
+                        sizeof (in6_addr));
+    }
+
+    if (a->sa_family == AF_INET)
+    {
+        if (b->sa_family != AF_INET)
+            return false;
+        
+        return !memcmp (&((sockaddr_in *) a)->sin_addr,
+                        &((sockaddr_in *) b)->sin_addr,
+                        sizeof (in6_addr));
+    }
+
+    return false;
+}
+
+bool Address::operator == (Address &Address)
+{
+    if ((!internal->Info) || (!Address.internal->Info))
+        return true;
+
+    return SockaddrEqual
+        (internal->Info->ai_addr, Address.internal->Info->ai_addr);
+}
+
+bool Address::operator != (Address &Address)
+{
+    if ((!internal->Info) || (!Address.internal->Info))
+        return true;
+
+    return !SockaddrEqual
+        (internal->Info->ai_addr, Address.internal->Info->ai_addr);
+}
+
+bool Address::IPv6 ()
+{
+    return internal->Info &&
+        internal->Info->ai_addr &&
+        ((sockaddr_storage *) internal->Info->ai_addr)->ss_family == AF_INET6;
 }
 

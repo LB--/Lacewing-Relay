@@ -30,22 +30,22 @@
 #include "../Common.h"
 
 lw_timer * lw_timer_new (lw_eventpump * eventpump)
-    { return (lw_timer *) new Lacewing::Timer(*(Lacewing::EventPump *) eventpump);
+    { return (lw_timer *) new Timer (*(EventPump *) eventpump);
     }
 void lw_timer_delete (lw_timer * timer)
-    { delete (Lacewing::Timer *) timer;
+    { delete (Timer *) timer;
     }
 void lw_timer_start (lw_timer * timer, long milliseconds)
-    { ((Lacewing::Timer *) timer)->Start(milliseconds);
+    { ((Timer *) timer)->Start (milliseconds);
     }
 void lw_timer_stop (lw_timer * timer)
-    { ((Lacewing::Timer *) timer)->Stop();
+    { ((Timer *) timer)->Stop ();
     }
 void lw_timer_force_tick (lw_timer * timer)
-    { ((Lacewing::Timer *) timer)->ForceTick();
+    { ((Timer *) timer)->ForceTick ();
     }
 void lw_timer_ontick (lw_timer * timer, lw_timer_handler_tick ontick)
-    { ((Lacewing::Timer *) timer)->onTick((Lacewing::Timer::HandlerTick) ontick);
+    { ((Timer *) timer)->onTick ((Timer::HandlerTick) ontick);
     }
 
 

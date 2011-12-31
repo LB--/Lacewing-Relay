@@ -40,8 +40,6 @@ namespace OverlappedType
     };
 }
 
-struct UDPInternal;
-
 struct UDPOverlapped
 {
     OVERLAPPED Overlapped;
@@ -49,51 +47,56 @@ struct UDPOverlapped
     OverlappedType::Type Type;
     void * Tag;
 
-    UDPOverlapped(UDPInternal &)
+    UDPOverlapped ()
     {
-       memset(&Overlapped, 0, sizeof(OVERLAPPED));
+        memset (&Overlapped, 0, sizeof (OVERLAPPED));
     }
 };
 
 struct UDPReceiveInformation
 {
-    char Buffer[1024 * 32];
+    /* TODO : Replace with ReceiveBuffer? */
+
+    char Buffer [1024 * 32];
     WSABUF WinsockBuffer;
 
-    UDPReceiveInformation(UDPInternal &)
+    UDPReceiveInformation ()
     {
         WinsockBuffer.buf = Buffer;
         WinsockBuffer.len = sizeof(Buffer);
 
-        FromLength = sizeof(sockaddr_in);
+        FromLength = sizeof (sockaddr_storage);
     }
 
-    sockaddr_in From;
+    sockaddr_storage From;
     int FromLength;
 };
 
-struct UDPInternal
+struct UDP::Internal
 {
-    EventPumpInternal &EventPump;
+    Lacewing::Pump &Pump;
 
-    Lacewing::UDP &Public;
+    UDP &Public;
     
-    UDPInternal(Lacewing::UDP &_Public, EventPumpInternal &_EventPump)
-            : Public(_Public), EventPump(_EventPump)
+    Internal (UDP &_Public, Lacewing::Pump &_Pump)
+            : Public (_Public), Pump (_Pump)
     {
-        RemoteIP       = 0;
         ReceivesPosted = 0;
 
-        HandlerReceive = 0;
-        HandlerError   = 0;
+        memset (&Handlers, 0, sizeof (Handlers));
 
-        Socket = SOCKET_ERROR;
+        Socket = -1;
     }
 
-    Lacewing::UDP::HandlerReceive  HandlerReceive;
-    Lacewing::UDP::HandlerError    HandlerError;
+    struct
+    {
+        HandlerReceive Receive;
+        HandlerError Error;
 
-    int RemoteIP;
+    } Handlers;
+
+    Lacewing::Filter Filter;
+
     int Port;
 
     SOCKET Socket;
@@ -101,11 +104,8 @@ struct UDPInternal
     lw_i64 BytesSent;
     lw_i64 BytesReceived;
 
-    Backlog<UDPInternal, UDPOverlapped>
-        OverlappedBacklog;
-
-    Backlog<UDPInternal, UDPReceiveInformation>
-        ReceiveInformationBacklog;
+    Backlog <UDPOverlapped> OverlappedBacklog;
+    Backlog <UDPReceiveInformation> ReceiveInformationBacklog;
 
     volatile long ReceivesPosted;
 
@@ -113,17 +113,17 @@ struct UDPInternal
     {
         while(ReceivesPosted < IdealPendingReceiveCount)
         {
-            UDPReceiveInformation &ReceiveInformation = ReceiveInformationBacklog.Borrow(*this);
-            UDPOverlapped &Overlapped = OverlappedBacklog.Borrow(*this);
+            UDPReceiveInformation &ReceiveInformation = ReceiveInformationBacklog.Borrow ();
+            UDPOverlapped &Overlapped = OverlappedBacklog.Borrow ();
 
             Overlapped.Type = OverlappedType::Receive;
             Overlapped.Tag = &ReceiveInformation;
 
             DWORD Flags = 0;
 
-            if(WSARecvFrom(Socket, &ReceiveInformation.WinsockBuffer,
+            if(WSARecvFrom (Socket, &ReceiveInformation.WinsockBuffer,
                             1, 0, &Flags, (sockaddr *) &ReceiveInformation.From, &ReceiveInformation.FromLength,
-                            (OVERLAPPED *) &Overlapped, 0) == SOCKET_ERROR)
+                            (OVERLAPPED *) &Overlapped, 0) == -1)
             {
                 int Error = WSAGetLastError();
 
@@ -134,176 +134,164 @@ struct UDPInternal
             InterlockedIncrement(&ReceivesPosted);
         }
     }
-
 };
 
-void UDPSocketCompletion(UDPInternal &Internal, UDPOverlapped &Overlapped, unsigned int BytesTransferred, int Error)
+static void UDPSocketCompletion (UDP::Internal * internal, UDPOverlapped &Overlapped, unsigned int BytesTransferred, int Error)
 {
     switch(Overlapped.Type)
     {
         case OverlappedType::Send:
         {
-            Internal.BytesSent += BytesTransferred;
+            internal->BytesSent += BytesTransferred;
             break;
         }
 
         case OverlappedType::Receive:
         {
-            Internal.BytesReceived += BytesTransferred;
+            internal->BytesReceived += BytesTransferred;
 
             UDPReceiveInformation &ReceiveInformation = *(UDPReceiveInformation *) Overlapped.Tag;
 
-            if(Internal.RemoteIP && ReceiveInformation.From.sin_addr.s_addr != Internal.RemoteIP)
-                break;
+            ReceiveInformation.Buffer [BytesTransferred] = 0;
 
-            Lacewing::Address Address(ReceiveInformation.From.sin_addr.s_addr, ntohs(ReceiveInformation.From.sin_port));
+            {   AddressWrapper Address;                
+                Address.Set (&ReceiveInformation.From);
 
-            ReceiveInformation.Buffer[BytesTransferred] = 0;
+                Lacewing::Address * FilterAddress = internal->Filter.Remote ();
 
-            if(Internal.HandlerReceive)
-                Internal.HandlerReceive(Internal.Public, Address, ReceiveInformation.Buffer, BytesTransferred);
+                if (FilterAddress && ((Lacewing::Address) Address) != *FilterAddress)
+                    break;
 
-            Internal.ReceiveInformationBacklog.Return(ReceiveInformation);
+                if (internal->Handlers.Receive)
+                    internal->Handlers.Receive (internal->Public, (Lacewing::Address &) Address,
+                                                        ReceiveInformation.Buffer, BytesTransferred);
+            }
 
-            InterlockedDecrement(&Internal.ReceivesPosted);
-            Internal.PostReceives();
+            internal->ReceiveInformationBacklog.Return (ReceiveInformation);
+
+            InterlockedDecrement(&internal->ReceivesPosted);
+            internal->PostReceives();
 
             break;
         }
     };
 
-    Internal.OverlappedBacklog.Return(Overlapped);
+    internal->OverlappedBacklog.Return (Overlapped);
 }
 
-void Lacewing::UDP::Host(int Port)
+void UDP::Host (int Port)
 {
-    Lacewing::Filter Filter;
+    Filter Filter;
     Filter.LocalPort(Port);
 
     Host(Filter);
 }
 
-void Lacewing::UDP::Host(Lacewing::Address &Address)
+void UDP::Host (Address &Address)
 {
-    Lacewing::Filter Filter;
-    Filter.Remote (Address);
+    Filter Filter;
+    Filter.Remote (&Address);
 
     Host(Filter);
 }
 
-void Lacewing::UDP::Host(Lacewing::Filter &Filter)
+void UDP::Host (Filter &Filter)
 {
     Unhost();
 
-    UDPInternal &Internal = *((UDPInternal *) InternalTag);
-
-    if(Hosting ())
+    if (Hosting())
     {
         Lacewing::Error Error;
         Error.Add("Already hosting");
         
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (*this, Error);
 
         return;    
     }
 
-    Internal.Socket = WSASocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP, 0, 0, WSA_FLAG_OVERLAPPED);
-    Internal.RemoteIP = Filter.Remote().IP();
+    {   Lacewing::Error Error;
 
-    Internal.EventPump.Add((HANDLE) Internal.Socket, &Internal, (void *) UDPSocketCompletion);
+        if ((internal->Socket = CreateServerSocket
+                (Filter, SOCK_DGRAM, IPPROTO_UDP, Error)) == -1)
+        {
+            if (internal->Handlers.Error)
+                internal->Handlers.Error (*this, Error);
 
-    sockaddr_in SocketAddress;
-    memset(&SocketAddress, 0, sizeof(Address));
-
-    SocketAddress.sin_family = AF_INET;
-    SocketAddress.sin_port = htons(Filter.LocalPort() ? Filter.LocalPort() : 0);
-    SocketAddress.sin_addr.s_addr = Filter.LocalIP() ? Filter.LocalIP() : INADDR_ANY;
-
-    if(bind(Internal.Socket, (sockaddr *) &SocketAddress, sizeof(sockaddr_in)) == SOCKET_ERROR)
-    {
-        closesocket (Internal.Socket);
-        Internal.Socket = SOCKET_ERROR;
-
-        Lacewing::Error Error;
-        
-        Error.Add (WSAGetLastError());
-        Error.Add ("Error binding port");
-
-        if(Internal.HandlerError)
-            Internal.HandlerError(*this, Error);
-
-        return;
+            return;
+        }
     }
 
-    socklen_t AddressLength = sizeof(sockaddr_in);
-    getsockname(Internal.Socket, (sockaddr *) &SocketAddress, &AddressLength);
+    internal->Filter.~Filter ();
+    new (&internal->Filter) Lacewing::Filter (Filter);
 
-    Internal.Port = ntohs(SocketAddress.sin_port);
-    Internal.PostReceives();
+    internal->Pump.Add ((HANDLE) internal->Socket,
+            internal, (Lacewing::Pump::Callback) UDPSocketCompletion);
+
+    internal->Port = GetSocketPort (internal->Socket);
+
+    internal->PostReceives ();
 }
 
-bool Lacewing::UDP::Hosting ()
+bool UDP::Hosting ()
 {
-    return ((UDPInternal *) InternalTag)->Socket != SOCKET_ERROR;
+    return internal->Socket != -1;
 }
 
-void Lacewing::UDP::Unhost()
+void UDP::Unhost ()
 {
-    UDPInternal &Internal = *((UDPInternal *) InternalTag);
-
-    LacewingCloseSocket(Internal.Socket);
-    Internal.Socket = SOCKET_ERROR;
+    LacewingCloseSocket (internal->Socket);
+    internal->Socket = -1;
 }
 
-int Lacewing::UDP::Port()
+int UDP::Port ()
 {
-    return ((UDPInternal *) InternalTag)->Port;
+    return internal->Port;
 }
 
-Lacewing::UDP::UDP(Lacewing::EventPump &EventPump)
+UDP::UDP (Lacewing::Pump &Pump)
 {
-    LacewingInitialise();  
-    InternalTag = new UDPInternal(*this, *(EventPumpInternal *) EventPump.InternalTag);
+    LacewingInitialise ();  
+    internal = new UDP::Internal (*this, Pump);
 }
 
-Lacewing::UDP::~UDP()
+UDP::~UDP ()
 {
-    delete ((UDPInternal *) InternalTag);
+    delete internal;
 }
 
-void Lacewing::UDP::Send(Lacewing::Address &Address, const char * Data, int Size)
+void UDP::Send (Address &Address, const char * Data, int Size)
 {
-    UDPInternal &Internal = *(UDPInternal *) InternalTag;
-
-    if(!Address.Ready())
+    if ((!Address.Ready ()) || !Address.internal->Info)
     {
         Lacewing::Error Error;
 
-        Error.Add("The address object passed to Send() wasn't ready");        
+        Error.Add("The address object passed to Send () wasn't ready");        
         Error.Add("Error sending");
 
-        if(Internal.HandlerError)
-            Internal.HandlerError(Internal.Public, Error);
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (internal->Public, Error);
 
         return;
     }
 
-    if(Size == -1)
-        Size = strlen(Data);
+    if (Size == -1)
+        Size = strlen (Data);
 
     WSABUF Buffer = { Size, (CHAR *) Data };
 
-    UDPOverlapped &Overlapped = Internal.OverlappedBacklog.Borrow(Internal);
+    UDPOverlapped &Overlapped = internal->OverlappedBacklog.Borrow ();
 
     Overlapped.Type = OverlappedType::Send;
     Overlapped.Tag  = 0;
 
-    sockaddr_in To;
-    GetSockaddr(Address, To);
+    addrinfo * Info = Address.internal->Info;
 
-    if(WSASendTo(Internal.Socket, &Buffer, 1, 0, 0, (sockaddr *) &To, sizeof(sockaddr_in),
-                    (OVERLAPPED *) &Overlapped, 0) == SOCKET_ERROR)
+    if (!Info)
+        return;
+
+    if (WSASendTo (internal->Socket, &Buffer, 1, 0, 0, Info->ai_addr,
+                        Info->ai_addrlen, (OVERLAPPED *) &Overlapped, 0) == -1)
     {
         int Code = WSAGetLastError();
 
@@ -314,24 +302,24 @@ void Lacewing::UDP::Send(Lacewing::Address &Address, const char * Data, int Size
             Error.Add(Code);            
             Error.Add("Error sending");
 
-            if(Internal.HandlerError)
-                Internal.HandlerError(*this, Error);
+            if (internal->Handlers.Error)
+                internal->Handlers.Error (*this, Error);
 
             return;
         }
     }
 }
 
-lw_i64 Lacewing::UDP::BytesReceived()
+lw_i64 UDP::BytesReceived ()
 {
-    return ((UDPInternal *) InternalTag)->BytesReceived;
+    return internal->BytesReceived;
 }
 
-lw_i64 Lacewing::UDP::BytesSent()
+lw_i64 UDP::BytesSent ()
 {
-    return ((UDPInternal *) InternalTag)->BytesSent;
+    return internal->BytesSent;
 }
 
-AutoHandlerFunctions(Lacewing::UDP, UDPInternal, Error)
-AutoHandlerFunctions(Lacewing::UDP, UDPInternal, Receive)
+AutoHandlerFunctions (UDP, Error)
+AutoHandlerFunctions (UDP, Receive)
 

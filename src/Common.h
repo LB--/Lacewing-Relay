@@ -105,11 +105,8 @@ inline void LacewingAssert(bool Expression)
 
 void LacewingInitialise();
 
-#ifndef LacewingWindows
-    struct PumpInternal;
-#endif
-
 #include "../include/Lacewing.h"
+using namespace Lacewing;
 
 #ifdef LacewingSPDY
     #include "../deps/zlib/zlib.h"
@@ -153,17 +150,11 @@ const int lw_max_path = 512;
     #undef SendMessage
     #undef Yield
 
+    #include "windows/Compat.h"
+
     #define strcasecmp stricmp
 
-    #ifndef SO_CONNECT_TIME
-        #define SO_CONNECT_TIME 0x700C
-    #endif
-    
-    inline void LacewingCloseSocket(SOCKET Socket)
-    {
-        CancelIo((HANDLE) Socket);
-        closesocket(Socket);
-    }
+    typedef SOCKET lw_socket;
 
     #define LacewingGetSocketError() WSAGetLastError()
     #define LacewingGetLastError() GetLastError()
@@ -180,27 +171,36 @@ const int lw_max_path = 512;
 
         if(!_TM)
         {
-            memset(TM, 0, sizeof(tm));
+            memset(TM, 0, sizeof (tm));
             return;
         }
 
-        memcpy(TM, _TM, sizeof(tm));
-    }
-
-    inline time_t FileTimeToUnixTime(const FILETIME &FileTime)
-    {
-        LARGE_INTEGER LargeInteger;
-
-        LargeInteger.LowPart = FileTime.dwLowDateTime;
-        LargeInteger.HighPart = FileTime.dwHighDateTime;
-
-        return (time_t)((LargeInteger.QuadPart - 116444736000000000) / 10000000);
+        memcpy(TM, _TM, sizeof (tm));
     }
 
     #define LacewingYield()             Sleep(0)
 
     #define lw_vsnprintf                _vsnprintf
     #define lw_snprintf                 _snprintf
+
+    namespace Lacewing
+    {
+        inline time_t FileTimeToUnixTime(const FILETIME &FileTime)
+        {
+            LARGE_INTEGER LargeInteger;
+
+            LargeInteger.LowPart = FileTime.dwLowDateTime;
+            LargeInteger.HighPart = FileTime.dwHighDateTime;
+
+            return (time_t) ((LargeInteger.QuadPart - 116444736000000000) / 10000000);
+        }
+            
+        inline void LacewingCloseSocket (lw_socket Socket)
+        {
+            CancelIo ((HANDLE) Socket);
+            closesocket (Socket);
+        }
+    }
 
 #else
 
@@ -241,6 +241,10 @@ const int lw_max_path = 512;
     
     #ifdef HAVE_SYS_SENDFILE_H
         #include <sys/sendfile.h>
+    #endif
+
+    #ifdef HAVE_NETDB_H
+        #include <netdb.h>
     #endif
 
     #if HAVE_DECL_TCP_CORK
@@ -298,16 +302,15 @@ const int lw_max_path = 512;
         #error "OpenSSL not found. Install OpenSSL and run ./configure again."
     #endif
 
-    #define SOCKET int
-    #define LacewingCloseSocket(S) close(S)
-    #define LacewingGetSocketError() errno
-    #define LacewingGetLastError() errno
+    #define LacewingCloseSocket(S)    close(S)
+    #define LacewingGetSocketError()  errno
+    #define LacewingGetLastError()    errno
 
     #define _atoi64 atoll
 
-    typedef long LONG;
+    typedef int lw_socket;
 
-    #define LacewingYield()             sched_yield()
+    #define LacewingYield()  sched_yield()
 
     #define lw_vsnprintf                vsnprintf
     #define lw_snprintf                 snprintf
@@ -318,23 +321,20 @@ const int lw_max_path = 512;
         #define LacewingNoSignal 0
     #endif
 
-    inline void DisableSigPipe (SOCKET Socket)
+    namespace Lacewing
     {
-        #if HAVE_DECL_SO_NOSIGPIPE
-       
-            int Yes = 1;
-            setsockopt (Socket, SOL_SOCKET, SO_NOSIGPIPE, (char *) &Yes, sizeof (Yes));
-        
-        #endif
-    }   
+        inline void DisableSigPipe (lw_socket Socket)
+        {
+            #if HAVE_DECL_SO_NOSIGPIPE
+           
+                int Yes = 1;
+                setsockopt (Socket, SOL_SOCKET, SO_NOSIGPIPE, (char *) &Yes, sizeof (Yes));
+            
+            #endif
+        }   
+    }
 
 #endif
-
-inline void DisableNagling (SOCKET Socket)
-{
-    int Yes = 1;
-    setsockopt(Socket, SOL_SOCKET, TCP_NODELAY, (char *) &Yes, sizeof(Yes));
-}
 
 #if defined(HAVE_MALLOC_H) || defined(LacewingWindows)
     #include <malloc.h>
@@ -362,7 +362,7 @@ inline int LacewingFormat(char *& Output, const char * Format, va_list args)
         if(!Output)
             return 0;
 
-        if(vsprintf(Output, Format, args) < 0)
+        if(vsprintf (Output, Format, args) < 0)
         {
             free(Output);
             Output = 0;
@@ -374,7 +374,6 @@ inline int LacewingFormat(char *& Output, const char * Format, va_list args)
 
     #endif
 }
-
 
 #if defined(LacewingDebug) || defined(LacewingForceDebugOutput)
 
@@ -458,7 +457,7 @@ inline void LacewingSyncExchange(volatile long * Target, long NewValue)
         {
             long Current = *Target;
 
-            if(__sync_val_compare_and_swap(Target, Current, NewValue) == Current)
+            if (__sync_val_compare_and_swap(Target, Current, NewValue) == Current)
                 break;
         }
 
@@ -471,9 +470,110 @@ inline void LacewingSyncExchange(volatile long * Target, long NewValue)
     #endif
 }
 
-inline int Read24Bit (const char * b)
+namespace Lacewing
 {
-    return 65536 * b[0] + 256 * b[1] + b[2];
+    inline void DisableNagling (lw_socket Socket)
+    {
+        int Yes = 1;
+        setsockopt (Socket, SOL_SOCKET, TCP_NODELAY, (char *) &Yes, sizeof (Yes));
+    }
+
+    inline void DisableIPV6Only (lw_socket Socket)
+    {
+        int No = 0;
+        setsockopt (Socket, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &No, sizeof (No));
+    }
+
+    inline int GetSocketPort (lw_socket Socket)
+    {
+        if (Socket == -1)
+            return 0;
+
+        sockaddr_storage Address;
+        socklen_t AddressLength = sizeof (Address);
+
+        if (getsockname (Socket, (sockaddr *) &Address, &AddressLength) == -1)
+            return 0;
+
+        return ntohs (Address.ss_family == AF_INET6 ?
+            ((sockaddr_in6 *) &Address)->sin6_port : ((sockaddr_in *) &Address)->sin_port);
+    }
+
+    int CreateServerSocket (Lacewing::Filter &, int Type, int Protocol, Lacewing::Error &Error);
+
+    inline int Read24Bit (const char * b)
+    {
+        return 65536 * b [0] + 256 * b [1] + b [2];
+    }
+
+    inline bool URLDecode(char * URL, char * New, unsigned int OutLength)
+    {
+        char * out = New;
+        char * out_end = New + OutLength;
+        char * in = (char *) URL;
+        char * in_end = in + strlen(in);
+
+        while(in < in_end)
+        {
+            if(*in == '%')
+            {
+                ++ in;
+
+                char n [3] = { in [0], in [1], 0 };
+                *out = (char) strtol (n, 0, 16);
+
+                ++ in;
+            }
+            else
+                *out = *in == '+' ? ' ' : *in;
+
+            if (out ++ >= out_end)
+                return false;
+
+            ++ in;
+        }
+
+        *out = 0;
+        return true;
+    }
+
+    inline bool BeginsWith(const char * String, const char * Substring)
+    {
+        while(*Substring)
+        {
+            if(!*String || tolower(*String) != tolower(*Substring))
+                return false;
+
+            ++ Substring;
+            ++ String;
+        }
+
+        return true;
+    }
+
+    inline char * Trim (const char * Input)
+    {
+        while (isspace (*Input))
+            ++ Input;
+
+        if (!*Input)
+            return strdup ("");
+
+        const char * End = Input + strlen (Input) - 1;
+        int offset = 0;
+
+        while (isspace (*(End --)))
+            ++ offset;
+
+        int Length = strlen (Input) - offset;
+
+        char * Result = (char *) malloc (Length + 1);
+        
+        memcpy (Result, Input, Length); 
+        Result [Length] = 0;
+
+        return Result;
+    }
 }
 
 #include "Utility.h"
@@ -482,92 +582,21 @@ inline int Read24Bit (const char * b)
 #include "MessageBuilder.h"
 #include "MessageReader.h"
 #include "Backlog.h"
+#include "Address.h"
 
-#ifdef LacewingWindows
-    #include "windows/EventPump.h"
-#else
-    #include "unix/Pump.h"
+#ifndef LacewingWindows
+    #include "unix/EventPump.h"
 #endif
 
-#define AutoHandlerFunctions(Public, Internal, HandlerName)              \
-    void Public::on##HandlerName(Public::Handler##HandlerName Handler)   \
-    {   ((Internal *) InternalTag)->Handler##HandlerName = Handler;      \
+#define AutoHandlerFunctions(Public, HandlerName)                        \
+    void Public::on##HandlerName (Public::Handler##HandlerName Handler)   \
+    {   internal->Handlers.HandlerName = Handler;                        \
     }                                                                    \
 
 #define AutoHandlerFlat(real_class, flat, handler_upper, handler_lower) \
     void flat##_on##handler_lower (flat * _flat, flat##_handler_##handler_lower _handler) \
-    {   ((real_class *) _flat)->on##handler_upper((real_class::Handler##handler_upper) _handler); \
+    {   ((real_class *) _flat)->on##handler_upper ((real_class::Handler##handler_upper) _handler); \
     }
-
-inline void GetSockaddr(Lacewing::Address &Address, sockaddr_in &out)
-{
-    memset(&out, 0, sizeof(sockaddr_in));
-
-    out.sin_family      = AF_INET;
-    out.sin_port        = htons((short) Address.Port());
-    out.sin_addr.s_addr = Address.IP();
-}
-
-inline bool URLDecode(char * URL, char * New, unsigned int OutLength)
-{
-    char * out = New;
-    char * out_end = New + OutLength;
-    char * in = (char *) URL;
-    char * in_end = in + strlen(in);
-
-    while(in < in_end)
-    {
-        if(*in == '%')
-        {
-            ++ in;
-
-            char n[3] = { in[0], in[1], 0 };
-            *out = (char) strtol(n, 0, 16);
-
-            ++ in;
-        }
-        else
-            *out = *in == '+' ? ' ' : *in;
-
-        if(out ++ >= out_end)
-            return false;
-
-        ++ in;
-    }
-
-    *out = 0;
-    return true;
-}
-
-inline bool BeginsWith(const char * String, const char * Substring)
-{
-    while(*Substring)
-    {
-        if(!*String || tolower(*String) != tolower(*Substring))
-            return false;
-
-        ++ Substring;
-        ++ String;
-    }
-
-    return true;
-}
-
-inline void Trim(char * Input, char *& Output)
-{
-    Output = Input;
-
-    while(isspace(*Output))
-        ++ Output;
-
-    if(!*Output)
-        return;
-
-    char * End = Output + strlen(Output) - 1;
-
-    while(isspace(*End))
-        *(End --) = 0;
-}
 
 #endif
 

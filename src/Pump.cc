@@ -27,21 +27,45 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "Common.h"
 
-lw_thread * lw_thread_new (const char * name, void * function)
-    { return (lw_thread *) new Thread (name, function);
+struct Pump::Internal
+{
+    int UseCount;
+
+    Internal ()
+    {
+        UseCount = 0;
     }
-void lw_thread_delete (lw_thread * thread)
-    { delete (Thread *) thread;
-    }
-void lw_thread_start (lw_thread * thread, void * parameter)
-    { ((Thread *) thread)->Start (parameter);
-    }
-lw_bool lw_thread_started (lw_thread * thread)
-    { return ((Thread *) thread)->Started ();
-    }
-long lw_thread_join (lw_thread * thread)
-    { return ((Thread *) thread)->Join ();
-    }
+};
+
+Pump::Pump ()
+{
+    internal = new Pump::Internal;
+}
+
+Pump::~ Pump ()
+{
+    delete internal;
+}
+
+void Pump::AddUser ()
+{
+    ++ internal->UseCount;
+}
+
+void Pump::RemoveUser ()
+{
+    -- internal->UseCount;
+}
+
+bool Pump::InUse ()
+{
+    return internal->UseCount > 0;
+}  
+
+bool Pump::IsEventPump ()
+{
+    return false;
+}
 

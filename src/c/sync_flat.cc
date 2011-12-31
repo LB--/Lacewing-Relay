@@ -30,19 +30,19 @@
 #include "../Common.h"
 
 lw_sync * lw_sync_new ()
-    { return (lw_sync *) new Lacewing::Sync();
+    { return (lw_sync *) new Sync ();
     }
 void lw_sync_delete (lw_sync * sync)
-    { delete (Lacewing::Sync *) sync;
+    { delete (Sync *) sync;
     }
 lw_sync_lock * lw_sync_lock_new (lw_sync * sync)
-    { return (lw_sync_lock *) new Lacewing::Sync::Lock(*(Lacewing::Sync *) sync);
+    { return (lw_sync_lock *) new Sync::Lock (*(Sync *) sync);
     }
 void lw_sync_lock_delete (lw_sync_lock * lock)
-    { delete (Lacewing::Sync::Lock *) lock;
+    { delete (Sync::Lock *) lock;
     }
 void lw_sync_lock_release (lw_sync_lock * lock)
-    { ((Lacewing::Sync::Lock *) lock)->Release();
+    { ((Sync::Lock *) lock)->Release ();
     }
 
 

@@ -29,37 +29,41 @@
 
 #include "../Common.h"
 
-lw_addr * lw_addr_new ()
-    { return (lw_addr *) new Lacewing::Address();
+lw_addr * lw_addr_new (const char * hostname, const char * service)
+    { return (lw_addr *) new Address (hostname, service);
     }
-lw_addr * lw_addr_new_ip (long ip, long port)
-    { return (lw_addr *) new Lacewing::Address ((unsigned int) ip, port);
+lw_addr * lw_addr_new_port (const char * hostname, long port)
+    { return (lw_addr *) new Address (hostname, port);
     }
-lw_addr * lw_addr_new_name (const char * hostname, long port, lw_bool blocking)
-    { return (lw_addr *) new Lacewing::Address(hostname, port, blocking ? 1 : 0);
+lw_addr * lw_addr_new_ex (const char * hostname, const char * service, long hints)
+    { return (lw_addr *) new Address (hostname, service, hints);
+    }
+lw_addr * lw_addr_new_port_ex (const char * hostname, long port, long hints)
+    { return (lw_addr *) new Address (hostname, port, hints);
     }
 lw_addr * lw_addr_copy (lw_addr * address)
-    { return (lw_addr *) new Lacewing::Address(*(Lacewing::Address *) address);
+    { return (lw_addr *) new Address (*(Address *) address);
     }
 void lw_addr_delete (lw_addr * address)
-    { delete (Lacewing::Address *) address;
+    { delete (Address *) address;
     }
 long lw_addr_port (lw_addr * address)
-    { return ((Lacewing::Address *) address)->Port();
+    { return ((Address *) address)->Port ();
     }
 void lw_addr_set_port (lw_addr * address, long port)
-    { ((Lacewing::Address *) address)->Port(port);
+    { ((Address *) address)->Port (port);
     }
 lw_bool lw_addr_is_ready (lw_addr * address)
-    { return ((Lacewing::Address *) address)->Ready();
+    { return ((Address *) address)->Ready ();
     }
-long lw_addr_ip (lw_addr * address)
-    { return ((Lacewing::Address *) address)->IP();
+lw_bool lw_addr_is_ipv6 (lw_addr * address)
+    { return ((Address *) address)->IPv6 ();
     }
-unsigned char lw_addr_ip_byte (lw_addr * address, long index)
-    { return ((Lacewing::Address *) address)->IP_Byte(index);
+lw_bool lw_addr_is_equal (lw_addr * address_a, lw_addr * address_b)
+    { return (*(Address *) address_a) == (*(Address *) address_b);
     }
-const char * lw_addr_tostring (lw_addr * address)
-    { return ((Lacewing::Address *) address)->ToString();
+const char * lw_addr_to_string (lw_addr * address)
+    { return ((Address *) address)->ToString ();
     }
+
 

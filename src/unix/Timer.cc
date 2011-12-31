@@ -28,19 +28,17 @@
  */
 
 #include "../Common.h"
-#include "EventPump.h"
 
-struct TimerInternal;
-
-void LegacyTimer (TimerInternal &Internal);
-void TimerTick (TimerInternal &Internal);
-
-struct TimerInternal
+struct Timer::Internal
 {
     Lacewing::Timer &Timer;
-    PumpInternal &EventPump;
+    Lacewing::Pump &Pump;
 
-    Lacewing::Timer::HandlerTick HandlerTick;
+    struct
+    {
+        HandlerTick Tick;
+    
+    } Handlers;
 
     bool Started;
 
@@ -48,85 +46,82 @@ struct TimerInternal
         int FD;
     #endif
 
-    Lacewing::Event StopEvent;
+    Event StopEvent;
     int Interval;
 
-    Lacewing::Thread LegacyTimerThread;
+    Thread LegacyTimerThread;
     
-    TimerInternal(Lacewing::Timer &_Timer, PumpInternal &_EventPump)
-                    : Timer(_Timer), EventPump(_EventPump),
+    Internal (Lacewing::Timer &_Timer, Lacewing::Pump &_Pump) : Timer (_Timer), Pump (_Pump),
                       LegacyTimerThread ("LegacyTimer", (void *) LegacyTimer)
     {
-        HandlerTick = 0;
         Started = false;
-        
+     
+        memset (&Handlers, 0, sizeof (Handlers));
+
         #ifdef LacewingUseTimerFD
-            FD = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
-            EventPump.AddRead(FD, this, (void *) TimerTick);
+            FD = timerfd_create (CLOCK_MONOTONIC, TFD_NONBLOCK);
+            EventPump.Add (FD, this, (Pump::Callback) Internal::TimerTick);
         #endif
     }
 
-    ~TimerInternal()
+    ~ Internal ()
     {
         #ifdef LacewingUseTimerFD
             close(FD);
         #endif
     }
+
+    static void TimerTick (Timer::Internal * internal)
+    {
+        if (internal->Handlers.Tick)
+            internal->Handlers.Tick (internal->Timer);
+    }
+
+    static void LegacyTimer (Timer::Internal * internal)
+    {
+        for (;;)
+        {
+            internal->StopEvent.Wait (internal->Interval);
+
+            if (internal->StopEvent.Signalled ())
+                break;
+            
+            internal->Pump.Post ((void *) TimerTick, internal);
+        }
+    }
 };
 
-void TimerTick(TimerInternal &Internal)
+Timer::Timer (Lacewing::Pump &Pump)
 {
-    if(Internal.HandlerTick)
-        Internal.HandlerTick(Internal.Timer);
+    internal = new Internal (*this, Pump);
+    Tag = 0;    
 }
 
-void LegacyTimer (TimerInternal &Internal)
-{
-    for(;;)
-    {
-        Internal.StopEvent.Wait(Internal.Interval);
-
-        if(Internal.StopEvent.Signalled())
-            break;
-        
-        Internal.EventPump.Pump.Post((void *) TimerTick, &Internal);
-    }
-}
-
-Lacewing::Timer::Timer(Lacewing::Pump &Pump)
-{
-    InternalTag = new TimerInternal(*this, *(PumpInternal *) Pump.InternalTag);
-    Tag         = 0;
-    
-    Pump.InUse (true);
-}
-
-Lacewing::Timer::~Timer()
+Timer::~Timer ()
 {
     Stop ();
 
-    delete ((TimerInternal *) InternalTag);
+    delete internal;
 }
 
-void Lacewing::Timer::Start(int Interval)
+void Timer::Start (int Interval)
 {
-    Stop();
+    Stop ();
 
-    TimerInternal &Internal = *((TimerInternal *) InternalTag);
-    
-    Internal.Started = true;
+    internal->Started = true;
+    internal->Pump.AddUser ();
 
     #ifdef LacewingUseKQueue
     
-        if(Internal.EventPump.Pump.IsEventPump())
+        if (internal->Pump.IsEventPump ())
         {
-            EventPumpInternal &EventPump = *(EventPumpInternal *)
-                    ((Lacewing::EventPump *) &Internal.EventPump.Pump)->EPInternalTag;
+            EventPump::Internal * EventPump
+                = ((Lacewing::EventPump *) &internal->Pump)->internal;
 
             struct kevent Change;
             EV_SET(&Change, 0, EVFILT_TIMER, EV_ADD | EV_ENABLE | EV_CLEAR, 0, Interval, this);
             
-            if(kevent(EventPump.Queue, &Change, 1, 0, 0, 0) == -1)
+            if (kevent (EventPump->Queue, &Change, 1, 0, 0, 0) == -1)
             {
                 DebugOut("Timer: Failed to add timer to kqueue: %s", strerror(errno));
                 return;
@@ -134,8 +129,8 @@ void Lacewing::Timer::Start(int Interval)
         }
         else
         {
-            Internal.Interval = Interval;
-            Internal.LegacyTimerThread.Start (&Internal);
+            internal->Interval = Interval;
+            internal->LegacyTimerThread.Start (internal);
         }
 
     #else
@@ -146,30 +141,28 @@ void Lacewing::Timer::Start(int Interval)
             spec.it_interval.tv_sec  = Interval / 1000;
             spec.it_interval.tv_nsec = (Interval % 1000) * 1000000;
 
-            memcpy(&spec.it_value, &spec.it_interval, sizeof(spec.it_interval));
+            memcpy(&spec.it_value, &spec.it_interval, sizeof (spec.it_interval));
             
-            timerfd_settime(Internal.FD, 0, &spec, 0);
+            timerfd_settime (internal->FD, 0, &spec, 0);
             
         #else
 
-            Internal.Interval = Interval;
-            Internal.LegacyTimerThread.Start (&Internal);
+            internal->Interval = Interval;
+            internal->LegacyTimerThread.Start (internal);
 
         #endif
     #endif
 }
 
-void Lacewing::Timer::Stop()
+void Timer::Stop ()
 {
     /* TODO: What if a tick has been posted using internal and this gets destructed? */
 
-    TimerInternal &Internal = *((TimerInternal *) InternalTag);
-
     #ifndef LacewingUseTimerFD
 
-        Internal.StopEvent.Signal ();
-        Internal.LegacyTimerThread.Join ();
-        Internal.StopEvent.Unsignal ();
+        internal->StopEvent.Signal ();
+        internal->LegacyTimerThread.Join ();
+        internal->StopEvent.Unsignal ();
 
     #endif
 
@@ -180,26 +173,25 @@ void Lacewing::Timer::Stop()
     #else
         #ifdef LacewingUseTimerFD
             itimerspec spec;
-            memset(&spec, 0, sizeof(itimerspec));
-            timerfd_settime(Internal.FD, 0, &spec, 0);
+            memset (&spec, 0, sizeof(itimerspec));
+            timerfd_settime (internal->FD, 0, &spec, 0);
         #endif
     #endif
 
-    Internal.Started = false;
+    internal->Started = false;
+    internal->Pump.RemoveUser ();
 }
 
-void Lacewing::Timer::ForceTick()
+void Timer::ForceTick ()
 {
-    TimerInternal &Internal = *((TimerInternal *) InternalTag);
-    
-    if(Internal.HandlerTick)
-        Internal.HandlerTick(*this);
+    if (internal->Handlers.Tick)
+        internal->Handlers.Tick (*this);
 }
 
-bool Lacewing::Timer::Started ()
+bool Timer::Started ()
 {
-    return ((TimerInternal *) InternalTag)->Started;
+    return internal->Started;
 }
 
-AutoHandlerFunctions(Lacewing::Timer, TimerInternal, Tick)
+AutoHandlerFunctions (Timer, Tick)
 

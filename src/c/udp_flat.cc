@@ -30,39 +30,39 @@
 #include "../Common.h"
 
 lw_udp* lw_udp_new (lw_eventpump * eventpump)
-    { return (lw_udp *) new Lacewing::UDP(*(Lacewing::EventPump *) eventpump);
+    { return (lw_udp *) new UDP (*(EventPump *) eventpump);
     }
 void lw_udp_delete (lw_udp * udp)
-    { delete (Lacewing::UDP *) udp;
+    { delete (UDP *) udp;
     }
 void lw_udp_host (lw_udp * udp, long port)
-    { ((Lacewing::UDP *) udp)->Host(port);
+    { ((UDP *) udp)->Host (port);
     }
 void lw_udp_host_filter (lw_udp * udp, lw_filter * filter)
-    { ((Lacewing::UDP *) udp)->Host(*(Lacewing::Filter *) filter);
+    { ((UDP *) udp)->Host (*(Filter *) filter);
     }
 void lw_udp_host_addr (lw_udp * udp, lw_addr * addr)
-    { ((Lacewing::UDP *) udp)->Host(*(Lacewing::Address *) addr);
+    { ((UDP *) udp)->Host (*(Address *) addr);
     }
 lw_bool lw_udp_hosting (lw_udp * udp)
-    { return ((Lacewing::UDP *) udp)->Hosting ();
+    { return ((UDP *) udp)->Hosting ();
     }
 void lw_udp_unhost (lw_udp * udp)
-    { ((Lacewing::UDP *) udp)->Unhost();
+    { ((UDP *) udp)->Unhost ();
     }
 long lw_udp_port (lw_udp * udp)
-    { return ((Lacewing::UDP *) udp)->Port();
+    { return ((UDP *) udp)->Port ();
     }
 lw_i64 lw_udp_bytes_sent (lw_udp * udp)
-    { return ((Lacewing::UDP *) udp)->BytesSent();
+    { return ((UDP *) udp)->BytesSent ();
     }
 lw_i64 lw_udp_bytes_received (lw_udp * udp)
-    { return ((Lacewing::UDP *) udp)->BytesReceived();
+    { return ((UDP *) udp)->BytesReceived ();
     }
 void lw_udp_send (lw_udp * udp, lw_addr * addr, const char * data, long size)
-    { ((Lacewing::UDP *) udp)->Send(*(Lacewing::Address *) addr, data, size);
+    { ((UDP *) udp)->Send (*(Address *) addr, data, size);
     }
 
-AutoHandlerFlat(Lacewing::UDP, lw_udp, Receive, receive)
-AutoHandlerFlat(Lacewing::UDP, lw_udp, Error, error)
+AutoHandlerFlat (UDP, lw_udp, Receive, receive)
+AutoHandlerFlat (UDP, lw_udp, Error, error)
 

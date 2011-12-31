@@ -30,11 +30,11 @@
 #include "Common.h"
 
 #if defined(LacewingDebug) || defined(LacewingForceDebugOutput)
-    Lacewing::Sync Sync_DebugOutput;
+    Sync Sync_DebugOutput;
 #endif
 
 #ifdef LacewingWindows
-    Lacewing::Sync Sync_GMTime;
+    Sync Sync_GMTime;
 #endif
 
 const char * Lacewing::Version()
@@ -80,14 +80,14 @@ void LacewingInitialise()
 
         WSADATA WinsockData;
 
-        if(WSAStartup(MAKEWORD(2, 2), &WinsockData))
+        if (WSAStartup(MAKEWORD(2, 2), &WinsockData))
             return;
     
     #else
 
         SSL_library_init();
 
-        STACK_OF(SSL_COMP) * comp_methods = SSL_COMP_get_compression_methods();
+        STACK_OF (SSL_COMP) * comp_methods = SSL_COMP_get_compression_methods();
         sk_SSL_COMP_zero(comp_methods);
 
     #endif
@@ -105,7 +105,7 @@ bool Lacewing::FileExists(const char * Filename)
 
         struct stat Attributes;
 
-        if(stat(Filename, &Attributes) == 0)
+        if (stat(Filename, &Attributes) == 0)
             return !S_ISDIR(Attributes.st_mode);
 
         return false;
@@ -119,14 +119,14 @@ bool Lacewing::PathExists(const char * Filename)
 {
     #ifdef LacewingWindows
 
-        int attr = GetFileAttributesA(Filename);
+        int attr = GetFileAttributesA (Filename);
         return attr != 0xFFFFFFFF && (attr & FILE_ATTRIBUTE_DIRECTORY) != 0;
         
     #else
 
         struct stat Attributes;
 
-        if(stat(Filename, &Attributes) == 0)
+        if (stat(Filename, &Attributes) == 0)
             return S_ISDIR(Attributes.st_mode);
 
         return false;
@@ -142,7 +142,7 @@ lw_i64 Lacewing::FileSize(const char * Filename)
     
         WIN32_FILE_ATTRIBUTE_DATA FileInformation;
 
-        if(!GetFileAttributesExA(Filename, GetFileExInfoStandard, &FileInformation))
+        if (!GetFileAttributesExA(Filename, GetFileExInfoStandard, &FileInformation))
             return 0;
 
         LARGE_INTEGER Size;
@@ -156,7 +156,7 @@ lw_i64 Lacewing::FileSize(const char * Filename)
         
         struct stat Attributes;
 
-        if(stat(Filename, &Attributes) != 0)
+        if (stat(Filename, &Attributes) != 0)
             return 0;
 
         return Attributes.st_size;
@@ -171,7 +171,7 @@ lw_i64 Lacewing::LastModified(const char * Filename)
     
         WIN32_FILE_ATTRIBUTE_DATA FileInformation;
 
-        if(!GetFileAttributesExA(Filename, GetFileExInfoStandard, &FileInformation))
+        if (!GetFileAttributesExA(Filename, GetFileExInfoStandard, &FileInformation))
             return 0;
     
         return FileTimeToUnixTime(FileInformation.ftLastWriteTime);
@@ -180,7 +180,7 @@ lw_i64 Lacewing::LastModified(const char * Filename)
     
         struct stat Attributes;
 
-        if(stat(Filename, &Attributes) != 0)
+        if (stat(Filename, &Attributes) != 0)
             return 0;
 
         return Attributes.st_mtime;
@@ -223,7 +223,7 @@ void Lacewing::TempPath(char * Buffer)
 
     #else
 
-        char * Temp = getenv("TMPDIR");
+        char * Temp = getenv ("TMPDIR");
 
         if(Temp)
         {
@@ -250,18 +250,18 @@ void Lacewing::NewTempFile(char * Buffer)
     do
     {   char TempName[64];
 
-        for(int i = 0; i < sizeof(TempName); i += sizeof(lw_i64))
+        for(int i = 0; i < sizeof (TempName); i += sizeof (lw_i64))
             *(lw_i64 *) (TempName + i) = i % 2 == 0 ? (lw_i64) time(0) : (lw_i64) rand();
 
-        Lacewing::MD5_Hex (TempName, TempName, sizeof(TempName));
+        MD5_Hex (TempName, TempName, sizeof (TempName));
 
         char Path [lw_max_path];
-        TempPath (Path);
+        Lacewing::TempPath (Path);
 
-        if(Path[strlen(Path) - 1] != '/')
+        if(Path[strlen (Path) - 1] != '/')
         {
-            Path[strlen(Path) + 1] =   0;
-            Path[strlen(Path)]     = '/';
+            Path[strlen (Path) + 1] =   0;
+            Path[strlen (Path)]     = '/';
         }
 
         lw_snprintf(Buffer, lw_max_path, "%slw-temp-%s", Path, TempName);
@@ -307,7 +307,7 @@ void Lacewing::MD5 (char * Output, const char * Input, int Length)
 
 void Lacewing::MD5_Hex (char * Output, const char * Input, int Length)
 {
-    MD5 (Output, Input, Length);
+    Lacewing::MD5 (Output, Input, Length);
 
     char Hex [40];
     
@@ -353,7 +353,7 @@ void Lacewing::SHA1 (char * Output, const char * Input, int Length)
 
 void Lacewing::SHA1_Hex (char * Output, const char * Input, int Length)
 {
-    SHA1 (Output, Input, Length);
+    Lacewing::SHA1 (Output, Input, Length);
 
     char Hex [48];
     

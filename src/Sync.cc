@@ -29,9 +29,9 @@
 
 #include "Common.h"
 
-struct SyncInternal
+struct Sync::Internal
 {
-    SyncInternal()
+    Internal ()
     {
         #ifdef LacewingWindows  
             
@@ -47,7 +47,7 @@ struct SyncInternal
         #endif
     }
 
-    ~SyncInternal()
+    ~ Internal ()
     {
         #ifdef LacewingWindows
 
@@ -73,45 +73,45 @@ struct SyncInternal
     #endif
 };
 
-Lacewing::Sync::Sync()
+Sync::Sync ()
 {
-    InternalTag = new SyncInternal;
-    Tag         = 0;
+    internal = new Sync::Internal;
+    Tag = 0;
 }
 
-Lacewing::Sync::~Sync()
+Sync::~Sync ()
 {
-    delete ((SyncInternal *) InternalTag);
+    delete internal;
 }
 
-Lacewing::Sync::Lock::Lock(Lacewing::Sync &Object)
+Sync::Lock::Lock (Sync &Object)
 {
-    if(!(InternalTag = Object.InternalTag))
+    if (!(internal = Object.internal))
         return;
 
     #ifdef LacewingWindows
-        EnterCriticalSection(&((SyncInternal *)InternalTag)->CriticalSection);
+        EnterCriticalSection (&((Sync::Internal *) internal)->CriticalSection);
     #else
-        pthread_mutex_lock(&((SyncInternal *) InternalTag)->Mutex);
+        pthread_mutex_lock (&((Sync::Internal *) internal)->Mutex);
     #endif
 }
 
-Lacewing::Sync::Lock::~Lock()
+Sync::Lock::~Lock ()
 {
-    Release();
+    Release ();
 }
 
-void Lacewing::Sync::Lock::Release()
+void Sync::Lock::Release ()
 {
-    if(!InternalTag)
+    if (!internal)
         return;
 
     #ifdef LacewingWindows
-        LeaveCriticalSection(&((SyncInternal *)InternalTag)->CriticalSection);
+        LeaveCriticalSection (&((Sync::Internal *)internal)->CriticalSection);
     #else
-        pthread_mutex_unlock(&((SyncInternal *) InternalTag)->Mutex);
+        pthread_mutex_unlock (&((Sync::Internal *) internal)->Mutex);
     #endif
 
-    InternalTag = 0;
+    internal = 0;
 }
 

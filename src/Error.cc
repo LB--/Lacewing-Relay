@@ -29,57 +29,56 @@
 
 #include "Common.h"
 
-struct ErrorInternal
+struct Error::Internal
 {
     char Error [4096];
     char * Begin;
 
-    ErrorInternal()
+    int Size;
+
+    Internal ()
     {
         *(Begin = Error + sizeof(Error) - 1) = 0;
+
+        Size = 0;
     }
 
     inline void Add(const char * Text)
     {
-        int Length = strlen(Text);
+        int Length = strlen (Text);
         memcpy(Begin -= Length, Text, Length);
     }
 };
 
-Lacewing::Error::Error()
+Error::Error ()
 {
-    InternalTag = new ErrorInternal;
+    internal = new Internal;
 }
 
-Lacewing::Error::~Error()
+Error::~Error ()
 {
-    if(!InternalTag)
-        return;
-
-    delete ((ErrorInternal *) InternalTag);
+    delete internal;
 }
 
-Lacewing::Error::operator const char *()
+Error::operator const char *()
 {
     return ToString();
 }
 
-const char * Lacewing::Error::ToString()
+const char * Error::ToString ()
 {
-    return ((ErrorInternal *) InternalTag)->Begin;
+    return internal->Begin;
 }
 
-Lacewing::Error * Lacewing::Error::Clone()
+Error * Error::Clone ()
 {
-    ErrorInternal &Internal = *((ErrorInternal *) InternalTag);
-
-    Lacewing::Error * New = new Lacewing::Error;
-    New->Add ("%s", ToString());
+    Error * New = new Error;
+    New->Add ("%s", ToString ());
 
     return New;
 }
 
-void Lacewing::Error::Add(const char * Format, ...)
+void Error::Add (const char * Format, ...)
 {
     va_list Arguments;
     va_start (Arguments, Format);
@@ -89,27 +88,27 @@ void Lacewing::Error::Add(const char * Format, ...)
     va_end (Arguments);
 }
 
-void Lacewing::Error::Add(const char * Format, va_list Arguments)
+void Error::Add (const char * Format, va_list Arguments)
 {
-    ErrorInternal &Internal = *((ErrorInternal *) InternalTag);
+    char Buffer [2048];
+    vsnprintf (Buffer, sizeof (Buffer), Format, Arguments);
 
-    char Buffer[2048];
-    vsnprintf(Buffer, sizeof(Buffer), Format, Arguments);
+    ++ internal->Size;
 
-    if(*Internal.Begin)
-        Internal.Add(" - ");
+    if (*internal->Begin)
+        internal->Add (" - ");
 
-    Internal.Add(Buffer);
+    internal->Add (Buffer);
 }
 
-void Lacewing::Error::Add(int Error)
+void Error::Add (int Error)
 {
     #ifdef LacewingWindows
 
         char * Message;
 
-        if(FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER,
-            0, Error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (char *) &Message, 1, 0))
+        if (FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+            0, Error, MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT), (char *) &Message, 1, 0))
         {
             Add(Error < 0 ? "%s (%08X)" : "%s (%d)", Message, Error);
         }
@@ -123,4 +122,8 @@ void Lacewing::Error::Add(int Error)
     #endif
 }
 
+int Error::Size ()
+{
+    return internal->Size;
+}
 
