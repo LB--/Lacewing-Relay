@@ -2714,7 +2714,7 @@ OBJECTS="build/Global.o build/Sync.o build/SpinSync.o build/Filter.o build/Addre
 			    build/addr_flat.o build/eventpump_flat.o build/global_flat.o build/server_flat.o build/timer_flat.o \
 				build/webserver_flat.o build/filter_flat.o build/udp_flat.o build/client_flat.o \
 				build/error_flat.o build/sync_flat.o build/ssync_flat.o build/thread_flat.o build/FlashPolicy.o \
-                build/Pump.o"
+                build/Pump.o build/flashpolicy_flat.o"
 
 
 COMMONDEPS="src/Common.h src/Backlog.h src/MessageBuilder.h src/MessageReader.h \

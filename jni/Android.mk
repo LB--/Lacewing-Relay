@@ -42,7 +42,8 @@ LOCAL_SRC_FILES     := \
     ../src/c/error_flat.cc \
     ../src/c/sync_flat.cc \
     ../src/c/ssync_flat.cc \
-    ../src/c/thread_flat.cc
+    ../src/c/thread_flat.cc \
+	../src/c/flashpolicy_flat.cc
 
 LOCAL_CFLAGS := -DLacewingLibrary -fno-exceptions -fno-rtti -fvisibility=hidden
 

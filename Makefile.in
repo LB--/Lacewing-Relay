@@ -85,6 +85,8 @@ build/ssync_flat.o: src/c/ssync_flat.cc $(COMMONDEPS)
 	c++ $(CXXFLAGS) -c -o $@ src/c/ssync_flat.cc
 build/thread_flat.o: src/c/thread_flat.cc $(COMMONDEPS)
 	c++ $(CXXFLAGS) -c -o $@ src/c/thread_flat.cc
+build/flashpolicy_flat.o: src/c/flashpolicy_flat.cc $(COMMONDEPS)
+	c++ $(CXXFLAGS) -c -o $@ src/c/flashpolicy_flat.cc
 
 build/unix-Event.o: src/unix/Event.cc $(COMMONDEPS)
 	c++ $(CXXFLAGS) -c -o $@ src/unix/Event.cc

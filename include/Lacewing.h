@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -336,6 +336,20 @@ LacewingFunction          void  lw_sha1_hex                 (char * output, cons
 
   typedef void (LacewingHandler * lw_udp_handler_error) (lw_udp *, lw_error *);
   LacewingFunction void lw_udp_onerror (lw_udp *, lw_udp_handler_error);
+
+/* FlashPolicy */
+
+  LacewingFlat (lw_flashpolicy);
+
+  LacewingFunction  lw_flashpolicy* lw_flashpolicy_new           (lw_eventpump *);
+  LacewingFunction            void  lw_flashpolicy_delete        (lw_flashpolicy *);
+  LacewingFunction            void  lw_flashpolicy_host          (lw_flashpolicy *, const char * filename);
+  LacewingFunction            void  lw_flashpolicy_host_filter   (lw_flashpolicy *, const char * filename, lw_filter *);
+  LacewingFunction            void  lw_flashpolicy_unhost        (lw_flashpolicy *);
+  LacewingFunction         lw_bool  lw_flashpolicy_hosting       (lw_flashpolicy *);
+
+  typedef void (LacewingHandler * lw_flashpolicy_handler_error) (lw_flashpolicy *, lw_error *);
+  LacewingFunction void lw_flashpolicy_onerror (lw_flashpolicy *, lw_flashpolicy_handler_error);
 
 /* Webserver */
 
@@ -1334,8 +1348,9 @@ struct FlashPolicy
     LacewingFunction  FlashPolicy (Pump &);
     LacewingFunction ~FlashPolicy ();
 
-    LacewingFunction void Host (const char * Filename, int Port = 843);
+    LacewingFunction void Host (const char * Filename);
     LacewingFunction void Host (const char * Filename, Lacewing::Filter &Filter);
+
     LacewingFunction void Unhost ();
 
     LacewingFunction bool Hosting ();

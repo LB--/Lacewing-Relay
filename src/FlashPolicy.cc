@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -95,20 +95,17 @@ FlashPolicy::~FlashPolicy ()
     delete internal;
 }
 
-void FlashPolicy::Host (const char * Filename, int Port)
+void FlashPolicy::Host (const char * Filename)
 {
     Filter Filter;
-    Filter.LocalPort (Port);
-
-    Host(Filename, Filter);
+    Host (Filename, Filter);
 }
 
 void FlashPolicy::Host (const char * Filename, Filter &Filter)
 {
     Unhost();
 
-    if (!Filter.LocalPort())
-        Filter.LocalPort(843);
+    Filter.LocalPort (843);
     
     {   FILE * File = fopen(Filename, "r");
 
