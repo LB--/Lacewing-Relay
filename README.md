@@ -11,7 +11,7 @@ Installing
 
 On Windows, use the MSVC project file in the `msvc` directory to build a DLL/LIB.
 
-On Linux/BSD/OS X:
+On Linux/BSD/OS X/MinGW:
 
     ./configure
     make
