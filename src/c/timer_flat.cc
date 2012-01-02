@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 #include "../Common.h"
 
 lw_timer * lw_timer_new (lw_eventpump * eventpump)
-    { return (lw_timer *) new Timer (*(EventPump *) eventpump);
+    { return (lw_timer *) new Timer (*(Pump *) eventpump);
     }
 void lw_timer_delete (lw_timer * timer)
     { delete (Timer *) timer;

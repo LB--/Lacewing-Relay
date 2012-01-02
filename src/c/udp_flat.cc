@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 #include "../Common.h"
 
 lw_udp* lw_udp_new (lw_eventpump * eventpump)
-    { return (lw_udp *) new UDP (*(EventPump *) eventpump);
+    { return (lw_udp *) new UDP (*(Pump *) eventpump);
     }
 void lw_udp_delete (lw_udp * udp)
     { delete (UDP *) udp;

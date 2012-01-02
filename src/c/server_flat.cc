@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 #include "../Common.h"
 
 lw_server * lw_server_new (lw_eventpump * eventpump)
-    { return (lw_server *) new Server (*(EventPump *) eventpump);
+    { return (lw_server *) new Server (*(Pump *) eventpump);
     }
 void lw_server_delete (lw_server * server)
     { delete (Server *) server;
