@@ -14,6 +14,7 @@ LOCAL_SRC_FILES     := \
     ../src/Address.cc \
     ../src/Error.cc \
     ../src/FlashPolicy.cc \
+	../src/Pump.cc \
     ../src/relay/RelayServer.cc \
     ../src/relay/RelayClient.cc \
     ../src/webserver/Webserver.cc \
