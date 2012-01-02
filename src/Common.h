@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -56,6 +56,10 @@
 
     #ifndef _CRT_NONSTDC_NO_WARNINGS
         #define _CRT_NONSTDC_NO_WARNINGS
+    #endif
+
+    #ifdef HAVE_CONFIG_H
+        #include "../config.h"
     #endif
 
 #else
@@ -412,11 +416,11 @@ inline int LacewingFormat(char *& Output, const char * Format, va_list args)
 
 inline void LacewingSyncIncrement(volatile long * Target)
 {
-    #ifdef __GNUC__
-        __sync_add_and_fetch(Target, 1);
+    #ifdef LacewingWindows
+        InterlockedIncrement (Target);
     #else
-        #ifdef LacewingWindows
-            InterlockedIncrement(Target);
+        #ifdef __GNUC__
+            __sync_add_and_fetch (Target, 1);
         #else
             #error "Don't know how to implement LacewingSyncIncrement on this platform"
         #endif
@@ -425,11 +429,11 @@ inline void LacewingSyncIncrement(volatile long * Target)
 
 inline void LacewingSyncDecrement(volatile long * Target)
 {
-    #ifdef __GNUC__
-        __sync_sub_and_fetch(Target, 1);
+    #ifdef LacewingWindows
+        InterlockedDecrement (Target);
     #else
-        #ifdef LacewingWindows
-            InterlockedDecrement(Target);
+        #ifdef __GNUC__
+            __sync_sub_and_fetch (Target, 1);
         #else
             #error "Don't know how to implement LacewingSyncDecrement on this platform"
         #endif
@@ -438,11 +442,11 @@ inline void LacewingSyncDecrement(volatile long * Target)
 
 inline long LacewingSyncCompareExchange(volatile long * Target, long NewValue, long OldValue)
 {
-    #ifdef __GNUC__
-        return __sync_val_compare_and_swap(Target, OldValue, NewValue);
+    #ifdef LacewingWindows
+        return InterlockedCompareExchange (Target, NewValue, OldValue);
     #else
-        #ifdef LacewingWindows
-            return InterlockedCompareExchange(Target, NewValue, OldValue);
+        #ifdef __GNUC__
+            return __sync_val_compare_and_swap (Target, OldValue, NewValue);
         #else
             #error "Don't know how to implement LacewingSyncCompareExchange on this platform"
         #endif
@@ -451,19 +455,19 @@ inline long LacewingSyncCompareExchange(volatile long * Target, long NewValue, l
 
 inline void LacewingSyncExchange(volatile long * Target, long NewValue)
 {
-    #ifdef __GNUC__
-        
-        for(;;)
-        {
-            long Current = *Target;
-
-            if (__sync_val_compare_and_swap(Target, Current, NewValue) == Current)
-                break;
-        }
-
+    #ifdef LacewingWindows
+        InterlockedExchange (Target, NewValue);
     #else
-        #ifdef LacewingWindows
-            InterlockedExchange(Target, NewValue);
+        #ifdef __GNUC__
+            
+            for (;;)
+            {
+                long Current = *Target;
+
+                if (__sync_val_compare_and_swap (Target, Current, NewValue) == Current)
+                    break;
+            }
+
         #else
             #error "Don't know how to implement LacewingSyncExchange on this platform"
         #endif
