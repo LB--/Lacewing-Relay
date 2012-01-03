@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,9 +33,10 @@
 
 struct Server::Client::Internal
 {
-    Server::Internal &Server;
+    Lacewing::Server::Internal &Server;
 
-    Internal (Server::Internal &_Server) : Server (_Server)
+    Internal (Lacewing::Server::Internal &_Server)
+        : Server (_Server)
     {
         Public.internal = this;
         Public.Tag = 0;
@@ -52,12 +53,12 @@ struct Server::Client::Internal
             SSL_free(Context);
     }
 
-    Server::Client Public;
+    Lacewing::Server::Client Public;
 
     AddressWrapper Address;
     sockaddr_storage SockAddr;
 
-    List <Server::Client::Internal *>::Element * Element;
+    List <Lacewing::Server::Client::Internal *>::Element * Element;
 
     int Socket;
     void * GoneKey;
