@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -60,7 +60,7 @@ struct Timer::Internal
 
         #ifdef LacewingUseTimerFD
             FD = timerfd_create (CLOCK_MONOTONIC, TFD_NONBLOCK);
-            EventPump.Add (FD, this, (Pump::Callback) Internal::TimerTick);
+            Pump.Add (FD, this, (Pump::Callback) TimerTick);
         #endif
     }
 
@@ -75,6 +75,14 @@ struct Timer::Internal
     {
         if (internal->Handlers.Tick)
             internal->Handlers.Tick (internal->Timer);
+
+        #ifdef LacewingUseTimerFD
+
+            {   lw_i64 expirations;
+                read (internal->FD, &expirations, sizeof (lw_i64));
+            }
+
+        #endif
     }
 
     static void LegacyTimer (Timer::Internal * internal)
@@ -141,8 +149,9 @@ void Timer::Start (int Interval)
             spec.it_interval.tv_sec  = Interval / 1000;
             spec.it_interval.tv_nsec = (Interval % 1000) * 1000000;
 
-            memcpy(&spec.it_value, &spec.it_interval, sizeof (spec.it_interval));
-            
+            spec.it_value.tv_sec = 0;
+            spec.it_value.tv_nsec = 1;
+ 
             timerfd_settime (internal->FD, 0, &spec, 0);
             
         #else
