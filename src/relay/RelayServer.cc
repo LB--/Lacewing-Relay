@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -228,7 +228,7 @@ RelayServer::Client::Internal * RelayServer::Channel::Internal::ReadPeer (Messag
     return 0;
 }
 
-void HandlerConnect (Server &Server, Server::Client &ClientSocket)
+static void HandlerConnect (Server &Server, Server::Client &ClientSocket)
 {
     RelayServer::Internal * internal = (RelayServer::Internal *) Server.Tag;
 
@@ -236,7 +236,7 @@ void HandlerConnect (Server &Server, Server::Client &ClientSocket)
     ClientSocket.Tag = &internal->ClientBacklog.Borrow (ClientSocket);   
 }
 
-void HandlerDisconnect (Server &Server, Server::Client &ClientSocket)
+static void HandlerDisconnect (Server &Server, Server::Client &ClientSocket)
 {
     RelayServer::Internal * internal = (RelayServer::Internal *) Server.Tag;
     RelayServer::Client::Internal &Client = *(RelayServer::Client::Internal *) ClientSocket.Tag;
@@ -250,7 +250,7 @@ void HandlerDisconnect (Server &Server, Server::Client &ClientSocket)
     internal->ClientBacklog.Return (Client);
 }
 
-void HandlerReceive (Server &Server, Server::Client &ClientSocket, char * Data, int Size)
+static void HandlerReceive (Server &Server, Server::Client &ClientSocket, char * Data, int Size)
 {
     RelayServer::Client::Internal &Client = *(RelayServer::Client::Internal *) ClientSocket.Tag;
     
@@ -267,7 +267,7 @@ void HandlerReceive (Server &Server, Server::Client &ClientSocket, char * Data, 
     Client.Reader.Process (Data, Size);
 }
 
-void HandlerError (Server &Server, Error &Error)
+static void HandlerError (Server &Server, Error &Error)
 {
     RelayServer::Internal * internal = (RelayServer::Internal *) Server.Tag;
 
@@ -277,7 +277,7 @@ void HandlerError (Server &Server, Error &Error)
         internal->Handlers.Error (internal->Server, Error);
 }
 
-void HandlerUDPReceive (UDP &UDP, Address &Address, char * Data, int Size)
+static void HandlerUDPReceive (UDP &UDP, Address &Address, char * Data, int Size)
 {
     RelayServer::Internal * internal = (RelayServer::Internal *) UDP.Tag;
 
@@ -309,7 +309,7 @@ void HandlerUDPReceive (UDP &UDP, Address &Address, char * Data, int Size)
     }
 }
 
-void HandlerUDPError (UDP &UDP, Error &Error)
+static void HandlerUDPError (UDP &UDP, Error &Error)
 {
     RelayServer::Internal * internal = (RelayServer::Internal *) UDP.Tag;
 
@@ -326,7 +326,7 @@ RelayServer::Internal::Internal (RelayServer &_Server, Pump &Pump)
 
     WelcomeMessage = Version ();
 
-    Timer.Tag = Server.Tag = UDP.Tag = this;
+    Timer.Tag = Socket.Tag = UDP.Tag = this;
 
     Timer.onTick (TimerTick);
 
