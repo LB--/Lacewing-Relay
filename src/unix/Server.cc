@@ -397,7 +397,7 @@ void ClientSocketWriteReady (Server::Client::Internal &Client)
     }
 }
 
-static void ListenSocketReadReady (Server::Internal * internal, bool)
+static void ListenSocketReadReady (Server::Internal * internal)
 {
     sockaddr_storage Address;
     socklen_t AddressLength = sizeof(Address);
