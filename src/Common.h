@@ -201,6 +201,9 @@ const int lw_max_path = 512;
             
         inline void LacewingCloseSocket (lw_socket Socket)
         {
+            if (Socket == -1)
+                return;
+
             CancelIo ((HANDLE) Socket);
             closesocket (Socket);
         }
@@ -306,9 +309,16 @@ const int lw_max_path = 512;
         #error "OpenSSL not found. Install OpenSSL and run ./configure again."
     #endif
 
-    #define LacewingCloseSocket(S)    close(S)
     #define LacewingGetSocketError()  errno
     #define LacewingGetLastError()    errno
+
+    inline void LacewingCloseSocket (int Socket)
+    {
+        if (Socket == -1)
+            return;
+
+        close (Socket);
+    }
 
     #define _atoi64 atoll
 
