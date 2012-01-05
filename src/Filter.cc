@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,6 +40,12 @@ struct Filter::Internal
         IPv6   = true;
     }
 
+    ~ Internal ()
+    {
+        delete Local;
+        delete Remote;
+    }
+
     bool Reuse, IPv6;
 
     Lacewing::Address * Local, * Remote;
@@ -56,6 +62,15 @@ Filter::Filter (Filter &_Filter)
 {
     internal  = new Filter::Internal;
     Tag       = 0;
+
+    IPv6 (_Filter.IPv6 ());
+    Reuse (_Filter.Reuse ());
+
+    LocalPort (_Filter.LocalPort ());
+    RemotePort (_Filter.RemotePort ());
+
+    Local (_Filter.Local ());
+    Remote (_Filter.Remote ());
 }
 
 Filter::~Filter ()
