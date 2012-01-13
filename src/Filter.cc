@@ -196,17 +196,37 @@ int Lacewing::CreateServerSocket (Lacewing::Filter &Filter, int Type, int Protoc
     }
 
     lw_socket Socket;
+    bool IPv6 = Filter.IPv6 ();
 
     #ifdef LacewingWindows
 
-        if ((Socket = WSASocket
-            (Filter.IPv6 () ? AF_INET6 : AF_INET,
-                Type, Protocol, 0, 0, WSA_FLAG_OVERLAPPED)) == -1)
+        if (IPv6)
         {
-            Error.Add (LacewingGetLastError ());
-            Error.Add ("Error creating socket");
+            if ((Socket = WSASocket
+                (AF_INET6, Type, Protocol, 0, 0, WSA_FLAG_OVERLAPPED)) == -1)
+            {
+                if (WSAGetLastError () != WSAEAFNOSUPPORT)
+                {
+                    Error.Add (WSAGetLastError ());
+                    Error.Add ("Error creating socket");
 
-            return -1;
+                    return -1;
+                }
+
+                IPv6 = false;
+            }
+        }
+
+        if (!IPv6)
+        {
+            if ((Socket = WSASocket
+                (AF_INET, Type, Protocol, 0, 0, WSA_FLAG_OVERLAPPED)) == -1)
+            {
+                Error.Add (WSAGetLastError ());
+                Error.Add ("Error creating socket");
+
+                return -1;
+            }
         }
 
     #else
@@ -224,7 +244,7 @@ int Lacewing::CreateServerSocket (Lacewing::Filter &Filter, int Type, int Protoc
 
     #endif
 
-    if (Filter.IPv6 ())
+    if (IPv6)
         DisableIPV6Only (Socket);
 
     {   int reuse = Filter.Reuse () ? 1 : 0;
@@ -249,7 +269,7 @@ int Lacewing::CreateServerSocket (Lacewing::Filter &Filter, int Type, int Protoc
 
     if (!addr_len)
     {
-        if (Filter.IPv6 ())
+        if (IPv6)
         {
             addr_len = sizeof (sockaddr_in6);
 
