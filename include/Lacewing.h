@@ -83,13 +83,7 @@
 #endif
 
 #ifndef LacewingFunction
-
     #define LacewingFunction __declspec (dllimport)
-
-    #ifndef Lacewing_NoAutoLink
-        #pragma comment (lib, "Lacewing.lib")
-    #endif
-
 #endif
 
 typedef lw_i8 lw_bool;
