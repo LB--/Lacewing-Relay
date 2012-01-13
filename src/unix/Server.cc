@@ -404,25 +404,24 @@ static void ListenSocketReadReady (Server::Internal * internal)
     
     for(;;)
     {
-        int Socket = accept (internal->Socket, (sockaddr *) &Address, &AddressLength);
-        
-        if(Socket == -1)
-            break; 
-        
-        fcntl(Socket, F_SETFL, fcntl (Socket, F_GETFL, 0) | O_NONBLOCK);
-        
-        DisableSigPipe (Socket);
-
-        if (!internal->Nagle)
-            DisableNagling (Socket);
-
         Server::Client::Internal &Client = internal->ClientStructureBacklog.Borrow (*internal);
 
-        Client.Socket = Socket;
+        {   socklen_t AddressLength = sizeof (Client.SockAddr);
+            
+            if ((Client.Socket = accept (internal->Socket, (sockaddr *) &Client.SockAddr, &AddressLength)) == -1)
+            {
+                internal->ClientStructureBacklog.Return (Client);
+                break;
+            }
+        }
+        
+        fcntl (Client.Socket, F_SETFL, fcntl (Client.Socket, F_GETFL, 0) | O_NONBLOCK);
+        
+        DisableSigPipe (Client.Socket);
 
-        /* TODO : Just accept () directly into Client.SockAddr? */
+        if (!internal->Nagle)
+            DisableNagling (Client.Socket);
 
-        memcpy (&Client.SockAddr, &Address, sizeof (Address));
         Client.Address.Set (&Client.SockAddr);
 
         if (internal->Context)
