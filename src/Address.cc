@@ -88,7 +88,7 @@ const char * Address::Internal::ToString ()
 
             #ifdef LacewingWindows
 
-                WSAAddressToString
+                WSAAddressToStringA
                     ((LPSOCKADDR) Info->ai_addr, (DWORD) Info->ai_addrlen, 0, Buffer,
                             (LPDWORD) &Length);
 
