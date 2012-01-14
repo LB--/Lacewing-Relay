@@ -1,5 +1,4 @@
-liblacewing is a library for writing cross-platform, networked applications in C,
-C++ and Javascript.
+liblacewing is a library for writing cross-platform, networked applications in C and C++
 
 http://lacewing-project.org/
 

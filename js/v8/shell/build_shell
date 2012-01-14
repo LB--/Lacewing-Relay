@@ -1,2 +1,0 @@
-cc -o shell -lv8 -llacewing shell.cc ../LacewingV8.cc
-

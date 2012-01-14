@@ -1,4 +1,0 @@
-The file "liblacewing.js" is converted to a C++ header file and compiled into the source,
-so as not to have any dependencies on external files.
-
-If you modify it, make sure you run gen before you build with LacewingV8.cc or LacewingMozJS.cc.
