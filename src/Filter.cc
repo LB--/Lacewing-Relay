@@ -93,8 +93,8 @@ void Filter::Remote (Lacewing::Address * Address)
     }
     else
     {
-        internal->RemotePort =
-            internal->Remote ? internal->Remote->Port () : 0;
+        if (internal->Remote)
+            internal->RemotePort = internal->Remote->Port ();
         
         delete internal->Remote;
         internal->Remote = 0;
@@ -121,9 +121,9 @@ void Filter::Local (Lacewing::Address * Address)
     }
     else
     {
-        internal->LocalPort =
-            internal->Local ? internal->Local->Port () : 0;
-        
+        if (internal->Local)
+            internal->LocalPort = internal->Local->Port ();
+
         delete internal->Local;
         internal->Local = 0;
     }
