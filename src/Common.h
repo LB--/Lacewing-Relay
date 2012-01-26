@@ -415,6 +415,8 @@ inline int LacewingFormat(char *& Output, const char * Format, va_list args)
                     printf ("[Lacewing] %s\n", data);
                 #endif
             #endif
+
+            free (data);
         }
 
         va_end (args);
