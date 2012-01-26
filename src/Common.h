@@ -588,6 +588,17 @@ namespace Lacewing
 
         return Result;
     }
+
+    inline void CopyString (char * Dest, const char * Source, int Size)
+    {
+        int Length = strlen (Source);
+
+        if (Length > -- Size)
+            Length = Size;
+
+        memcpy (Dest, Source, Length);
+        Dest [Length] = 0;
+    }
 }
 
 #include "Utility.h"

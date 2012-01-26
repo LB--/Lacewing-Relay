@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -192,7 +192,7 @@ void Webserver::Request::Internal::ProcessHeader (const char * Name, char * Valu
         /* The hostname gets stored separately with the port removed for
            the Request.Hostname() function (the raw header is still saved) */
 
-        strncpy(this->Hostname, Value, sizeof (this->Hostname));
+        CopyString(this->Hostname, Value, sizeof (this->Hostname));
 
         for(char * i = this->Hostname; *i; ++ i)
         {
@@ -324,7 +324,7 @@ void Webserver::Request::Internal::AddFileSend (const char * Filename, lw_i64 Fi
     File->FileOffset = FileOffset;
     File->FileSize   = FileSize;
 
-    strncpy (File->Filename, Filename, sizeof (File->Filename));
+    CopyString (File->Filename, Filename, sizeof (File->Filename));
 }
 
 void Webserver::Request::Internal::File::Send (Server::Client &Socket, int ToSend, bool &Flushed)

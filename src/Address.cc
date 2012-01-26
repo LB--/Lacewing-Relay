@@ -215,7 +215,7 @@ void Address::Internal::Init (const char * _Hostname, const char * Service, int 
         }
     }
 
-    strncpy (this->Service, Service, sizeof (this->Service)); 
+    CopyString (this->Service, Service, sizeof (this->Service)); 
 
     ResolverThread.Join (); /* block if the thread is already running */
     ResolverThread.Start (this);
