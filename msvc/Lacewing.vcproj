@@ -50,7 +50,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../;../src/"
+				AdditionalIncludeDirectories="../;../src/;../deps/http-parser"
 				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;_WINDOWS;_USRDLL;LacewingLibrary"
 				GeneratePreprocessedFile="0"
 				MinimalRebuild="true"
@@ -1003,6 +1003,22 @@
 					RelativePath="..\src\relay\RelayServer.cc"
 					>
 				</File>
+			</Filter>
+			<Filter
+				Name="deps"
+				>
+				<Filter
+					Name="http-parser"
+					>
+					<File
+						RelativePath="..\deps\http-parser\http_parser.c"
+						>
+					</File>
+					<File
+						RelativePath="..\deps\http-parser\http_parser.h"
+						>
+					</File>
+				</Filter>
 			</Filter>
 		</Filter>
 		<Filter
