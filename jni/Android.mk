@@ -23,6 +23,7 @@ LOCAL_SRC_FILES     := \
     ../src/webserver/MimeTypes.cc \
     ../src/webserver/http/HTTP.cc \
     ../src/webserver/http/Multipart.cc \
+    ../deps/http-parser/http_parser.c \
     ../src/unix/Event.cc \
     ../src/unix/EventPump.cc \
     ../src/unix/Server.cc \
@@ -45,7 +46,7 @@ LOCAL_SRC_FILES     := \
     ../src/c/thread_flat.cc \
 	../src/c/flashpolicy_flat.cc
 
-LOCAL_CFLAGS := -DLacewingLibrary -fno-exceptions -fno-rtti -fvisibility=hidden
+LOCAL_CFLAGS := -DLacewingLibrary -fno-exceptions -fno-rtti -fvisibility=hidden -DHTTP_PARSER_STRICT=0 -DHTTP_PARSER_DEBUG=0 
 
 include $(BUILD_SHARED_LIBRARY)
 
