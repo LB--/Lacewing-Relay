@@ -56,7 +56,7 @@ build/MimeTypes.o: src/webserver/MimeTypes.cc $(COMMONDEPS)
 build/HTTP.o: src/webserver/http/HTTP.cc $(COMMONDEPS)
 	c++ $(CXXFLAGS) -c -o $@ src/webserver/http/HTTP.cc
 build/http-parser.o: deps/http-parser/http_parser.c deps/http-parser/http_parser.h
-	c++ $(CXXFLAGS) -I deps/http-parser -c -o $@ deps/http-parser/http_parser.c
+	c++ $(CXXFLAGS) -c -o $@ deps/http-parser/http_parser.c
 build/Multipart.o: src/webserver/http/Multipart.cc $(COMMONDEPS)
 	c++ $(CXXFLAGS) -c -o $@ src/webserver/http/Multipart.cc
 build/FlashPolicy.o: src/FlashPolicy.cc $(COMMONDEPS)
