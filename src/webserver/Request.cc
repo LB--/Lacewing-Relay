@@ -215,96 +215,129 @@ void Webserver::Request::Internal::In_Header
     InHeaders.Set (Name, Value);
 }
 
-bool Webserver::Request::Internal::In_URL (char * URL)
+static inline bool GetField (char * URL, http_parser_url &parsed, int field, char * &buf, int &length)
 {
-    /* Must be able to process both absolute and relative URLs (which may come from either SPDY or HTTP) */
-
-    char * ProtocolEnd = strstr (URL, "://");
-
-    if (ProtocolEnd)
-    {
-        /* Absolute URL */
-
-        URL += 3;
-
-        char * HostnameEnd = strchr (URL, '/');
-
-        if (!HostnameEnd)
-            return false;
-
-        *HostnameEnd ++ = 0;
-
-        In_Header ("Host", URL);
-
-        if (!*HostnameEnd)
-            return false;
-        
-        URL = HostnameEnd;
-    }
-    else
-    {
-        /* Relative URL */
-           
-        if (*URL == '/')
-            ++ URL;
-    }
-
-    /* Strip the GET data from the URL and add it to GetItems, decoded */
-
-    char * GetData = strchr(URL, '?');
-
-    if(GetData)
-    {
-        *(GetData ++) = 0;
-
-        for(;;)
-        {
-            char * Name = GetData;
-            char * Value = strchr(Name, '=');
-
-            if(!Value)
-                break;
-
-            *(Value ++) = 0;
-
-            char * Next = strchr(Value, '&');
-            
-            if(Next)
-                *(Next ++) = 0;
-
-            char * NameDecoded = (char *) malloc(strlen(Name) + 1);
-            char * ValueDecoded = (char *) malloc(strlen(Value) + 1);
-
-            if(!URLDecode(Name, NameDecoded, strlen(Name) + 1) || !URLDecode(Value, ValueDecoded, strlen(Value) + 1))
-            {
-                free(NameDecoded);
-                free(ValueDecoded);
-            }
-            else
-                GetItems.Set (NameDecoded, ValueDecoded, false);
-
-            if(!Next)
-                break;
-
-            GetData = Next;
-        }
-    }
-
-    /* Make an URL decoded copy of the URL with the GET data stripped */
-    
-    if(!URLDecode(URL, this->URL, sizeof(this->URL)))
+    if (! (parsed.field_set & (1 << field)))
         return false;
 
-    /* Check for any directory traversal in the URL, and replace any backward
-       slashes with forward slashes. */
+    buf = URL + parsed.field_data [field].off;
+    length = parsed.field_data [field].len;
 
-    for(char * i = this->URL; *i; ++ i)
+    return true;
+}
+
+bool Webserver::Request::Internal::In_URL (char * URL)
+{
+    /* Check for any directory traversal in the URL, and replace
+     * any backward slashes with forward slashes.
+     */
+
+    for (char * i = URL; *i; ++ i)
     {
         if(i [0] == '.' && i [1] == '.')
             return false;
 
         if(*i == '\\')
             *i = '/';
+    }
+
+    /* Now hand it over to the URL parser */
+
+    http_parser_url parsed;
+
+    if (http_parser_parse_url (URL, strlen (URL), 0, &parsed))
+        return false;
+
+
+    /* Path */
+
+    *this->URL = 0;
+
+    {   char * path;
+        int path_length;
+
+        if (GetField (URL, parsed, UF_PATH, path, path_length))
+        {
+            if (*path == '/')
+                ++ path;
+
+            char * end = path + path_length, b = *end;
+
+            if (!URLDecode (path, this->URL, sizeof (this->URL)))
+            {
+                *end = b;
+                return false;
+            }
+            
+            *end = b;
+        }
+    }
+
+
+    /* Host */
+
+    {   char * host;
+        int host_length;
+
+        if (GetField (URL, parsed, UF_HOST, host, host_length))
+        {
+            if (parsed.field_set & (1 << UF_PORT))
+            {
+                /* TODO : Is this robust? */
+
+                host_length += 1 + parsed.field_data [UF_PORT].off;
+            }
+
+            char * end = host + host_length, b = *end;
+
+            *end = 0;
+            In_Header ("Host", host);
+            *end = b;
+        }
+    }
+
+
+    /* GET data */
+
+    {   char * get_data;
+        int get_data_length;
+
+        if (GetField (URL, parsed, UF_QUERY, get_data, get_data_length))
+        {
+            char * end = get_data + get_data_length, b = *end;
+
+            *end = 0;
+
+            for (;;)
+            {
+                char * name = get_data, * value = strchr (get_data, '=');
+
+                if (!value ++)
+                    break;
+
+                char * next = strchr (value, '&');
+
+                int name_length = (value - name) - 1,
+                    value_length = next ? next - value : strlen (value);
+
+                char * name_decoded = (char *) malloc (name_length + 1),
+                     * value_decoded = (char *) malloc (value_length + 1);
+
+                if(!URLDecode (name, name_decoded, name_length + 1)
+                        || !URLDecode (value, value_decoded, value_length + 1))
+                {
+                    free (name_decoded);
+                    free (value_decoded);
+                }
+                else
+                    GetItems.Set (name_decoded, value_decoded, false);
+
+                if(!(get_data = next))
+                    break;
+            }
+
+            *end = b;
+        }
     }
 
     return true;
