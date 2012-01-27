@@ -22,9 +22,9 @@ AC_ARG_ENABLE([i486],
 CFLAGS="$CFLAGS -DLacewingLibrary -DHAVE_CONFIG_H -fvisibility=hidden"
 
 if test "x$enable_debug" = xyes; then
-    CFLAGS="$CFLAGS -DPOSIX_SOURCE -DDEBUG -DLacewingDebug -g -O0"
+    CFLAGS="$CFLAGS -DPOSIX_SOURCE -DDEBUG -DLacewingDebug -DHTTP_PARSER_STRICT=1 -DHTTP_PARSER_DEBUG=1 -g -O0"
 else
-    CFLAGS="$CFLAGS -DPOSIX_SOURCE -O2"
+    CFLAGS="$CFLAGS -DPOSIX_SOURCE -DHTTP_PARSER_STRICT=0 -DHTTP_PARSER_DEBUG=0 -O2"
 fi
 
 if test "x$enable_i486" = xyes; then
@@ -35,7 +35,7 @@ SO_EXT="so"
 
 OBJECTS="build/Global.o build/Sync.o build/SpinSync.o build/Filter.o build/Address.o \
 				build/Error.o build/RelayServer.o build/RelayClient.o build/Webserver.o build/HTTP.o \
-				build/Multipart.o build/MimeTypes.o build/Request.o build/Sessions.o \
+				build/Multipart.o build/http-parser.o build/MimeTypes.o build/Request.o build/Sessions.o \
 			    build/addr_flat.o build/eventpump_flat.o build/global_flat.o build/server_flat.o build/timer_flat.o \
 				build/webserver_flat.o build/filter_flat.o build/udp_flat.o build/client_flat.o \
 				build/error_flat.o build/sync_flat.o build/ssync_flat.o build/thread_flat.o build/FlashPolicy.o \

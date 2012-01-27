@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,25 +30,35 @@
 class HTTPClient : public WebserverClient
 {
     Webserver::Request::Internal Request; /* HTTP is one request at a time, so this is just reused */
-
-    MessageBuilder Buffer;
-    lw_i64 BodyRemaining;
-    int State;
     
     time_t LastActivityTime;
 
-    void ProcessLine      (char * Line);
-    void ProcessFirstLine (char * Line);
-    void ProcessHeader    (char * Line);
-
-    void Reset ();
+    http_parser Parser;
+    bool ParsingHeaders, SignalEOF;
     
+    MessageBuilder Buffer;
+    
+    char * CurHeaderName;
+    size_t CurHeaderNameLength;
+
 public:
 
     HTTPClient (Webserver::Internal &, Lacewing::Server::Client &, bool Secure);
     ~ HTTPClient ();
 
     void Process (char * Buffer, int Size);
+
+    /* Called by the HTTP parser */
+
+    int onMessageBegin ();
+    int onHeadersComplete ();
+    int onMessageComplete ();
+
+    int onURL (char *, size_t);
+    int onBody (char *, size_t);
+    int onHeaderField (char *, size_t);
+    int onHeaderValue (char *, size_t);
+
     void Respond (Webserver::Request::Internal &);
     void Dead ();
 

@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -67,7 +67,7 @@ void Webserver::Internal::SocketReceive (Server &Server, Server::Client &Client,
     Webserver::Internal &Webserver = *(Webserver::Internal *) Server.Tag;
 
     if (!Client.Tag)
-        Client.Tag = new HTTPClient (Webserver, Client, &Server == Webserver.SecureSocket);
+        Client.Tag = (WebserverClient *) new HTTPClient (Webserver, Client, &Server == Webserver.SecureSocket);
 
     ((WebserverClient *) Client.Tag)->Process(Buffer, Size);
 }

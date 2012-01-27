@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,6 +28,8 @@
  */
 
 #include "../Common.h"
+#include "../../deps/http-parser/http_parser.h"
+
 #include "Map.h"
 
 class HTTPClient;
@@ -203,16 +205,17 @@ struct Webserver::Request::Internal
     
 
     /* Input */
-
-    char Method     [8];
-    char Version    [16];
+    
+    char Method     [16];
     char URL        [4096];
     char Hostname   [128];
-    
+
     Map InHeaders, InCookies, GetItems, PostItems;
     
-    void ProcessHeader (const char * Name, char * Value);
-    bool ProcessURL (char * URL);
+    void In_Method (const char * Method);
+
+    void In_Header (const char * Name, char * Value);
+    bool In_URL (char * URL);
 
 
     /* Output */
@@ -261,7 +264,7 @@ public:
     int Timeout;
 
     WebserverClient (Webserver::Internal &, Lacewing::Server::Client &, bool Secure);
-    
+
     virtual void Tick () = 0;
 
     virtual void Process (char * Buffer, int Size) = 0;

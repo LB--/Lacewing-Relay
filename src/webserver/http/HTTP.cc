@@ -29,11 +29,43 @@
 
 #include "../Common.h"
 
+#define Callback(F) \
+    static int F (http_parser * parser) \
+    {   return ((HTTPClient *) parser->data)->F (); \
+    }
+
+/* This discards the const qualifier, because it'll be part of one
+ * of our (non-const) buffers anyway. */
+
+#define DataCallback(F) \
+    static int F (http_parser * parser, const char * buf, size_t len) \
+    {   return ((HTTPClient *) parser->data)->F ((char *) buf, len); \
+    }
+
+ Callback (onMessageBegin)
+ Callback (onHeadersComplete)
+ Callback (onMessageComplete)
+
+ DataCallback (onURL)
+ DataCallback (onBody)
+ DataCallback (onHeaderField)
+ DataCallback (onHeaderValue)
+
+#undef Callback
+#undef DataCallback
+
+static http_parser_settings ParserSettings = { 0 };
+
 HTTPClient::HTTPClient (Webserver::Internal &_Server, Server::Client &_Socket, bool Secure)
     : Request (_Server, *this), WebserverClient (_Server, _Socket, Secure)
 {
     Multipart = 0;
-    Reset ();
+    Request.Clean ();
+
+    http_parser_init (&Parser, HTTP_REQUEST);
+    Parser.data = this;
+
+    ParsingHeaders = true;
 }
 
 HTTPClient::~HTTPClient ()
@@ -41,308 +73,254 @@ HTTPClient::~HTTPClient ()
     delete Multipart;
 }
 
-/* Called upon initialisation, and at the end of each request to prepare for a new one */
-
-void HTTPClient::Reset()
+void HTTPClient::Process (char * buffer, int size)
 {
-    Request.Clean ();
-    
-    State = 0;
-    BodyRemaining = 0;
-}
-
-void HTTPClient::Process (char * Buffer, int Size)
-{
-    if(!Request.Responded)
-    {
-        /* The application hasn't yet called Finish() for the last request, so this data
-           can't be processed.  Buffer it to process when Finish() is called. */
-
-        this->Buffer.Add(Buffer, Size);
+    if (!size)
         return;
+
+    if (!ParserSettings.on_message_begin)
+    {
+        ParserSettings.on_message_begin      = ::onMessageBegin;
+        ParserSettings.on_url                = ::onURL;
+        ParserSettings.on_header_field       = ::onHeaderField;
+        ParserSettings.on_header_value       = ::onHeaderValue;
+        ParserSettings.on_headers_complete   = ::onHeadersComplete;
+        ParserSettings.on_body               = ::onBody;
+        ParserSettings.on_message_complete   = ::onMessageComplete;
     }
 
     /* TODO: A naughty client could keep the connection open by sending 1 byte every 5 seconds */
 
     LastActivityTime = time (0);
 
-
-    /* State 0 : Line content
-       State 1 : Got CR, need LF
-       State 2 : Message body */
-
-    if(State < 2)
+    if (!Request.Responded)
     {
-        for(char * i = Buffer; *i; )
-        {
-            if(State == 0 && *i == '\r')
-            {
-                State = 1;
-            }
-            else if(*i == '\n')
-            {
-                i [State == 1 ? -1 : 0] = 0;
+        /* The application hasn't yet called Finish() for the last request, so this data
+           can't be processed.  Buffer it to process when Finish() is called. */
 
-                if(this->Buffer.Size)
-                {
-                    this->Buffer.Add (Buffer, -1);
-                    this->Buffer.Add <char> (0);
-
-                    ProcessLine(this->Buffer.Buffer);
-
-                    this->Buffer.Reset();
-                }
-                else
-                {
-                    ProcessLine(Buffer);
-                }
-
-                Size -= (++ i) - Buffer;
-                Buffer = i;
-
-                if(State == -1 || State >= 2)
-                    break;
-
-                State = 0;
-                continue;
-            }
-            else if(State == 1)
-            {
-                /* The only thing valid after \r is \n */
-
-                State = -1;
-                break;
-            }
-                
-            ++ i;
-        }
-            
-        if(State == -1)
-        {
-            Socket.Disconnect();
-            return;
-        }
-
-        if(State < 2)
-        {
-            this->Buffer.Add(Buffer, Size);
-            return;
-        }
-    }
-
-    /* State >= 2 is the request body */
-
-    if(Multipart)
-    {
-        Multipart->Process(Buffer, Size);
-     
-        if(Multipart->State == MultipartProcessor::Done)
-        {
-            Multipart->CallRequestHandler ();
-            
-            delete Multipart;
-            Multipart = 0;
-
-            return;
-        }
-
-        if(Multipart->State == MultipartProcessor::Error)
-        {       
-            DebugOut("Multipart reported error - killing client");
-            Request.Public.Disconnect();
-
-            return;
-        }
-
+        this->Buffer.Add (buffer, size);
         return;
     }
 
-    /* No multipart = standard form post data */
-
-    int ToRead = (int) (BodyRemaining < Size ? BodyRemaining : Size);
-    this->Buffer.Add(Buffer, ToRead);
-
-    BodyRemaining -= ToRead;
-    Size -= ToRead;
-    
-    if(BodyRemaining == 0)
+    if (ParsingHeaders)
     {
-        this->Buffer.Add<char>(0);
+        for (int i = 0; i < size; )
+        {
+            {   char b = buffer [i];
+
+                if (b == '\r')
+                {
+                    if (buffer [i + 1] == '\n')
+                        ++ i;
+                }
+                else if (b != '\n')
+                {
+                    ++ i;
+                    continue;
+                }
+            }
+
+            int toParse = i + 1, parsed;
+
+            if (Buffer.Size)
+            {
+                Buffer.Add (buffer, toParse);
+
+                parsed = http_parser_execute
+                    (&Parser, &ParserSettings, Buffer.Buffer, Buffer.Size);
+
+                Buffer.Reset ();
+            }
+            else
+            {
+                parsed = http_parser_execute
+                    (&Parser, &ParserSettings, buffer, toParse);
+            }
+
+            size -= toParse;
+            buffer += toParse;
+
+            if (parsed != toParse || Parser.upgrade)
+            {
+                Socket.Disconnect ();
+                return;
+            }
+
+            i = 0;
+        }
+
+        if (ParsingHeaders)
+        {
+            this->Buffer.Add (buffer, size);
+            return;
+        }
+    }
+
+    int parsed = http_parser_execute (&Parser, &ParserSettings, buffer, size);
+
+    if (SignalEOF)
+    {
+        http_parser_execute (&Parser, &ParserSettings, 0, 0);
+        SignalEOF = false;
+    }
+
+    if (parsed != size || Parser.upgrade)
+    {
+        Socket.Disconnect ();
+        return;
+    }
+}
+
+int HTTPClient::onMessageBegin ()
+{
+    Request.Clean ();
+    ParsingHeaders = true;
+
+    return 0;
+}
+
+int HTTPClient::onURL (char * URL, size_t length)
+{
+    /* Yes, these callbacks write a null terminator to the end and then restore
+     * the old byte.  It's perfectly safe to do so, because Lacewing::Server
+     * terminates every chunk of data anyway (so there's always a trailing byte).
+     */
+
+    char * end = URL + length, b = *end;
+
+    *end = 0;
+    bool success = Request.In_URL (URL);
+    *end = b;
+
+    return success ? 0 : -1;
+}
+
+int HTTPClient::onHeaderField (char * buffer, size_t length)
+{
+    /* Since we already ensure the parser receives entire lines while processing
+     * headers, it's safe to just save the pointer and size from onHeaderField
+     * and use them in onHeaderValue.
+     */
+
+    CurHeaderName = buffer;
+    CurHeaderNameLength = length;
+
+    return 0;
+}
+
+int HTTPClient::onHeaderValue (char * value, size_t length)
+{
+    /* The parser never reads back, so might as well destroy the byte following
+     * the header name (it can't be anything to do with the value, because
+     * there has to be a `:` in the middle)
+     */
+
+    CurHeaderName [CurHeaderNameLength] = 0;
+
+    char * end = value + length, b = *end;
+
+    *end = 0;
+    Request.In_Header (CurHeaderName, value);
+    *end = b;
+
+    return 0;
+}
+
+int HTTPClient::onHeadersComplete ()
+{
+    ParsingHeaders = false;
+
+    Request.In_Method
+        (http_method_str ((http_method) Parser.method));
+
+    {   const char * ContentType = Request.InHeaders.Get ("Content-Type");
+
+        if (BeginsWith (ContentType, "multipart"))
+            Multipart = new MultipartProcessor (*this, ContentType);
+    }
+
+    return 0;
+}
+
+int HTTPClient::onBody (char * buffer, size_t size)
+{
+    if (!Multipart)
+    {
+        /* Normal request body - just buffer it */
+
+        this->Buffer.Add (buffer, size);
+        return 0;
+    }
+
+    /* Multipart request body - hand it over to Multipart */
+
+    Multipart->Process (buffer, size);
+ 
+    if (Multipart->State == MultipartProcessor::Error)
+    {
+        delete Multipart;
+        Multipart = 0;
+
+        return -1;
+    }
+
+    if (Multipart->State == MultipartProcessor::Done)
+    {
+        Multipart->CallRequestHandler ();
+ 
+        delete Multipart;
+        Multipart = 0;
+
+        SignalEOF = true;
+    }
+
+    return 0;
+}
+
+int HTTPClient::onMessageComplete ()
+{
+    if (this->Buffer.Size)
+    {
+        this->Buffer.Add <char> (0);
+
         char * PostData = this->Buffer.Buffer;
 
-        /* Parse the POST data into name/value pairs.  Using BeginsWith to check the Content-Type to
-           exclude the charset if specified (eg. application/x-www-form-urlencoded; charset=UTF-8) */
-
-        if(*PostData)
+        for (;;)
         {
-            for(;;)
+            char * Name = PostData, * Value = strchr (PostData, '=');
+
+            if (!Value)
+                break;
+
+            *(Value ++) = 0;
+
+            char * Next = strchr (Value, '&');
+            
+            if (Next)
+                *(Next ++) = 0;
+
+            char * NameDecoded = (char *) malloc (strlen (Name) + 1),
+                 * ValueDecoded = (char *) malloc (strlen (Value) + 1);
+
+            if(!URLDecode (Name, NameDecoded, strlen (Name) + 1)
+                    || !URLDecode (Value, ValueDecoded, strlen (Value) + 1))
             {
-                char * Name = PostData;
-                char * Value = strchr(Name, '=');
-
-                if(!Value)
-                    break;
-
-                *(Value ++) = 0;
-
-                char * Next = strchr(Value, '&');
-                
-                if(Next)
-                    *(Next ++) = 0;
-
-                char * NameDecoded = (char *) malloc(strlen(Name) + 1);
-                char * ValueDecoded = (char *) malloc(strlen(Value) + 1);
-
-                if(!URLDecode(Name, NameDecoded, strlen(Name) + 1) || !URLDecode(Value, ValueDecoded, strlen(Value) + 1))
-                {
-                    free(NameDecoded);
-                    free(ValueDecoded);
-                }
-                else
-                    Request.PostItems.Set (NameDecoded, ValueDecoded, false);
-
-                if(!Next)
-                    break;
-
-                PostData = Next;
+                free (NameDecoded);
+                free (ValueDecoded);
             }
+            else
+                Request.PostItems.Set (NameDecoded, ValueDecoded, false);
+
+            if (! (PostData = Next))
+                break;
         }
 
         this->Buffer.Reset();
-        
-        Request.RunStandardHandler();
-
-        /* Now we wait for Finish() to call Respond().  It may have done so already, or the application
-           may call Finish() later. */
     }
 
-    /* If Size is > 0 here, the client must be pipelining requests. */
+    Request.RunStandardHandler ();
 
-    if(Size > 0)
-        Process(Buffer, Size);
-}
-
-void HTTPClient::ProcessLine(char * Line)
-{
-    do
-    {   if(!*Request.Method)
-        {
-            ProcessFirstLine(Line);
-            break;
-        }
-
-        if(*Line)
-        {
-            ProcessHeader(Line);
-            break;
-        }
-
-        /* Blank line marks end of headers */
-
-        if(!strcmp (Request.Method, "GET") || !strcmp (Request.Method, "HEAD") ||
-                (BodyRemaining = _atoi64(Request.InHeaders.Get ("Content-Length"))) <= 0)
-        {
-            /* No body - this is a complete request done */
-        
-            Request.RunStandardHandler();
-            break;
-        }
-
-
-        /* The request has a body.  BodyRemaining has been set, and definitely isn't 0. */
-
-        const char * ContentType = Request.InHeaders.Get ("Content-Type");
-
-        if(BeginsWith(ContentType, "application/x-www-form-urlencoded"))
-        {
-            State = 2;
-            break;
-        }
-
-        if(BeginsWith(ContentType, "multipart"))
-        {
-            Multipart = new MultipartProcessor (*this, ContentType);
-            
-            State = 3;
-            break;
-        }
-
-        /* Unknown content type */
-
-        State = -1;
-    }
-    while(0);
-
-    if(State == -1)
-    {
-        /* Parsing error */
-        Request.Public.Disconnect();
-    }
-}
-
-void HTTPClient::ProcessFirstLine(char * Line)
-{
-    /* Method (eg GET, POST, HEAD) */
-
-    {   char * Method = Line;
-
-        if(!(Line = strchr(Line, ' ')))
-        {
-            State = -1;
-            return;
-        }
-
-        *(Line ++) = 0;
-
-        CopyString(Request.Method, Method, sizeof(Request.Method));
-    }
-
-    /* URL */
-
-    {   char * URL = Line;
-
-        if(!(Line = strchr(Line, ' ')))
-        {
-            State = -1;
-            return;
-        }
-
-        *(Line ++) = 0;
-
-        if (!Request.ProcessURL (URL))
-        {
-            State = -1;
-            return;
-        }
-    }
-
-    /* HTTP version */
-
-    if(strcasecmp(Line, "HTTP/1.1") && strcasecmp(Line, "HTTP/1.0"))
-    {
-        State = -1;
-        return;
-    }
-
-    strcpy (Request.Version, Line);
-}
-
-void HTTPClient::ProcessHeader(char * Line)
-{
-    char * Name = Line;
-
-    if(!(Line = strchr(Line, ':')))
-    {
-        State = -1;
-        return;
-    }
-
-    *(Line ++) = 0;
-
-    while(*Line == ' ')
-        ++ Line;
-
-    Request.ProcessHeader (Name, Line);
+    return 0;
 }
 
 void HTTPClient::Respond (Webserver::Request::Internal &) /* request parameter ignored - HTTP only ever has one request object per client */
@@ -351,7 +329,7 @@ void HTTPClient::Respond (Webserver::Request::Internal &) /* request parameter i
     
     Socket.StartBuffering ();
 
-    Socket << Request.Version << " " << Request.Status;
+    Socket << "HTTP/" << Parser.http_major << "." << Parser.http_minor << " " << Request.Status;
     
     for(Map::Item * Current = Request.OutHeaders.First; Current; Current = Current->Next)
         Socket << "\r\n" << Current->Key << ": " << Current->Value;
@@ -410,12 +388,8 @@ void HTTPClient::Respond (Webserver::Request::Internal &) /* request parameter i
     if (!Flushed)
         Socket.Flush ();
 
-    /* Close the connection if this is HTTP/1.0 without a Connection: Keep-Alive header */
-
-    if((!strcasecmp(Request.Version, "HTTP/1.0")) && strcasecmp(Request.InHeaders.Get("Connection"), "Keep-Alive"))
-        Request.Public.Disconnect();
-    
-    Reset ();
+    if (!http_should_keep_alive (&Parser))
+        Socket.Disconnect ();
 }
 
 void HTTPClient::Dead ()

@@ -56,7 +56,6 @@ void Webserver::Request::Internal::Clean ()
     PostItems   .Clear();
 
     *Method   = 0;
-    *Version  = 0;
     *URL      = 0;
     *Hostname = 0;
     
@@ -149,9 +148,16 @@ void Webserver::Request::Internal::RunStandardHandler ()
     AfterHandler ();
 }
 
-void Webserver::Request::Internal::ProcessHeader (const char * Name, char * Value)
+void Webserver::Request::Internal::In_Method
+    (const char * method)
 {
-    if(!strcasecmp(Name, "Cookie"))
+    CopyString (Method, method, sizeof (Method));
+}
+
+void Webserver::Request::Internal::In_Header
+        (const char * Name, char * Value)
+{
+    if (!strcasecmp(Name, "Cookie"))
     {
         for(;;)
         {
@@ -184,6 +190,8 @@ void Webserver::Request::Internal::ProcessHeader (const char * Name, char * Valu
                 break;
         }
 
+        /* TODO : Keep the raw header too? */
+
         return;
     }
 
@@ -207,7 +215,7 @@ void Webserver::Request::Internal::ProcessHeader (const char * Name, char * Valu
     InHeaders.Set (Name, Value);
 }
 
-bool Webserver::Request::Internal::ProcessURL (char * URL)
+bool Webserver::Request::Internal::In_URL (char * URL)
 {
     /* Must be able to process both absolute and relative URLs (which may come from either SPDY or HTTP) */
 
@@ -226,7 +234,7 @@ bool Webserver::Request::Internal::ProcessURL (char * URL)
 
         *HostnameEnd ++ = 0;
 
-        ProcessHeader ("Host", URL);
+        In_Header ("Host", URL);
 
         if (!*HostnameEnd)
             return false;
