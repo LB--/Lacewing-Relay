@@ -82,7 +82,7 @@ void Thread::Start (void * Parameter)
     internal->Parameter = Parameter;
     
     internal->Started = pthread_create
-        (&internal->Thread, 0, (void * (*) (void *)) ThreadWrapper, internal);
+        (&internal->Thread, 0, (void * (*) (void *)) ThreadWrapper, internal) == 0;
 }
 
 bool Thread::Started ()
