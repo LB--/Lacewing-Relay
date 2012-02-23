@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -73,11 +73,6 @@ public:
 
         memcpy(this->Buffer + this->Size, Buffer, Size);
         this->Size += Size;
-    }
-
-    inline void Add(const String &Text)
-    {
-        Add(Text.Buffer, Text.Length);
     }
 
     template<class T> inline void Add (T Value)

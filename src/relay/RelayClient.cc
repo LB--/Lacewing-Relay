@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -66,6 +66,12 @@ struct RelayClient::Internal
 
     Internal (RelayClient &_Client, Pump &_EventPump);
 
+    ~ Internal ()
+    {
+        free (Name);
+        free (WelcomeMessage);
+    }
+
     FrameReader Reader;
 
     static void MessageHandler (void * Tag, unsigned char Type, char * Message, int Size);
@@ -91,10 +97,10 @@ struct RelayClient::Internal
     void Clear();
 
     List <RelayClient::Channel::Internal *> Channels;
-    String Name;
+    char * Name;
 
     int ID;
-    String WelcomeMessage;
+    char * WelcomeMessage;
 
     bool Connected;
 };
@@ -114,10 +120,17 @@ struct RelayClient::Channel::Peer::Internal
     {
         Public.internal = this;
         Public.Tag = 0;
+
+        Name = strdup ("");
+    }
+
+    ~ Internal ()
+    {
+        free (Name);
     }
 
     int ID;
-    String Name;
+    char * Name;
    
     bool IsChannelMaster;
 };
@@ -133,14 +146,17 @@ struct RelayClient::Channel::Internal
     {
         Public.internal = this;
         Public.Tag = 0;
+
+        Name = strdup ("");
     }
 
     ~ Internal ()
     {
+        free (Name);
     }
 
     int ID;
-    String Name;
+    char * Name;
     bool IsChannelMaster;
 
     List <RelayClient::Channel::Peer::Internal *> Peers;
@@ -170,7 +186,9 @@ struct RelayClient::Channel::Internal
 
         Peer->ID               = PeerID;
         Peer->IsChannelMaster  = (Flags & 1) != 0;
-        Peer->Name             = Name;
+
+        free (Peer->Name);
+        Peer->Name = strdup (Name);
 
         Peer->Element = Peers.Push (Peer);
 
@@ -187,8 +205,10 @@ void RelayClient::Internal::Clear()
     
     Channels.Clear();
 
-    Name = "";
-    ID   = -1;
+    free (Name);
+    Name = strdup ("");
+
+    ID = -1;
 
     Connected = false;
 }
@@ -281,6 +301,9 @@ void HandlerClientUDPError (UDP &UDP, Error &Error)
 RelayClient::Internal::Internal (RelayClient &_Client, Pump &_EventPump)
     : Client (_Client), Message (true), Socket (_EventPump), Timer (_EventPump), UDP (_EventPump)
 {
+    Name = strdup ("");
+    WelcomeMessage = strdup ("");
+
     memset (&Handlers, 0, sizeof (Handlers));
 
     Reader.MessageHandler = MessageHandler;
@@ -591,7 +614,9 @@ void RelayClient::Internal::MessageHandler (unsigned char Type, char * Message, 
                     if(Succeeded)
                     {
                         ID = Reader.Get <unsigned short> ();
-                        WelcomeMessage = Reader.GetRemaining();
+
+                        free (WelcomeMessage);
+                        WelcomeMessage = strdup (Reader.GetRemaining());
 
                         if (Reader.Failed)
                             break;
@@ -620,20 +645,23 @@ void RelayClient::Internal::MessageHandler (unsigned char Type, char * Message, 
 
                     if(Succeeded)
                     {
-                        if(!this->Name.Length)
+                        if(!*this->Name)
                         {
-                            this->Name = Name;
+                            free (this->Name);
+                            this->Name = strdup (Name);
 
                             if (Handlers.NameSet)
                                 Handlers.NameSet (Client);
                         }
                         else
                         {
-                            String OldName = this->Name;
-                            this->Name = Name;
+                            char * OldName = this->Name;
+                            this->Name = strdup (Name);
 
                             if (Handlers.NameChanged)
                                 Handlers.NameChanged (Client, OldName);
+
+                            free (OldName);
                         }
                     }
                     else
@@ -915,11 +943,13 @@ void RelayClient::Internal::MessageHandler (unsigned char Type, char * Message, 
             {
                 /* Peer is changing their name */
 
-                String OldName (Peer->Name);
-                Peer->Name = Name;
+                char * OldName = Peer->Name;
+                Peer->Name = strdup (Name);
 
                 if (Handlers.PeerChangeName)
                     Handlers.PeerChangeName (Client, Channel->Public, Peer->Public, OldName);
+
+                free (OldName);
             }
 
             Peer->IsChannelMaster = (Flags & 1) != 0;

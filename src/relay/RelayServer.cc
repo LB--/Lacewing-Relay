@@ -62,6 +62,11 @@ struct RelayServer::Internal
 
     Internal (RelayServer &_Server, Pump &Pump);
 
+    ~ Internal ()
+    {
+        free (WelcomeMessage);
+    }
+
     IDPool ClientIDs;
     IDPool ChannelIDs;
     
@@ -70,7 +75,7 @@ struct RelayServer::Internal
 
     FrameBuilder Builder;
 
-    String WelcomeMessage;
+    char * WelcomeMessage;
 
     List <RelayServer::Channel::Internal *> Channels;
 
@@ -99,11 +104,15 @@ struct RelayServer::Client::Internal
         Handshook      = false;
         Ponged         = true;
         GotFirstByte   = false;
+
+        Name = strdup ("");
     }
 
     ~ Internal ()
     {
         Server.ClientIDs.Return (ID);  
+
+        free (Name);
     }
 
     FrameReader Reader;
@@ -112,7 +121,7 @@ struct RelayServer::Client::Internal
 
     List <RelayServer::Channel::Internal *> Channels;
 
-    String Name;
+    char * Name;
     bool NameAltered;
 
     bool CheckName (const char * Name);
@@ -142,16 +151,20 @@ struct RelayServer::Channel::Internal
         Public.Tag            = 0;
 
         ID = Server.ChannelIDs.Borrow ();
+
+        Name = strdup ("");
     }
 
     ~ Internal ()
     {
         Server.ChannelIDs.Return (ID);
+
+        free (Name);
     }
 
     List <RelayServer::Client::Internal *> Clients;
 
-    String Name;
+    char * Name;
 
     unsigned short ID;
 
@@ -192,7 +205,7 @@ static void TimerTick (Lacewing::Timer &Timer)
         internal->Builder.Send (Client.Socket, false);
     }
 
-    internal->Builder.FrameReset ();
+    internal->Builder.Reset ();
 
     for (List <RelayServer::Client::Internal *>::Element * E = ToDisconnect.First; E; E = E->Next)
         (** E)->Socket.Disconnect ();
@@ -324,7 +337,7 @@ RelayServer::Internal::Internal (RelayServer &_Server, Pump &Pump)
 {
     memset (&Handlers, 0, sizeof (Handlers));
 
-    WelcomeMessage = Version ();
+    WelcomeMessage = strdup (Lacewing::Version ());
 
     Timer.Tag = Socket.Tag = UDP.Tag = this;
 
@@ -425,7 +438,7 @@ void RelayServer::Channel::Internal::Close ()
         }
     }
 
-    Builder.FrameReset();
+    Builder.Reset();
 
     
     /* Remove this channel from the channel list and return it to the backlog. */
@@ -480,7 +493,7 @@ void RelayServer::Channel::Internal::RemoveClient (RelayServer::Client::Internal
         Builder.Send((** E)->Socket, false);
     }
 
-    Builder.FrameReset();
+    Builder.Reset();
 }
 
 bool RelayServer::Client::Internal::CheckName (const char * Name)
@@ -615,7 +628,7 @@ void RelayServer::Client::Internal::MessageHandler (unsigned char Type, char * M
                     if (!CheckName (Name))
                         break;
 
-                    String NameCopy = this->Name;
+                    char * OldName = strdup (this->Name);
 
                     /* The .Name() setter will also set NameAltered to true.  This means that if the
                        handler sets the name explicitly, the default behaviour of setting the name to
@@ -636,12 +649,14 @@ void RelayServer::Client::Internal::MessageHandler (unsigned char Type, char * M
 
                         Builder.Send(Socket);
 
+                        free (OldName);
                         break;
                     }
 
                     if (!NameAltered)
                     {
-                        this->Name = Name;
+                        free (this->Name);
+                        this->Name = strdup (Name);
                     }
                     else
                     {
@@ -649,16 +664,20 @@ void RelayServer::Client::Internal::MessageHandler (unsigned char Type, char * M
 
                         if (!CheckName (this->Name))
                         {
-                            this->Name = NameCopy;
+                            free (this->Name);
+                            this->Name = OldName;
+
                             break;
                         }
                     }
+
+                    free (OldName);
 
                     Builder.AddHeader        (0, 0);  /* Response */
                     Builder.Add <unsigned char> (1);  /* SetName */
                     Builder.Add <unsigned char> (1);  /* Success */
                 
-                    Builder.Add <unsigned char> (this->Name.Length);
+                    Builder.Add <unsigned char> (strlen (this->Name));
                     Builder.Add (this->Name);
 
                     Builder.Send (Socket);
@@ -684,7 +703,7 @@ void RelayServer::Client::Internal::MessageHandler (unsigned char Type, char * M
                             Builder.Send((** E2)->Socket, false);
                         }
 
-                        Builder.FrameReset ();
+                        Builder.Reset ();
                     }
 
                     break;
@@ -692,7 +711,7 @@ void RelayServer::Client::Internal::MessageHandler (unsigned char Type, char * M
 
                 case 2: /* JoinChannel */
                 {            
-                    if(!this->Name.Length)
+                    if(!*this->Name)
                         Reader.Failed = true;
 
                     unsigned char Flags = Reader.Get <unsigned char> ();
@@ -753,7 +772,7 @@ void RelayServer::Client::Internal::MessageHandler (unsigned char Type, char * M
                             Builder.Add <unsigned char> (2);  /* JoinChannel */
                             Builder.Add <unsigned char> (0);  /* Failed */
 
-                            Builder.Add <unsigned char> (Channel->Name.Length);
+                            Builder.Add <unsigned char> (strlen (Channel->Name));
                             Builder.Add (Channel->Name);
 
                             Builder.Add ("Join refused by server", -1);
@@ -768,7 +787,7 @@ void RelayServer::Client::Internal::MessageHandler (unsigned char Type, char * M
                         Builder.Add <unsigned char> (1);  /* Success */
                         Builder.Add <unsigned char> (0);  /* Not the channel master */
 
-                        Builder.Add <unsigned char> (Channel->Name.Length);
+                        Builder.Add <unsigned char> (strlen (Channel->Name));
                         Builder.Add (Channel->Name);
 
                         Builder.Add <unsigned short> (Channel->ID);
@@ -780,7 +799,7 @@ void RelayServer::Client::Internal::MessageHandler (unsigned char Type, char * M
 
                             Builder.Add <unsigned short> (Client->ID);
                             Builder.Add <unsigned char>  (Channel->ChannelMaster == Client ? 1 : 0);
-                            Builder.Add <unsigned char>  (Client->Name.Length);
+                            Builder.Add <unsigned char>  (strlen (Client->Name));
                             Builder.Add (Client->Name);
                         }
 
@@ -802,7 +821,7 @@ void RelayServer::Client::Internal::MessageHandler (unsigned char Type, char * M
                             Builder.Send((** E)->Socket, false);
                         }
 
-                        Builder.FrameReset();
+                        Builder.Reset();
 
 
                         /* Add this client to the channel */
@@ -828,7 +847,7 @@ void RelayServer::Client::Internal::MessageHandler (unsigned char Type, char * M
                         Builder.Add <unsigned char> (2);  /* JoinChannel */
                         Builder.Add <unsigned char> (0);  /* Failed */
 
-                        Builder.Add <unsigned char> (Channel->Name.Length);
+                        Builder.Add <unsigned char> (strlen (Channel->Name));
                         Builder.Add (Channel->Name);
 
                         Builder.Add ("Join refused by server", -1);
@@ -849,7 +868,7 @@ void RelayServer::Client::Internal::MessageHandler (unsigned char Type, char * M
                     Builder.Add <unsigned char> (1);  /* Success */
                     Builder.Add <unsigned char> (1);  /* Channel master */
 
-                    Builder.Add <unsigned char> (Channel->Name.Length);
+                    Builder.Add <unsigned char> (strlen (Channel->Name));
                     Builder.Add (Channel->Name);
 
                     Builder.Add <unsigned short> (Channel->ID);
@@ -931,7 +950,7 @@ void RelayServer::Client::Internal::MessageHandler (unsigned char Type, char * M
                             continue;
 
                         Builder.Add <unsigned short> (Channel->Clients.Size);
-                        Builder.Add <unsigned char>  (Channel->Name.Length);
+                        Builder.Add <unsigned char>  (strlen (Channel->Name));
                         Builder.Add (Channel->Name);
                     }
 
@@ -1003,7 +1022,7 @@ void RelayServer::Client::Internal::MessageHandler (unsigned char Type, char * M
                     Builder.Send((** E)->Socket, false);
             }
 
-            Builder.FrameReset ();
+            Builder.Reset ();
 
             break;
         }
@@ -1135,7 +1154,7 @@ void RelayServer::Channel::Send (int Subchannel, const char * Message, int Size,
         Builder.Send ((** E)->Socket, false);
     }
 
-    Builder.FrameReset ();
+    Builder.Reset ();
 }
 
 void RelayServer::Channel::Blast (int Subchannel, const char * Message, int Size, int Variant)
@@ -1154,7 +1173,7 @@ void RelayServer::Channel::Blast (int Subchannel, const char * Message, int Size
         Builder.Send (internal->Server.UDP, (** E)->UDPAddress, false);
     }
 
-    Builder.FrameReset ();
+    Builder.Reset ();
 }
 
 int RelayServer::Client::ID ()
@@ -1169,7 +1188,8 @@ const char * RelayServer::Channel::Name ()
 
 void RelayServer::Channel::Name (const char * Name)
 {
-    ((RelayServer::Channel::Internal *) internal)->Name = Name;
+    free (internal->Name);
+    internal->Name = strdup (Name);
 }
 
 bool RelayServer::Channel::Hidden ()
@@ -1184,7 +1204,8 @@ bool RelayServer::Channel::AutoCloseEnabled ()
 
 void RelayServer::SetWelcomeMessage (const char * Message)
 {
-    internal->WelcomeMessage = Message;
+    free (internal->WelcomeMessage);
+    internal->WelcomeMessage = strdup (Message);
 }
 
 void RelayServer::SetChannelListing (bool Enabled)
@@ -1221,8 +1242,9 @@ const char * RelayServer::Client::Name ()
 
 void RelayServer::Client::Name (const char * Name)
 {
+    free (internal->Name);
+    internal->Name = strdup (Name);
 
-    internal->Name = Name;
     internal->NameAltered = true;
 }
 

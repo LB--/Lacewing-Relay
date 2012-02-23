@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,15 +32,20 @@
 struct Thread::Internal
 {
     void * Function, * Parameter;
-    String Name;
+    char * Name;
 
     pthread_t Thread;
     bool Started;
 
     Internal (const char * _Name, void * _Function)
-        : Function (_Function), Name (_Name)
+        : Function (_Function), Name (strdup (_Name))
     {
         Started = false;
+    }
+
+    ~ Internal ()
+    {
+        free (Name);
     }
 };
 
@@ -59,7 +64,7 @@ Thread::~Thread ()
 static int ThreadWrapper (Thread::Internal * internal)
 {
     #if HAVE_DECL_PR_SET_NAME != 0
-        prctl (PR_SET_NAME, (unsigned long) (const char *) internal->Name, 0, 0, 0);
+        prctl (PR_SET_NAME, (unsigned long) internal->Name, 0, 0, 0);
     #endif
     
     int ExitCode = ((int (*) (void *)) internal->Function) (internal->Parameter);

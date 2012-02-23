@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,6 +30,8 @@
 #ifndef LacewingUtility
 #define LacewingUtility
 
+/* TODO : The utility classes could definitely all do with improvement. */
+
 namespace Lacewing
 {
     template <class T> struct List
@@ -39,7 +41,7 @@ namespace Lacewing
             Element * Next, * Prev;
             T Value;
             
-            inline T operator * ()
+            inline T &operator * ()
             {
                 return Value;
             }
@@ -61,8 +63,11 @@ namespace Lacewing
 
         inline Element * Push (T What)
         {
-            Element * E = new Element;
+            Element * E = new (std::nothrow) Element;
             
+            if (!E)
+                return 0;
+
             E->Value = What;
             E->Next  = 0;
             E->Prev  = Last;
@@ -82,9 +87,26 @@ namespace Lacewing
             return E;
         }
 
+        inline Element * Find (T What)
+        {
+            for (Element * E = First; E; E = E->Next)
+                if (** E == What)
+                    return E;
+
+            return 0;
+        }
+
+        inline Element * PushFront (T What)
+        {
+            return Size > 0 ? InsertBefore (First, What) : Push (What);
+        }
+
         inline Element * InsertBefore (Element * Before, T What)
         {
-            Element * E = new Element;
+            Element * E = new (std::nothrow) Element;
+
+            if (!E)
+                return 0;
 
             if (Before->Prev)
                 Before->Prev->Next = E;
@@ -193,91 +215,6 @@ namespace Lacewing
         inline void Clear ()
         {
             Size = 0;
-        }
-    };
-
-    struct String
-    {
-        const static int MaxPrealloc = 4096;
-
-        int Length, AllocatedFor, MaxLength;
-        char * Buffer;
-     
-        inline String (int _MaxLength = 512) : MaxLength (_MaxLength)
-        {
-            *(Buffer = (char *) malloc (AllocatedFor = (MaxLength
-                            <= MaxPrealloc ? MaxLength : MaxPrealloc))) = 0;
-
-            Length = 0;
-        }
-
-        inline String (const char * Source)
-        {
-            AllocatedFor = Length = strlen (Source);
-            Buffer = strdup (Source);
-        }
-
-        inline String (const String &Source)
-        {
-            AllocatedFor = Length = strlen (Source.Buffer);
-            Buffer = strdup (Source.Buffer);
-
-            MaxLength = Source.MaxLength;
-        }
-
-        inline ~ String ()
-        {
-            free (Buffer);
-        }   
-
-        inline int Prepare (int Size)
-        {
-            if (MaxLength && Size > MaxLength)
-                Size = MaxLength;
-
-            if (Size < AllocatedFor)
-                return Size;
-
-            char * New = (char *) realloc (Buffer, AllocatedFor *= 3);
-
-            if (New)
-            {
-                Buffer = New;
-                return Size;
-            }
-
-            return 0;
-        }
-
-        inline String &operator = (const char * S)
-        {
-            memcpy (Buffer, S, Length = (Prepare (strlen (S) + 1) - 1));
-            Buffer [Length] = 0;
-
-            return *this;
-        }
-
-        inline String &operator = (const String &S)
-        {
-            memcpy (Buffer, S.Buffer, Length = (Prepare (strlen (S.Buffer) + 1) - 1));
-            Buffer [Length] = 0;
-
-            return *this;
-        }
-
-        inline operator const char * ()
-        {
-            return Buffer ? Buffer : "";
-        }
-
-        inline int CompareCaseSensitive (String &B)
-        {
-            return strcmp ((const char *) *this, (const char *) B);
-        }
-        
-        inline int Compare (String &B)
-        {
-            return strcasecmp ((const char *) *this, (const char *) B);
         }
     };
 }
