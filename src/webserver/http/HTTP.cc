@@ -66,6 +66,7 @@ HTTPClient::HTTPClient (Webserver::Internal &_Server, Server::Client &_Socket, b
     Parser.data = this;
 
     ParsingHeaders = true;
+    SignalEOF = false;
 }
 
 HTTPClient::~HTTPClient ()
@@ -283,37 +284,40 @@ int HTTPClient::onMessageComplete ()
     {
         this->Buffer.Add <char> (0);
 
-        char * PostData = this->Buffer.Buffer;
+        char * post_data = this->Buffer.Buffer,
+                 * end = post_data + this->Buffer.Size, b = *end;
+
+        *end = 0;
 
         for (;;)
         {
-            char * Name = PostData, * Value = strchr (PostData, '=');
+            char * name = post_data, * value = strchr (post_data, '=');
 
-            if (!Value)
+            if (!value ++)
                 break;
 
-            *(Value ++) = 0;
+            char * next = strchr (value, '&');
 
-            char * Next = strchr (Value, '&');
-            
-            if (Next)
-                *(Next ++) = 0;
+            int name_length = (value - name) - 1,
+                value_length = next ? next - value : strlen (value);
 
-            char * NameDecoded = (char *) malloc (strlen (Name) + 1),
-                 * ValueDecoded = (char *) malloc (strlen (Value) + 1);
+            char * name_decoded = (char *) malloc (name_length + 1),
+                 * value_decoded = (char *) malloc (value_length + 1);
 
-            if(!URLDecode (Name, NameDecoded, strlen (Name) + 1)
-                    || !URLDecode (Value, ValueDecoded, strlen (Value) + 1))
+            if(!URLDecode (name, name_length, name_decoded, name_length + 1)
+                    || !URLDecode (value, value_length, value_decoded, value_length + 1))
             {
-                free (NameDecoded);
-                free (ValueDecoded);
+                free (name_decoded);
+                free (value_decoded);
             }
             else
-                Request.PostItems.Set (NameDecoded, ValueDecoded, false);
+                Request.PostItems.Set (name_decoded, value_decoded, false);
 
-            if (! (PostData = Next))
+            if(!(post_data = next))
                 break;
         }
+
+        *end = b;
 
         this->Buffer.Reset();
     }

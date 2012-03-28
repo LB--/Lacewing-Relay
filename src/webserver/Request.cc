@@ -263,7 +263,7 @@ bool Webserver::Request::Internal::In_URL (char * URL)
 
             char * end = path + path_length, b = *end;
 
-            if (!URLDecode (path, this->URL, sizeof (this->URL)))
+            if (!URLDecode (path, path_length, this->URL, sizeof (this->URL)))
             {
                 *end = b;
                 return false;
@@ -323,8 +323,8 @@ bool Webserver::Request::Internal::In_URL (char * URL)
                 char * name_decoded = (char *) malloc (name_length + 1),
                      * value_decoded = (char *) malloc (value_length + 1);
 
-                if(!URLDecode (name, name_decoded, name_length + 1)
-                        || !URLDecode (value, value_decoded, value_length + 1))
+                if(!URLDecode (name, name_length, name_decoded, name_length + 1)
+                        || !URLDecode (value, value_length, value_decoded, value_length + 1))
                 {
                     free (name_decoded);
                     free (value_decoded);

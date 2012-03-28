@@ -522,18 +522,17 @@ namespace Lacewing
         return 65536 * b [0] + 256 * b [1] + b [2];
     }
 
-    inline bool URLDecode(char * URL, char * New, unsigned int OutLength)
+    inline bool URLDecode (char * in, unsigned int in_length, char * out, unsigned int out_length)
     {
-        char * out = New;
-        char * out_end = New + OutLength;
-        char * in = (char *) URL;
-        char * in_end = in + strlen(in);
+        char * out_end = out + out_length;
+        char * in_end = in + in_length;
 
         while(in < in_end)
         {
             if(*in == '%')
             {
-                ++ in;
+                if ((++ in) + 2 >= in_end)
+                    return false;
 
                 char n [3] = { in [0], in [1], 0 };
                 *out = (char) strtol (n, 0, 16);
