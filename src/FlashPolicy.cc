@@ -54,7 +54,7 @@ struct FlashPolicy::Internal
     }
 };
 
-void SocketReceive (Server &Socket, Server::Client &Client, char * Buffer, int Size)
+void SocketReceive (Server &Socket, Server::Client &Client, char * Buffer, size_t Size)
 {
     FlashPolicy::Internal * internal = (FlashPolicy::Internal *) Socket.Tag;
 
@@ -62,8 +62,8 @@ void SocketReceive (Server &Socket, Server::Client &Client, char * Buffer, int S
     {
         if(!Buffer [i])
         {
-            Client.Send(internal->Buffer, internal->Size);
-            Client.Send("\0", 1);
+            Client.Write(internal->Buffer, internal->Size);
+            Client.Write("\0", 1);
 
             return;
         }

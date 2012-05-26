@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -36,253 +36,67 @@
         #ifdef __FreeBSD__
             #define LacewingFreeBSDSendFile
         #else
-            #error "Don't know how to use sendfile() on this platform"
+            #warning "Don't know how to use sendfile(2) on this platform."
         #endif
     #endif
 #endif
 
+/* FDStream makes the assumption that this will fail for anything but a regular
+ * file (i.e. something that is always considered read ready)
+ */
 
-/* This is just a thin wrapper around the various sendfile() calls offered by different *nix-es.
-
-   Sends a file from SourceFD to DestFD.  Returns true for success, false for failure.
-   On success, the number of bytes sent will be added to Offset and subtracted from Size. */
-
-bool LacewingSendFile(int SourceFD, int DestFD, off_t &Offset, off_t &Size)
+inline lw_i64 LacewingSendFile (int from, int dest, lw_i64 size)
 {
     #ifdef LacewingLinuxSendfile
         
-        int Sent = sendfile(DestFD, SourceFD, &Offset, Size);
+        int sent = sendfile (dest, from, 0, size);
 
-        if(Sent == -1)
+        if (sent == -1)
         {
-            if(errno == EAGAIN)
-                return true;
+            if (errno == EAGAIN)
+                return 0;
 
-            return false;
+            return -1;
         }
 
-        /* Linux automatically adjusts the offset */
-
-        Size -= Sent;        
-        return true;
+        return sent;
 
     #endif
 
     #ifdef LacewingFreeBSDSendFile
 
-        off_t Sent;
+        off_t sent;
 
-        if(sendfile(SourceFD, DestFD, Offset, Size, 0, &Sent, 0) != 0)
+        if (sendfile (from, dest, lseek (from, 0, SEEK_CUR), size, 0, &sent, 0) != 0)
         {
-            /* EAGAIN might still have sent some bytes on BSD */
-
             if(errno != EAGAIN)
-                return false;
+                return -1;
         }
+
+        lseek (from, sent, SEEK_CUR);
                                     
-        Offset += Sent;
-        Size   -= Sent;
-    
-        return true;
+        return sent;
 
     #endif
 
     #ifdef LacewingMacSendFile
 
-        off_t Sent = Size;
+        off_t bytes = size;
 
-        if(sendfile(SourceFD, DestFD, Offset, &Sent, 0, 0) != 0)
+        if (sendfile (from, dest, lseek (from, 0, SEEK_CUR), &bytes, 0, 0) != 0)
         {
-            /* EAGAIN might still have sent some bytes on OS X */
-
-            if(errno != EAGAIN)
-                return false;
+            if (errno != EAGAIN)
+                return -1;
         }
                   
-        Offset += Sent;
-        Size   -= Sent;
+        lseek (from, bytes, SEEK_CUR);
+        
+        return bytes;
     
     #endif
+
+    errno = EINVAL;
+    return -1;
 }
-
-
-/* And these are the high level file transfer classes used by Lacewing::Server */
-
-class FileTransfer
-{
-public:
-
-    /* These will return false when the file transfer is complete (or failed) */
-
-    virtual bool WriteReady () = 0;
-    virtual bool ReadReady () = 0;
-};
-
-class RawFileTransfer : public FileTransfer
-{
-protected:
-
-    int FromFD;
-    int ToFD;
-
-    off_t Offset, Size;
-
-public:
-
-    RawFileTransfer (int FromFD, int ToFD, off_t Offset, off_t Size)
-    {
-        this->FromFD = FromFD;
-        this->ToFD   = ToFD;
-        this->Offset = Offset;
-        this->Size   = Size;
-    }
-
-    ~ RawFileTransfer ()
-    {
-        close(FromFD);
-    }
-
-    bool WriteReady()
-    {
-        if(!LacewingSendFile(FromFD, ToFD, Offset, Size))
-            return false;
-
-        if(!Size)
-            return false;
-
-        return true;
-    }
-
-    bool ReadReady()
-    {
-        return true;
-    }
-};
-
-/* With SSL, we can't use sendfile() at all, so Lacewing reads chunks of the file
-   into userland with read() and sends them with SSL_write() */
-
-class SSLFileTransfer : public FileTransfer
-{
-protected:
-
-    char Chunk[1024 * 256];
-    int ChunkSize;
-    
-    /* Returns true if there's a chunk loaded that needs sending, or
-       false if there was an error (assume EOF) */
-
-    bool Read()
-    {
-        if(ChunkSize != -1)
-        {
-            /* There's already a chunk to send */
-            return true;
-        }
-        
-        int BytesLeft = Bytes - BytesRead;
-        int ToRead = BytesLeft > sizeof(Chunk) ? sizeof(Chunk) : BytesLeft;
-
-        if(!ToRead)
-            return false;
-        
-        if((ChunkSize = read(FromFD, Chunk, ToRead)) == -1)
-            return false;
-
-        BytesRead += ChunkSize;
-        return true;
-    }
-
-    int FromFD;
-    SSL * To;
-
-    off_t Bytes, BytesRead;
-
-    enum
-    {
-        SendOnReadReady,
-        SendOnWriteReady
-
-    } SendOn;
-
-    bool Ready()
-    {
-        for(;;)
-        {
-            if(!Read())
-                return false;
-
-            int Bytes = SSL_write(To, Chunk, ChunkSize);
-
-            if(Bytes == 0)
-                return false;
-
-            if(Bytes > 0)
-            {
-                /* Onwards to the next chunk */
-
-                ChunkSize = -1;
-                continue;
-            }
-
-            /* We're not ready to send any more (or there was an error) */
-
-            switch(SSL_get_error(To, Bytes))
-            {
-                case SSL_ERROR_WANT_READ:
-
-                    SendOn = SendOnReadReady;
-                    return true;
-
-                case SSL_ERROR_WANT_WRITE:
-
-                    SendOn = SendOnWriteReady;
-                    return true;
-
-                default:
-                    return false;
-            };
-        }
-
-        return true;
-    }
-
-public:
-
-    SSLFileTransfer (int FromFD, SSL * To, off_t Bytes)
-    {
-        this->FromFD    = FromFD;
-        this->To        = To;
-        this->Bytes     = Bytes;
-        this->BytesRead = 0;
-
-        SendOn = SendOnWriteReady;
-        ChunkSize = -1;
-    }
-
-    ~ SSLFileTransfer ()
-    {
-        close(FromFD);
-    }
-
-    bool WriteReady()
-    {
-        if(SendOn != SendOnWriteReady)
-            return true;
-
-        return Ready();
-    }
-
-    bool ReadReady()
-    {
-        if(SendOn != SendOnReadReady)
-            return true;
-
-        return Ready();
-    }
-};
-
-
-
 
 

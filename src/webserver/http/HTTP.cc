@@ -74,7 +74,7 @@ HTTPClient::~HTTPClient ()
     delete Multipart;
 }
 
-void HTTPClient::Process (char * buffer, int size)
+void HTTPClient::Process (char * buffer, size_t size)
 {
     if (!size)
         return;
@@ -121,29 +121,38 @@ void HTTPClient::Process (char * buffer, int size)
                 }
             }
 
-            int toParse = i + 1, parsed;
+            int toParse = i + 1;
+            bool error = false;
 
             if (Buffer.Size)
             {
                 Buffer.Add (buffer, toParse);
 
-                parsed = http_parser_execute
+                size_t parsed = http_parser_execute
                     (&Parser, &ParserSettings, Buffer.Buffer, Buffer.Size);
+
+                if (parsed != Buffer.Size)
+                    error = true;
 
                 Buffer.Reset ();
             }
             else
             {
-                parsed = http_parser_execute
+                size_t parsed = http_parser_execute
                     (&Parser, &ParserSettings, buffer, toParse);
+
+                if (parsed != toParse)
+                    error = true;
             }
 
             size -= toParse;
             buffer += toParse;
 
-            if (parsed != toParse || Parser.upgrade)
+            if (error || Parser.upgrade)
             {
-                Socket.Disconnect ();
+                DebugOut ("HTTP error, closing socket...");
+
+                Socket.Close ();
                 return;
             }
 
@@ -152,6 +161,8 @@ void HTTPClient::Process (char * buffer, int size)
 
         if (ParsingHeaders)
         {
+            /* TODO : max line length */
+
             this->Buffer.Add (buffer, size);
             return;
         }
@@ -167,7 +178,7 @@ void HTTPClient::Process (char * buffer, int size)
 
     if (parsed != size || Parser.upgrade)
     {
-        Socket.Disconnect ();
+        Socket.Close ();
         return;
     }
 }
@@ -175,19 +186,19 @@ void HTTPClient::Process (char * buffer, int size)
 int HTTPClient::onMessageBegin ()
 {
     Request.Clean ();
-    ParsingHeaders = true;
 
     return 0;
 }
 
 int HTTPClient::onURL (char * URL, size_t length)
 {
-    /* Yes, these callbacks write a null terminator to the end and then restore
-     * the old byte.  It's perfectly safe to do so, because Lacewing::Server
-     * terminates every chunk of data anyway (so there's always a trailing byte).
+    /* Writing a null terminator to the end and then restoring it afterwards.
+     * This assumes the byte after the URL is writable (it should be a space)
      */
 
     char * end = URL + length, b = *end;
+
+    LacewingAssert (b == ' ');
 
     *end = 0;
     bool success = Request.In_URL (URL);
@@ -219,6 +230,8 @@ int HTTPClient::onHeaderValue (char * value, size_t length)
     CurHeaderName [CurHeaderNameLength] = 0;
 
     char * end = value + length, b = *end;
+
+    LacewingAssert (b == '\r' || b == '\n');
 
     *end = 0;
     Request.In_Header (CurHeaderName, value);
@@ -324,19 +337,21 @@ int HTTPClient::onMessageComplete ()
 
     Request.RunStandardHandler ();
 
+    ParsingHeaders = true;
+
     return 0;
 }
 
 void HTTPClient::Respond (Webserver::Request::Internal &) /* request parameter ignored - HTTP only ever has one request object per client */
 {
     LastActivityTime = time (0);
-    
-    Socket.StartBuffering ();
 
-    Socket << "HTTP/" << Parser.http_major << "." << Parser.http_minor << " " << Request.Status;
+    Buffer.Reset ();
+
+    Buffer << "HTTP/" << Parser.http_major << "." << Parser.http_minor << " " << Request.Status;
     
     for(Map::Item * Current = Request.OutHeaders.First; Current; Current = Current->Next)
-        Socket << "\r\n" << Current->Key << ": " << Current->Value;
+        Buffer << "\r\n" << Current->Key << ": " << Current->Value;
 
     for(Map::Item * Current = Request.OutCookies.First; Current; Current = Current->Next)
     {
@@ -350,50 +365,29 @@ void HTTPClient::Respond (Webserver::Request::Internal &) /* request parameter i
         if (ValueSize == strlen (OldValue) && memcmp (OldValue, Current->Value, ValueSize) == 0)
             continue;
 
-        Socket << "\r\nSet-Cookie: " << Current->Key << "=" << Current->Value;
+        Buffer << "\r\nSet-Cookie: " << Current->Key << "=" << Current->Value;
     }
 
-    Socket << "\r\nContent-Length: " << (Request.TotalFileSize + Request.TotalNonFileSize);
-    Socket << "\r\n\r\n";
+    Buffer << "\r\nContent-Length: " << Request.Public.Queued ();
+    Buffer << "\r\n\r\n";
 
-    bool Flushed = false;
+    Socket.Cork ();
 
-    if ((!Socket.CheapBuffering()) && Request.TotalNonFileSize > (1024 * 8))
-    {
-        Socket.Flush ();
-        Flushed = true;
+    {   Stream::HeadBuffer head [1];
+        
+        head [0].Buffer = Buffer.Buffer;
+        head [0].Length = Buffer.Size;
+
+        Request.Public.EndQueue (1, head);
     }
 
-    for (int Offset = 0 ;;)
-    {
-        Webserver::Request::Internal::File * File = Request.FirstFile;
+    Request.Public.BeginQueue ();
 
-        if (File)
-        {
-            Socket.SendWritable (Request.Response.Buffer + Offset, File->Offset - Offset);
-            
-            File->Send (Socket, -1, Flushed);
-
-            Offset = File->Offset;
-            Request.FirstFile = File->Next;
-
-            delete File;
-                        
-            if (Request.FirstFile)
-                continue;
-        }
-
-        Socket.SendWritable (Request.Response.Buffer + Offset, Request.Response.Size - Offset);
-        break;
-    }
-
-    Request.Response.Reset ();
-
-    if (!Flushed)
-        Socket.Flush ();
+    Buffer.Reset ();
+    Socket.Uncork ();
 
     if (!http_should_keep_alive (&Parser))
-        Socket.Disconnect ();
+        Socket.Close ();
 }
 
 void HTTPClient::Dead ()
@@ -418,7 +412,7 @@ void HTTPClient::Tick ()
     if (Request.Responded && (time(0) - LastActivityTime) > Timeout)
     {
         DebugOut ("Dropping HTTP connection due to inactivity (%s/%d)", Socket.GetAddress().ToString(), &Socket.GetAddress());
-        Socket.Disconnect ();
+        Socket.Close ();
     }
 }
 

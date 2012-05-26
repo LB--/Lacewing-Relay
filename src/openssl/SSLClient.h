@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,39 +27,55 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+namespace Lacewing
+{
+    class SSLClient
+    {
+        ssl_st * SSL;
+        BIO * InternalBIO, * ExternalBIO;
 
-lw_client * lw_client_new (lw_eventpump * eventpump)
-    { return (lw_client *) new Client (*(Pump *) eventpump);
-    }
-void lw_client_delete (lw_client * client)
-    { delete (Client *) client;
-    }
-void lw_client_connect (lw_client * client, const char * host, long port)
-    { ((Client *) client)->Connect (host, port);
-    }
-void lw_client_connect_addr (lw_client * client, lw_addr * address)
-    { ((Client *) client)->Connect (*(Address *) address);
-    }
-void lw_client_close (lw_client * client)
-    { ((Client *) client)->Close ();
-    }
-lw_bool lw_client_connected (lw_client * client)
-    { return ((Client *) client)->Connected ();
-    }
-lw_bool lw_client_connecting (lw_client * client)
-    { return ((Client *) client)->Connecting ();
-    }
-lw_addr * lw_client_server_addr (lw_client * client)
-    { return (lw_addr *) &((Client *) client)->ServerAddress ();
-    }
+        void Pump ();
+        bool Pumping;
 
-AutoHandlerFlat (Client, lw_client, Connect, connect)
-AutoHandlerFlat (Client, lw_client, Disconnect, disconnect)
-AutoHandlerFlat (Client, lw_client, Receive, receive)
-AutoHandlerFlat (Client, lw_client, Error, error)
+        int WriteCondition;
+
+    public:
+
+        SSLClient (SSL_CTX *);
+        ~ SSLClient ();
 
 
+        /* Data coming from the network passes through this Stream first */
+
+        struct Downstream : public Stream
+        {
+            SSLClient &Client;
+
+            Downstream (SSLClient &);
+
+            size_t Put (const char * buffer, size_t size);
+
+            friend class Lacewing::SSLClient;
+
+        } Downstream;
+
+
+        /* Data destined for the network passes through this Stream first */
+
+        struct Upstream : public Stream
+        {
+            SSLClient &Client;
+
+            Upstream (SSLClient &);
+
+            size_t Put (const char * buffer, size_t size);
+
+            friend class Lacewing::SSLClient;
+
+        } Upstream;
+
+    };
+}
 
 
 

@@ -63,12 +63,18 @@ namespace Lacewing
 
         inline Element * Push (T What)
         {
+            Element * E = Push ();
+            E->Value = What;
+            return E;
+        }
+
+        inline Element * Push ()
+        {
             Element * E = new (std::nothrow) Element;
             
             if (!E)
                 return 0;
 
-            E->Value = What;
             E->Next  = 0;
             E->Prev  = Last;
             
@@ -96,12 +102,34 @@ namespace Lacewing
             return 0;
         }
 
+        inline void Remove (T What)
+        {
+            Element * E = Find (What);
+
+            if (E)
+                Erase (E);
+        }
+
         inline Element * PushFront (T What)
         {
-            return Size > 0 ? InsertBefore (First, What) : Push (What);
+            Element * E = PushFront ();
+            E->Value = What;
+            return E;
+        }
+
+        inline Element * PushFront ()
+        {
+            return Size > 0 ? InsertBefore (First) : Push ();
         }
 
         inline Element * InsertBefore (Element * Before, T What)
+        {
+            Element * E = InsertBefore (Before);
+            E->Value = What;
+            return E;
+        }
+
+        inline Element * InsertBefore (Element * Before)
         {
             Element * E = new (std::nothrow) Element;
 
@@ -114,7 +142,6 @@ namespace Lacewing
             E->Prev = Before->Prev;
             Before->Prev = E;
 
-            E->Value = What;
             E->Next  = Before;
 
             if (Before == First)
@@ -125,22 +152,20 @@ namespace Lacewing
             return E;
         }
 
-        inline T Pop ()
+        inline void Pop ()
         {
-            T Value = ** Last;
             Erase (Last);
-            return Value;
         }
 
-        inline T PopFront ()
+        inline void PopFront ()
         {
-            T Value = ** First;
             Erase (First);
-            return Value;
         }
 
-        inline void Erase (Element * E)
+        inline Element * Erase (Element * E)
         {
+            Element * next = E->Next;
+
             if (E == First)
                 First = E->Next;
 
@@ -156,6 +181,10 @@ namespace Lacewing
             delete E;
 
             -- Size;
+            
+            LacewingAssert (Size >= 0);
+
+            return next;
         }
         
         inline void Clear ()
@@ -170,6 +199,7 @@ namespace Lacewing
             Last = 0;
             Size = 0;
         }
+
     };
 
     template <class T> struct Array

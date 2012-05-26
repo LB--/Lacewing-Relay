@@ -75,6 +75,8 @@
         #endif
     #endif
 
+    #define __STDC_FORMAT_MACROS
+
 #endif
 
 #ifdef LacewingLibrary
@@ -91,36 +93,24 @@
     #define LacewingFunction
 #endif
 
-inline void LacewingAssert(bool Expression)
-{
-#ifdef LacewingDebug
-
-	if(Expression)
-		return;
-
-	#ifdef _MSC_VER
-		__asm int 3;
-	#else
-		(*(int *) 0) = 1;
-	#endif	
-	
-#endif
-}
-
 void LacewingInitialise();
 
 #include "../include/Lacewing.h"
 using namespace Lacewing;
 
-#ifdef LacewingSPDY
-    #include "../deps/zlib/zlib.h"
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <time.h>
 #include <new>
+
+#ifndef LacewingDebug
+    #define LacewingAssert(X)
+#else
+    #define LacewingAssert(X) assert(X)
+#endif
 
 const int lw_max_path = 512;
 
@@ -133,9 +123,6 @@ const int lw_max_path = 512;
     #ifndef _WIN32_WINNT
         #define _WIN32_WINNT 0x0501
     #endif
-
-    #define I64Format   "%I64d"
-    #define UDFormat    "%d"
 
     #include <winsock2.h>
     #include <windows.h>
@@ -151,10 +138,8 @@ const int lw_max_path = 512;
     #include <process.h>
     #include <ctime>
 
-    #undef SendMessage
-    #undef Yield
-
     #include "windows/Compat.h"
+    #include "windows/WinSSLClient.h"
 
     #define strcasecmp stricmp
 
@@ -182,10 +167,9 @@ const int lw_max_path = 512;
         memcpy(TM, _TM, sizeof (tm));
     }
 
-    #define LacewingYield()             Sleep(0)
-
-    #define lw_vsnprintf                _vsnprintf
-    #define lw_snprintf                 _snprintf
+    #define lw_vsnprintf   _vsnprintf
+    #define lw_snprintf    _snprintf
+    #define lw_fmt_size    "%Id"
 
     namespace Lacewing
     {
@@ -210,14 +194,6 @@ const int lw_max_path = 512;
     }
 
 #else
-
-    #ifndef Lacewing64
-        #define I64Format   "%lld"
-    #else
-        #define I64Format   "%ld"
-    #endif
-    
-    #define UDFormat    "%ud"
 
     #include <sys/types.h> 
     #include <sys/stat.h>
@@ -309,6 +285,8 @@ const int lw_max_path = 512;
         #error "OpenSSL not found. Install OpenSSL and run ./configure again."
     #endif
 
+    #include "openssl/SSLClient.h"
+
     #define LacewingGetSocketError()  errno
     #define LacewingGetLastError()    errno
 
@@ -324,29 +302,11 @@ const int lw_max_path = 512;
 
     typedef int lw_socket;
 
-    #define LacewingYield()  sched_yield()
+    #define lw_vsnprintf   vsnprintf
+    #define lw_snprintf    snprintf
+    #define lw_fmt_size    "%zd"
 
-    #define lw_vsnprintf                vsnprintf
-    #define lw_snprintf                 snprintf
-
-    #if HAVE_DECL_MSG_NOSIGNAL
-        #define LacewingNoSignal MSG_NOSIGNAL
-    #else
-        #define LacewingNoSignal 0
-    #endif
-
-    namespace Lacewing
-    {
-        inline void DisableSigPipe (lw_socket Socket)
-        {
-            #if HAVE_DECL_SO_NOSIGPIPE
-           
-                int Yes = 1;
-                setsockopt (Socket, SOL_SOCKET, SO_NOSIGPIPE, (char *) &Yes, sizeof (Yes));
-            
-            #endif
-        }   
-    }
+    #include "unix/SendFile.h"
 
 #endif
 
@@ -399,20 +359,20 @@ inline int LacewingFormat(char *& Output, const char * Format, va_list args)
         va_start (args, format);
         
         char * data;
-        int size = LacewingFormat (data, format, args);
+        size_t size = LacewingFormat (data, format, args);
         
         if(size > 0)
         {
             Lacewing::Sync::Lock Lock (Sync_DebugOutput);
 
             #ifdef LacewingAndroid
-                __android_log_write (ANDROID_LOG_INFO, "Lacewing", data);
+                __android_log_write (ANDROID_LOG_INFO, "liblacewing", data);
             #else
                 #ifdef COXSDK
-                    OutputDebugString (data);
-                    OutputDebugString ("\n");
+                    OutputDebugStringA (data);
+                    OutputDebugStringA ("\n");
                 #else
-                    printf ("[Lacewing] %s\n", data);
+                    fprintf (stderr, "[liblacewing] %s\n", data);
                 #endif
             #endif
 
@@ -425,74 +385,50 @@ inline int LacewingFormat(char *& Output, const char * Format, va_list args)
 #else
     #define DebugOut(X, ...)
 #endif
-
-inline void LacewingSyncIncrement(volatile long * Target)
-{
-    #ifdef LacewingWindows
-        InterlockedIncrement (Target);
-    #else
-        #ifdef __GNUC__
-            __sync_add_and_fetch (Target, 1);
-        #else
-            #error "Don't know how to implement LacewingSyncIncrement on this platform"
-        #endif
-    #endif
-}
-
-inline void LacewingSyncDecrement(volatile long * Target)
-{
-    #ifdef LacewingWindows
-        InterlockedDecrement (Target);
-    #else
-        #ifdef __GNUC__
-            __sync_sub_and_fetch (Target, 1);
-        #else
-            #error "Don't know how to implement LacewingSyncDecrement on this platform"
-        #endif
-    #endif
-}
-
-inline long LacewingSyncCompareExchange(volatile long * Target, long NewValue, long OldValue)
-{
-    #ifdef LacewingWindows
-        return InterlockedCompareExchange (Target, NewValue, OldValue);
-    #else
-        #ifdef __GNUC__
-            return __sync_val_compare_and_swap (Target, OldValue, NewValue);
-        #else
-            #error "Don't know how to implement LacewingSyncCompareExchange on this platform"
-        #endif
-    #endif
-}
-
-inline void LacewingSyncExchange(volatile long * Target, long NewValue)
-{
-    #ifdef LacewingWindows
-        InterlockedExchange (Target, NewValue);
-    #else
-        #ifdef __GNUC__
-            
-            for (;;)
-            {
-                long Current = *Target;
-
-                if (__sync_val_compare_and_swap (Target, Current, NewValue) == Current)
-                    break;
-            }
-
-        #else
-            #error "Don't know how to implement LacewingSyncExchange on this platform"
-        #endif
-    #endif
-}
-
 namespace Lacewing
 {
-    inline void DisableNagling (lw_socket Socket)
+    inline void SyncIncrement(volatile long * Target)
     {
-        int Yes = 1;
-        setsockopt (Socket, SOL_SOCKET, TCP_NODELAY, (char *) &Yes, sizeof (Yes));
+        #ifdef LacewingWindows
+            InterlockedIncrement (Target);
+        #else
+            #ifdef __GNUC__
+                __sync_add_and_fetch (Target, 1);
+            #else
+                #error "Don't know how to implement LacewingSyncIncrement on this platform"
+            #endif
+        #endif
     }
+
+    inline void SyncDecrement(volatile long * Target)
+    {
+        #ifdef LacewingWindows
+            InterlockedDecrement (Target);
+        #else
+            #ifdef __GNUC__
+                __sync_sub_and_fetch (Target, 1);
+            #else
+                #error "Don't know how to implement LacewingSyncDecrement on this platform"
+            #endif
+        #endif
+    }
+
+    inline long SyncCompareExchange(volatile long * Target, long NewValue, long OldValue)
+    {
+        #ifdef LacewingWindows
+            return InterlockedCompareExchange (Target, NewValue, OldValue);
+        #else
+            #ifdef __GNUC__
+                return __sync_val_compare_and_swap (Target, OldValue, NewValue);
+            #else
+                #error "Don't know how to implement LacewingSyncCompareExchange on this platform"
+            #endif
+        #endif
+    }
+
+    /* TODO : find the optimal value for this?  make adjustable? */
+    
+    const static size_t DefaultBufferSize = 1024 * 64; 
 
     inline void DisableIPV6Only (lw_socket Socket)
     {
@@ -500,19 +436,26 @@ namespace Lacewing
         setsockopt (Socket, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &No, sizeof (No));
     }
 
-    inline int GetSocketPort (lw_socket Socket)
+    inline sockaddr_storage GetSockAddr (lw_socket socket)
     {
-        if (Socket == -1)
-            return 0;
+        sockaddr_storage addr;
+        memset (&addr, 0, sizeof (addr));
 
-        sockaddr_storage Address;
-        socklen_t AddressLength = sizeof (Address);
+        if (socket != -1)
+        {
+            socklen_t addr_len = sizeof (Address);
+            getsockname (socket, (sockaddr *) &addr, &addr_len);
+        }
 
-        if (getsockname (Socket, (sockaddr *) &Address, &AddressLength) == -1)
-            return 0;
+        return addr;
+    }
 
-        return ntohs (Address.ss_family == AF_INET6 ?
-            ((sockaddr_in6 *) &Address)->sin6_port : ((sockaddr_in *) &Address)->sin_port);
+    inline int GetSocketPort (lw_socket socket)
+    {
+        sockaddr_storage addr = GetSockAddr (socket);
+
+        return ntohs (addr.ss_family == AF_INET6 ?
+            ((sockaddr_in6 *) &addr)->sin6_port : ((sockaddr_in *) &addr)->sin_port);
     }
 
     int CreateServerSocket (Lacewing::Filter &, int Type, int Protocol, Lacewing::Error &Error);
@@ -602,27 +545,30 @@ namespace Lacewing
     }
 }
 
+#define AutoHandlerFunctions(Public, HandlerName)                        \
+    void Public::on##HandlerName (Public::Handler##HandlerName Handler)  \
+    {   internal->Handlers.HandlerName = Handler;                        \
+    }                                                                    \
+
+#define AutoHandlerFlat(real_class, flat, handler_upper, handler_lower)  \
+    void flat##_on##handler_lower                                        \
+            (flat * _flat, flat##_handler_##handler_lower _handler)      \
+    {                                                                    \
+        ((real_class *) _flat)->on##handler_upper                        \
+            ((real_class::Handler##handler_upper) _handler);             \
+    }                                                                    \
+
 #include "Utility.h"
 #include "TimeHelper.h"
-#include "ReceiveBuffer.h"
-#include "MessageBuilder.h"
-#include "MessageReader.h"
+#include "HeapBuffer.h"
 #include "Backlog.h"
 #include "Address.h"
+#include "StreamGraph.h"
+#include "Stream.h"
 
 #ifndef LacewingWindows
     #include "unix/EventPump.h"
 #endif
-
-#define AutoHandlerFunctions(Public, HandlerName)                        \
-    void Public::on##HandlerName (Public::Handler##HandlerName Handler)   \
-    {   internal->Handlers.HandlerName = Handler;                        \
-    }                                                                    \
-
-#define AutoHandlerFlat(real_class, flat, handler_upper, handler_lower) \
-    void flat##_on##handler_lower (flat * _flat, flat##_handler_##handler_lower _handler) \
-    {   ((real_class *) _flat)->on##handler_upper ((real_class::Handler##handler_upper) _handler); \
-    }
 
 #endif
 

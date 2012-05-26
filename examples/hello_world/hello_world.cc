@@ -20,7 +20,12 @@ int main(int argc, char * argv[])
     Lacewing::Webserver Webserver(EventPump);
 
     Webserver.onGet(onGet);
-    Webserver.Host(80);    
+
+    Lacewing::Filter Filter;
+    Filter.LocalPort (8080);
+    Filter.Reuse (true);
+
+    Webserver.Host(Filter);    
     
     EventPump.StartEventLoop();
     

@@ -302,15 +302,7 @@ Error * Address::Resolve ()
 {
     internal->ResolverThread.Join ();
 
-    if (internal->Error)
-    {
-        Error * Error = internal->Error;
-        internal->Error = 0;
-
-        return Error;
-    }
-
-    return 0;
+    return internal->Error;
 }
 
 static bool SockaddrEqual (sockaddr * a, sockaddr * b)

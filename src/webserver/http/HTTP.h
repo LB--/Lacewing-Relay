@@ -29,24 +29,24 @@
 
 class HTTPClient : public WebserverClient
 {
-    Webserver::Request::Internal Request; /* HTTP is one request at a time, so this is just reused */
-    
     time_t LastActivityTime;
 
     http_parser Parser;
     bool ParsingHeaders, SignalEOF;
     
-    MessageBuilder Buffer;
+    HeapBuffer Buffer;
     
     char * CurHeaderName;
     size_t CurHeaderNameLength;
 
 public:
 
+    Webserver::Request::Internal Request; /* HTTP is one request at a time, so this is just reused */
+
     HTTPClient (Webserver::Internal &, Lacewing::Server::Client &, bool Secure);
     ~ HTTPClient ();
 
-    void Process (char * Buffer, int Size);
+    void Process (char * buffer, size_t Size);
 
     /* Called by the HTTP parser */
 
@@ -101,7 +101,7 @@ public:
         Array <Lacewing::Webserver::Upload *> Uploads;
         HTTPUpload * CurrentUpload;
 
-        MessageBuilder Buffer;
+        HeapBuffer Buffer;
 
     } * Multipart;
 };

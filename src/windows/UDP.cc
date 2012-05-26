@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -55,9 +55,7 @@ struct UDPOverlapped
 
 struct UDPReceiveInformation
 {
-    /* TODO : Replace with ReceiveBuffer? */
-
-    char Buffer [1024 * 32];
+    char Buffer [DefaultBufferSize];
     WSABUF WinsockBuffer;
 
     UDPReceiveInformation ()
@@ -101,9 +99,6 @@ struct UDP::Internal
 
     SOCKET Socket;
 
-    lw_i64 BytesSent;
-    lw_i64 BytesReceived;
-
     Backlog <UDPOverlapped> OverlappedBacklog;
     Backlog <UDPReceiveInformation> ReceiveInformationBacklog;
 
@@ -142,14 +137,11 @@ static void UDPSocketCompletion (UDP::Internal * internal, UDPOverlapped &Overla
     {
         case OverlappedType::Send:
         {
-            internal->BytesSent += BytesTransferred;
             break;
         }
 
         case OverlappedType::Receive:
         {
-            internal->BytesReceived += BytesTransferred;
-
             UDPReceiveInformation &ReceiveInformation = *(UDPReceiveInformation *) Overlapped.Tag;
 
             ReceiveInformation.Buffer [BytesTransferred] = 0;
@@ -260,7 +252,7 @@ UDP::~UDP ()
     delete internal;
 }
 
-void UDP::Send (Address &Address, const char * Data, int Size)
+void UDP::Write (Address &Address, const char * Data, size_t Size)
 {
     if ((!Address.Ready ()) || !Address.internal->Info)
     {
@@ -308,16 +300,6 @@ void UDP::Send (Address &Address, const char * Data, int Size)
             return;
         }
     }
-}
-
-lw_i64 UDP::BytesReceived ()
-{
-    return internal->BytesReceived;
-}
-
-lw_i64 UDP::BytesSent ()
-{
-    return internal->BytesSent;
 }
 
 AutoHandlerFunctions (UDP, Error)

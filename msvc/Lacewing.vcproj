@@ -87,7 +87,7 @@
 				ProgramDatabaseFile="../bin/Lacewing.pdb"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary="../bin/Lacewing.lib"
+				ImportLibrary="../bin/liblacewing-debug.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -194,7 +194,7 @@
 				LinkTimeCodeGeneration="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary="../bin/Lacewing.lib"
+				ImportLibrary="../bin/liblacewing.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -257,7 +257,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../;../src/"
-				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;_WINDOWS;_USRDLL;LacewingLibrary"
+				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;_WINDOWS;_USRDLL"
 				GeneratePreprocessedFile="0"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -347,7 +347,7 @@
 				EnableFiberSafeOptimizations="true"
 				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="../;../src/"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LacewingLibrary"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="false"
@@ -433,11 +433,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\include\Lacewing.h"
+				RelativePath="..\src\Handlers.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\MessageBuilder.h"
+				RelativePath="..\src\HeapBuffer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\include\Lacewing.h"
 				>
 			</File>
 			<File
@@ -453,11 +457,19 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\ReceiveBuffer.h"
+				RelativePath="..\src\Stream.cc"
 				>
 			</File>
 			<File
-				RelativePath="..\src\SpinSync.cc"
+				RelativePath="..\src\Stream.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\StreamGraph.cc"
+				>
+			</File>
+			<File
+				RelativePath="..\src\StreamGraph.h"
 				>
 			</File>
 			<File
@@ -475,62 +487,6 @@
 			<Filter
 				Name="c"
 				>
-				<File
-					RelativePath="..\src\c\addr_flat.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\c\client_flat.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\c\error_flat.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\c\eventpump_flat.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\c\filter_flat.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\c\flashpolicy_flat.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\c\global_flat.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\c\server_flat.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\c\ssync_flat.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\c\sync_flat.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\c\thread_flat.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\c\timer_flat.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\c\udp_flat.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\c\webserver_flat.cc"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="unix"
@@ -712,6 +668,78 @@
 						>
 						<Tool
 							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\src\unix\FDStream.cc"
+					>
+					<FileConfiguration
+						Name="DLL - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="DLL - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\src\unix\File.cc"
+					>
+					<FileConfiguration
+						Name="DLL - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="DLL - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
 						/>
 					</FileConfiguration>
 				</File>
@@ -964,6 +992,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\windows\FDStream.cc"
+					>
+				</File>
+				<File
+					RelativePath="..\src\windows\File.cc"
+					>
+				</File>
+				<File
 					RelativePath="..\src\windows\Server.cc"
 					>
 				</File>
@@ -979,28 +1015,12 @@
 					RelativePath="..\src\windows\UDP.cc"
 					>
 				</File>
-			</Filter>
-			<Filter
-				Name="relay"
-				>
 				<File
-					RelativePath="..\src\relay\FrameBuilder.h"
+					RelativePath="..\src\windows\WinSSLClient.cc"
 					>
 				</File>
 				<File
-					RelativePath="..\src\relay\FrameReader.h"
-					>
-				</File>
-				<File
-					RelativePath="..\src\relay\IDPool.h"
-					>
-				</File>
-				<File
-					RelativePath="..\src\relay\RelayClient.cc"
-					>
-				</File>
-				<File
-					RelativePath="..\src\relay\RelayServer.cc"
+					RelativePath="..\src\windows\WinSSLClient.h"
 					>
 				</File>
 			</Filter>
@@ -1019,6 +1039,82 @@
 						>
 					</File>
 				</Filter>
+			</Filter>
+			<Filter
+				Name="openssl"
+				>
+				<File
+					RelativePath="..\src\openssl\SSLClient.cc"
+					>
+					<FileConfiguration
+						Name="DLL - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="DLL - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\src\openssl\SSLClient.h"
+					>
+					<FileConfiguration
+						Name="DLL - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="DLL - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Static Library - Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCustomBuildTool"
+						/>
+					</FileConfiguration>
+				</File>
 			</Filter>
 		</Filter>
 		<Filter

@@ -55,7 +55,7 @@ struct Webserver::Upload::Internal
         AutoSaveFile     = 0;
     }
 
-    inline ~ Internal ()
+    virtual inline ~ Internal ()
     {
         DebugOut("Free upload!");
     }
@@ -67,16 +67,8 @@ struct Webserver::Internal
 {
     Lacewing::Pump &Pump;
 
-    const static size_t SendBufferSize    = 1024 * 32;  /* Maximum of 32 KB wasted per SendFile/SendConstant */
-    const static size_t SendBufferBacklog = 32;         /* 256 KB allocated initially and when the server runs out */
-
     Lacewing::Server * Socket, * SecureSocket;
     Lacewing::Timer Timer;
-
-    List <char *> SendBuffers;
-
-    char * BorrowSendBuffer();
-    void ReturnSendBuffer(char * SendBuffer);
 
     struct Session
     {
@@ -95,7 +87,7 @@ struct Webserver::Internal
 
     static void SocketConnect(Lacewing::Server &, Lacewing::Server::Client &);
     static void SocketDisconnect(Lacewing::Server &, Lacewing::Server::Client &);
-    static void SocketReceive(Lacewing::Server &, Lacewing::Server::Client &, char * Buffer, int Size);
+    static void SocketReceive(Lacewing::Server &, Lacewing::Server::Client &, char * Buffer, size_t);
     static void SocketError(Lacewing::Server &, Lacewing::Error &);
 
     inline void PrepareSocket()
@@ -196,7 +188,7 @@ struct Webserver::Request::Internal
     void * Tag;
 
     Webserver::Internal &Server;
-    WebserverClient   &Client;
+    WebserverClient &Client;
 
     Internal (Webserver::Internal &_Server, WebserverClient &_Client);
     ~ Internal ();
@@ -213,7 +205,6 @@ struct Webserver::Request::Internal
     Map InHeaders, InCookies, GetItems, PostItems;
     
     void In_Method (const char * Method);
-
     void In_Header (const char * Name, char * Value);
     bool In_URL (char * URL);
 
@@ -224,29 +215,10 @@ struct Webserver::Request::Internal
 
     Map OutHeaders, OutCookies;
     
-    struct File
-    {
-        char Filename [lw_max_path];
-        unsigned int Offset;
-
-        File * Next;
-
-        void Send (Lacewing::Server::Client &Socket, int MaxOutput, bool &Flushed);
-        
-        lw_i64 FileOffset, FileSize;
-    };
-
-    MessageBuilder Response;
-
-    File * FirstFile;
-    lw_i64 TotalFileSize, TotalNonFileSize;
-
     void BeforeHandler ();
     void AfterHandler ();
 
     void RunStandardHandler ();    
-
-    void AddFileSend (const char * Filename, lw_i64 FileOffset, lw_i64 FileSize);
 
     bool Responded;
     void Respond ();
@@ -264,10 +236,11 @@ public:
     int Timeout;
 
     WebserverClient (Webserver::Internal &, Lacewing::Server::Client &, bool Secure);
+    virtual ~ WebserverClient ();
 
     virtual void Tick () = 0;
 
-    virtual void Process (char * Buffer, int Size) = 0;
+    virtual void Process (char * Buffer, size_t Size) = 0;
     virtual void Respond (Webserver::Request::Internal &Request) = 0;
     virtual void Dead () = 0;
     

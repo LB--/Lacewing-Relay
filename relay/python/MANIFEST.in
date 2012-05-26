@@ -1,4 +1,0 @@
-include *.txt
-recursive-include examples *.mfa *.py *.xml
-recursive-include docs *
-recursive-include lacewing *.py

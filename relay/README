@@ -1,9 +1,0 @@
-The Lacewing Relay protocol will be a simple protocol for relaying messages between multiple clients.
-It can run over TCP and optionally also UDP, providing a familiar IRC-like structure with things like named channels.
-
-Current implementations :-
-
-- Python (pylacewing)
-- C/C++ (part of liblacewing)
-- ActionScript 3.0
-- Multimedia Fusion 2

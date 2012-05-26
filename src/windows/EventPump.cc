@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,6 +33,13 @@
 #define SigRemove            ((OVERLAPPED *) 2)
 #define SigEndWatcherThread  ((OVERLAPPED *) 3)
 
+struct Pump::Watch
+{
+    Callback onCompletion;
+
+    void * Tag;
+};
+
 struct EventPump::Internal
 {  
     Lacewing::EventPump &Pump;
@@ -47,32 +54,25 @@ struct EventPump::Internal
         HandlerTickNeeded  = 0;
     }
 
-    struct Event
-    {
-        void * Tag;
-
-        Pump::Callback Callback;
-    };
-
-    Backlog <Event> EventBacklog;
+    Backlog <Pump::Watch> WatchBacklog;
 
     void (LacewingHandler * HandlerTickNeeded) (Lacewing::EventPump &EventPump);
 
     static bool Process (EventPump::Internal * internal, OVERLAPPED * Overlapped,
-                            unsigned int BytesTransferred, EventPump::Internal::Event * Event, int Error)
+                            unsigned int BytesTransferred, Pump::Watch * Watch, int Error)
     {
         if (BytesTransferred == 0xFFFFFFFF)
         {
             /* See Post () */
 
-            ((void * (*) (void *)) Event) (Overlapped);
+            ((void * (*) (void *)) Watch) (Overlapped);
 
             return true;
         }
 
         if (Overlapped == SigRemove)
         {
-            internal->EventBacklog.Return (*Event);
+            internal->WatchBacklog.Return (*Watch);
             internal->Pump.RemoveUser ();
 
             return true;
@@ -81,15 +81,15 @@ struct EventPump::Internal
         if (Overlapped == SigExitEventLoop)
             return false;
 
-        if (Event->Callback)
-            Event->Callback (Event->Tag, Overlapped, BytesTransferred, Error);
+        if (Watch->onCompletion)
+            Watch->onCompletion (Watch->Tag, Overlapped, BytesTransferred, Error);
 
         return true;
     }
     
     OVERLAPPED * WatcherOverlapped;
     unsigned int WatcherBytesTransferred;
-    EventPump::Internal::Event * WatcherEvent;
+    EventPump::Pump::Watch * WatcherEvent;
     Lacewing::Event WatcherResumeEvent;
     int WatcherError;
 
@@ -154,14 +154,15 @@ Error * EventPump::Tick ()
     OVERLAPPED * Overlapped;
     unsigned int BytesTransferred;
     
-    EventPump::Internal::Event * Event;
+    Pump::Watch * Watch;
 
     for(;;)
     {
         int Error = 0;
 
-        if (!GetQueuedCompletionStatus (internal->CompletionPort, (DWORD *) &BytesTransferred,
-                 (PULONG_PTR) &Event, &Overlapped, 0))
+        if (!GetQueuedCompletionStatus
+                (internal->CompletionPort, (DWORD *) &BytesTransferred,
+                     (PULONG_PTR) &Watch, &Overlapped, 0))
         {
             Error = GetLastError();
 
@@ -172,7 +173,7 @@ Error * EventPump::Tick ()
                 break;
         }
 
-        Internal::Process (internal, Overlapped, BytesTransferred, Event, Error);
+        Internal::Process (internal, Overlapped, BytesTransferred, Watch, Error);
     }
  
     if (internal->HandlerTickNeeded)
@@ -186,7 +187,8 @@ Error * EventPump::StartEventLoop ()
     OVERLAPPED * Overlapped;
     unsigned int BytesTransferred;
     
-    EventPump::Internal::Event * Event;
+    Pump::Watch * Watch;
+
     bool Exit = false;
 
     for(;;)
@@ -195,8 +197,9 @@ Error * EventPump::StartEventLoop ()
 
         int Error = 0;
 
-        if (!GetQueuedCompletionStatus (internal->CompletionPort, (DWORD *) &BytesTransferred,
-                 (PULONG_PTR) &Event, &Overlapped, INFINITE))
+        if (!GetQueuedCompletionStatus
+                (internal->CompletionPort, (DWORD *) &BytesTransferred,
+                        (PULONG_PTR) &Watch, &Overlapped, INFINITE))
         {
             Error = GetLastError();
 
@@ -204,7 +207,7 @@ Error * EventPump::StartEventLoop ()
                 continue;
         }
 
-        if (!Internal::Process (internal, Overlapped, BytesTransferred, Event, Error))
+        if (!Internal::Process (internal, Overlapped, BytesTransferred, Watch, Error))
             break;
     }
         
@@ -224,32 +227,36 @@ Error * EventPump::StartSleepyTicking (void (LacewingHandler * onTickNeeded) (Ev
     return 0;
 }
 
-void * EventPump::Add (HANDLE Handle, void * Tag, Pump::Callback Callback)
+Pump::Watch * EventPump::Add (HANDLE Handle, void * Tag, Pump::Callback Callback)
 {
     LacewingAssert (Callback != 0);
 
-    Internal::Event &E = internal->EventBacklog.Borrow ();
+    Pump::Watch &watch = internal->WatchBacklog.Borrow ();
 
-    E.Callback = Callback;
-    E.Tag = Tag;
+    watch.onCompletion = Callback;
+    watch.Tag = Tag;
 
     if (CreateIoCompletionPort (Handle,
-            internal->CompletionPort, (ULONG_PTR) &E, 0) != 0)
+            internal->CompletionPort, (ULONG_PTR) &watch, 0) != 0)
     {
         /* success */
+    }
+    else
+    {
+        LacewingAssert (false);
     }
     
     AddUser ();
 
-    return &E;
+    return &watch;
 }
 
-void EventPump::Remove (void * Key)
+void EventPump::Remove (Pump::Watch * Watch)
 {
-    ((Internal::Event *) Key)->Callback = 0;
+    Watch->onCompletion = 0;
 
     PostQueuedCompletionStatus
-        (internal->CompletionPort, 0, (ULONG_PTR) Key, SigRemove);
+        (internal->CompletionPort, 0, (ULONG_PTR) Watch, SigRemove);
 }
 
 bool EventPump::IsEventPump ()
@@ -262,5 +269,13 @@ void EventPump::Post (void * Function, void * Parameter)
     PostQueuedCompletionStatus
         (internal->CompletionPort, 0xFFFFFFFF,
             (ULONG_PTR) Function, (OVERLAPPED *) Parameter);
+}
+
+void EventPump::UpdateCallbacks
+    (Pump::Watch * watch, void * tag, Pump::Callback onCompletion)
+{
+    watch->Tag = tag;
+    watch->onCompletion = onCompletion;
+
 }
 

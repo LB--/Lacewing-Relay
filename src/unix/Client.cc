@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -54,10 +54,7 @@ struct Client::Internal
 
         memset (&Handlers, 0, sizeof (Handlers));
 
-        Nagle = true;
         Address = 0;
-
-        QueuedOffset = 0;
     }
 
     ~ Internal ()
@@ -70,18 +67,12 @@ struct Client::Internal
     int Socket;
     bool Connected, Connecting;
 
-    ReceiveBuffer Buffer;
-
-    void ReadReady ();
     void WriteReady ();
 
-    bool Nagle;
-
-    MessageBuilder Queued;
-    int QueuedOffset;
+    Pump::Watch * Watch;
 };
 
-Client::Client (Lacewing::Pump &Pump)
+Client::Client (Lacewing::Pump &Pump) : FDStream (Pump)
 {
     LacewingInitialise ();
 
@@ -90,7 +81,7 @@ Client::Client (Lacewing::Pump &Pump)
 
 Client::~Client ()
 {
-    Disconnect ();
+    Close ();
 
     delete internal;
 }
@@ -103,104 +94,43 @@ void Client::Connect (const char * Host, int Port)
 
 void Client::Internal::WriteReady ()
 {
-    if(Connecting)
+    LacewingAssert (Connecting);
+
+    int Error;
+    
+    {   socklen_t ErrorLength = sizeof (Error);
+        getsockopt (Socket, SOL_SOCKET, SO_ERROR, &Error, &ErrorLength);
+    }
+
+    if(Error != 0)
     {
-        int Error;
-        
-        {   socklen_t ErrorLength = sizeof (Error);
-            getsockopt (Socket, SOL_SOCKET, SO_ERROR, &Error, &ErrorLength);
-        }
+        /* Failed to connect */
 
-        if(Error != 0)
-        {
-            /* Failed to connect */
-
-            Connecting = false;
-
-            Lacewing::Error Error;
-            Error.Add("Error connecting");
-
-            if (Handlers.Error)
-                Handlers.Error (Public, Error);
-
-            return;
-        }
-
-        Connected  = true;
         Connecting = false;
 
-        if (Handlers.Connect)
-            Handlers.Connect (Public);
+        Lacewing::Error Error;
+        Error.Add("Error connecting");
+
+        if (Handlers.Error)
+            Handlers.Error (Public, Error);
+
+        return;
     }
 
-    if(Queued.Size > 0)
-    {
-        int Sent = send (Socket, Queued.Buffer + QueuedOffset, Queued.Size - QueuedOffset, LacewingNoSignal);
-        
-        if(Sent < (Queued.Size - QueuedOffset))
-            QueuedOffset += Sent;
-        else
-        {
-            Queued.Reset();
-            QueuedOffset = 0;
-        }
-    }
-}
+    Public.SetFD (Socket, Watch);
 
-void Client::Internal::ReadReady ()
-{
-    for(;;)
-    {
-        Buffer.Prepare ();
-        int Bytes = recv (Socket, Buffer.Buffer, Buffer.Size, MSG_DONTWAIT);
+    Connecting = false;
 
-        if(Bytes == -1)
-        {
-            if(errno == EAGAIN)
-                break;
+    if (Handlers.Connect)
+        Handlers.Connect (Public);
 
-            /* Assume some sort of disconnect */
-
-            close(Socket);
-            Bytes = 0;
-        }
-
-        if(Bytes == 0)
-        {
-            Socket = -1;
-            Connected = false;
-
-            if (Handlers.Disconnect)
-                Handlers.Disconnect (Public);
-
-            return;
-        }
-
-        Buffer.Received(Bytes);
-
-        if (Handlers.Receive)
-            Handlers.Receive (Public, Buffer.Buffer, Bytes);
-            
-        if(Socket == -1)
-        {
-            /* Disconnect called from within the receive handler */
-
-            Connected = false;
-            
-            if (Handlers.Disconnect)
-                Handlers.Disconnect (Public);
-
-            return;
-        }
-    }
+    if (Handlers.Receive)
+        Public.Read (-1);
 }
 
 static void WriteReady (Client::Internal * internal)
-{   internal->WriteReady ();
-}
-
-static void ReadReady (Client::Internal * internal)
-{   internal->ReadReady ();
+{   
+    internal->WriteReady ();
 }
 
 void Client::Connect (Address &Address)
@@ -247,15 +177,23 @@ void Client::Connect (Address &Address)
         return;
     }
 
-    DisableSigPipe (internal->Socket);
+    if (!Address.internal->Info)
+    {
+        Lacewing::Error Error;
+       
+        Error.Add("The provided Address object is not ready for use");
+        
+        if (internal->Handlers.Error)
+            internal->Handlers.Error (*this, Error);
 
-    if (!internal->Nagle)
-        ::DisableNagling (internal->Socket);
+        return;
+    }
 
-    fcntl (internal->Socket, F_SETFL, fcntl (internal->Socket, F_GETFL, 0) | O_NONBLOCK);
+    fcntl (internal->Socket, F_SETFL,
+            fcntl (internal->Socket, F_GETFL, 0) | O_NONBLOCK);
 
-    internal->Pump.Add (internal->Socket, internal,
-                    (Pump::Callback) ReadReady, (Pump::Callback) WriteReady);
+    internal->Watch = internal->Pump.Add (internal->Socket, internal,
+                            0, (Pump::Callback) ::WriteReady);
 
     if (connect (internal->Socket, Address.internal->Info->ai_addr,
                         Address.internal->Info->ai_addrlen) == -1)
@@ -277,7 +215,7 @@ void Client::Connect (Address &Address)
 
 bool Client::Connected ()
 {
-    return internal->Connected;
+    return Valid ();
 }
 
 bool Client::Connecting ()
@@ -285,77 +223,50 @@ bool Client::Connecting ()
     return internal->Connecting;
 }
 
-void Client::Disconnect ()
-{
-    LacewingCloseSocket (internal->Socket);
-    internal->Socket = -1;
-}
-
-void Client::Send (const char * Data, int Size)
-{
-    if(!Connected())
-        return;
-
-    if (Size == -1)
-        Size = strlen (Data);
-
-
-    if (internal->Queued.Size > 0)
-    {
-        internal->Queued.Add (Data, Size);
-        return;
-    }
-
-    int Sent = send (internal->Socket, Data, Size, LacewingNoSignal);
-
-    if(Sent < Size)
-        internal->Queued.Add (Data + Sent, Size - Sent);
-}
-
 Address &Client::ServerAddress ()
 {
     return *internal->Address;
 }
 
-void Client::DisableNagling ()
+static void onData (Stream &, void * tag, char * buffer, size_t size)
 {
-    internal->Nagle = false;
+    Client::Internal * internal = (Client::Internal *) tag;
 
-    if (internal->Socket != -1)
-        ::DisableNagling (internal->Socket);
+    internal->Handlers.Receive (internal->Public, buffer, size);
 }
 
-bool Client::CheapBuffering ()
+void Client::onReceive (Client::HandlerReceive onReceive)
 {
-    /* TODO : Userland buffering support for Unix client? */
+    internal->Handlers.Receive = onReceive;
 
-    return true;
+    if (onReceive)
+    {
+        AddHandlerData (::onData, internal);
+        Read (-1);
+    }
+    else
+    {
+        RemoveHandlerData (::onData, internal);
+    }
 }
 
-void Client::StartBuffering ()
+static void onClose (Stream &, void * tag)
 {
-    if(!Connected())
-        return;
+    Client::Internal * internal = (Client::Internal *) tag;
 
-    #ifdef LacewingAllowCork
-        int Enabled = 1;
-        setsockopt (internal->Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof (Enabled));
-    #endif
+    internal->Handlers.Disconnect (internal->Public);
 }
 
-void Client::Flush ()
+void Client::onDisconnect (Client::HandlerDisconnect onDisconnect)
 {
-    if(!Connected())
-        return;
+    internal->Handlers.Disconnect = onDisconnect;
 
-    #ifdef LacewingAllowCork    
-        int Enabled = 0;
-        setsockopt (internal->Socket, IPPROTO_TCP, LacewingCork, &Enabled, sizeof (Enabled));
-    #endif
+    if (onDisconnect)
+        AddHandlerClose (::onClose, internal);
+    else
+        RemoveHandlerClose (::onClose, internal);
 }
 
 AutoHandlerFunctions (Client, Connect)
-AutoHandlerFunctions (Client, Disconnect)
-AutoHandlerFunctions (Client, Receive)
 AutoHandlerFunctions (Client, Error)
 

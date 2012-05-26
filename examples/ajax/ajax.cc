@@ -4,8 +4,10 @@
 
 #include <Lacewing.h>
 
+#include <string.h>
 #include <iostream>
 #include <list>
+
 using namespace std;
 
 list <Lacewing::Webserver::Request *> WaitingRequests;
@@ -77,8 +79,11 @@ int main(int argc, char * argv[])
     Webserver.onGet(onGet);
     Webserver.onPost(onPost);
     Webserver.onDisconnect(onDisconnect);
-    
-    Webserver.Host(8080);    
+   
+    Lacewing::Filter Filter;
+    Filter.LocalPort (8080);
+
+    Webserver.Host(Filter);    
     
     EventPump.StartEventLoop();
     

@@ -34,18 +34,8 @@ WebserverClient::WebserverClient (Webserver::Internal &_Server, Server::Client &
 {
 }
 
-char * Webserver::Internal::BorrowSendBuffer ()
+WebserverClient::~ WebserverClient ()
 {
-    if (!SendBuffers.First)
-        for (int i = Webserver::Internal::SendBufferBacklog; i; -- i)
-            SendBuffers.Push (new char [Webserver::Internal::SendBufferSize]);
-
-    return SendBuffers.Pop ();
-}
-
-void Webserver::Internal::ReturnSendBuffer (char * SendBuffer)
-{
-    SendBuffers.Push (SendBuffer);
 }
 
 void Webserver::Internal::SocketConnect (Server &Server, Server::Client &Client)
@@ -62,12 +52,23 @@ void Webserver::Internal::SocketDisconnect (Server &Server, Server::Client &Clie
     delete ((WebserverClient *) Client.Tag);
 }
 
-void Webserver::Internal::SocketReceive (Server &Server, Server::Client &Client, char * Buffer, int Size)
+void Webserver::Internal::SocketReceive (Server &Server, Server::Client &Client, char * Buffer, size_t Size)
 {
     Webserver::Internal &Webserver = *(Webserver::Internal *) Server.Tag;
 
     if (!Client.Tag)
-        Client.Tag = (WebserverClient *) new HTTPClient (Webserver, Client, &Server == Webserver.SecureSocket);
+    {
+        HTTPClient * client = new (std::nothrow) HTTPClient
+            (Webserver, Client, &Server == Webserver.SecureSocket);
+
+        Client.Tag = (WebserverClient *) client;
+
+        if (!Client.Tag)
+            return;
+
+        Client.Write (client->Request.Public);
+        client->Request.Public.BeginQueue ();
+    }
 
     ((WebserverClient *) Client.Tag)->Process(Buffer, Size);
 }
@@ -145,7 +146,7 @@ void Webserver::Host (Filter &Filter)
     if (!Filter.LocalPort())
         Filter.LocalPort(80);
 
-    internal->Socket->Host(Filter, true);
+    internal->Socket->Host(Filter);
 }
 
 void Webserver::HostSecure (int Port)
@@ -166,7 +167,7 @@ void Webserver::HostSecure (Filter &Filter)
     if (!Filter.LocalPort())
         Filter.LocalPort(443);
 
-    internal->SecureSocket->Host(Filter, true);
+    internal->SecureSocket->Host(Filter);
 }
 
 void Webserver::Unhost ()
@@ -211,18 +212,6 @@ int Webserver::SecurePort ()
         return 0;
 
     return internal->SecureSocket->Port ();
-}
-
-lw_i64 Webserver::BytesSent ()
-{
-    return (internal->Socket ? internal->Socket->BytesSent () : 0)
-        + (internal->SecureSocket ? internal->SecureSocket->BytesSent () : 0);
-}
-
-lw_i64 Webserver::BytesReceived ()
-{
-    return (internal->Socket ? internal->Socket->BytesReceived () : 0)
-        + (internal->SecureSocket ? internal->SecureSocket->BytesReceived () : 0);
 }
 
 bool Webserver::LoadCertificateFile (const char * Filename, const char * CommonName)

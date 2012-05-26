@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +27,16 @@
  * SUCH DAMAGE.
  */
 
+struct Pump::Watch
+{
+    Callback onReadReady, onWriteReady;
+    bool EdgeTriggered;
+
+    int FD;
+    void * Tag;
+
+};
+
 struct EventPump::Internal
 {  
     Lacewing::EventPump &EventPump;
@@ -35,16 +45,9 @@ struct EventPump::Internal
 
     Internal (Lacewing::EventPump &_EventPump, int MaxHint);
 
-    struct Event
-    {
-        Pump::Callback ReadReady, WriteReady;
+    Backlog <Pump::Watch> WatchBacklog;
 
-        void * Tag;
-    };
-
-    Backlog <Event> EventBacklog;
-
-    bool Ready (struct Event * Event, bool ReadReady, bool WriteReady);
+    bool Ready (Pump::Watch *, bool ReadReady, bool WriteReady);
 
     Lacewing::Sync Sync_Signals;
 

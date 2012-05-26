@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,11 +44,8 @@ lw_bool lw_file_exists (const char * filename)
 lw_bool lw_path_exists (const char * filename)
     { return PathExists (filename);
     }
-lw_i64 lw_file_size (const char * filename)
+size_t lw_file_size (const char * filename)
     { return FileSize (filename);
-    }
-void lw_int64_to_string (lw_i64 int64, char * buffer)
-    { Int64ToString (int64, buffer);
     }
 void lw_temp_path (char * buffer)
     { TempPath (buffer);

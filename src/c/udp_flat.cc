@@ -53,14 +53,8 @@ void lw_udp_unhost (lw_udp * udp)
 long lw_udp_port (lw_udp * udp)
     { return ((UDP *) udp)->Port ();
     }
-lw_i64 lw_udp_bytes_sent (lw_udp * udp)
-    { return ((UDP *) udp)->BytesSent ();
-    }
-lw_i64 lw_udp_bytes_received (lw_udp * udp)
-    { return ((UDP *) udp)->BytesReceived ();
-    }
 void lw_udp_send (lw_udp * udp, lw_addr * addr, const char * data, long size)
-    { ((UDP *) udp)->Send (*(Address *) addr, data, size);
+    { ((UDP *) udp)->Write (*(Address *) addr, data, size);
     }
 
 AutoHandlerFlat (UDP, lw_udp, Receive, receive)

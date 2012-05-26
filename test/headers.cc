@@ -22,7 +22,7 @@ int main(int argc, char * argv[])
     Lacewing::Webserver Webserver(EventPump);
 
     Webserver.onGet (onGet);
-    Webserver.Host (80);    
+    Webserver.Host (8080);
     
     EventPump.StartEventLoop();
     

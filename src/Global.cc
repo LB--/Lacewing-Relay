@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -86,6 +86,7 @@ void LacewingInitialise()
     #else
 
         SSL_library_init();
+        SSL_load_error_strings();
 
         STACK_OF (SSL_COMP) * comp_methods = SSL_COMP_get_compression_methods();
         sk_SSL_COMP_zero(comp_methods);
@@ -93,6 +94,60 @@ void LacewingInitialise()
     #endif
 
     Initialised = true;
+}
+
+void lw_dump (const char * buffer, size_t size)
+{
+    const int bytes_per_row = 8,
+              text_offset = bytes_per_row * 3 + 8;
+
+    if (size == -1)
+        size = strlen (buffer);
+
+    printf("=== " lw_fmt_size " bytes @ " lw_fmt_size " ===\n", size, buffer);
+
+    int row_offset = 0, row_offset_c = 0, row = 0;
+
+    while (size > 0)
+    {
+        lw_i64 i = row * bytes_per_row + row_offset;
+
+        if (i >= size)
+        {
+            if (row_offset_c >= text_offset) /* printing text? */
+                break;
+            else
+                row_offset = bytes_per_row; /* skip to printing text */
+        }
+        else
+        {
+            unsigned char b = (unsigned char) buffer [i];
+            
+            row_offset_c += row_offset_c >= text_offset ?
+                ( isprint (b) ? printf ("%c", b) : printf (".") )
+                    : printf ("%02hX ", (short) b);
+        }
+
+        if ((++ row_offset) >= bytes_per_row)
+        {
+            row_offset = 0;
+
+            if (row_offset_c < text_offset)
+            {
+                while (row_offset_c < text_offset)
+                    row_offset_c += printf (" ");
+            }
+            else
+            {
+                row_offset = row_offset_c = 0;
+                ++ row;
+
+                printf ("\n");
+            }
+        }
+    }
+
+    printf ("\n===\n");
 }
 
 bool Lacewing::FileExists(const char * Filename)
@@ -136,7 +191,7 @@ bool Lacewing::PathExists(const char * Filename)
     return false;
 }
 
-lw_i64 Lacewing::FileSize(const char * Filename)
+size_t Lacewing::FileSize(const char * Filename)
 {
     #ifdef LacewingWindows
     
@@ -204,11 +259,6 @@ lw_i64 Lacewing::CurrentThreadID()
     #endif
 
     return -1;
-}
-
-void Lacewing::Int64ToString(lw_i64 Value, char * Output)
-{
-    sprintf(Output, I64Format, Value);
 }
 
 void Lacewing::TempPath(char * Buffer)

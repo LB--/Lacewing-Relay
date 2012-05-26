@@ -6,6 +6,8 @@ CXXFLAGS = @CXXFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
+CXX = clang++
+
 SO_EXT = @SO_EXT@
 SONAME_FLAGS = @SONAME_FLAGS@
 
@@ -21,109 +23,116 @@ all: liblacewing.@SO_EXT@ liblacewing.a
 
 liblacewing.@SO_EXT@: $(OBJECTS)
 	@echo Linking shared library...
-	@g++ $(CXXFLAGS) $(SONAME_FLAGS) -shared -o $(REAL_NAME) ./build/*.o $(LIBS)
+	@$(CXX) $(CXXFLAGS) $(SONAME_FLAGS) -shared -o $(REAL_NAME) ./build/*.o $(LIBS)
 
 liblacewing.a: $(OBJECTS)
 	@echo Linking static library...
 	@ar rcs liblacewing.a ./build/*.o
 
 build/Global.o: src/Global.cc $(COMMONDEPS) 
-	c++ $(CXXFLAGS) -c -o $@ src/Global.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/Global.cc
 build/Sync.o: src/Sync.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/Sync.cc
-build/SpinSync.o: src/SpinSync.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/SpinSync.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/Sync.cc
 build/Filter.o: src/Filter.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/Filter.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/Filter.cc
 build/Address.o: src/Address.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/Address.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/Address.cc
+build/Stream.o: src/Stream.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/Stream.cc
+build/StreamGraph.o: src/StreamGraph.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/StreamGraph.cc
+build/Pipe.o: src/Pipe.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/Pipe.cc
 build/Pump.o: src/Pump.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/Pump.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/Pump.cc
 build/Error.o: src/Error.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/Error.cc
-build/RelayServer.o: src/relay/RelayServer.cc $(COMMONDEPS) src/relay/FrameReader.h src/relay/IDPool.h
-	c++ $(CXXFLAGS) -c -o $@ src/relay/RelayServer.cc
-build/RelayClient.o: src/relay/RelayClient.cc $(COMMONDEPS) src/relay/FrameReader.h src/relay/IDPool.h
-	c++ $(CXXFLAGS) -c -o $@ src/relay/RelayClient.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/Error.cc
 build/Webserver.o: src/webserver/Webserver.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/webserver/Webserver.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/Webserver.cc
 build/Request.o: src/webserver/Request.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/webserver/Request.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/Request.cc
 build/Sessions.o: src/webserver/Sessions.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/webserver/Sessions.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/Sessions.cc
 build/MimeTypes.o: src/webserver/MimeTypes.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/webserver/MimeTypes.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/MimeTypes.cc
 build/HTTP.o: src/webserver/http/HTTP.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/webserver/http/HTTP.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/http/HTTP.cc
 build/http-parser.o: deps/http-parser/http_parser.c deps/http-parser/http_parser.h
-	c++ $(CXXFLAGS) -c -o $@ deps/http-parser/http_parser.c
+	$(CXX) $(CXXFLAGS) -c -o $@ deps/http-parser/http_parser.c
 build/Multipart.o: src/webserver/http/Multipart.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/webserver/http/Multipart.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/http/Multipart.cc
 build/FlashPolicy.o: src/FlashPolicy.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/FlashPolicy.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/FlashPolicy.cc
 build/addr_flat.o: src/c/addr_flat.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/c/addr_flat.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/addr_flat.cc
 build/eventpump_flat.o: src/c/eventpump_flat.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/c/eventpump_flat.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/eventpump_flat.cc
 build/global_flat.o: src/c/global_flat.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/c/global_flat.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/global_flat.cc
 build/server_flat.o: src/c/server_flat.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/c/server_flat.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/server_flat.cc
 build/timer_flat.o: src/c/timer_flat.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/c/timer_flat.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/timer_flat.cc
 build/webserver_flat.o: src/c/webserver_flat.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/c/webserver_flat.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/webserver_flat.cc
 build/filter_flat.o: src/c/filter_flat.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/c/filter_flat.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/filter_flat.cc
 build/udp_flat.o: src/c/udp_flat.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/c/udp_flat.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/udp_flat.cc
 build/client_flat.o: src/c/client_flat.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/c/client_flat.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/client_flat.cc
 build/error_flat.o: src/c/error_flat.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/c/error_flat.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/error_flat.cc
 build/sync_flat.o: src/c/sync_flat.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/c/sync_flat.cc
-build/ssync_flat.o: src/c/ssync_flat.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/c/ssync_flat.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/sync_flat.cc
 build/thread_flat.o: src/c/thread_flat.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/c/thread_flat.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/thread_flat.cc
 build/flashpolicy_flat.o: src/c/flashpolicy_flat.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/c/flashpolicy_flat.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/flashpolicy_flat.cc
+
+build/openssl-SSLClient.o: src/openssl/SSLClient.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/openssl/SSLClient.cc
 
 build/unix-Event.o: src/unix/Event.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/unix/Event.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/unix/Event.cc
 build/unix-EventPump.o: src/unix/EventPump.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/unix/EventPump.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/unix/EventPump.cc
 build/unix-Server.o: src/unix/Server.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/unix/Server.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/unix/Server.cc
 build/unix-Timer.o: src/unix/Timer.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/unix/Timer.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/unix/Timer.cc
 build/unix-UDP.o: src/unix/UDP.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/unix/UDP.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/unix/UDP.cc
 build/unix-Thread.o: src/unix/Thread.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/unix/Thread.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/unix/Thread.cc
 build/unix-Client.o: src/unix/Client.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/unix/Client.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/unix/Client.cc
+build/unix-FDStream.o: src/unix/FDStream.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/unix/FDStream.cc
+build/unix-File.o: src/unix/File.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/unix/File.cc
 
 build/windows-Event.o: src/windows/Event.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/windows/Event.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/Event.cc
 build/windows-EventPump.o: src/windows/EventPump.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/windows/EventPump.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/EventPump.cc
 build/windows-Server.o: src/windows/Server.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/windows/Server.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/Server.cc
 build/windows-Timer.o: src/windows/Timer.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/windows/Timer.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/Timer.cc
 build/windows-UDP.o: src/windows/UDP.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/windows/UDP.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/UDP.cc
 build/windows-Thread.o: src/windows/Thread.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/windows/Thread.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/Thread.cc
 build/windows-Client.o: src/windows/Client.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/windows/Client.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/Client.cc
 build/windows-Compat.o: src/windows/Compat.cc $(COMMONDEPS)
-	c++ $(CXXFLAGS) -c -o $@ src/windows/Compat.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/Compat.cc
+build/windows-FDStream.o: src/windows/FDStream.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/FDStream.cc
 
 ############
-    
+	
 clean:
 	rm -f liblacewing.@SO_EXT@* liblacewing.a ./build/*.o
 

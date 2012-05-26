@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -270,7 +270,7 @@ void HTTPClient::MultipartProcessor::ProcessHeader()
 
         for(;;)
         {
-            if(i = strchr(Begin, ';'))
+            if ((i = strchr(Begin, ';')))
                 *(i ++) = 0;
             else
                 i = Begin + strlen(Begin) - 1;
@@ -342,8 +342,6 @@ void HTTPClient::MultipartProcessor::ProcessDispositionPair(char * Pair)
 
 void HTTPClient::MultipartProcessor::ToFile(const char * Data, size_t Size)
 {
-    LacewingAssert(Size >= 0);
-
     if(!Size)
         return;
 
@@ -365,7 +363,7 @@ void HTTPClient::MultipartProcessor::ToFile(const char * Data, size_t Size)
         if(fwrite(Data, 1, Size, CurrentUpload->AutoSaveFile) != Size)
         {
             CurrentUpload->AutoSaveFile = 0;
-            Client.Socket.Disconnect ();
+            Client.Socket.Close ();
         }
 
         return;

@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -53,8 +53,6 @@ struct UDP::Internal
     Lacewing::Filter Filter;
 
     int Socket;
-
-    lw_i64 BytesSent, BytesReceived;
 };
 
 static void ReadReady (UDP::Internal * internal, bool)
@@ -62,7 +60,7 @@ static void ReadReady (UDP::Internal * internal, bool)
     sockaddr_storage From;
     socklen_t FromSize = sizeof (From);
 
-    char Buffer[256 * 1024];
+    char Buffer [DefaultBufferSize];
     
     for(;;)
     {
@@ -147,7 +145,7 @@ UDP::~UDP ()
     delete internal;
 }
 
-void UDP::Send (Address &Address, const char * Data, int Size)
+void UDP::Write (Address &Address, const char * Data, size_t Size)
 {
     if(!Address.Ready())
     {
@@ -183,16 +181,6 @@ void UDP::Send (Address &Address, const char * Data, int Size)
 
         return;
     }
-}
-
-lw_i64 UDP::BytesReceived ()
-{
-    return internal->BytesReceived;
-}
-
-lw_i64 UDP::BytesSent ()
-{
-    return internal->BytesSent;
 }
 
 AutoHandlerFunctions (UDP, Error)

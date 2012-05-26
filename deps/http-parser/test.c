@@ -587,7 +587,7 @@ const struct message requests[] =
   ,.body= ""
   }
 
-#define LINE_FOLDING_IN_HEADER 20
+#define LINE_FOLDING_IN_HEADER 21
 , {.name= "line folding in header value"
   ,.type= HTTP_REQUEST
   ,.raw= "GET / HTTP/1.1\r\n"
@@ -616,7 +616,7 @@ const struct message requests[] =
   }
 
 
-#define QUERY_TERMINATED_HOST 21
+#define QUERY_TERMINATED_HOST 22
 , {.name= "host terminated by a query string"
   ,.type= HTTP_REQUEST
   ,.raw= "GET http://hypnotoad.org?hail=all HTTP/1.1\r\n"
@@ -635,7 +635,7 @@ const struct message requests[] =
   ,.body= ""
   }
 
-#define QUERY_TERMINATED_HOSTPORT 22
+#define QUERY_TERMINATED_HOSTPORT 23
 , {.name= "host:port terminated by a query string"
   ,.type= HTTP_REQUEST
   ,.raw= "GET http://hypnotoad.org:1234?hail=all HTTP/1.1\r\n"
@@ -655,7 +655,7 @@ const struct message requests[] =
   ,.body= ""
   }
 
-#define SPACE_TERMINATED_HOSTPORT 23
+#define SPACE_TERMINATED_HOSTPORT 24
 , {.name= "host:port terminated by a space"
   ,.type= HTTP_REQUEST
   ,.raw= "GET http://hypnotoad.org:1234 HTTP/1.1\r\n"
@@ -675,7 +675,7 @@ const struct message requests[] =
   ,.body= ""
   }
 
-#define PATCH_REQ 24
+#define PATCH_REQ 25
 , {.name = "PATCH request"
   ,.type= HTTP_REQUEST
   ,.raw= "PATCH /file.txt HTTP/1.1\r\n"
@@ -703,7 +703,7 @@ const struct message requests[] =
   ,.body= "cccccccccc"
   }
 
-#define CONNECT_CAPS_REQUEST 25
+#define CONNECT_CAPS_REQUEST 26
 , {.name = "connect caps request"
   ,.type= HTTP_REQUEST
   ,.raw= "CONNECT HOME0.NETSCAPE.COM:443 HTTP/1.0\r\n"
@@ -728,7 +728,7 @@ const struct message requests[] =
   }
 
 #if !HTTP_PARSER_STRICT
-#define UTF8_PATH_REQ 26
+#define UTF8_PATH_REQ 27
 , {.name= "utf-8 path request"
   ,.type= HTTP_REQUEST
   ,.raw= "GET /δ¶/δt/pope?q=1#narf HTTP/1.1\r\n"
@@ -749,7 +749,7 @@ const struct message requests[] =
   ,.body= ""
   }
 
-#define HOSTNAME_UNDERSCORE 27
+#define HOSTNAME_UNDERSCORE 28
 , {.name = "hostname underscore"
   ,.type= HTTP_REQUEST
   ,.raw= "CONNECT home_0.netscape.com:443 HTTP/1.0\r\n"
@@ -773,6 +773,102 @@ const struct message requests[] =
   ,.body= ""
   }
 #endif  /* !HTTP_PARSER_STRICT */
+
+/* see https://github.com/ry/http-parser/issues/47 */
+#define EAT_TRAILING_CRLF_NO_CONNECTION_CLOSE 29
+, {.name = "eat CRLF between requests, no \"Connection: close\" header"
+  ,.raw= "POST / HTTP/1.1\r\n"
+         "Host: www.example.com\r\n"
+         "Content-Type: application/x-www-form-urlencoded\r\n"
+         "Content-Length: 4\r\n"
+         "\r\n"
+         "q=42\r\n" /* note the trailing CRLF */
+  ,.should_keep_alive= TRUE
+  ,.message_complete_on_eof= FALSE
+  ,.http_major= 1
+  ,.http_minor= 1
+  ,.method= HTTP_POST
+  ,.query_string= ""
+  ,.fragment= ""
+  ,.request_path= "/"
+  ,.request_url= "/"
+  ,.num_headers= 3
+  ,.upgrade= 0
+  ,.headers= { { "Host", "www.example.com" }
+             , { "Content-Type", "application/x-www-form-urlencoded" }
+             , { "Content-Length", "4" }
+             }
+  ,.body= "q=42"
+  }
+
+/* see https://github.com/ry/http-parser/issues/47 */
+#define EAT_TRAILING_CRLF_WITH_CONNECTION_CLOSE 30
+, {.name = "eat CRLF between requests even if \"Connection: close\" is set"
+  ,.raw= "POST / HTTP/1.1\r\n"
+         "Host: www.example.com\r\n"
+         "Content-Type: application/x-www-form-urlencoded\r\n"
+         "Content-Length: 4\r\n"
+         "Connection: close\r\n"
+         "\r\n"
+         "q=42\r\n" /* note the trailing CRLF */
+  ,.should_keep_alive= FALSE
+  ,.message_complete_on_eof= FALSE /* input buffer isn't empty when on_message_complete is called */
+  ,.http_major= 1
+  ,.http_minor= 1
+  ,.method= HTTP_POST
+  ,.query_string= ""
+  ,.fragment= ""
+  ,.request_path= "/"
+  ,.request_url= "/"
+  ,.num_headers= 4
+  ,.upgrade= 0
+  ,.headers= { { "Host", "www.example.com" }
+             , { "Content-Type", "application/x-www-form-urlencoded" }
+             , { "Content-Length", "4" }
+             , { "Connection", "close" }
+             }
+  ,.body= "q=42"
+  }
+
+#define PURGE_REQ 31
+, {.name = "PURGE request"
+  ,.type= HTTP_REQUEST
+  ,.raw= "PURGE /file.txt HTTP/1.1\r\n"
+         "Host: www.example.com\r\n"
+         "\r\n"
+  ,.should_keep_alive= TRUE
+  ,.message_complete_on_eof= FALSE
+  ,.http_major= 1
+  ,.http_minor= 1
+  ,.method= HTTP_PURGE
+  ,.query_string= ""
+  ,.fragment= ""
+  ,.request_path= "/file.txt"
+  ,.request_url= "/file.txt"
+  ,.num_headers= 1
+  ,.headers= { { "Host", "www.example.com" } }
+  ,.body= ""
+  }
+
+#define SEARCH_REQ 32
+, {.name = "SEARCH request"
+  ,.type= HTTP_REQUEST
+  ,.raw= "SEARCH / HTTP/1.1\r\n"
+         "Host: www.example.com\r\n"
+         "\r\n"
+  ,.should_keep_alive= TRUE
+  ,.message_complete_on_eof= FALSE
+  ,.http_major= 1
+  ,.http_minor= 1
+  ,.method= HTTP_SEARCH
+  ,.query_string= ""
+  ,.fragment= ""
+  ,.request_path= "/"
+  ,.request_url= "/"
+  ,.num_headers= 1
+  ,.headers= { { "Host", "www.example.com" } }
+  ,.body= ""
+  }
 
 , {.name= NULL } /* sentinel */
 };
@@ -1376,7 +1472,7 @@ message_complete_cb (http_parser *p)
                     "value in both on_message_complete and on_headers_complete "
                     "but it doesn't! ***\n\n");
     assert(0);
-    exit(1);
+    abort();
   }
   messages[num_messages].message_complete_cb_called = TRUE;
 
@@ -1393,7 +1489,7 @@ dontcall_message_begin_cb (http_parser *p)
 {
   if (p) { } // gcc
   fprintf(stderr, "\n\n*** on_message_begin() called on paused parser ***\n\n");
-  exit(1);
+  abort();
 }
 
 int
@@ -1401,7 +1497,7 @@ dontcall_header_field_cb (http_parser *p, const char *buf, size_t len)
 {
   if (p || buf || len) { } // gcc
   fprintf(stderr, "\n\n*** on_header_field() called on paused parser ***\n\n");
-  exit(1);
+  abort();
 }
 
 int
@@ -1409,7 +1505,7 @@ dontcall_header_value_cb (http_parser *p, const char *buf, size_t len)
 {
   if (p || buf || len) { } // gcc
   fprintf(stderr, "\n\n*** on_header_value() called on paused parser ***\n\n");
-  exit(1);
+  abort();
 }
 
 int
@@ -1417,7 +1513,7 @@ dontcall_request_url_cb (http_parser *p, const char *buf, size_t len)
 {
   if (p || buf || len) { } // gcc
   fprintf(stderr, "\n\n*** on_request_url() called on paused parser ***\n\n");
-  exit(1);
+  abort();
 }
 
 int
@@ -1425,7 +1521,7 @@ dontcall_body_cb (http_parser *p, const char *buf, size_t len)
 {
   if (p || buf || len) { } // gcc
   fprintf(stderr, "\n\n*** on_body_cb() called on paused parser ***\n\n");
-  exit(1);
+  abort();
 }
 
 int
@@ -1434,7 +1530,7 @@ dontcall_headers_complete_cb (http_parser *p)
   if (p) { } // gcc
   fprintf(stderr, "\n\n*** on_headers_complete() called on paused "
                   "parser ***\n\n");
-  exit(1);
+  abort();
 }
 
 int
@@ -1443,7 +1539,7 @@ dontcall_message_complete_cb (http_parser *p)
   if (p) { } // gcc
   fprintf(stderr, "\n\n*** on_message_complete() called on paused "
                   "parser ***\n\n");
-  exit(1);
+  abort();
 }
 
 static http_parser_settings settings_dontcall =
@@ -1695,7 +1791,7 @@ message_eq (int index, const struct message *expected)
     if (http_parser_parse_url(m->request_url, strlen(m->request_url), 0, &u)) {
       fprintf(stderr, "\n\n*** failed to parse URL %s ***\n\n",
         m->request_url);
-      exit(1);
+      abort();
     }
 
     m->port = (u.field_set & (1 << UF_PORT)) ?
@@ -1773,7 +1869,7 @@ upgrade_message_fix(char *body, const size_t nread, const size_t nmsgs, ...) {
 
       /* Check the portion of the response after its specified upgrade */
       if (!check_str_eq(m, "upgrade", body + off, body + nread)) {
-        exit(1);
+        abort();
       }
 
       /* Fix up the response so that message_eq() will verify the beginning
@@ -1789,7 +1885,7 @@ upgrade_message_fix(char *body, const size_t nread, const size_t nmsgs, ...) {
   va_end(ap);
   printf("\n\n*** Error: expected a message with upgrade ***\n");
 
-  exit(1);
+  abort();
 }
 
 static void
@@ -1835,6 +1931,280 @@ print_error (const char *raw, size_t error_location)
   fprintf(stderr, "^\n\nerror location: %u\n", (unsigned int)error_location);
 }
 
+void
+test_preserve_data (void)
+{
+  char my_data[] = "application-specific data";
+  http_parser parser;
+  parser.data = my_data;
+  http_parser_init(&parser, HTTP_REQUEST);
+  if (parser.data != my_data) {
+    printf("\n*** parser.data not preserved accross http_parser_init ***\n\n");
+    abort();
+  }
+}
+
+struct url_test {
+  const char *name;
+  const char *url;
+  int is_connect;
+  struct http_parser_url u;
+  int rv;
+};
+
+const struct url_test url_tests[] =
+{ {.name="proxy request"
+  ,.url="http://hostname/"
+  ,.is_connect=0
+  ,.u=
+    {.field_set=(1 << UF_SCHEMA) | (1 << UF_HOST) | (1 << UF_PATH)
+    ,.port=0
+    ,.field_data=
+      {{  0,  4 } /* UF_SCHEMA */
+      ,{  7,  8 } /* UF_HOST */
+      ,{  0,  0 } /* UF_PORT */
+      ,{ 15,  1 } /* UF_PATH */
+      ,{  0,  0 } /* UF_QUERY */
+      ,{  0,  0 } /* UF_FRAGMENT */
+      }
+    }
+  ,.rv=0
+  }
+
+, {.name="CONNECT request"
+  ,.url="hostname:443"
+  ,.is_connect=1
+  ,.u=
+    {.field_set=(1 << UF_HOST) | (1 << UF_PORT)
+    ,.port=443
+    ,.field_data=
+      {{  0,  0 } /* UF_SCHEMA */
+      ,{  0,  8 } /* UF_HOST */
+      ,{  9,  3 } /* UF_PORT */
+      ,{  0,  0 } /* UF_PATH */
+      ,{  0,  0 } /* UF_QUERY */
+      ,{  0,  0 } /* UF_FRAGMENT */
+      }
+    }
+  ,.rv=0
+  }
+
+, {.name="proxy ipv6 request"
+  ,.url="http://[1:2::3:4]/"
+  ,.is_connect=0
+  ,.u=
+    {.field_set=(1 << UF_SCHEMA) | (1 << UF_HOST) | (1 << UF_PATH)
+    ,.port=0
+    ,.field_data=
+      {{  0,  4 } /* UF_SCHEMA */
+      ,{  8,  8 } /* UF_HOST */
+      ,{  0,  0 } /* UF_PORT */
+      ,{ 17,  1 } /* UF_PATH */
+      ,{  0,  0 } /* UF_QUERY */
+      ,{  0,  0 } /* UF_FRAGMENT */
+      }
+    }
+  ,.rv=0
+  }
+
+, {.name="CONNECT ipv6 address"
+  ,.url="[1:2::3:4]:443"
+  ,.is_connect=1
+  ,.u=
+    {.field_set=(1 << UF_HOST) | (1 << UF_PORT)
+    ,.port=443
+    ,.field_data=
+      {{  0,  0 } /* UF_SCHEMA */
+      ,{  1,  8 } /* UF_HOST */
+      ,{ 11,  3 } /* UF_PORT */
+      ,{  0,  0 } /* UF_PATH */
+      ,{  0,  0 } /* UF_QUERY */
+      ,{  0,  0 } /* UF_FRAGMENT */
+      }
+    }
+  ,.rv=0
+  }
+
+, {.name="extra ? in query string"
+  ,.url="http://a.tbcdn.cn/p/fp/2010c/??fp-header-min.css,fp-base-min.css,fp-channel-min.css,fp-product-min.css,fp-mall-min.css,fp-category-min.css,fp-sub-min.css,fp-gdp4p-min.css,fp-css3-min.css,fp-misc-min.css?t=20101022.css"
+  ,.is_connect=0
+  ,.u=
+    {.field_set=(1<<UF_SCHEMA) | (1<<UF_HOST) | (1<<UF_PATH) | (1<<UF_QUERY)
+    ,.port=0
+    ,.field_data=
+      {{  0,  4 } /* UF_SCHEMA */
+      ,{  7, 10 } /* UF_HOST */
+      ,{  0,  0 } /* UF_PORT */
+      ,{ 17, 12 } /* UF_PATH */
+      ,{ 30,187 } /* UF_QUERY */
+      ,{  0,  0 } /* UF_FRAGMENT */
+      }
+    }
+  ,.rv=0
+  }
+
+, {.name="proxy empty host"
+  ,.url="http://:443/"
+  ,.is_connect=0
+  ,.rv=1
+  }
+
+, {.name="proxy empty port"
+  ,.url="http://hostname:/"
+  ,.is_connect=0
+  ,.rv=1
+  }
+
+, {.name="CONNECT empty host"
+  ,.url=":443"
+  ,.is_connect=1
+  ,.rv=1
+  }
+
+, {.name="CONNECT empty port"
+  ,.url="hostname:"
+  ,.is_connect=1
+  ,.rv=1
+  }
+
+, {.name="CONNECT with extra bits"
+  ,.url="hostname:443/"
+  ,.is_connect=1
+  ,.rv=1
+  }
+
+, {.name="space in URL"
+  ,.url="/foo bar/"
+  ,.rv=1 /* s_dead */
+  }
+
+, {.name="carriage return in URL"
+  ,.url="/foo\rbar/"
+  ,.rv=1 /* s_dead */
+  }
+
+, {.name="line feed in URL"
+  ,.url="/foo\nbar/"
+  ,.rv=1 /* s_dead */
+  }
+
+#if HTTP_PARSER_STRICT
+
+, {.name="tab in URL"
+  ,.url="/foo\tbar/"
+  ,.rv=1 /* s_dead */
+  }
+
+, {.name="form feed in URL"
+  ,.url="/foo\fbar/"
+  ,.rv=1 /* s_dead */
+  }
+
+#else /* !HTTP_PARSER_STRICT */
+
+, {.name="tab in URL"
+  ,.url="/foo\tbar/"
+  ,.u=
+    {.field_set=(1 << UF_PATH)
+    ,.field_data=
+      {{  0,  0 } /* UF_SCHEMA */
+      ,{  0,  0 } /* UF_HOST */
+      ,{  0,  0 } /* UF_PORT */
+      ,{  0,  9 } /* UF_PATH */
+      ,{  0,  0 } /* UF_QUERY */
+      ,{  0,  0 } /* UF_FRAGMENT */
+      }
+    }
+  ,.rv=0
+  }
+
+, {.name="form feed in URL"
+  ,.url="/foo\fbar/"
+  ,.u=
+    {.field_set=(1 << UF_PATH)
+    ,.field_data=
+      {{  0,  0 } /* UF_SCHEMA */
+      ,{  0,  0 } /* UF_HOST */
+      ,{  0,  0 } /* UF_PORT */
+      ,{  0,  9 } /* UF_PATH */
+      ,{  0,  0 } /* UF_QUERY */
+      ,{  0,  0 } /* UF_FRAGMENT */
+      }
+    }
+  ,.rv=0
+  }
+#endif
+};
+
+void
+dump_url (const char *url, const struct http_parser_url *u)
+{
+  char part[512];
+  unsigned int i;
+
+  printf("\tfield_set: 0x%x, port: %u\n", u->field_set, u->port);
+  for (i = 0; i < UF_MAX; i++) {
+    if ((u->field_set & (1 << i)) == 0) {
+      printf("\tfield_data[%u]: unset\n", i);
+      continue;
+    }
+
+    memcpy(part, url + u->field_data[i].off, u->field_data[i].len);
+    part[u->field_data[i].len] = '\0';
+
+    printf("\tfield_data[%u]: off: %u len: %u part: \"%s\"\n",
+           i,
+           u->field_data[i].off,
+           u->field_data[i].len,
+           part);
+  }
+}
+
+void
+test_parse_url (void)
+{
+  struct http_parser_url u;
+  const struct url_test *test;
+  unsigned int i;
+  int rv;
+
+  for (i = 0; i < (sizeof(url_tests) / sizeof(url_tests[0])); i++) {
+    test = &url_tests[i];
+    memset(&u, 0, sizeof(u));
+
+    rv = http_parser_parse_url(test->url,
+                               strlen(test->url),
+                               test->is_connect,
+                               &u);
+
+    if (test->rv == 0) {
+      if (rv != 0) {
+        printf("\n*** http_parser_parse_url(\"%s\") \"%s\" test failed, "
+               "unexpected rv %d ***\n\n", test->url, test->name, rv);
+        abort();
+      }
+
+      if (memcmp(&u, &test->u, sizeof(u)) != 0) {
+        printf("\n*** http_parser_parse_url(\"%s\") \"%s\" failed ***\n",
+               test->url, test->name);
+
+        printf("target http_parser_url:\n");
+        dump_url(test->url, &test->u);
+        printf("result http_parser_url:\n");
+        dump_url(test->url, &u);
+
+        abort();
+      }
+    } else {
+      /* test->rv != 0 */
+      if (rv == 0) {
+        printf("\n*** http_parser_parse_url(\"%s\") \"%s\" test failed, "
+               "unexpected rv %d ***\n\n", test->url, test->name, rv);
+        abort();
+      }
+    }
+  }
+}
 
 void
 test_message (const struct message *message)
@@ -1859,7 +2229,7 @@ test_message (const struct message *message)
 
       if (read != msg1len) {
         print_error(msg1, read);
-        exit(1);
+        abort();
       }
     }
 
@@ -1873,24 +2243,24 @@ test_message (const struct message *message)
 
     if (read != msg2len) {
       print_error(msg2, read);
-      exit(1);
+      abort();
     }
 
     read = parse(NULL, 0);
 
     if (read != 0) {
       print_error(message->raw, read);
-      exit(1);
+      abort();
     }
 
   test:
 
     if (num_messages != 1) {
       printf("\n*** num_messages != 1 after testing '%s' ***\n\n", message->name);
-      exit(1);
+      abort();
     }
 
-    if(!message_eq(0, message)) exit(1);
+    if(!message_eq(0, message)) abort();
 
     parser_free();
   }
@@ -1911,7 +2281,7 @@ test_message_count_body (const struct message *message)
     read = parse_count_body(message->raw + i, toread);
     if (read != toread) {
       print_error(message->raw, read);
-      exit(1);
+      abort();
     }
   }
 
@@ -1919,15 +2289,15 @@ test_message_count_body (const struct message *message)
   read = parse_count_body(NULL, 0);
   if (read != 0) {
     print_error(message->raw, read);
-    exit(1);
+    abort();
   }
 
   if (num_messages != 1) {
     printf("\n*** num_messages != 1 after testing '%s' ***\n\n", message->name);
-    exit(1);
+    abort();
   }
 
-  if(!message_eq(0, message)) exit(1);
+  if(!message_eq(0, message)) abort();
 
   parser_free();
 }
@@ -1959,7 +2329,7 @@ test_simple (const char *buf, enum http_errno err_expected)
 #endif
     fprintf(stderr, "\n*** test_simple expected %s, but saw %s ***\n\n%s\n",
         http_errno_name(err_expected), http_errno_name(err), buf);
-    exit(1);
+    abort();
   }
 }
 
@@ -1988,7 +2358,54 @@ test_header_overflow_error (int req)
   }
 
   fprintf(stderr, "\n*** Error expected but none in header overflow test ***\n");
-  exit(1);
+  abort();
+}
+
+static void
+test_content_length_overflow (const char *buf, size_t buflen, int expect_ok)
+{
+  http_parser parser;
+  http_parser_init(&parser, HTTP_RESPONSE);
+  http_parser_execute(&parser, &settings_null, buf, buflen);
+
+  if (expect_ok)
+    assert(HTTP_PARSER_ERRNO(&parser) == HPE_OK);
+  else
+    assert(HTTP_PARSER_ERRNO(&parser) == HPE_INVALID_CONTENT_LENGTH);
+}
+
+void
+test_header_content_length_overflow_error (void)
+{
+#define X(size)                                                               \
+  "HTTP/1.1 200 OK\r\n"                                                       \
+  "Content-Length: " #size "\r\n"                                             \
+  "\r\n"
+  const char a[] = X(18446744073709551614); /* 2^64-2 */
+  const char b[] = X(18446744073709551615); /* 2^64-1 */
+  const char c[] = X(18446744073709551616); /* 2^64   */
+#undef X
+  test_content_length_overflow(a, sizeof(a) - 1, 1); /* expect ok      */
+  test_content_length_overflow(b, sizeof(b) - 1, 0); /* expect failure */
+  test_content_length_overflow(c, sizeof(c) - 1, 0); /* expect failure */
+}
+
+void
+test_chunk_content_length_overflow_error (void)
+{
+#define X(size)                                                               \
+    "HTTP/1.1 200 OK\r\n"                                                     \
+    "Transfer-Encoding: chunked\r\n"                                          \
+    "\r\n"                                                                    \
+    #size "\r\n"                                                              \
+    "..."
+  const char a[] = X(FFFFFFFFFFFFFFFE);  /* 2^64-2 */
+  const char b[] = X(FFFFFFFFFFFFFFFF);  /* 2^64-1 */
+  const char c[] = X(10000000000000000); /* 2^64   */
+#undef X
+  test_content_length_overflow(a, sizeof(a) - 1, 1); /* expect ok      */
+  test_content_length_overflow(b, sizeof(b) - 1, 0); /* expect failure */
+  test_content_length_overflow(c, sizeof(c) - 1, 0); /* expect failure */
 }
 
 void
@@ -2021,7 +2438,7 @@ test_no_overflow_long_body (int req, size_t length)
           "\n*** error in test_no_overflow_long_body %s of length %zu ***\n",
           req ? "REQUEST" : "RESPONSE",
           length);
-  exit(1);
+  abort();
 }
 
 void
@@ -2053,26 +2470,26 @@ test_multiple3 (const struct message *r1, const struct message *r2, const struct
 
   if (read != strlen(total)) {
     print_error(total, read);
-    exit(1);
+    abort();
   }
 
   read = parse(NULL, 0);
 
   if (read != 0) {
     print_error(total, read);
-    exit(1);
+    abort();
   }
 
 test:
 
   if (message_count != num_messages) {
     fprintf(stderr, "\n\n*** Parser didn't see 3 messages only %d *** \n", num_messages);
-    exit(1);
+    abort();
   }
 
-  if (!message_eq(0, r1)) exit(1);
-  if (message_count > 1 && !message_eq(1, r2)) exit(1);
-  if (message_count > 2 && !message_eq(2, r3)) exit(1);
+  if (!message_eq(0, r1)) abort();
+  if (message_count > 1 && !message_eq(1, r2)) abort();
+  if (message_count > 2 && !message_eq(2, r3)) abort();
 
   parser_free();
 }
@@ -2195,7 +2612,7 @@ test:
   fprintf(stderr, "buf1 (%u) %s\n\n", (unsigned int)buf1_len, buf1);
   fprintf(stderr, "buf2 (%u) %s\n\n", (unsigned int)buf2_len , buf2);
   fprintf(stderr, "buf3 (%u) %s\n", (unsigned int)buf3_len, buf3);
-  exit(1);
+  abort();
 }
 
 // user required to free the result
@@ -2274,10 +2691,10 @@ test_message_pause (const struct message *msg)
 test:
   if (num_messages != 1) {
     printf("\n*** num_messages != 1 after testing '%s' ***\n\n", msg->name);
-    exit(1);
+    abort();
   }
 
-  if(!message_eq(0, msg)) exit(1);
+  if(!message_eq(0, msg)) abort();
 
   parser_free();
 }
@@ -2295,6 +2712,10 @@ main (void)
   for (request_count = 0; requests[request_count].name; request_count++);
   for (response_count = 0; responses[response_count].name; response_count++);
 
+  //// API
+  test_preserve_data();
+  test_parse_url();
+
   //// OVERFLOW CONDITIONS
 
   test_header_overflow_error(HTTP_REQUEST);
@@ -2304,6 +2725,9 @@ main (void)
   test_header_overflow_error(HTTP_RESPONSE);
   test_no_overflow_long_body(HTTP_RESPONSE, 1000);
   test_no_overflow_long_body(HTTP_RESPONSE, 100000);
+
+  test_header_content_length_overflow_error();
+  test_chunk_content_length_overflow_error();
 
   //// RESPONSES
 

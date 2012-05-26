@@ -29,14 +29,20 @@
 
 #include "Common.h"
 
+Webserver::Request::Request (Pump &_Pump) : Pipe (_Pump)
+{
+}
+
+Webserver::Request::~ Request ()
+{
+}
+
 Webserver::Request::Internal::Internal
     (Webserver::Internal &_Server, WebserverClient &_Client)
-        : Server (_Server), Client (_Client)
+        : Server (_Server), Client (_Client), Public (_Server.Pump)
 {
-    Public.Tag         = 0;
+    Public.Tag = 0;
     Public.internal = this;
-
-    FirstFile = 0;
 }
 
 Webserver::Request::Internal::~ Internal ()
@@ -73,11 +79,8 @@ void Webserver::Request::Internal::BeforeHandler ()
 
     strcpy(Status, "200 OK");
 
-    Response.Reset();     
     OutHeaders.Clear();
     
-    TotalFileSize = TotalNonFileSize = 0;
-
     OutHeaders.Set ("Server", Lacewing::Version ());
     OutHeaders.Set ("Content-Type", "text/html; charset=UTF-8");
 
@@ -343,68 +346,6 @@ bool Webserver::Request::Internal::In_URL (char * URL)
     return true;
 }
 
-void Webserver::Request::Internal::AddFileSend (const char * Filename, lw_i64 FileOffset, lw_i64 FileSize)
-{
-    Webserver::Request::Internal::File * File = FirstFile;
-
-    if(!File)
-    {
-        File = FirstFile = new Webserver::Request::Internal::File;
-    }
-    else
-    {
-        while(File->Next)
-            File = File->Next;
-
-        File->Next = new Webserver::Request::Internal::File;
-        File = File->Next;
-    }
-
-    File->Next       = 0;
-    File->Offset     = Response.Size;
-    File->FileOffset = FileOffset;
-    File->FileSize   = FileSize;
-
-    CopyString (File->Filename, Filename, sizeof (File->Filename));
-}
-
-void Webserver::Request::Internal::File::Send (Server::Client &Socket, int ToSend, bool &Flushed)
-{
-    if (ToSend != -1)
-    {
-        if(*Filename)
-        {
-            /* TODO: Hmm, it's a shame it has to reopen the file every time the SPDY
-               window is filled */
-
-            Socket.SendFile (Filename, FileOffset, ToSend);
-            Flushed = true;
-            
-            FileOffset += ToSend;
-            FileSize   -= ToSend;
-            
-            return;
-        }
-
-        Socket.Send ((char *) FileOffset, ToSend);
-            
-        FileOffset += ToSend;
-        FileSize   -= ToSend;
-
-        return;
-    }
-
-    if(*Filename)
-    {
-        Socket.SendFile (Filename, FileOffset, FileSize);
-        Flushed = true;
-
-        return;
-    }
-
-    Socket.Send ((char *) FileOffset, (int) FileSize);
-}
-
 void Webserver::Request::Internal::Respond ()
 {
     LacewingAssert (!Responded);
@@ -420,65 +361,7 @@ Address &Webserver::Request::GetAddress ()
 
 void Webserver::Request::Disconnect ()
 {
-    ((Webserver::Request::Internal *) internal)->Client.Socket.Disconnect ();
-}
-
-void Webserver::Request::Send (const char * Data, int Size)
-{
-    if(Size == -1)
-        Size = strlen(Data);
-
-    if (Size <= 0)
-        return;
-
-    internal->TotalNonFileSize += Size;
-    internal->Response.Add (Data, Size);
-}
-
-void Webserver::Request::SendConstant (const char * Data, int Size)
-{
-    if(Size == -1)
-        Size = strlen(Data);
-
-    if (Size <= 0)
-        return;
-
-    internal->TotalNonFileSize += Size;
-    internal->AddFileSend ("", (lw_i64) Data, Size);
-}
-
-void Webserver::Request::SendFile (const char * Filename, lw_i64 Offset, lw_i64 Size)
-{
-    if (!*Filename)
-        return;
-
-    if (Size == -1)
-        Size = FileSize (Filename);
-
-    if (Size <= 0)
-        return;
-
-    internal->TotalFileSize += Size;
-    internal->AddFileSend (Filename, Offset, Size);
-}
-
-void Webserver::Request::Reset ()
-{
-    internal->Response.Reset ();
-    
-    {   Webserver::Request::Internal::File * File = internal->FirstFile;
-
-        while(File)
-        {
-            delete File;
-            File = File->Next;
-        }
-
-        internal->FirstFile = 0;
-    }
-
-    internal->TotalFileSize = 0;
-    internal->TotalNonFileSize = 0;
+    ((Webserver::Request::Internal *) internal)->Client.Socket.Close ();
 }
 
 void Webserver::Request::GuessMimeType (const char * Filename)

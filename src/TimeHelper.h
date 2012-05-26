@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,13 +30,12 @@
 #ifndef LacewingTimeHelper
 #define LacewingTimeHelper
 
-#include <time.h>
-
 const char * const Weekdays [] =
     { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 
-const char * const Months [] =
-    { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+    const char * const Months [] =
+        { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
 inline int LookupDayOfWeek(const char * String)
 {
@@ -99,7 +98,7 @@ inline time_t ParseTimeString(const char * StringC)
         Time = String + 17;
 
     }
-    else if(String[3] == ' ' || String[3] == '	')
+    else if(String[3] == ' ' || String[3] == '\t')
     {
         /* ANSI C's asctime() format - Sun Nov  6 08:49:37 1994 */
 

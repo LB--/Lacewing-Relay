@@ -74,12 +74,6 @@ lw_bool lw_ws_load_sys_cert (lw_ws * webserver, const char * store_name, const c
 lw_bool lw_ws_cert_loaded (lw_ws * webserver)
     { return ((Webserver *) webserver)->CertificateLoaded ();
     }
-lw_i64 lw_ws_bytes_sent (lw_ws * webserver)
-    { return ((Webserver *) webserver)->BytesSent ();
-    }
-lw_i64 lw_ws_bytes_received (lw_ws * webserver)
-    { return ((Webserver *) webserver)->BytesReceived ();
-    }
 void lw_ws_close_session (lw_ws * webserver, const char * id)
     { ((Webserver *) webserver)->CloseSession (id);
     }
@@ -122,26 +116,11 @@ void lw_ws_req_set_mime_type_ex (lw_ws_req * request, const char * mime_type, co
 void lw_ws_req_guess_mime_type (lw_ws_req * request, const char * filename)
     { ((Webserver::Request *) request)->GuessMimeType (filename);
     }
-void lw_ws_req_send_text (lw_ws_req * request, const char * data)
-    { ((Webserver::Request *) request)->Send (data);
+void lw_ws_req_write_text (lw_ws_req * request, const char * data)
+    { ((Webserver::Request *) request)->Write (data);
     }
-void lw_ws_req_send_text_const (lw_ws_req * request, const char * data)
-    { ((Webserver::Request *) request)->SendConstant (data);
-    }
-void lw_ws_req_send (lw_ws_req * request, const char * data, long size)
-    { ((Webserver::Request *) request)->Send (data, size);
-    }
-void lw_ws_req_send_const (lw_ws_req * request, const char * data, long size)
-    { ((Webserver::Request *) request)->SendConstant (data, size);
-    }
-void lw_ws_req_sendfile (lw_ws_req * request, const char * filename)
-    { ((Webserver::Request *) request)->SendFile (filename);
-    }
-void lw_ws_req_sendfile_ex (lw_ws_req * request, const char * filename, lw_i64 offset, lw_i64 size)
-    { ((Webserver::Request *) request)->SendFile (filename, offset, size);
-    }
-void lw_ws_req_reset (lw_ws_req * request)
-    { ((Webserver::Request *) request)->Reset ();
+void lw_ws_req_write (lw_ws_req * request, const char * data, long size)
+    { ((Webserver::Request *) request)->Write (data, size);
     }
 void lw_ws_req_finish (lw_ws_req * request)
     { ((Webserver::Request *) request)->Finish ();
@@ -297,7 +276,7 @@ AutoHandlerFlat (Webserver, lw_ws, UploadChunk, upload_chunk)
 AutoHandlerFlat (Webserver, lw_ws, UploadDone, upload_done)
 AutoHandlerFlat (Webserver, lw_ws, UploadPost, upload_post)
 
-void lw_ws_req_sendf (lw_ws_req * request, const char * format, ...)
+void lw_ws_req_writef (lw_ws_req * request, const char * format, ...)
 {
     va_list args;
     va_start (args, format);
@@ -306,7 +285,7 @@ void lw_ws_req_sendf (lw_ws_req * request, const char * format, ...)
     int size = LacewingFormat(data, format, args);
     
     if (size > 0)
-        ((Webserver::Request *) request)->Send (data, size);
+        ((Webserver::Request *) request)->Write (data, size);
 
     va_end (args);
 }

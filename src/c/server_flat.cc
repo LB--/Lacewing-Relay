@@ -38,14 +38,8 @@ void lw_server_delete (lw_server * server)
 void lw_server_host (lw_server * server, long port)
     { ((Server *) server)->Host (port);
     }
-void lw_server_host_ex (lw_server * server, long port, lw_bool client_speaks_first)
-    { ((Server *) server)->Host (port, client_speaks_first != 0);
-    }
 void lw_server_host_filter (lw_server * server, lw_filter * filter)
     { ((Server *) server)->Host (*(Filter *) filter);
-    }
-void lw_server_host_filter_ex (lw_server * server, lw_filter * filter, lw_bool client_speaks_first)
-    { ((Server *) server)->Host (*(Filter *) filter, client_speaks_first != 0);
     }
 void lw_server_unhost (lw_server * server)
     { ((Server *) server)->Unhost ();
@@ -65,44 +59,23 @@ lw_bool lw_server_load_sys_cert (lw_server * server, const char * store_name, co
 lw_bool lw_server_cert_loaded (lw_server * server)
     { return ((Server *) server)->CertificateLoaded ();
     }
-lw_i64 lw_server_bytes_sent (lw_server * server)
-    { return ((Server *) server)->BytesSent ();
-    }
-lw_i64 lw_server_bytes_received (lw_server * server)
-    { return ((Server *) server)->BytesReceived ();
-    }
-void lw_server_disable_nagling (lw_server * server)
-    { ((Server *) server)->DisableNagling ();
-    }
 lw_addr * lw_server_client_address (lw_server_client * client)
     { return (lw_addr *) &((Server::Client *) client)->GetAddress ();
     }
-void lw_server_client_send (lw_server_client * client, const char * data, long size)
-    { ((Server::Client *) client)->Send (data, size);
+void lw_server_client_write (lw_server_client * client, const char * data, long size)
+    { ((Server::Client *) client)->Write (data, size);
     }
-void lw_server_client_send_text (lw_server_client * client, const char * text)
-    { ((Server::Client *) client)->Send (text);
+void lw_server_client_write_text (lw_server_client * client, const char * text)
+    { ((Server::Client *) client)->Write (text);
     }
-void lw_server_client_send_writable (lw_server_client * client, char * data, long size)
-    { ((Server::Client *) client)->SendWritable (data, size);
-    }
-lw_bool lw_server_client_cheap_buffering (lw_server_client * client)
-    { return ((Server::Client *) client)->CheapBuffering ();
-    }
-void lw_server_client_start_buffering (lw_server_client * client)
-    { ((Server::Client *) client)->StartBuffering ();
-    }
-void lw_server_client_flush (lw_server_client * client)
-    { ((Server::Client *) client)->Flush ();
-    }
-void lw_server_client_disconnect (lw_server_client * client)
-    { ((Server::Client *) client)->Disconnect ();
+void lw_server_client_close (lw_server_client * client)
+    { ((Server::Client *) client)->Close ();
     }
 lw_server_client * lw_server_client_next (lw_server_client * client)
     { return (lw_server_client *) ((Server::Client *) client)->Next ();
     }
 
-void lw_server_client_sendf (lw_server_client * client, const char * format, ...)
+void lw_server_client_writef (lw_server_client * client, const char * format, ...)
 {
     va_list args;
     va_start (args, format);
@@ -110,8 +83,10 @@ void lw_server_client_sendf (lw_server_client * client, const char * format, ...
     char * data;
     int size = LacewingFormat (data, format, args);
     
+    /* TODO : SendWritable? */
+
     if (size > 0)
-        ((Server::Client *) client)->SendWritable (data, size);
+        ((Server::Client *) client)->Write (data, size);
 
     va_end (args);
 }

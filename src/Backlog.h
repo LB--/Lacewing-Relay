@@ -34,13 +34,13 @@ protected:
     unsigned int Count;
     List <T *> Items;
 
-    Lacewing::SpinSync Sync;
+    Lacewing::Sync Sync;
 
     inline T * BorrowMem ()
     {
         T * Borrowed;
 
-        {   Lacewing::SpinSync::WriteLock Lock (Sync);
+        {   Lacewing::Sync::Lock Lock (Sync);
 
             if (!Items.First)
             {
@@ -59,7 +59,8 @@ protected:
                 }
             }
 
-            Borrowed = Items.Pop ();
+            Borrowed = (** Items.Last);
+            Items.Pop ();
         }
 
         #ifdef LacewingDebug
@@ -139,7 +140,7 @@ public:
 
         #endif
 
-        Lacewing::SpinSync::WriteLock Lock (Sync);
+        Lacewing::Sync::Lock Lock (Sync);
         Items.Push (&Object);
     }
 };

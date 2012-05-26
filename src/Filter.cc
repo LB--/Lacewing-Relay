@@ -36,7 +36,7 @@ struct Filter::Internal
         LocalPort = RemotePort = 0;
         Local     = Remote     = 0;
 
-        Reuse  = false;
+        Reuse  = true;
         IPv6   = true;
     }
 
@@ -240,7 +240,6 @@ int Lacewing::CreateServerSocket (Lacewing::Filter &Filter, int Type, int Protoc
         }
 
         fcntl (Socket, F_SETFL, fcntl (Socket, F_GETFL, 0) | O_NONBLOCK);
-        DisableSigPipe (Socket);
 
     #endif
 

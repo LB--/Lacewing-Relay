@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -73,15 +73,16 @@ EventPump::Internal::Internal
     #endif
 }
 
-bool EventPump::Internal::Ready (struct Event * Event, bool ReadReady, bool WriteReady)
+bool EventPump::Internal::Ready
+    (Pump::Watch * watch, bool ReadReady, bool WriteReady)
 {
-    if (Event)
+    if (watch)
     {
-        if (ReadReady && Event->ReadReady)
-            Event->ReadReady (Event->Tag);
+        if (ReadReady && watch->onReadReady)
+            watch->onReadReady (watch->Tag);
 
-        if (WriteReady && Event->WriteReady)
-            Event->WriteReady (Event->Tag);
+        if (WriteReady && watch->onWriteReady)
+            watch->onWriteReady (watch->Tag);
 
         return true;
     }
@@ -102,7 +103,11 @@ bool EventPump::Internal::Ready (struct Event * Event, bool ReadReady, bool Writ
 
         case SigRemove:
         {
-            EventBacklog.Return (*(struct Event *) SignalParams.PopFront ());
+            Pump::Watch * ToRemove = (Pump::Watch *) (** SignalParams.First);
+            SignalParams.PopFront ();
+
+            WatchBacklog.Return (*ToRemove);
+
             this->EventPump.RemoveUser ();
 
             break;
@@ -110,14 +115,19 @@ bool EventPump::Internal::Ready (struct Event * Event, bool ReadReady, bool Writ
 
         case SigPost:
         {
-            void * Function   = SignalParams.PopFront ();
-            void * Parameter  = SignalParams.PopFront ();
+            void * Function = (** SignalParams.First);
+            SignalParams.PopFront ();
+
+            void * Parameter = (** SignalParams.First);
+            SignalParams.PopFront ();
 
             ((void * (*) (void *)) Function) (Parameter);
             
             break;
         }
     };
+
+    return true;
 }
 
 EventPump::EventPump (int MaxHint)
@@ -146,7 +156,7 @@ Error * EventPump::Tick ()
 
             internal->Ready
             (
-                (Internal::Event *) EPollEvent.data.ptr,
+                (Pump::Watch *) EPollEvent.data.ptr,
                 
                 (EPollEvent.events & EPOLLIN) != 0
                     || (EPollEvent.events & EPOLLHUP) != 0
@@ -177,7 +187,7 @@ Error * EventPump::Tick ()
             {
                 internal->Ready
                 (
-                    (Internal::Event *) KEvent.udata,
+                    (Pump::Watch *) KEvent.udata,
                     
                     KEvent.filter == EVFILT_READ
                         || (KEvent.flags & EV_EOF),
@@ -207,7 +217,7 @@ Error * EventPump::StartEventLoop ()
 
                 if (!internal->Ready
                 (
-                    (Internal::Event *) EPollEvent.data.ptr,
+                    (Pump::Watch *) EPollEvent.data.ptr,
                     
                     (EPollEvent.events & EPOLLIN) != 0
                         || (EPollEvent.events & EPOLLHUP) != 0
@@ -236,7 +246,7 @@ Error * EventPump::StartEventLoop ()
                 {
                     if (!internal->Ready
                     (
-                        (Internal::Event *) KEvent.udata,
+                        (Pump::Watch *) KEvent.udata,
                         
                         KEvent.filter == EVFILT_READ
                             || (KEvent.flags & EV_EOF),
@@ -253,62 +263,105 @@ Error * EventPump::StartEventLoop ()
     return 0;
 }
 
-Error * EventPump::StartSleepyTicking (void (LacewingHandler * onTickNeeded) (EventPump &EventPump))
+Error * EventPump::StartSleepyTicking
+    (void (LacewingHandler * onTickNeeded) (EventPump &EventPump))
 {
     /* TODO */
 
     return 0;
 }
 
-void * EventPump::Add (int FD, void * Tag, Pump::Callback ReadReady,
-                            Pump::Callback WriteReady, bool EdgeTriggered)
+Pump::Watch * EventPump::Add (int FD, void * tag, Pump::Callback onReadReady,
+                            Pump::Callback onWriteReady, bool edge_triggered)
 {
-    if ((!ReadReady) && (!WriteReady))
+    if ((!onReadReady) && (!onWriteReady))
         return 0;
 
-    Internal::Event &E = internal->EventBacklog.Borrow ();
+    Pump::Watch &watch = internal->WatchBacklog.Borrow ();
+    memset (&watch, 0, sizeof (Pump::Watch));
 
-    E.ReadReady    = ReadReady;
-    E.WriteReady   = WriteReady;
-    E.Tag          = Tag;
+    watch.FD = FD;
 
     #if defined (LacewingUseEPoll)
     
-        epoll_event Event;
-        memset (&Event, 0, sizeof (epoll_event));
+        watch.onReadReady = onReadReady;
+        watch.onWriteReady = onWriteReady;
+        watch.EdgeTriggered = edge_triggered;
+        watch.Tag = tag;
 
-        Event.events = (ReadReady ? EPOLLIN : 0) | (WriteReady ? EPOLLOUT : 0) |
-                            (EdgeTriggered ? EPOLLET : 0);
+        epoll_event event;
+        memset (&event, 0, sizeof (event));
 
-        Event.data.ptr = &E;
+        event.data.ptr = &watch;
+        
+        event.events = (onReadReady ? EPOLLIN : 0) |
+                            (onWriteReady ? EPOLLOUT : 0) |
+                                (edge_triggered ? EPOLLET : 0);
 
-        epoll_ctl (internal->Queue, EPOLL_CTL_ADD, FD, &Event);
+        epoll_ctl (internal->Queue, EPOLL_CTL_ADD, FD, &event);
 
     #elif defined (LacewingUseKQueue)
-    
-        struct kevent Change;
 
-        if (ReadReady)
-        {
-            EV_SET (&Change, FD, EVFILT_READ, EV_ADD | EV_ENABLE | EV_EOF
-                        | (EdgeTriggered ? EV_CLEAR : 0), 0, 0, &E);
-
-            kevent (internal->Queue, &Change, 1, 0, 0, 0);
-        }
-
-        if (WriteReady)
-        {
-            EV_SET (&Change, FD, EVFILT_WRITE, EV_ADD | EV_ENABLE | EV_EOF
-                        | (EdgeTriggered ? EV_CLEAR : 0), 0, 0, &E);
-
-            kevent (internal->Queue, &Change, 1, 0, 0, 0);
-        }
+        UpdateCallbacks (&watch, tag, onReadReady,
+                            onWriteReady, edge_triggered);
 
     #endif
 
     AddUser ();
 
-    return &E;
+    return &watch;
+}
+
+void EventPump::UpdateCallbacks
+    (Pump::Watch * watch, void * tag, Callback onReadReady,
+            Callback onWriteReady, bool edge_triggered)
+{
+    if ( ((onReadReady != 0) != (watch->onReadReady != 0))
+            || ((onWriteReady != 0) != (watch->onWriteReady != 0))
+                || (edge_triggered != watch->EdgeTriggered) )
+    {
+        #if defined (LacewingUseEPoll)
+        
+            epoll_event event;
+            memset (&event, 0, sizeof (event));
+
+            event.data.ptr = watch;
+
+            event.events = (onReadReady ? EPOLLIN : 0) |
+                                (onWriteReady ? EPOLLOUT : 0) |
+                                    (edge_triggered ? EPOLLET : 0);
+
+            epoll_ctl (internal->Queue, EPOLL_CTL_MOD, watch->FD, &event);
+
+        #elif defined (LacewingUseKQueue)
+        
+            struct kevent change;
+
+            if (onReadReady)
+            {
+                EV_SET (&change, watch->FD, EVFILT_READ,
+                            EV_ADD | EV_ENABLE | EV_EOF |
+                               (edge_triggered ? EV_CLEAR : 0), 0, 0, watch);
+
+                kevent (internal->Queue, &change, 1, 0, 0, 0);
+            }
+
+            if (onWriteReady)
+            {
+                EV_SET (&change, watch->FD, EVFILT_WRITE,
+                            EV_ADD | EV_ENABLE | EV_EOF |
+                               (edge_triggered ? EV_CLEAR : 0), 0, 0, watch);
+
+                kevent (internal->Queue, &change, 1, 0, 0, 0);
+            }
+
+        #endif
+    }
+
+    watch->onReadReady = onReadReady;
+    watch->onWriteReady = onWriteReady;
+    watch->EdgeTriggered = edge_triggered;
+    watch->Tag = tag;
 }
 
 bool EventPump::IsEventPump ()
@@ -316,14 +369,16 @@ bool EventPump::IsEventPump ()
     return true;
 }
 
-void EventPump::Remove (void * Key)
+void EventPump::Remove (Pump::Watch * watch)
 {
-    ((Internal::Event *) Key)->ReadReady   = 0;
-    ((Internal::Event *) Key)->WriteReady  = 0;
+    /* TODO : Should this remove the FD from epoll/kqueue immediately? */
+
+    watch->onReadReady = 0;
+    watch->onWriteReady = 0;
 
     Lacewing::Sync::Lock Lock (internal->Sync_Signals);
 
-    internal->SignalParams.Push (Key);
+    internal->SignalParams.Push (watch);
 
     write (internal->SignalPipe_Write, &SigRemove, sizeof (SigRemove));
 }
