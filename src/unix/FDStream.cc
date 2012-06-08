@@ -183,7 +183,7 @@ void FDStream::SetFD (int FD, Pump::Watch * watch)
 
     #if HAVE_DECL_SO_NOSIGPIPE
     {   int b = 1;
-        setsockopt (Socket, SOL_SOCKET, SO_NOSIGPIPE, (char *) &b, sizeof (b));
+        setsockopt (FD, SOL_SOCKET, SO_NOSIGPIPE, (char *) &b, sizeof (b));
     }
     #endif
 
@@ -193,8 +193,8 @@ void FDStream::SetFD (int FD, Pump::Watch * watch)
 
     internal->FD = FD;
 
-    struct stat64 stat;
-    fstat64 (FD, &stat);
+    struct stat stat;
+    fstat (FD, &stat);
 
     if ((internal->Size = stat.st_size) > 0)
         return;
