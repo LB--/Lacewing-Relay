@@ -449,6 +449,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\Pipe.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\src\Pump.cc"
 				>
 			</File>
