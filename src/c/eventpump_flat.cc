@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,25 +29,19 @@
 
 #include "../Common.h"
 
-lw_eventpump * lw_eventpump_new ()
-    { return (lw_eventpump *) new EventPump;
+lw_pump * lw_eventpump_new ()
+    { return (lw_pump *) new EventPump;
     }
-void lw_eventpump_delete (lw_eventpump * eventpump)
-    { delete (EventPump *) eventpump;
-    }
-void lw_eventpump_tick (lw_eventpump * eventpump)
+void lw_eventpump_tick (lw_pump * eventpump)
     { ((EventPump *) eventpump)->Tick ();
     }
-void lw_eventpump_start_event_loop (lw_eventpump * eventpump)
+void lw_eventpump_start_event_loop (lw_pump * eventpump)
     { ((EventPump *) eventpump)->StartEventLoop ();
     }
-void lw_eventpump_start_sleepy_ticking (lw_eventpump * eventpump, void (LacewingHandler * on_tick_needed) (lw_eventpump *))
+void lw_eventpump_start_sleepy_ticking (lw_pump * eventpump, void (LacewingHandler * on_tick_needed) (lw_pump *))
     { ((EventPump *) eventpump)->StartSleepyTicking ((void (LacewingHandler *) (EventPump &)) on_tick_needed);
     }
-void lw_eventpump_post_eventloop_exit (lw_eventpump * eventpump)
+void lw_eventpump_post_eventloop_exit (lw_pump * eventpump)
     { ((EventPump *) eventpump)->PostEventLoopExit ();
-    }
-lw_bool lw_eventpump_in_use (lw_eventpump * eventpump)
-    { return ((EventPump *) eventpump)->InUse ();
     }
 

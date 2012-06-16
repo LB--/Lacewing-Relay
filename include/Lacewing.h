@@ -88,6 +88,12 @@ typedef lw_i8 lw_bool;
 const lw_bool lw_true  = (lw_bool) 1;
 const lw_bool lw_false = (lw_bool) 0;
 
+#ifdef _WIN32
+    typedef HANDLE lw_fd;
+#else
+    typedef int lw_fd;
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -157,17 +163,97 @@ LacewingFunction          void  lw_dump                     (const char * buffer
   LacewingFunction        lw_bool  lw_filter_is_reuse_set       (lw_filter *);
   LacewingFunction        lw_bool  lw_filter_is_ipv6            (lw_filter *);
 
+/* Pump */
+
+  LacewingFlat (lw_pump);
+  LacewingFlat (lw_pump_watch);
+
+  LacewingFunction           void  lw_pump_delete               (lw_pump *);
+  LacewingFunction           void  lw_pump_add_user             (lw_pump *);
+  LacewingFunction           void  lw_pump_remove_user          (lw_pump *);
+  LacewingFunction        lw_bool  lw_pump_in_use               (lw_pump *);
+  LacewingFunction           void  lw_pump_remove               (lw_pump *, lw_pump_watch *);
+  LacewingFunction           void  lw_pump_post                 (lw_pump *, void * fn, void * param);
+  LacewingFunction        lw_bool  lw_pump_is_eventpump         (lw_pump *);
+
+  #ifdef _WIN32
+
+    typedef void (LacewingHandler * lw_pump_callback)
+        (void * tag, OVERLAPPED *, unsigned int bytes, int error);
+
+    LacewingFunction lw_pump_watch* lw_pump_add
+                          (lw_pump *, HANDLE, void * tag, lw_pump_callback);
+
+    LacewingFunction void lw_pump_update_callbacks
+                          (lw_pump *, lw_pump_watch *, void * tag, lw_pump_callback);
+  #else
+
+    typedef void (LacewingHandler * lw_pump_callback) (void * tag);
+
+    LacewingFunction lw_pump_watch* lw_pump_add
+                          (lw_pump *, int FD, void * tag, lw_pump_callback onReadReady,
+                              lw_pump_callback onWriteReady, lw_bool edge_triggered);
+
+    LacewingFunction void lw_pump_update_callbacks
+                          (lw_pump *, lw_pump_watch *, void * tag, lw_pump_callback onReadReady,
+                              lw_pump_callback onWriteReady, lw_bool edge_triggered);
+  #endif
+
 /* EventPump */
 
-  LacewingFlat (lw_eventpump);
+  LacewingFunction        lw_pump* lw_pump_new                  ();
+  LacewingFunction           void  lw_pump_tick                 (lw_pump *);
+  LacewingFunction           void  lw_pump_start_event_loop     (lw_pump *);
+  LacewingFunction           void  lw_pump_start_sleepy_ticking (lw_pump *, void (LacewingHandler * on_tick_needed) (lw_pump *));
+  LacewingFunction           void  lw_pump_post_eventloop_exit  (lw_pump *);
 
-  LacewingFunction   lw_eventpump* lw_eventpump_new                  ();
-  LacewingFunction           void  lw_eventpump_delete               (lw_eventpump *);
-  LacewingFunction           void  lw_eventpump_tick                 (lw_eventpump *);
-  LacewingFunction           void  lw_eventpump_start_event_loop     (lw_eventpump *);
-  LacewingFunction           void  lw_eventpump_start_sleepy_ticking (lw_eventpump *, void (LacewingHandler * on_tick_needed) (lw_eventpump *));
-  LacewingFunction           void  lw_eventpump_post_eventloop_exit  (lw_eventpump *);
-  LacewingFunction        lw_bool  lw_eventpump_in_use               (lw_eventpump *);
+/* Stream */
+
+  LacewingFlat (lw_stream);
+
+  LacewingFunction   lw_bool  lw_stream_valid                 (lw_stream *);
+  LacewingFunction    size_t  lw_stream_bytes_left            (lw_stream *);
+  LacewingFunction      void  lw_stream_read                  (lw_stream *, size_t bytes);
+  LacewingFunction      void  lw_stream_begin_queue           (lw_stream *);
+  LacewingFunction    size_t  lw_stream_queued                (lw_stream *);
+  LacewingFunction      void  lw_stream_end_queue             (lw_stream *, int head_buffers, const char ** buffers, size_t * lengths);
+  LacewingFunction      void  lw_stream_write                 (lw_stream *, const char * buffer, size_t length);
+  LacewingFunction      void  lw_stream_writef                (lw_stream *, const char * format, ...);
+  LacewingFunction      void  lw_stream_write_stream          (lw_stream *, lw_stream * src, size_t size, lw_bool delete_when_finished);
+  LacewingFunction      void  lw_stream_write_file            (lw_stream * stream, const char * filename);
+  LacewingFunction      void  lw_stream_add_filter_upstream   (lw_stream * stream, lw_stream * filter, lw_bool delete_with_stream);
+  LacewingFunction      void  lw_stream_add_filter_downstream (lw_stream * stream, lw_stream * filter, lw_bool delete_with_stream);
+  LacewingFunction   lw_bool  lw_stream_is_transparent        (lw_stream * stream);
+  LacewingFunction      void* lw_stream_type                  (lw_stream * stream);
+  LacewingFunction      void  lw_stream_close                 (lw_stream * stream);
+
+  typedef void (LacewingHandler * lw_stream_handler_data) (lw_stream *, void * tag, char * buffer, size_t length);
+
+  LacewingFunction void lw_stream_add_handler_data (lw_stream *, lw_stream_handler_data, void * tag);
+  LacewingFunction void lw_stream_remove_handler_data (lw_stream *, lw_stream_handler_data, void * tag);
+
+/* FDStream */
+
+  LacewingFunction  lw_stream* lw_fdstream_new         (lw_pump *);
+  LacewingFunction       void  lw_fdstream_set_fd      (lw_stream *, lw_fd fd, lw_pump_watch * watch);
+  LacewingFunction       void  lw_fdstream_cork        (lw_stream *);
+  LacewingFunction       void  lw_fdstream_uncork      (lw_stream *);
+  LacewingFunction       void  lw_fdstream_nagle       (lw_stream *, lw_bool nagle);
+
+/* File */
+
+  LacewingFunction lw_stream * lw_file_new (lw_pump *);
+
+  LacewingFunction lw_stream * lw_file_open_new
+      (lw_pump *, const char * filename, const char * mode);
+
+  LacewingFunction lw_bool lw_file_open
+      (lw_stream * file, const char * filename, const char * mode);
+
+/* Pipe */
+  
+  LacewingFunction      lw_stream* lw_pipe_new            ();
+  LacewingFunction      lw_stream* lw_pipe_new_pump       (lw_pump *);
 
 /* Timer */
 
@@ -218,42 +304,31 @@ LacewingFunction          void  lw_dump                     (const char * buffer
 
 /* Client */
 
-  LacewingFlat (lw_client);
-
-  LacewingFunction      lw_client* lw_client_new                (lw_eventpump *);
-  LacewingFunction           void  lw_client_delete             (lw_client *);
-  LacewingFunction           void  lw_client_connect            (lw_client *, const char * host, long port);
-  LacewingFunction           void  lw_client_connect_addr       (lw_client *, lw_addr *);
-  LacewingFunction           void  lw_client_disconnect         (lw_client *);
-  LacewingFunction        lw_bool  lw_client_connected          (lw_client *);
-  LacewingFunction        lw_bool  lw_client_connecting         (lw_client *);
-  LacewingFunction        lw_addr* lw_client_server_addr        (lw_client *);
-  LacewingFunction           void  lw_client_write               (lw_client *, const char * data, long size);
-  LacewingFunction           void  lw_client_write_text          (lw_client *, const char * text);
-  LacewingFunction           void  lw_client_writef              (lw_client *, const char * format, ...);
-  LacewingFunction           void  lw_client_disable_nagling    (lw_client *);
-  LacewingFunction        lw_bool  lw_client_cheap_buffering    (lw_client *);
-  LacewingFunction           void  lw_client_start_buffering    (lw_client *);
-  LacewingFunction           void  lw_client_flush              (lw_client *);
+  LacewingFunction      lw_stream* lw_client_new                (lw_pump *);
+  LacewingFunction           void  lw_client_connect            (lw_stream *, const char * host, long port);
+  LacewingFunction           void  lw_client_connect_addr       (lw_stream *, lw_addr *);
+  LacewingFunction           void  lw_client_disconnect         (lw_stream *);
+  LacewingFunction        lw_bool  lw_client_connected          (lw_stream *);
+  LacewingFunction        lw_bool  lw_client_connecting         (lw_stream *);
+  LacewingFunction        lw_addr* lw_client_server_addr        (lw_stream *);
   
-  typedef void (LacewingHandler * lw_client_handler_connect) (lw_client *);
-  LacewingFunction void lw_client_onconnect (lw_client *, lw_client_handler_connect);
+  typedef void (LacewingHandler * lw_client_handler_connect) (lw_stream *);
+  LacewingFunction void lw_client_onconnect (lw_stream *, lw_client_handler_connect);
 
-  typedef void (LacewingHandler * lw_client_handler_disconnect) (lw_client *);
-  LacewingFunction void lw_client_ondisconnect (lw_client *, lw_client_handler_disconnect);
+  typedef void (LacewingHandler * lw_client_handler_disconnect) (lw_stream *);
+  LacewingFunction void lw_client_ondisconnect (lw_stream *, lw_client_handler_disconnect);
 
-  typedef void (LacewingHandler * lw_client_handler_receive) (lw_client *, char * data, long size);
-  LacewingFunction void lw_client_onreceive (lw_client *, lw_client_handler_receive);
+  typedef void (LacewingHandler * lw_client_handler_receive) (lw_stream *, char * data, long size);
+  LacewingFunction void lw_client_onreceive (lw_stream *, lw_client_handler_receive);
 
-  typedef void (LacewingHandler * lw_client_handler_error) (lw_client *, lw_error *);
-  LacewingFunction void lw_client_onerror (lw_client *, lw_client_handler_error);
+  typedef void (LacewingHandler * lw_client_handler_error) (lw_stream *, lw_error *);
+  LacewingFunction void lw_client_onerror (lw_stream *, lw_client_handler_error);
 
 /* Server */
 
   LacewingFlat (lw_server);
-  LacewingFlat (lw_server_client);
 
-  LacewingFunction        lw_server* lw_server_new                      (lw_eventpump *);
+  LacewingFunction        lw_server* lw_server_new                      (lw_pump *);
   LacewingFunction             void  lw_server_delete                   (lw_server *);
   LacewingFunction             void  lw_server_host                     (lw_server *, long port);
   LacewingFunction             void  lw_server_host_ex                  (lw_server *, long port, lw_bool client_speaks_first);
@@ -265,25 +340,16 @@ LacewingFunction          void  lw_dump                     (const char * buffer
   LacewingFunction          lw_bool  lw_server_load_cert_file           (lw_server *, const char * filename, const char * passphrase);
   LacewingFunction          lw_bool  lw_server_load_sys_cert            (lw_server *, const char * store_name, const char * common_name, const char * location);
   LacewingFunction          lw_bool  lw_server_cert_loaded              (lw_server *);
-  LacewingFunction             void  lw_server_disable_nagling          (lw_server *);
-  LacewingFunction          lw_addr* lw_server_client_address           (lw_server_client *);
-  LacewingFunction             void  lw_server_client_write              (lw_server_client *, const char * data, long size);
-  LacewingFunction             void  lw_server_client_write_writable     (lw_server_client *, char * data, long size);
-  LacewingFunction             void  lw_server_client_write_text         (lw_server_client *, const char * text);
-  LacewingFunction             void  lw_server_client_writef             (lw_server_client *, const char * format, ...);
-  LacewingFunction          lw_bool  lw_server_client_cheap_buffering   (lw_server_client *);
-  LacewingFunction             void  lw_server_client_start_buffering   (lw_server_client *);
-  LacewingFunction             void  lw_server_client_flush             (lw_server_client *);
-  LacewingFunction             void  lw_server_client_disconnect        (lw_server_client *);
-  LacewingFunction lw_server_client* lw_server_client_next              (lw_server_client *);
+  LacewingFunction          lw_addr* lw_server_client_address           (lw_stream * client);
+  LacewingFunction        lw_stream* lw_server_client_next              (lw_stream * client);
 
-  typedef void (LacewingHandler * lw_server_handler_connect) (lw_server *, lw_server_client *);
+  typedef void (LacewingHandler * lw_server_handler_connect) (lw_server *, lw_stream * client);
   LacewingFunction void lw_server_onconnect (lw_server *, lw_server_handler_connect);
 
-  typedef void (LacewingHandler * lw_server_handler_disconnect) (lw_server *, lw_server_client *);
+  typedef void (LacewingHandler * lw_server_handler_disconnect) (lw_server *, lw_stream * client);
   LacewingFunction void lw_server_ondisconnect (lw_server *, lw_server_handler_disconnect);
 
-  typedef void (LacewingHandler * lw_server_handler_receive) (lw_server *, lw_server_client *, char * data, size_t size);
+  typedef void (LacewingHandler * lw_server_handler_receive) (lw_server *, lw_stream * client, char * data, size_t size);
   LacewingFunction void lw_server_onreceive (lw_server *, lw_server_handler_receive);
   
   typedef void (LacewingHandler * lw_server_handler_error) (lw_server *, lw_error *);
@@ -293,7 +359,7 @@ LacewingFunction          void  lw_dump                     (const char * buffer
 
   LacewingFlat (lw_udp);
 
-  LacewingFunction         lw_udp* lw_udp_new                   (lw_eventpump *);
+  LacewingFunction         lw_udp* lw_udp_new                   (lw_pump *);
   LacewingFunction           void  lw_udp_delete                (lw_udp *);
   LacewingFunction           void  lw_udp_host                  (lw_udp *, long port);
   LacewingFunction           void  lw_udp_host_filter           (lw_udp *, lw_filter *);
@@ -301,7 +367,7 @@ LacewingFunction          void  lw_dump                     (const char * buffer
   LacewingFunction        lw_bool  lw_udp_hosting               (lw_udp *);
   LacewingFunction           void  lw_udp_unhost                (lw_udp *);
   LacewingFunction           long  lw_udp_port                  (lw_udp *);
-  LacewingFunction           void  lw_udp_write                  (lw_udp *, lw_addr *, const char * data, size_t size);
+  LacewingFunction           void  lw_udp_write                 (lw_udp *, lw_addr *, const char * data, size_t size);
 
   typedef void (LacewingHandler * lw_udp_handler_receive) (lw_udp *, lw_addr *, char * data, size_t size);
   LacewingFunction void lw_udp_onreceive (lw_udp *, lw_udp_handler_receive);
@@ -313,7 +379,7 @@ LacewingFunction          void  lw_dump                     (const char * buffer
 
   LacewingFlat (lw_flashpolicy);
 
-  LacewingFunction  lw_flashpolicy* lw_flashpolicy_new           (lw_eventpump *);
+  LacewingFunction  lw_flashpolicy* lw_flashpolicy_new           (lw_pump *);
   LacewingFunction            void  lw_flashpolicy_delete        (lw_flashpolicy *);
   LacewingFunction            void  lw_flashpolicy_host          (lw_flashpolicy *, const char * filename);
   LacewingFunction            void  lw_flashpolicy_host_filter   (lw_flashpolicy *, const char * filename, lw_filter *);
@@ -334,7 +400,7 @@ LacewingFunction          void  lw_dump                     (const char * buffer
   LacewingFlat (lw_ws_upload);
   LacewingFlat (lw_ws_upload_hdr);
 
-  LacewingFunction              lw_ws* lw_ws_new                    (lw_eventpump *);
+  LacewingFunction              lw_ws* lw_ws_new                    (lw_pump *);
   LacewingFunction               void  lw_ws_delete                 (lw_ws *);
   LacewingFunction               void  lw_ws_host                   (lw_ws *, long port);
   LacewingFunction               void  lw_ws_host_secure            (lw_ws *, long port);
@@ -363,12 +429,6 @@ LacewingFunction          void  lw_dump                     (const char * buffer
   LacewingFunction               void  lw_ws_req_set_mime_type      (lw_ws_req *, const char * mime_type);
   LacewingFunction               void  lw_ws_req_set_mime_type_ex   (lw_ws_req *, const char * mime_type, const char * charset);
   LacewingFunction               void  lw_ws_req_guess_mime_type    (lw_ws_req *, const char * filename);
-  LacewingFunction               void  lw_ws_req_write_text         (lw_ws_req *, const char * data);
-  LacewingFunction               void  lw_ws_req_write_text_const   (lw_ws_req *, const char * data);
-  LacewingFunction               void  lw_ws_req_write              (lw_ws_req *, const char * data, long size);
-  LacewingFunction               void  lw_ws_req_write_const        (lw_ws_req *, const char * data, long size);
-  LacewingFunction               void  lw_ws_req_writef             (lw_ws_req *, const char * format, ...);
-  LacewingFunction               void  lw_ws_req_reset              (lw_ws_req *);
   LacewingFunction               void  lw_ws_req_finish             (lw_ws_req *);
   LacewingFunction             lw_i64  lw_ws_req_last_modified      (lw_ws_req *);
   LacewingFunction               void  lw_ws_req_set_last_modified  (lw_ws_req *, lw_i64);
@@ -461,12 +521,6 @@ LacewingFunction          void  lw_dump                     (const char * buffer
 namespace Lacewing
 {
 
-#ifdef _WIN32
-    typedef HANDLE FD;
-#else
-    typedef int FD;
-#endif
-
 LacewingFunction   const char* Version                 ();
 LacewingFunction       lw_i64  CurrentThreadID         ();
 LacewingFunction       lw_i64  LastModified            (const char * Filename);
@@ -524,8 +578,8 @@ private:
 
 public:
 
-    LacewingFunction  Pump ();
-    LacewingFunction ~Pump ();
+    LacewingFunction Pump ();
+    LacewingFunction virtual ~Pump ();
 
     LacewingFunction void AddUser ();
     LacewingFunction void RemoveUser ();
@@ -680,19 +734,15 @@ struct Stream
     LacewingFunction void BeginQueue ();
     LacewingFunction size_t Queued ();
 
-    /* When EndQueue is called, one or more HeadBuffers may optionally be
+    /* When EndQueue is called, one or more head buffers may optionally be
      * written _before_ the queued data.  This is used for e.g. including HTTP
      * headers before the (already buffered) response body.
      */
 
-    struct HeadBuffer
-    {
-        char * Buffer;
-        size_t Length;
-    };
-
     LacewingFunction void EndQueue ();    
-    LacewingFunction void EndQueue (int HeadBuffers, HeadBuffer *);
+
+    LacewingFunction void EndQueue
+        (int head_buffers, const char ** buffers, size_t * lengths);
 
     LacewingFunction void Write (const char * buffer, size_t size = -1);
 
@@ -726,6 +776,8 @@ struct Stream
 
     LacewingFunction virtual bool IsTransparent ();
 
+    LacewingFunction void Close ();
+
     /* Since we don't compile with RTTI (and this is the only place it would be needed) */
 
     LacewingFunction virtual void * Type ();
@@ -733,7 +785,6 @@ struct Stream
 protected:
  
     LacewingFunction void Data (char * buffer, size_t size);
-    LacewingFunction void Close ();
 
     LacewingFunction virtual void WriteReady ();
 
@@ -771,7 +822,7 @@ public:
     LacewingFunction FDStream (Lacewing::Pump &);
     LacewingFunction virtual ~ FDStream ();
 
-    LacewingFunction void SetFD (Lacewing::FD, Pump::Watch * watch = 0);
+    LacewingFunction void SetFD (lw_fd, Pump::Watch * watch = 0);
 
     LacewingFunction bool Valid ();
 
@@ -809,7 +860,6 @@ struct File : public FDStream
     LacewingFunction virtual ~ File ();
 
     LacewingFunction bool Open (const char * Filename, const char * Mode = "rb");
-    LacewingFunction bool Open ();
 };
 
 struct Address
@@ -915,7 +965,7 @@ struct Server
 
     struct Client : public FDStream
     {
-        Client (Lacewing::Pump &, Lacewing::FD);
+        Client (Lacewing::Pump &, lw_fd);
 
         LacewingClassTag;
 

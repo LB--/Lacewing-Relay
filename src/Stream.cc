@@ -750,13 +750,12 @@ size_t Stream::Queued ()
     return size;
 }
 
-void Stream::EndQueue (int HeadBufferCount, HeadBuffer * HeadBuffers)
+void Stream::EndQueue
+        (int head_buffers, const char ** buffers, size_t * lengths)
 {
-    for (int i = 0; i < HeadBufferCount; ++ i)
+    for (int i = 0; i < head_buffers; ++ i)
     {
-        HeadBuffer &buffer = HeadBuffers [i];
-
-        internal->Write (buffer.Buffer, buffer.Length,
+        internal->Write (buffers [i], lengths [i],
                     Internal::Write_IgnoreQueue | Internal::Write_IgnoreBusy);
     }
 

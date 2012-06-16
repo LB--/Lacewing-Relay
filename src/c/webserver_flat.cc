@@ -29,8 +29,8 @@
 
 #include "../Common.h"
 
-lw_ws * lw_ws_new (lw_eventpump * eventpump)
-    { return (lw_ws *) new Webserver (*(Pump *) eventpump);
+lw_ws * lw_ws_new (lw_pump * pump)
+    { return (lw_ws *) new Webserver (*(Pump *) pump);
     }
 void lw_ws_delete (lw_ws * webserver)
     { delete (Webserver *) webserver;
@@ -86,61 +86,61 @@ long lw_ws_idle_timeout (lw_ws * webserver)
 void lw_ws_set_idle_timeout (lw_ws * webserver, long timeout)
     { ((Webserver *) webserver)->IdleTimeout (timeout);
     }
-lw_addr* lw_ws_req_addr (lw_ws_req * request)
+lw_addr* lw_ws_req_addr (lw_stream * request)
     { return (lw_addr *) &((Webserver::Request *) request)->GetAddress ();
     }
-lw_bool lw_ws_req_secure (lw_ws_req * request)
+lw_bool lw_ws_req_secure (lw_stream * request)
     { return ((Webserver::Request *) request)->Secure ();
     }
-const char* lw_ws_req_url (lw_ws_req * request)
+const char* lw_ws_req_url (lw_stream * request)
     { return ((Webserver::Request *) request)->URL ();
     }
-const char* lw_ws_req_hostname (lw_ws_req * request)
+const char* lw_ws_req_hostname (lw_stream * request)
     { return ((Webserver::Request *) request)->Hostname ();
     }
-void lw_ws_req_disconnect (lw_ws_req * request)
+void lw_ws_req_disconnect (lw_stream * request)
     { ((Webserver::Request *) request)->Disconnect ();
     } 
-void lw_ws_req_set_redirect (lw_ws_req * request, const char * url)
+void lw_ws_req_set_redirect (lw_stream * request, const char * url)
     { ((Webserver::Request *) request)->SetRedirect (url);
     }
-void lw_ws_req_set_status (lw_ws_req * request, long code, const char * message)
+void lw_ws_req_set_status (lw_stream * request, long code, const char * message)
     { ((Webserver::Request *) request)->Status (code, message);
     }
-void lw_ws_req_set_mime_type (lw_ws_req * request, const char * mime_type)
+void lw_ws_req_set_mime_type (lw_stream * request, const char * mime_type)
     { ((Webserver::Request *) request)->SetMimeType (mime_type);
     }
-void lw_ws_req_set_mime_type_ex (lw_ws_req * request, const char * mime_type, const char * charset)
+void lw_ws_req_set_mime_type_ex (lw_stream * request, const char * mime_type, const char * charset)
     { ((Webserver::Request *) request)->SetMimeType (mime_type, charset);
     }
-void lw_ws_req_guess_mime_type (lw_ws_req * request, const char * filename)
+void lw_ws_req_guess_mime_type (lw_stream * request, const char * filename)
     { ((Webserver::Request *) request)->GuessMimeType (filename);
     }
-void lw_ws_req_write_text (lw_ws_req * request, const char * data)
+void lw_ws_req_write_text (lw_stream * request, const char * data)
     { ((Webserver::Request *) request)->Write (data);
     }
-void lw_ws_req_write (lw_ws_req * request, const char * data, long size)
+void lw_ws_req_write (lw_stream * request, const char * data, long size)
     { ((Webserver::Request *) request)->Write (data, size);
     }
-void lw_ws_req_finish (lw_ws_req * request)
+void lw_ws_req_finish (lw_stream * request)
     { ((Webserver::Request *) request)->Finish ();
     }
-lw_i64 lw_ws_req_last_modified (lw_ws_req * request)
+lw_i64 lw_ws_req_last_modified (lw_stream * request)
     { return ((Webserver::Request *) request)->LastModified ();
     }
-void lw_ws_req_set_last_modified (lw_ws_req * request, lw_i64 modified)
+void lw_ws_req_set_last_modified (lw_stream * request, lw_i64 modified)
     { ((Webserver::Request *) request)->LastModified (modified);
     }
-void lw_ws_req_set_unmodified (lw_ws_req * request)
+void lw_ws_req_set_unmodified (lw_stream * request)
     { ((Webserver::Request *) request)->SetUnmodified ();
     }
-void lw_ws_req_set_header (lw_ws_req * request, const char * name, const char * value)
+void lw_ws_req_set_header (lw_stream * request, const char * name, const char * value)
     { ((Webserver::Request *) request)->Header (name, value);
     }
-const char* lw_ws_req_header (lw_ws_req * request, const char * name)
+const char* lw_ws_req_header (lw_stream * request, const char * name)
     { return ((Webserver::Request *) request)->Header (name);
     }
-lw_ws_req_hdr* lw_ws_req_first_header (lw_ws_req * request)
+lw_ws_req_hdr* lw_ws_req_first_header (lw_stream * request)
     { return (lw_ws_req_hdr *) ((Webserver::Request *) request)->FirstHeader ();
     }
 lw_ws_req_hdr* lw_ws_req_hdr_next (lw_ws_req_hdr * header)
@@ -152,25 +152,25 @@ const char* lw_ws_req_hdr_name (lw_ws_req_hdr * header)
 const char* lw_ws_req_hdr_value (lw_ws_req_hdr * header)
     { return ((struct Webserver::Request::Header *) header)->Value ();
     }
-void lw_ws_req_set_cookie (lw_ws_req * request, const char * name, const char * value)
+void lw_ws_req_set_cookie (lw_stream * request, const char * name, const char * value)
     { ((Webserver::Request *) request)->Cookie (name, value);
     }
-void lw_ws_req_set_cookie_ex (lw_ws_req * request, const char * name, const char * value, const char * attributes)
+void lw_ws_req_set_cookie_ex (lw_stream * request, const char * name, const char * value, const char * attributes)
     { ((Webserver::Request *) request)->Cookie (name, value, attributes);
     }
-const char* lw_ws_req_get_cookie (lw_ws_req * request, const char * name)
+const char* lw_ws_req_get_cookie (lw_stream * request, const char * name)
     { return ((Webserver::Request *) request)->Cookie (name);
     }
-const char* lw_ws_req_session_id (lw_ws_req * request)
+const char* lw_ws_req_session_id (lw_stream * request)
     { return ((Webserver::Request *) request)->Session ();
     }
-void lw_ws_req_session_write (lw_ws_req * request, const char * name, const char * value)
+void lw_ws_req_session_write (lw_stream * request, const char * name, const char * value)
     { ((Webserver::Request *) request)->Session (name, value);
     }
-const char* lw_ws_req_session_read (lw_ws_req * request, const char * name)
+const char* lw_ws_req_session_read (lw_stream * request, const char * name)
     { return ((Webserver::Request *) request)->Session (name);
     }
-lw_ws_req_ssnitem * lw_ws_req_first_session_item (lw_ws_req * request)
+lw_ws_req_ssnitem * lw_ws_req_first_session_item (lw_stream * request)
     { return (lw_ws_req_ssnitem *) ((Webserver::Request *) request)->FirstSessionItem ();
     }
 const char* lw_ws_req_ssnitem_name (lw_ws_req_ssnitem * item)
@@ -182,19 +182,19 @@ const char* lw_ws_req_ssnitem_value (lw_ws_req_ssnitem * item)
 lw_ws_req_ssnitem * lw_ws_req_ssnitem_next (lw_ws_req_ssnitem * item)
     { return (lw_ws_req_ssnitem *) ((Webserver::Request::SessionItem *) item)->Next ();
     }
-void lw_ws_req_session_close (lw_ws_req * request)
+void lw_ws_req_session_close (lw_stream * request)
     { ((Webserver::Request *) request)->CloseSession ();
     }
-const char* lw_ws_req_GET (lw_ws_req * request, const char * name)
+const char* lw_ws_req_GET (lw_stream * request, const char * name)
     { return ((Webserver::Request *) request)->GET (name);
     }
-const char* lw_ws_req_POST (lw_ws_req * request, const char * name)
+const char* lw_ws_req_POST (lw_stream * request, const char * name)
     { return ((Webserver::Request *) request)->POST (name);
     }
-lw_ws_req_param* lw_ws_req_first_GET (lw_ws_req * request)
+lw_ws_req_param* lw_ws_req_first_GET (lw_stream * request)
     { return (lw_ws_req_param *) ((Webserver::Request *) request)->GET ();
     }
-lw_ws_req_param* lw_ws_req_first_POST (lw_ws_req * request)
+lw_ws_req_param* lw_ws_req_first_POST (lw_stream * request)
     { return (lw_ws_req_param *) ((Webserver::Request *) request)->POST ();
     }
 const char* lw_ws_req_param_name (lw_ws_req_param * param)
@@ -206,7 +206,7 @@ const char* lw_ws_req_param_value (lw_ws_req_param * param)
 lw_ws_req_param* lw_ws_req_param_next (lw_ws_req_param * param)
     { return (lw_ws_req_param *) ((Webserver::Request::Parameter *) param)->Next ();
     }
-lw_ws_req_cookie * lw_ws_req_first_cookie (lw_ws_req * request)
+lw_ws_req_cookie * lw_ws_req_first_cookie (lw_stream * request)
     { return (lw_ws_req_cookie *) ((Webserver::Request *) request)->FirstCookie ();
     }
 const char* lw_ws_req_cookie_name (lw_ws_req_cookie * cookie)
@@ -218,25 +218,25 @@ const char* lw_ws_req_cookie_value (lw_ws_req_cookie * cookie)
 lw_ws_req_cookie * lw_ws_req_cookie_next (lw_ws_req_cookie * cookie)
     { return (lw_ws_req_cookie *) ((struct Webserver::Request::Cookie *) cookie)->Next ();
     }
-void lw_ws_req_disable_cache (lw_ws_req * request)
+void lw_ws_req_disable_cache (lw_stream * request)
     { ((Webserver::Request *) request)->DisableCache ();
     }
-long lw_ws_req_idle_timeout (lw_ws_req * request)
+long lw_ws_req_idle_timeout (lw_stream * request)
     { return ((Webserver::Request *) request)->IdleTimeout ();
     }
-void lw_ws_req_set_idle_timeout (lw_ws_req * request, long timeout)
+void lw_ws_req_set_idle_timeout (lw_stream * request, long timeout)
     { ((Webserver::Request *) request)->IdleTimeout (timeout);
     }
-/*void lw_ws_req_enable_dl_resuming (lw_ws_req * request)
+/*void lw_ws_req_enable_dl_resuming (lw_stream * request)
     { ((Webserver::Request *) request)->EnableDownloadResuming ();
     }
-lw_i64 lw_ws_req_reqrange_begin (lw_ws_req * request)
+lw_i64 lw_ws_req_reqrange_begin (lw_stream * request)
     { return ((Webserver::Request *) request)->RequestedRangeBegin ();
     }
-lw_i64 lw_ws_req_reqrange_end (lw_ws_req * request)
+lw_i64 lw_ws_req_reqrange_end (lw_stream * request)
     { return ((Webserver::Request *) request)->RequestedRangeEnd ();
     }
-void lw_ws_req_set_outgoing_range (lw_ws_req * request, lw_i64 begin, lw_i64 end)
+void lw_ws_req_set_outgoing_range (lw_stream * request, lw_i64 begin, lw_i64 end)
     { ((Webserver::Request *) request)->SetOutgoingRange (begin, end);
     }*/
 const char* lw_ws_upload_form_el_name (lw_ws_upload * upload)
@@ -248,7 +248,7 @@ const char* lw_ws_upload_filename (lw_ws_upload * upload)
 const char* lw_ws_upload_header (lw_ws_upload * upload, const char * name)
     { return ((Webserver::Upload *) upload)->Header (name);
     }
-lw_ws_upload_hdr* lw_ws_upload_first_header (lw_ws_req * upload)
+lw_ws_upload_hdr* lw_ws_upload_first_header (lw_stream * upload)
     { return (lw_ws_upload_hdr *) ((Webserver::Upload *) upload)->FirstHeader ();
     }
 lw_ws_upload_hdr* lw_ws_upload_hdr_next (lw_ws_upload_hdr * header)
@@ -267,25 +267,12 @@ const char* lw_ws_upload_autosave_fname (lw_ws_upload * upload)
     { return ((Webserver::Upload *) upload)->GetAutoSaveFilename ();
     }
 
-AutoHandlerFlat (Webserver, lw_ws, Get, get)
-AutoHandlerFlat (Webserver, lw_ws, Post, post)
-AutoHandlerFlat (Webserver, lw_ws, Head, head)
-AutoHandlerFlat (Webserver, lw_ws, Error, error)
-AutoHandlerFlat (Webserver, lw_ws, UploadStart, upload_start)
-AutoHandlerFlat (Webserver, lw_ws, UploadChunk, upload_chunk)
-AutoHandlerFlat (Webserver, lw_ws, UploadDone, upload_done)
-AutoHandlerFlat (Webserver, lw_ws, UploadPost, upload_post)
+AutoHandlerFlat (Webserver, lw_ws, lw_ws, Get, get)
+AutoHandlerFlat (Webserver, lw_ws, lw_ws, Post, post)
+AutoHandlerFlat (Webserver, lw_ws, lw_ws, Head, head)
+AutoHandlerFlat (Webserver, lw_ws, lw_ws, Error, error)
+AutoHandlerFlat (Webserver, lw_ws, lw_ws, UploadStart, upload_start)
+AutoHandlerFlat (Webserver, lw_ws, lw_ws, UploadChunk, upload_chunk)
+AutoHandlerFlat (Webserver, lw_ws, lw_ws, UploadDone, upload_done)
+AutoHandlerFlat (Webserver, lw_ws, lw_ws, UploadPost, upload_post)
 
-void lw_ws_req_writef (lw_ws_req * request, const char * format, ...)
-{
-    va_list args;
-    va_start (args, format);
-    
-    char * data;
-    int size = LacewingFormat(data, format, args);
-    
-    if (size > 0)
-        ((Webserver::Request *) request)->Write (data, size);
-
-    va_end (args);
-}

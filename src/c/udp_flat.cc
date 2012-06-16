@@ -29,8 +29,8 @@
 
 #include "../Common.h"
 
-lw_udp* lw_udp_new (lw_eventpump * eventpump)
-    { return (lw_udp *) new UDP (*(Pump *) eventpump);
+lw_udp* lw_udp_new (lw_pump * pump)
+    { return (lw_udp *) new UDP (*(Pump *) pump);
     }
 void lw_udp_delete (lw_udp * udp)
     { delete (UDP *) udp;
@@ -57,6 +57,6 @@ void lw_udp_send (lw_udp * udp, lw_addr * addr, const char * data, long size)
     { ((UDP *) udp)->Write (*(Address *) addr, data, size);
     }
 
-AutoHandlerFlat (UDP, lw_udp, Receive, receive)
-AutoHandlerFlat (UDP, lw_udp, Error, error)
+AutoHandlerFlat (UDP, lw_udp, lw_udp, Receive, receive)
+AutoHandlerFlat (UDP, lw_udp, lw_udp, Error, error)
 

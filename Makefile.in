@@ -6,7 +6,7 @@ CXXFLAGS = @CXXFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
-CXX = clang++
+CXX = @CXX@
 
 SO_EXT = @SO_EXT@
 SONAME_FLAGS = @SONAME_FLAGS@
@@ -63,10 +63,15 @@ build/Multipart.o: src/webserver/http/Multipart.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/http/Multipart.cc
 build/FlashPolicy.o: src/FlashPolicy.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/FlashPolicy.cc
+
 build/addr_flat.o: src/c/addr_flat.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/c/addr_flat.cc
+build/pump_flat.o: src/c/pump_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/pump_flat.cc
 build/eventpump_flat.o: src/c/eventpump_flat.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/c/eventpump_flat.cc
+build/pipe_flat.o: src/c/pipe_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/pipe_flat.cc
 build/global_flat.o: src/c/global_flat.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/c/global_flat.cc
 build/server_flat.o: src/c/server_flat.cc $(COMMONDEPS)
@@ -89,6 +94,12 @@ build/thread_flat.o: src/c/thread_flat.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/c/thread_flat.cc
 build/flashpolicy_flat.o: src/c/flashpolicy_flat.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/c/flashpolicy_flat.cc
+build/stream_flat.o: src/c/stream_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/stream_flat.cc
+build/fdstream_flat.o: src/c/fdstream_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/fdstream_flat.cc
+build/file_flat.o: src/c/file_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/c/file_flat.cc
 
 build/openssl-SSLClient.o: src/openssl/SSLClient.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/openssl/SSLClient.cc

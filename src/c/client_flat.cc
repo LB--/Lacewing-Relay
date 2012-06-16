@@ -29,35 +29,35 @@
 
 #include "../Common.h"
 
-lw_client * lw_client_new (lw_eventpump * eventpump)
-    { return (lw_client *) new Client (*(Pump *) eventpump);
+lw_stream * lw_client_new (lw_pump * pump)
+    { return (lw_stream *) new Client (*(Pump *) pump);
     }
-void lw_client_delete (lw_client * client)
+void lw_client_delete (lw_stream * client)
     { delete (Client *) client;
     }
-void lw_client_connect (lw_client * client, const char * host, long port)
+void lw_client_connect (lw_stream * client, const char * host, long port)
     { ((Client *) client)->Connect (host, port);
     }
-void lw_client_connect_addr (lw_client * client, lw_addr * address)
+void lw_client_connect_addr (lw_stream * client, lw_addr * address)
     { ((Client *) client)->Connect (*(Address *) address);
     }
-void lw_client_close (lw_client * client)
+void lw_client_close (lw_stream * client)
     { ((Client *) client)->Close ();
     }
-lw_bool lw_client_connected (lw_client * client)
+lw_bool lw_client_connected (lw_stream * client)
     { return ((Client *) client)->Connected ();
     }
-lw_bool lw_client_connecting (lw_client * client)
+lw_bool lw_client_connecting (lw_stream * client)
     { return ((Client *) client)->Connecting ();
     }
-lw_addr * lw_client_server_addr (lw_client * client)
+lw_addr * lw_client_server_addr (lw_stream * client)
     { return (lw_addr *) &((Client *) client)->ServerAddress ();
     }
 
-AutoHandlerFlat (Client, lw_client, Connect, connect)
-AutoHandlerFlat (Client, lw_client, Disconnect, disconnect)
-AutoHandlerFlat (Client, lw_client, Receive, receive)
-AutoHandlerFlat (Client, lw_client, Error, error)
+AutoHandlerFlat (Client, lw_stream, lw_client, Connect, connect)
+AutoHandlerFlat (Client, lw_stream, lw_client, Disconnect, disconnect)
+AutoHandlerFlat (Client, lw_stream, lw_client, Receive, receive)
+AutoHandlerFlat (Client, lw_stream, lw_client, Error, error)
 
 
 

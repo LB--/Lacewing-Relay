@@ -40,7 +40,7 @@ namespace Lacewing
     {
     public:
         
-        lw_i64 Size, Allocated, Offset;
+        size_t Size, Allocated, Offset;
         char * Buffer;
 
         inline HeapBuffer ()
@@ -59,7 +59,7 @@ namespace Lacewing
             return this->Buffer;
         }
 
-        inline void Add (const char * buffer, lw_i64 size)
+        inline void Add (const char * buffer, size_t size)
         {
             if (size == -1)
                 size = strlen (buffer);

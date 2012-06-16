@@ -29,24 +29,14 @@
 
 #include "../Common.h"
 
-lw_flashpolicy* lw_flashpolicy_new (lw_pump * pump)
-    { return (lw_flashpolicy *) new FlashPolicy (*(Pump *) pump);
+lw_stream * lw_file_new (lw_pump * pump)
+    { return (lw_stream *) new File (*(Pump *) pump);
     }
-void lw_flashpolicy_delete (lw_flashpolicy * fp)
-    { delete (FlashPolicy *) fp;
+lw_stream * lw_file_open_new (lw_pump * pump, const char * filename, const char * mode)
+    { return (lw_stream *) new File (*(Pump *) pump, filename, mode);
     }
-void lw_flashpolicy_host (lw_flashpolicy * fp, const char * filename)
-    { ((FlashPolicy *) fp)->Host (filename);
-    }
-void lw_flashpolicy_host_filter (lw_flashpolicy * fp, const char * filename, lw_filter * filter)
-    { ((FlashPolicy *) fp)->Host (filename, *(Filter *) filter);
-    }
-void lw_flashpolicy_unhost (lw_flashpolicy * fp)
-    { ((FlashPolicy *) fp)->Unhost ();
-    }
-lw_bool lw_flashpolicy_hosting (lw_flashpolicy * fp)
-    { return ((FlashPolicy *) fp)->Hosting ();
+lw_bool lw_file_open (lw_stream * file, const char * filename, const char * mode)
+    { return ((File *) file)->Open (filename, mode);
     }
 
-AutoHandlerFlat (FlashPolicy, lw_flashpolicy, lw_flashpolicy, Error, error)
 

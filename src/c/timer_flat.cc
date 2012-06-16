@@ -29,8 +29,8 @@
 
 #include "../Common.h"
 
-lw_timer * lw_timer_new (lw_eventpump * eventpump)
-    { return (lw_timer *) new Timer (*(Pump *) eventpump);
+lw_timer * lw_timer_new (lw_pump * pump)
+    { return (lw_timer *) new Timer (*(Pump *) pump);
     }
 void lw_timer_delete (lw_timer * timer)
     { delete (Timer *) timer;

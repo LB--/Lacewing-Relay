@@ -550,9 +550,9 @@ namespace Lacewing
     {   internal->Handlers.HandlerName = Handler;                        \
     }                                                                    \
 
-#define AutoHandlerFlat(real_class, flat, handler_upper, handler_lower)  \
+#define AutoHandlerFlat(real_class, type, flat, handler_upper, handler_lower) \
     void flat##_on##handler_lower                                        \
-            (flat * _flat, flat##_handler_##handler_lower _handler)      \
+            (type * _flat, flat##_handler_##handler_lower _handler)      \
     {                                                                    \
         ((real_class *) _flat)->on##handler_upper                        \
             ((real_class::Handler##handler_upper) _handler);             \

@@ -27,14 +27,12 @@
  * SUCH DAMAGE.
  */
 
-#define AutoHandlerFunctions(Public, HandlerName)                        \
-    void Public::on##HandlerName (Public::Handler##HandlerName Handler)   \
-    {   internal->Handlers.HandlerName = Handler;                        \
-    }                                                                    \
+#include "../Common.h"
 
-#define AutoHandlerFlat(real_class, flat, handler_upper, handler_lower) \
-    void flat##_on##handler_lower (flat * _flat, flat##_handler_##handler_lower _handler) \
-    {   ((real_class *) _flat)->on##handler_upper ((real_class::Handler##handler_upper) _handler); \
+lw_stream * lw_pipe_new ()
+    { return (lw_stream *) new Pipe ();
     }
-
+lw_stream * lw_pipe_new_pump (lw_pump * pump)
+    { return (lw_stream *) new Pipe (*(Pump *) pump);
+    }
 

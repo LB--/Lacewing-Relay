@@ -373,14 +373,7 @@ void HTTPClient::Respond (Webserver::Request::Internal &) /* request parameter i
 
     Socket.Cork ();
 
-    {   Stream::HeadBuffer head [1];
-        
-        head [0].Buffer = Buffer.Buffer;
-        head [0].Length = Buffer.Size;
-
-        Request.Public.EndQueue (1, head);
-    }
-
+    Request.Public.EndQueue (1, (const char **) &Buffer.Buffer, &Buffer.Size);
     Request.Public.BeginQueue ();
 
     Buffer.Reset ();
