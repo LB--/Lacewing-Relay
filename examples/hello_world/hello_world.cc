@@ -1,11 +1,5 @@
 
-/*
-    Simple hello world webserver example (C++)
-   
-    - See hello_world.c for a C version
-    - See hello_world.js for a Javascript version
-*/
-
+/* See `hello_world.c` for a C version */
 
 #include <Lacewing.h>
 
@@ -21,11 +15,7 @@ int main(int argc, char * argv[])
 
     Webserver.onGet(onGet);
 
-    Lacewing::Filter Filter;
-    Filter.LocalPort (8080);
-    Filter.Reuse (true);
-
-    Webserver.Host(Filter);    
+    Webserver.Host(8080);    
     
     EventPump.StartEventLoop();
     

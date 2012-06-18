@@ -1,16 +1,11 @@
 
-/*
-    Simple hello world webserver example (C)
-   
-    - See hello_world.cc for a C++ version
-    - See hello_world.js for a Javascript version
-*/
+/* See `hello_world.cc` for a C++ version */
 
 #include <Lacewing.h>
 
 void onGet(lw_ws * webserver, lw_ws_req * request)
 {
-    lw_ws_req_sendf(request, "Hello world from %s", lw_version());
+    lw_ws_req_writef(request, "Hello world from %s", lw_version());
 }
 
 int main(int argc, char * argv[])
@@ -19,7 +14,7 @@ int main(int argc, char * argv[])
     lw_ws * webserver = lw_ws_new(eventpump);
 
     lw_ws_onget(webserver, onGet);
-    lw_ws_host(webserver, 80);
+    lw_ws_host(webserver, 8080);
     
     lw_eventpump_start_event_loop(eventpump);
     

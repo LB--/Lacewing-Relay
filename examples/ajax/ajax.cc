@@ -1,7 +1,4 @@
 
-/* AJAX example (C++) - see ajax.js for a Javascript version.  This would be
-   very possible in C, too, but I haven't translated the example. */
-
 #include <Lacewing.h>
 
 #include <string.h>
@@ -10,56 +7,54 @@
 
 using namespace std;
 
-list <Lacewing::Webserver::Request *> WaitingRequests;
+list <Lacewing::Webserver::Request *> waiting;
 
-void onGet(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
+void onGet(Lacewing::Webserver &, Lacewing::Webserver::Request &Request)
 {
-    Request.SendFile("ajax.html");
+    Request.WriteFile("ajax.html");
     Request.Finish();        
 }
 
-void onPost(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
+void onPost(Lacewing::Webserver &, Lacewing::Webserver::Request &request)
 {
-    if(!strcmp(Request.URL(), "poll"))
+    if(!strcmp(request.URL(), "poll"))
     {
-        WaitingRequests.push_back(&Request);
+        waiting.push_back(&request);
         return;
     }
     
-    if(!strcmp(Request.URL(), "message"))
+    if(!strcmp(request.URL(), "message"))
     {
-        const char * Message = Request.POST("message");
+        const char * message = request.POST("message");
         
-        /* Loop through all the waiting requests, sending them the message and
-           finishing them. */
+        cout << "Message from " << request.GetAddress() << ": " << message << endl;
+
+        /* Complete all waiting requests with the message */
         
-        for(list<Lacewing::Webserver::Request *>::iterator it = WaitingRequests.begin();
-                it != WaitingRequests.end(); ++ it)
+        for(list<Lacewing::Webserver::Request *>::iterator it
+                = waiting.begin(); it != waiting.end(); ++ it)
         {
-            Lacewing::Webserver::Request &WaitingRequest = **it;
+            Lacewing::Webserver::Request &waiting_req = **it;
             
-            WaitingRequest << Message;
-            WaitingRequest.Finish();
+            waiting_req << message;
+            waiting_req.Finish();
         }
 
-        WaitingRequests.clear();        
-        Request.Finish();
+        waiting.clear();        
+        request.Finish();
         
         return;
     }
 }
 
-void onDisconnect(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
+void onDisconnect(Lacewing::Webserver &, Lacewing::Webserver::Request &Request)
 {
-    /* Remove the request from our list when it disconnects (it will be freed
-       right after this handler) */
-
-    for(list<Lacewing::Webserver::Request *>::iterator it = WaitingRequests.begin();
-            it != WaitingRequests.end(); ++ it)
+    for(list<Lacewing::Webserver::Request *>::iterator it
+            = waiting.begin(); it != waiting.end(); ++ it)
     {
         if(*it == &Request)
         {
-            WaitingRequests.erase(it);
+            waiting.erase(it);
             break;
         }
     }
@@ -71,8 +66,9 @@ int main(int argc, char * argv[])
     Lacewing::Webserver Webserver(EventPump);
 
     /* Enabling this means we will have to call Request.Finish() to complete
-       a request.  Until we do this, requests will just "hang", which is exactly
-       how long-poll AJAX works. */
+     * a request.  Until Request.Finish() is called, requests will just hang,
+     * which is exactly what we want for long-poll AJAX.
+     */
        
     Webserver.EnableManualRequestFinish();
     
@@ -80,10 +76,7 @@ int main(int argc, char * argv[])
     Webserver.onPost(onPost);
     Webserver.onDisconnect(onDisconnect);
    
-    Lacewing::Filter Filter;
-    Filter.LocalPort (8080);
-
-    Webserver.Host(Filter);    
+    Webserver.Host(8080);    
     
     EventPump.StartEventLoop();
     
