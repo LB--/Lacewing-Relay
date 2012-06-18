@@ -99,7 +99,7 @@ void HTTPClient::Process (char * buffer, size_t size)
         /* The application hasn't yet called Finish() for the last request, so this data
            can't be processed.  Buffer it to process when Finish() is called. */
 
-        this->Buffer.Add (buffer, size);
+        Request.Buffer.Add (buffer, size);
         return;
     }
 
@@ -124,17 +124,18 @@ void HTTPClient::Process (char * buffer, size_t size)
             int toParse = i + 1;
             bool error = false;
 
-            if (Buffer.Size)
+            if (Request.Buffer.Size)
             {
-                Buffer.Add (buffer, toParse);
+                Request.Buffer.Add (buffer, toParse);
 
                 size_t parsed = http_parser_execute
-                    (&Parser, &ParserSettings, Buffer.Buffer, Buffer.Size);
+                    (&Parser, &ParserSettings,
+                        Request.Buffer.Buffer, Request.Buffer.Size);
 
-                if (parsed != Buffer.Size)
+                if (parsed != Request.Buffer.Size)
                     error = true;
 
-                Buffer.Reset ();
+                Request.Buffer.Reset ();
             }
             else
             {
@@ -163,7 +164,7 @@ void HTTPClient::Process (char * buffer, size_t size)
         {
             /* TODO : max line length */
 
-            this->Buffer.Add (buffer, size);
+            Request.Buffer.Add (buffer, size);
             return;
         }
     }
@@ -262,7 +263,7 @@ int HTTPClient::onBody (char * buffer, size_t size)
     {
         /* Normal request body - just buffer it */
 
-        this->Buffer.Add (buffer, size);
+        Request.Buffer.Add (buffer, size);
         return 0;
     }
 
@@ -293,48 +294,6 @@ int HTTPClient::onBody (char * buffer, size_t size)
 
 int HTTPClient::onMessageComplete ()
 {
-    if (this->Buffer.Size)
-    {
-        this->Buffer.Add <char> (0);
-
-        char * post_data = this->Buffer.Buffer,
-                 * end = post_data + this->Buffer.Size, b = *end;
-
-        *end = 0;
-
-        for (;;)
-        {
-            char * name = post_data, * value = strchr (post_data, '=');
-
-            if (!value ++)
-                break;
-
-            char * next = strchr (value, '&');
-
-            int name_length = (value - name) - 1,
-                value_length = next ? next - value : strlen (value);
-
-            char * name_decoded = (char *) malloc (name_length + 1),
-                 * value_decoded = (char *) malloc (value_length + 1);
-
-            if(!URLDecode (name, name_length, name_decoded, name_length + 1)
-                    || !URLDecode (value, value_length, value_decoded, value_length + 1))
-            {
-                free (name_decoded);
-                free (value_decoded);
-            }
-            else
-                Request.PostItems.Set (name_decoded, value_decoded, false);
-
-            if(!(post_data = next))
-                break;
-        }
-
-        *end = b;
-
-        this->Buffer.Reset();
-    }
-
     Request.RunStandardHandler ();
 
     ParsingHeaders = true;
@@ -346,12 +305,14 @@ void HTTPClient::Respond (Webserver::Request::Internal &) /* request parameter i
 {
     LastActivityTime = time (0);
 
-    Buffer.Reset ();
+    HeapBuffer &buffer = Request.Buffer;
 
-    Buffer << "HTTP/" << Parser.http_major << "." << Parser.http_minor << " " << Request.Status;
+    buffer.Reset ();
+
+    buffer << "HTTP/" << Parser.http_major << "." << Parser.http_minor << " " << Request.Status;
     
     for(Map::Item * Current = Request.OutHeaders.First; Current; Current = Current->Next)
-        Buffer << "\r\n" << Current->Key << ": " << Current->Value;
+        buffer << "\r\n" << Current->Key << ": " << Current->Value;
 
     for(Map::Item * Current = Request.OutCookies.First; Current; Current = Current->Next)
     {
@@ -365,18 +326,19 @@ void HTTPClient::Respond (Webserver::Request::Internal &) /* request parameter i
         if (ValueSize == strlen (OldValue) && memcmp (OldValue, Current->Value, ValueSize) == 0)
             continue;
 
-        Buffer << "\r\nSet-Cookie: " << Current->Key << "=" << Current->Value;
+        buffer << "\r\nSet-Cookie: " << Current->Key << "=" << Current->Value;
     }
 
-    Buffer << "\r\nContent-Length: " << Request.Public.Queued ();
-    Buffer << "\r\n\r\n";
+    buffer << "\r\nContent-Length: " << Request.Public.Queued () << "\r\n\r\n";
 
     Socket.Cork ();
 
-    Request.Public.EndQueue (1, (const char **) &Buffer.Buffer, &Buffer.Size);
+    Request.Public.EndQueue
+        (1, (const char **) &buffer.Buffer, &buffer.Size);
+
     Request.Public.BeginQueue ();
 
-    Buffer.Reset ();
+    buffer.Reset ();
     Socket.Uncork ();
 
     if (!http_should_keep_alive (&Parser))

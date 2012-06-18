@@ -34,8 +34,6 @@ class HTTPClient : public WebserverClient
     http_parser Parser;
     bool ParsingHeaders, SignalEOF;
     
-    HeapBuffer Buffer;
-    
     char * CurHeaderName;
     size_t CurHeaderNameLength;
 

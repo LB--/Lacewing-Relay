@@ -461,6 +461,7 @@ LacewingFunction          void  lw_dump                     (const char * buffer
   LacewingFunction  lw_ws_req_ssnitem* lw_ws_req_ssnitem_next       (lw_ws_req_ssnitem *);
   LacewingFunction         const char* lw_ws_req_GET                (lw_ws_req *, const char * name);
   LacewingFunction         const char* lw_ws_req_POST               (lw_ws_req *, const char * name);
+  LacewingFunction         const char* lw_ws_req_body               (lw_ws_req *);
   LacewingFunction               void  lw_ws_req_disable_cache      (lw_ws_req *);
   LacewingFunction               long  lw_ws_req_idle_timeout       (lw_ws_req *);
   LacewingFunction               void  lw_ws_req_set_idle_timeout   (lw_ws_req *, long seconds);  
@@ -1150,6 +1151,8 @@ struct Webserver
 
         LacewingFunction const char * GET  (const char * Name);
         LacewingFunction const char * POST (const char * Name);
+
+        LacewingFunction const char * Body ();
     };
 
     LacewingFunction void CloseSession (const char * ID);

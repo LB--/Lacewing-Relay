@@ -185,8 +185,6 @@ struct Webserver::Request::Internal
 {
     Lacewing::Webserver::Request Public; 
 
-    void * Tag;
-
     Webserver::Internal &Server;
     WebserverClient &Client;
 
@@ -197,7 +195,7 @@ struct Webserver::Request::Internal
     
 
     /* Input */
-    
+
     char Method     [16];
     char URL        [4096];
     char Hostname   [128];
@@ -207,6 +205,16 @@ struct Webserver::Request::Internal
     void In_Method (const char * Method);
     void In_Header (const char * Name, char * Value);
     bool In_URL (char * URL);
+    
+    /* The protocol implementation can use this for any intermediate
+     * buffering, providing it contains the request body (if any) when
+     * the handler is called.
+     */
+
+    HeapBuffer Buffer;
+
+    void ParsePostData ();
+    bool ParsedPostData;
 
 
     /* Output */

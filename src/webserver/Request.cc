@@ -55,6 +55,7 @@ void Webserver::Request::Internal::Clean ()
        everything ready for a new request. */
     
     Responded = true;
+    ParsedPostData = false;
    
     InHeaders   .Clear();
     InCookies   .Clear();
@@ -76,6 +77,8 @@ void Webserver::Request::Internal::Clean ()
 void Webserver::Request::Internal::BeforeHandler ()
 {
     /* Any preparation to be done immediately before calling the handler should be in this function */
+
+    Buffer.Add <char> (0); /* null terminate body */
 
     strcpy(Status, "200 OK");
 
@@ -502,26 +505,81 @@ const char * Webserver::Request::Cookie::Value ()
     return ((Map::Item *) this)->Value;
 }
 
+const char * Webserver::Request::Body ()
+{
+    return internal->Buffer.Buffer;
+}
+
 const char * Webserver::Request::GET (const char * Name)
 {
-    return ((Webserver::Request::Internal *) internal)->GetItems.Get (Name);
+    return internal->GetItems.Get (Name);
+}
+
+void Webserver::Request::Internal::ParsePostData ()
+{
+    if (ParsedPostData)
+        return;
+
+    ParsedPostData = true;
+
+    if (!BeginsWith (InHeaders.Get ("Content-Type"), "application/x-www-form-urlencoded"))
+        return;
+
+    char * post_data = Buffer.Buffer,
+             * end = post_data + Buffer.Size, b = *end;
+
+    *end = 0;
+
+    for (;;)
+    {
+        char * name = post_data, * value = strchr (post_data, '=');
+
+        if (!value ++)
+            break;
+
+        char * next = strchr (value, '&');
+
+        int name_length = (value - name) - 1,
+            value_length = next ? next - value : strlen (value);
+
+        char * name_decoded = (char *) malloc (name_length + 1),
+             * value_decoded = (char *) malloc (value_length + 1);
+
+        if(!URLDecode (name, name_length, name_decoded, name_length + 1)
+                || !URLDecode (value, value_length, value_decoded, value_length + 1))
+        {
+            free (name_decoded);
+            free (value_decoded);
+        }
+        else
+        {
+            PostItems.Set (name_decoded, value_decoded, false);
+        }
+
+        if(!(post_data = next))
+            break;
+    }
+
+    *end = b;
 }
 
 const char * Webserver::Request::POST (const char * Name)
 {
-    return ((Webserver::Request::Internal *) internal)->PostItems.Get (Name);
+    internal->ParsePostData ();
+
+    return internal->PostItems.Get (Name);
 }
 
 Webserver::Request::Parameter * Webserver::Request::GET ()
 {
-    return (Webserver::Request::Parameter *)
-                ((Webserver::Request::Internal *) internal)->GetItems.First;
+    return (Webserver::Request::Parameter *) internal->GetItems.First;
 }
 
 Webserver::Request::Parameter * Webserver::Request::POST ()
 {
-    return (Webserver::Request::Parameter *)
-                ((Webserver::Request::Internal *) internal)->PostItems.First;
+    internal->ParsePostData ();
+
+    return (Webserver::Request::Parameter *) internal->PostItems.First;
 }
 
 Webserver::Request::Parameter *
