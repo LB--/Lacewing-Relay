@@ -2743,7 +2743,7 @@ if test "x$EXEEXT" = "x.exe"; then
 
     OBJECTS="$OBJECTS build/windows-Client.o build/windows-Compat.o build/windows-Event.o build/windows-EventPump.o \
         build/windows-Server.o build/windows-Thread.o build/windows-Timer.o build/windows-UDP.o \
-        build/windows-FDStream.o"
+        build/windows-FDStream.o build/windows-File.o build/windows-WinSSLClient.o"
 
     COMMONDEPS="$COMMONDEPS src/windows/Compat.h"
 

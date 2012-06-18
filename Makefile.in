@@ -141,6 +141,10 @@ build/windows-Compat.o: src/windows/Compat.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/Compat.cc
 build/windows-FDStream.o: src/windows/FDStream.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/FDStream.cc
+build/windows-File.o: src/windows/File.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/File.cc
+build/windows-WinSSLClient.o: src/windows/WinSSLClient.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/WinSSLClient.cc
 
 ############
 	
