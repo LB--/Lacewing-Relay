@@ -60,27 +60,29 @@ struct Address::Internal
 
 struct AddressWrapper : public Address::Internal
 {
-    Lacewing::Address * Address;
     char AddressBytes [sizeof (Lacewing::Address)];
 
+    sockaddr_storage SockAddr;
     addrinfo info;
 
     inline AddressWrapper ()
     {
-        Address = (Lacewing::Address *) AddressBytes;
+        Lacewing::Address * address = (Lacewing::Address *) AddressBytes;
 
-        Address->Tag = 0;
-        Address->internal = this;
+        address->Tag = 0;
+        address->internal = this;
 
         memset (&info, 0, sizeof (info));
 
-        Info = &info;
+        info.ai_addr = (sockaddr *) &SockAddr;
+
+        Info = &info;       
     }
 
     inline void Set (sockaddr_storage * s)
     {
-        info.ai_addr = (sockaddr *) s;
-        
+        memcpy (&SockAddr, s, sizeof(sockaddr_storage));
+
         if ((info.ai_family = s->ss_family) == AF_INET6)
             info.ai_addrlen = sizeof (sockaddr_in6);
         else
@@ -89,7 +91,7 @@ struct AddressWrapper : public Address::Internal
 
     inline operator Lacewing::Address & ()
     {
-        return *Address;
+        return *(Lacewing::Address *) AddressBytes;
     }
 };
 
