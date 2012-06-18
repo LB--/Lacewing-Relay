@@ -9,14 +9,14 @@ LOCAL_MODULE        := lacewing
 LOCAL_SRC_FILES     := \
     ../src/Global.cc \
     ../src/Sync.cc \
-    ../src/SpinSync.cc \
     ../src/Filter.cc \
     ../src/Address.cc \
+    ../src/StreamGraph.cc \
+    ../src/Stream.cc \
+    ../src/Pipe.cc \
     ../src/Error.cc \
     ../src/FlashPolicy.cc \
 	../src/Pump.cc \
-    ../src/relay/RelayServer.cc \
-    ../src/relay/RelayClient.cc \
     ../src/webserver/Webserver.cc \
     ../src/webserver/Sessions.cc \
     ../src/webserver/Request.cc \
@@ -31,7 +31,13 @@ LOCAL_SRC_FILES     := \
     ../src/unix/UDP.cc \
     ../src/unix/Client.cc \
     ../src/unix/Thread.cc \
+    ../src/unix/File.cc \
+    ../src/unix/FDStream.cc \
     ../src/c/addr_flat.cc \
+    ../src/c/pump_flat.cc \
+    ../src/c/stream_flat.cc \
+    ../src/c/pipe_flat.cc \
+    ../src/c/file_flat.cc \
     ../src/c/eventpump_flat.cc \
     ../src/c/global_flat.cc \
     ../src/c/server_flat.cc \
