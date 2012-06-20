@@ -1,4 +1,4 @@
-liblacewing is a library for writing cross-platform, networked applications in C and C++
+liblacewing is a library for writing cross-platform, networked applications in C/C++.
 
 http://lacewing-project.org/
 
@@ -18,11 +18,6 @@ On Linux/BSD/OS X/MinGW:
 
 For other platforms (such as the Android NDK) see the documentation.
 
-Ubuntu users can also add the following to their software sources to get the `liblacewing` and `liblacewing-dev` packages:
-
-    deb http://ppa.launchpad.net/udp/ppa/ubuntu natty main 
-    deb-src http://ppa.launchpad.net/udp/ppa/ubuntu natty main 
-
 
 Documentation
 =============
@@ -30,7 +25,21 @@ Documentation
 The API documentation for liblacewing can be found [here](http://lacewing-project.org/docs).
 
 Issues with the documentation can be reported in the [gh-pages branch](https://github.com/udp/lacewing/tree/gh-pages)
-of the Lacewing GitHub repository.
+of the liblacewing GitHub repository.
+
+
+Changes in 0.3.0 (2012-Jun-20)
+==============================
+
+- I/O is now separated into classes such as `Stream` and `FDStream` instead of being provided separately by each class.
+
+- The Relay* classes have been removed (they may become a separate library later)
+
+- HTTP parser switched out for joyent/http-parser
+
+- IPv6 is now supported
+
+- Lots of miscellaneous fixes/refactoring
 
 
 Changes in 0.2.6 (2011-Dec-18)
