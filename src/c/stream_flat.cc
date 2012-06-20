@@ -29,11 +29,6 @@
 
 #include "../Common.h"
 
-lw_bool lw_stream_valid (lw_stream * stream)
-{
-    return ((Stream *) stream)->Valid ();
-}
-
 size_t lw_stream_bytes_left (lw_stream * stream)
 {
     return ((Stream *) stream)->BytesLeft ();
@@ -64,6 +59,11 @@ void lw_stream_end_queue
 void lw_stream_write (lw_stream * stream, const char * buffer, size_t length)
 {
     ((Stream *) stream)->Write (buffer, length);
+}
+
+void lw_stream_write_text (lw_stream * stream, const char * buffer)
+{
+    ((Stream *) stream)->Write (buffer);
 }
 
 void lw_stream_write_stream

@@ -44,4 +44,7 @@ void lw_fdstream_uncork (lw_stream * stream)
 void lw_fdstream_nagle (lw_stream * stream, lw_bool nagle)
     { ((FDStream *) stream)->Nagle (nagle);
     }
+lw_bool lw_fdstream_valid (lw_stream * stream)
+    {   return ((FDStream *) stream)->Valid ();
+    }
 

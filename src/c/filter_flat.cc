@@ -68,6 +68,9 @@ void lw_filter_set_reuse (lw_filter * filter, lw_bool reuse)
 lw_bool lw_filter_is_reuse_set (lw_filter * filter)
     { return ((Filter *) filter)->Reuse ();
     }
+void lw_filter_set_ipv6 (lw_filter * filter, lw_bool enabled)
+    { ((Filter *) filter)->IPv6 (enabled);
+    }
 lw_bool lw_filter_is_ipv6 (lw_filter * filter)
     { return ((Filter *) filter)->IPv6 ();
     }

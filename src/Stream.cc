@@ -111,11 +111,6 @@ Stream::Internal::~ Internal ()
         Public->Close ();
 }
 
-bool Stream::Valid ()
-{
-    return true;
-}
-
 void Stream::Write (const char * buffer, size_t size)
 {
     internal->Write (buffer, size, 0);
