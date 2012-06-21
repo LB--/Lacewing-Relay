@@ -219,6 +219,7 @@ LacewingFunction          void  lw_dump                     (const char * buffer
   LacewingFunction    size_t  lw_stream_queued                (lw_stream *);
   LacewingFunction      void  lw_stream_end_queue             (lw_stream *, int head_buffers, const char ** buffers, size_t * lengths);
   LacewingFunction      void  lw_stream_write                 (lw_stream *, const char * buffer, size_t length);
+  LacewingFunction    size_t  lw_stream_write_partial         (lw_stream *, const char * buffer, size_t length);
   LacewingFunction      void  lw_stream_write_text            (lw_stream *, const char * buffer);
   LacewingFunction      void  lw_stream_writef                (lw_stream *, const char * format, ...);
   LacewingFunction      void  lw_stream_write_stream          (lw_stream *, lw_stream * src, size_t size, lw_bool delete_when_finished);
@@ -740,7 +741,11 @@ struct Stream
     LacewingFunction void EndQueue
         (int head_buffers, const char ** buffers, size_t * lengths);
 
-    LacewingFunction void Write (const char * buffer, size_t size = -1);
+    LacewingFunction void Write
+        (const char * buffer, size_t size = -1);
+
+    LacewingFunction size_t WritePartial
+        (const char * buffer, size_t size = -1);
 
     inline Stream &operator << (char * s)                   
     {   Write (s);                                      

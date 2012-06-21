@@ -116,6 +116,11 @@ void Stream::Write (const char * buffer, size_t size)
     internal->Write (buffer, size, 0);
 }
 
+size_t Stream::WritePartial (const char * buffer, size_t size)
+{
+    return internal->Write (buffer, size, Internal::Write_Partial);
+}
+
 size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
 {
     if (size == -1)

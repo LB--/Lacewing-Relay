@@ -61,6 +61,11 @@ void lw_stream_write (lw_stream * stream, const char * buffer, size_t length)
     ((Stream *) stream)->Write (buffer, length);
 }
 
+size_t lw_stream_write_partial (lw_stream * stream, const char * buffer, size_t length)
+{
+    return ((Stream *) stream)->WritePartial (buffer, length);
+}
+
 void lw_stream_write_text (lw_stream * stream, const char * buffer)
 {
     ((Stream *) stream)->Write (buffer);
