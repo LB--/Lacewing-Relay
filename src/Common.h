@@ -443,7 +443,7 @@ namespace Lacewing
 
         if (socket != -1)
         {
-            socklen_t addr_len = sizeof (Address);
+            socklen_t addr_len = sizeof (addr);
             getsockname (socket, (sockaddr *) &addr, &addr_len);
         }
 
