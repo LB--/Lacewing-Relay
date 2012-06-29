@@ -1,5 +1,5 @@
 AC_PREREQ([2.49])
-AC_INIT([liblacewing], [0.3.0], [])
+AC_INIT([liblacewing], [0.3.1], [])
 
 AC_PROG_CXX
 

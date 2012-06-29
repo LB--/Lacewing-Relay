@@ -28,6 +28,14 @@ Issues with the documentation can be reported in the [gh-pages branch](https://g
 of the liblacewing GitHub repository.
 
 
+Changes in 0.3.1 (2012-Jun-29)
+=============================
+
+- New Stream::WritePartial function to opt out of automatic buffering
+
+- Fix bad length param in GetSockAddr function (causing problems with `::Port` etc)
+
+
 Changes in 0.3.0 (2012-Jun-20)
 ==============================
 
