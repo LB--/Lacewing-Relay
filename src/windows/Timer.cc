@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin et al.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,7 +27,7 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
 
 static void TimerThread (Timer::Internal *);
 
@@ -78,7 +78,7 @@ void TimerThread (Timer::Internal * internal)
 
         if(Result != WAIT_OBJECT_0)
         {
-            DebugOut ("Got result %d", Result);
+            lwp_trace ("Got result %d", Result);
             break;
         }
 
@@ -114,7 +114,7 @@ void Timer::Start (int Interval)
 
     if (!SetWaitableTimer (internal->TimerHandle, &DueTime, Interval, 0, 0, 0))
     {
-        LacewingAssert (false);
+        assert (false);
     }
 
     internal->Started = true;

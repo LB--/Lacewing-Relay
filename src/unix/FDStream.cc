@@ -27,7 +27,50 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
+
+/* FDStream makes the assumption that this will fail for anything but a regular
+ * file (i.e. something that is always considered read ready)
+ */
+
+static lw_i64 lwp_sendfile (int from, int dest, lw_i64 size)
+{
+   #if defined (__linux__)
+
+      ssize_t sent;
+      
+      if ((sent = sendfile (dest, from, 0, size)) == -1)
+         return errno == EAGAIN ? 0 : -1;
+
+      return sent;
+
+   #elif defined (__FreeBSD__)
+
+      off_t sent;
+
+      if (sendfile (from, dest, lseek (from, 0, SEEK_CUR), size, 0, &sent, 0) != 0)
+         if (errno != EAGAIN)
+            return -1;
+
+      lseek (from, sent, SEEK_CUR);
+      return sent;
+
+   #elif defined (__APPLE__)
+
+      off_t bytes = size;
+
+      if (sendfile (from, dest, lseek (from, 0, SEEK_CUR), &bytes, 0, 0) != 0)
+         if (errno != EAGAIN)
+            return -1;
+
+      lseek (from, bytes, SEEK_CUR);
+      return bytes;
+
+   #endif
+
+   errno = EINVAL;
+   return -1;
+}
 
 static void * FDStreamType = (void *) "FDStream";
 
@@ -74,7 +117,7 @@ struct FDStream::Internal
 
     static void WriteReady (void * tag)
     {
-        ((Internal *) tag)->Public.WriteReady ();
+        ((Internal *) tag)->Public.Retry (Stream::Retry_Now);
     }
 
     static void ReadReady (void * tag)
@@ -88,6 +131,9 @@ struct FDStream::Internal
 
     void TryRead ()
     {
+        if (FD == -1)
+            return;
+
         if (Reading)
             return;
 
@@ -95,7 +141,7 @@ struct FDStream::Internal
 
         /* TODO : Use a buffer on the heap instead? */
 
-        char buffer [DefaultBufferSize];
+        char buffer [lwp_default_buffer_size];
 
         while (ReadingSize == -1 || ReadingSize > 0)
         {
@@ -126,15 +172,18 @@ struct FDStream::Internal
 
             Public.Data (buffer, bytes);
 
-            /* Calling Data may result in destruction of the Stream - see
-             * FDStream destructor.
+            /* Calling Data or Close may result in destruction of the Stream -
+             * see FDStream destructor.
              */
 
             if (!Reading)
-            {
-                delete this;
-                return;
-            }
+                break;
+        }
+
+        if (!Reading)
+        {
+            delete this;
+            return;
         }
 
         Reading = false;
@@ -257,11 +306,13 @@ size_t FDStream::Put (Stream &_stream, size_t size)
     if (size == -1)
         size = stream->BytesLeft ();
 
-    return LacewingSendFile (stream->internal->FD, internal->FD, size);
+    return lwp_sendfile (stream->internal->FD, internal->FD, size);
 }
 
 void FDStream::Read (size_t bytes)
 {
+    lwp_trace ("FDStream (FD %d) read " lwp_fmt_size, internal->FD, bytes);
+
     bool WasReading = internal->ReadingSize != 0;
 
     if (bytes == -1)
@@ -295,7 +346,7 @@ void FDStream::Close ()
 
 void FDStream::Internal::Close ()
 {
-    DebugOut ("FDStream::Close for FD %d", FD);
+    lwp_trace ("FDStream::Close for FD %d", FD);
 
     int FD = this->FD;
 
@@ -316,7 +367,7 @@ void FDStream::Internal::Close ()
 
 void FDStream::Cork ()
 {
-    #ifdef LacewingAllowCork
+    #ifdef LacewingCork
         int enabled = 1;
         setsockopt (internal->FD, IPPROTO_TCP, LacewingCork, &enabled, sizeof (enabled));
     #endif
@@ -324,7 +375,7 @@ void FDStream::Cork ()
 
 void FDStream::Uncork ()
 {
-    #ifdef LacewingAllowCork
+    #ifdef LacewingCork
         int enabled = 0;
         setsockopt (internal->FD, IPPROTO_TCP, LacewingCork, &enabled, sizeof (enabled));
     #endif

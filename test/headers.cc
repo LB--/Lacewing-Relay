@@ -1,9 +1,13 @@
 
 #include <Lacewing.h>
 
+#include <assert.h>
+#include <string.h>
+
 void onGet(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
 {
-    Request << "<p>Hello world from " << Lacewing::Version() << "</p>";
+    Request << "<p>Hello world from " << lw_version () << "</p>";
+    Request << "<p>Your User-Agent is: " << Request.Header ("User-Agent") << "</p>";
     
     Request << "<p>Headers used in this request:</p><p>";
    

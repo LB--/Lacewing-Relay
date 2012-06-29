@@ -5,7 +5,7 @@
 
 void onGet(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
 {
-    Request << "Hello world from " << Lacewing::Version();
+    Request << "Hello world from " << lw_version ();
 }
 
 int main(int argc, char * argv[])

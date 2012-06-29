@@ -1,6 +1,6 @@
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin et al.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,7 +26,7 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
 
 struct Lacewing::Event::Internal
 {
@@ -34,7 +34,7 @@ struct Lacewing::Event::Internal
 
 Event::Event()
 {
-    LacewingInitialise();
+    lwp_init ();
 
     internal = (Lacewing::Event::Internal *) WSACreateEvent ();
     Tag = 0;

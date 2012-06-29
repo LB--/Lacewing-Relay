@@ -27,10 +27,12 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
+#include "../Address.h"
+#include "WinSSLClient.h"
 
 static void onClientClose (Stream &, void * tag);
-static void onClientData (Stream &, void * tag, char * buffer, size_t size);
+static void onClientData (Stream &, void * tag, const char * buffer, size_t size);
 
 struct Server::Internal
 {
@@ -83,6 +85,9 @@ struct Server::Client::Internal
     Internal (Lacewing::Server::Internal &_Server, HANDLE _FD)
         : Server (_Server), FD (_FD), Public (_Server.Pump, _FD)
     {
+        UserCount = 0;
+        Dead = false;
+
         Public.internal = this;
         Public.Tag = 0;
 
@@ -90,7 +95,7 @@ struct Server::Client::Internal
          * This is important, because ours will destroy the client.
          */
 
-        Public.AddHandlerClose (onClientClose, &Server);
+        Public.AddHandlerClose (onClientClose, this);
 
         if (Server.CertificateLoaded)
         {
@@ -98,8 +103,8 @@ struct Server::Client::Internal
 
             SSL = new WinSSLClient (Server.SSLCreds);
             
-            Public.AddFilterDownstream (SSL->Downstream);
-            Public.AddFilterUpstream (SSL->Upstream);
+            Public.AddFilterDownstream (SSL->Downstream, false, true);
+            Public.AddFilterUpstream (SSL->Upstream, false, true);
         }
         else
         {   SSL = 0;
@@ -108,15 +113,25 @@ struct Server::Client::Internal
 
     ~ Internal ()
     {
-        DebugOut ("Terminate %p", &Public);
+        lwp_trace ("Terminate %p", &Public);
+
+        ++ UserCount;
 
         FD = INVALID_HANDLE_VALUE;
         
-        if (Server.Handlers.Disconnect)
-            Server.Handlers.Disconnect (Server.Public, Public);
+        if (Element) /* connect handler already called? */
+        {
+            if (Server.Handlers.Disconnect)
+                Server.Handlers.Disconnect (Server.Public, Public);
 
-        Server.Clients.Erase (Element);
+            Server.Clients.Erase (Element);
+        }
+
+        delete SSL;
     }
+
+    int UserCount;
+    bool Dead;
 
     WinSSLClient * SSL;
 
@@ -134,7 +149,7 @@ Server::Client::Client (Lacewing::Pump &Pump, HANDLE FD) : FDStream (Pump)
 
 Server::Server (Lacewing::Pump &Pump)
 {
-    LacewingInitialise();
+    lwp_init ();
     
     internal = new Server::Internal (*this, Pump);
     Tag = 0;
@@ -167,14 +182,14 @@ bool Server::Internal::IssueAccept ()
         return false;
 
     if ((overlapped->FD = (HANDLE) WSASocket
-            (GetSockAddr (Socket).ss_family, SOCK_STREAM, IPPROTO_TCP,
+            (lwp_socket_addr (Socket).ss_family, SOCK_STREAM, IPPROTO_TCP,
                     0, 0, WSA_FLAG_OVERLAPPED)) == INVALID_HANDLE_VALUE)
     {
         delete overlapped;
         return false;
     }
 
-    DisableIPV6Only ((lw_socket) overlapped->FD);
+    lwp_disable_ipv6_only ((lwp_socket) overlapped->FD);
 
     DWORD bytes_received; 
 
@@ -248,14 +263,24 @@ static void ListenSocketCompletion (void * tag, OVERLAPPED * _overlapped,
     client->Address.Set (remote_addr);
     delete overlapped;
 
+    ++ client->UserCount;
+
     if (internal->Handlers.Connect)
         internal->Handlers.Connect (internal->Public, client->Public);
 
+    if (client->Dead)
+    {
+        delete client;
+        return;
+    }
+
     client->Element = internal->Clients.Push (client);
+
+    -- client->UserCount;
 
     if (internal->Handlers.Receive)
     {
-        client->Public.AddHandlerData (onClientData, internal);
+        client->Public.AddHandlerData (onClientData, client);
         client->Public.Read (-1);
     }
 }
@@ -274,7 +299,7 @@ void Server::Host (Filter &Filter)
 
     Lacewing::Error Error;
 
-    if ((internal->Socket = CreateServerSocket
+    if ((internal->Socket = lwp_create_server_socket
             (Filter, SOCK_STREAM, IPPROTO_TCP, Error)) == -1)
     {
         if (internal->Handlers.Error)
@@ -323,7 +348,7 @@ int Server::ClientCount ()
 
 int Server::Port ()
 {
-    return GetSocketPort (internal->Socket);
+    return lwp_socket_port (internal->Socket);
 }
 
 bool Server::LoadSystemCertificate (const char * StoreName, const char * CommonName, const char * Location)
@@ -425,7 +450,7 @@ bool Server::LoadSystemCertificate (const char * StoreName, const char * CommonN
     {
         Lacewing::Error Error;
 
-        Error.Add(LacewingGetLastError ());
+        Error.Add(WSAGetLastError ());
         Error.Add("Error loading certificate");
 
         if (internal->Handlers.Error)
@@ -517,7 +542,7 @@ bool Server::LoadSystemCertificate (const char * StoreName, const char * CommonN
 
 bool Server::LoadCertificateFile (const char * Filename, const char * CommonName)
 {
-    if (!FileExists (Filename))
+    if (!lw_file_exists (Filename))
     {
         Lacewing::Error Error;
         
@@ -664,6 +689,17 @@ bool Server::CertificateLoaded ()
     return internal->CertificateLoaded;   
 }
 
+bool Server::CanNPN ()
+{
+    /* NPN is currently not available w/ schannel */
+
+    return false;
+}
+
+void Server::AddNPN (const char *)
+{
+}
+
 Address &Server::Client::GetAddress ()
 {
     return internal->Address;
@@ -681,17 +717,22 @@ Server::Client * Server::FirstClient ()
             &(** internal->Clients.First)->Public : 0;
 }
 
-void onClientData (Stream &stream, void * tag, char * buffer, size_t size)
+void onClientData (Stream &stream, void * tag, const char * buffer, size_t size)
 {
-    Server::Internal * internal = (Server::Internal *) tag;
+    Server::Client::Internal * client = (Server::Client::Internal *) tag;
+    Server::Internal &server = client->Server;
 
-    internal->Handlers.Receive
-        (internal->Public, *(Server::Client *) &stream, buffer, size);
+    server.Handlers.Receive (server.Public, client->Public, buffer, size);
 }
 
 void onClientClose (Stream &stream, void * tag)
 {
-    delete (Server::Client::Internal *) &stream;
+    Server::Client::Internal * client = (Server::Client::Internal *) tag;
+
+    if (client->UserCount > 0)
+        client->Dead = false;
+    else
+        delete client;
 }
 
 void Server::onReceive (Server::HandlerReceive onReceive)
@@ -707,7 +748,7 @@ void Server::onReceive (Server::HandlerReceive onReceive)
             for (List <Server::Client::Internal *>::Element * E
                     = internal->Clients.First; E; E = E->Next)
             {
-                (** E)->Public.AddHandlerData (onClientData, internal);
+                (** E)->Public.AddHandlerData (onClientData, (** E));
             }
         }
         
@@ -719,7 +760,7 @@ void Server::onReceive (Server::HandlerReceive onReceive)
     for (List <Server::Client::Internal *>::Element * E
             = internal->Clients.First; E; E = E->Next)
     {
-        (** E)->Public.RemoveHandlerData (onClientData, internal);
+        (** E)->Public.RemoveHandlerData (onClientData, (** E));
     }
 }
 

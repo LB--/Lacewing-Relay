@@ -29,7 +29,7 @@
 
 #include "Common.h"
 
-Webserver::Request::Request (Pump &_Pump) : Pipe (_Pump)
+Webserver::Request::Request (Pump &_Pump) : Stream (_Pump)
 {
 }
 
@@ -39,10 +39,16 @@ Webserver::Request::~ Request ()
 
 Webserver::Request::Internal::Internal
     (Webserver::Internal &_Server, WebserverClient &_Client)
-        : Server (_Server), Client (_Client), Public (_Server.Pump)
+        : Server (_Server), Client (_Client), Webserver::Request (_Server.Pump)
 {
-    Public.Tag = 0;
-    Public.internal = this;
+    Tag = 0;
+    internal = this;
+
+    Cookies = 0;
+    GetItems = 0;
+    PostItems = 0;
+
+    Responded = true;
 }
 
 Webserver::Request::Internal::~ Internal ()
@@ -51,32 +57,65 @@ Webserver::Request::Internal::~ Internal ()
 
 void Webserver::Request::Internal::Clean ()
 {
-    /* HTTP clients reuse the same request object, so this should clear
-       everything ready for a new request. */
-    
     Responded = true;
     ParsedPostData = false;
-   
-    InHeaders   .Clear();
-    InCookies   .Clear();
-    GetItems    .Clear();
-    PostItems   .Clear();
+
+    Version_Major = 0;
+    Version_Minor = 0;
+
+    while (InHeaders.Last)
+    {
+        WebserverHeader &header = (** InHeaders.Last);
+
+        free (header.Name);
+        free (header.Value);
+
+        InHeaders.Pop ();
+    }
+
+    while (OutHeaders.Last)
+    {
+        WebserverHeader &header = (** OutHeaders.Last);
+
+        free (header.Name);
+        free (header.Value);
+
+        OutHeaders.Pop ();
+    }
+
+    if (Cookies)
+    {
+        Cookie * last_cookie;
+
+        while ((last_cookie = (Cookie *) Cookies->hh.tbl->tail))
+        {
+            free (last_cookie->Name);
+            free (last_cookie->Value);
+
+            HASH_DEL (Cookies, last_cookie);
+
+            if (last_cookie == Cookies)
+                break;
+        }
+    }
+    
+    lw_nvhash_clear (GetItems);
+    lw_nvhash_clear (PostItems);
+
+    Cookies    = 0;
+    GetItems   = 0;
+    PostItems  = 0;
 
     *Method   = 0;
     *URL      = 0;
     *Hostname = 0;
-    
-    /* The output cookies are cleared here rather than in BeforeHandler() because
-       the received cookies will be written to OutCookies as well as InCookies.  When
-       it comes to sending the response, OutCookies will be compared to InCookies to
-       see which cookies have changed and should be sent as Set-Cookie headers. */
-
-    OutCookies.Clear();
 }
 
 void Webserver::Request::Internal::BeforeHandler ()
 {
-    /* Any preparation to be done immediately before calling the handler should be in this function */
+    /* Any preparation to be done immediately before calling the handler should
+     * be in this function.
+     */
 
     Buffer.Add <char> (0); /* null terminate body */
 
@@ -84,26 +123,30 @@ void Webserver::Request::Internal::BeforeHandler ()
 
     OutHeaders.Clear();
     
-    OutHeaders.Set ("Server", Lacewing::Version ());
-    OutHeaders.Set ("Content-Type", "text/html; charset=UTF-8");
+    AddHeader ("Server", lw_version ());
+    AddHeader ("Content-Type", "text/html; charset=UTF-8");
 
     if(Client.Secure)
     {
-        /* When the request is secure, add the "Cache-Control: public" header by default.
-           DisableCache() called in the handler will remove this, and should be used for any
-           pages containing sensitive data that shouldn't be cached.  */
+        /* When the request is secure, add the "Cache-Control: public" header
+         * by default.  DisableCache() called in the handler will remove this,
+         * and should be used for any pages containing sensitive data that
+         * shouldn't be cached.
+         */
 
-        OutHeaders.Set("Cache-Control", "public");
+        AddHeader ("Cache-Control", "public");
     }   
 
-    LacewingAssert (Responded);
+    assert (Responded);
 
     Responded = false;
 }
 
 void Webserver::Request::Internal::AfterHandler ()
 {
-    /* Anything to be done immediately after the handler has returned should be in this function */
+    /* Anything to be done immediately after the handler has returned should be
+     * in this function.
+     */
     
     if((!Responded) && Server.AutoFinish)
         Respond ();
@@ -111,19 +154,19 @@ void Webserver::Request::Internal::AfterHandler ()
 
 void Webserver::Request::Internal::RunStandardHandler ()
 {
-    /* If the protocol doesn't want to call the handler itself (ie. it's a standard GET/POST/HEAD
-       request), it will call this function to invoke the appropriate handler automatically. */
+    /* If the protocol doesn't want to call the handler itself (i.e. it's a
+     * standard GET/POST/HEAD request), it will call this function to invoke
+     * the appropriate handler automatically.
+     */
 
     BeforeHandler ();
 
     do
     {
-        /* The BodyProcessor might want to call its own handler (eg for multipart file upload) */
-        
         if(!strcmp(Method, "GET"))
         {
             if (Server.Handlers.Get)
-                Server.Handlers.Get (Server.Webserver, Public);
+                Server.Handlers.Get (Server.Webserver, *this);
 
             break;
         }
@@ -131,7 +174,7 @@ void Webserver::Request::Internal::RunStandardHandler ()
         if(!strcmp(Method, "POST"))
         {
             if (Server.Handlers.Post)
-                Server.Handlers.Post (Server.Webserver, Public);
+                Server.Handlers.Post (Server.Webserver, *this);
 
             break;
         }
@@ -139,13 +182,14 @@ void Webserver::Request::Internal::RunStandardHandler ()
         if(!strcmp(Method, "HEAD"))
         {
             if (Server.Handlers.Head)
-                Server.Handlers.Head (Server.Webserver, Public);
+                Server.Handlers.Head (Server.Webserver, *this);
 
             break;
         }
 
-        Public.Status (501, "Not Implemented");
-        Public.Finish ();
+        ((Request *) this)->Status (501, "Not Implemented");
+
+        Finish ();
 
         return;
 
@@ -154,74 +198,176 @@ void Webserver::Request::Internal::RunStandardHandler ()
     AfterHandler ();
 }
 
-void Webserver::Request::Internal::In_Method
-    (const char * method)
+bool Webserver::Request::Internal::In_Version (size_t len, const char * version)
 {
-    CopyString (Method, method, sizeof (Method));
+    if (len != 8)
+        return false;
+
+    if (memcmp (version, "HTTP/", 5) || version [6] != '.')
+        return false;
+
+    Version_Major = version [5] - '0';
+    Version_Minor = version [7] - '0';
+
+    if (Version_Major != 1)
+        return false;
+
+    if (Version_Minor != 0 && Version_Minor != 1)
+        return false;
+
+    return true;
 }
 
-void Webserver::Request::Internal::In_Header
-        (const char * Name, char * Value)
+bool Webserver::Request::Internal::In_Method (size_t len, const char * method)
 {
-    if (!strcasecmp(Name, "Cookie"))
+    if (len > (sizeof (Method) - 1))
+        return false;
+
+    memcpy (Method, method, len);
+    Method [len] = 0;
+
+    return true;
+}
+
+static lw_bool parse_cookie_header
+    (size_t length, const char * value,
+        Webserver::Request::Internal::Cookie * cookies)
+{
+    size_t name_begin, name_len, value_begin, value_len;
+
+    int state = 0;
+
+    for (size_t i = 0 ;; ++ i)
     {
-        for(;;)
+        switch (state)
         {
-            char * CookieName  = Value;
-            char * CookieValue = Value;
+        case 0: /* seeking name */
 
-            if(!(CookieValue = strchr(CookieValue, '=')))
-                break; /* invalid cookie */
-            
-            *(CookieValue ++) = 0;
+            if (i >= value_len)
+                return lw_true;
 
-            char * Next = strchr(CookieValue, ';');
-
-            if(Next)
-                *(Next ++) = 0;
-
-            while(*CookieName == ' ')
-                ++ CookieName;
-
-            while(*CookieName && CookieName[strlen(CookieName - 1)] == ' ')
-                CookieName[strlen(CookieName - 1)] = 0;
-
-            /* The copy in InCookies doesn't get modified, so the response generator
-               can determine which cookies have been changed. */
-
-            InCookies.Set (CookieName, CookieValue);
-            OutCookies.Set (CookieName, CookieValue);
-            
-            if(!(Value = Next))
+            if (value [i] == ' ' || value [i] == '\t')
                 break;
-        }
 
-        /* TODO : Keep the raw header too? */
+            name_begin = i;
+            name_len = 1;
 
-        return;
+            ++ state;
+
+            break;
+
+        case 1: /* seeking name/value separator */
+
+            if (i >= value_len)
+                return lw_false;
+
+            if (value [i] == '=')
+            {
+                value_begin = i + 1;
+                value_len = 0;
+
+                ++ state;
+                break;
+            }
+
+            ++ name_len;
+            break;
+
+        case 2: /* seeking end of value */
+
+            if (i >= value_len || value [i] == ';')
+            {
+                Webserver::Request::Internal::Cookie cookie;
+
+                cookie.Changed = false;
+
+                if (! (cookie.Name = (char *) malloc (name_len + 1)))
+                    return lw_false;
+
+                if (! (cookie.Value = (char *) malloc (value_len + 1)))
+                {
+                    free (cookie.Name);
+                    return lw_false;
+                }
+ 
+                cookie.Name [name_len] = 0;
+                cookie.Value [value_len] = 0;
+
+                memcpy (cookie.Name, value + name_begin, name_len);
+                memcpy (cookie.Value, value + value_begin, value_len);
+
+                if (i >= value_len)
+                    return lw_true;
+
+                state = 0;
+                break;
+            }
+
+            ++ value_len;
+        };
+    }
+}
+
+bool Webserver::Request::Internal::In_Header
+    (size_t name_len, const char * name, size_t value_len, const char * value)
+{
+    {   WebserverHeader header;
+
+        /* TODO : limit name_len/value_len */
+
+        if (! (header.Name = (char *) malloc (name_len + 1)))
+            return lw_false;
+
+        if (! (header.Value = (char *) malloc (value_len + 1)))
+            return lw_false;
+        
+        for (size_t i = 0; i < name_len; ++ i)
+            header.Name [i] = tolower (name [i]);
+
+        header.Name [name_len] = 0;
+
+        name = header.Name;
+
+        memcpy (header.Value, value, value_len);
+        header.Value [value_len] = 0;
+
+        InHeaders.Push (header);
     }
 
-    if(!strcasecmp (Name, "Host"))
+    if (!strcmp (name, "cookie"))
+        return parse_cookie_header (value_len, value, Cookies);
+
+    if (!strcmp (name, "host"))
     {
         /* The hostname gets stored separately with the port removed for
-           the Request.Hostname() function (the raw header is still saved) */
+         * the Request.Hostname() function.
+         */
 
-        CopyString(this->Hostname, Value, sizeof (this->Hostname));
+        if (value_len > (sizeof (this->Hostname) - 1))
+            return false; /* hostname too long */
 
-        for(char * i = this->Hostname; *i; ++ i)
+        size_t host_len = value_len;
+
+        for (size_t i = 0; i < value_len; ++ i)
         {
-            if(*i == ':')
+            if(i > 0 && value [i] == ':')
             {
-                *i = 0;
+                host_len = (i - 1);
                 break;
             }
         }
+
+        memcpy (this->Hostname, value, host_len);
+        this->Hostname [host_len] = 0;
+
+        return lw_true;
     }   
     
-    InHeaders.Set (Name, Value);
+    return lw_true;
 }
 
-static inline bool GetField (char * URL, http_parser_url &parsed, int field, char * &buf, int &length)
+static inline bool GetField (const char * URL, http_parser_url &parsed,
+                             int field, const char * &buf, int &length)
 {
     if (! (parsed.field_set & (1 << field)))
         return false;
@@ -232,26 +378,21 @@ static inline bool GetField (char * URL, http_parser_url &parsed, int field, cha
     return true;
 }
 
-bool Webserver::Request::Internal::In_URL (char * URL)
+bool Webserver::Request::Internal::In_URL (size_t length, const char * URL)
 {
-    /* Check for any directory traversal in the URL, and replace
-     * any backward slashes with forward slashes.
-     */
+    /* Check for any directory traversal in the URL. */
 
-    for (char * i = URL; *i; ++ i)
+    for (size_t i = 0; i < (length - 1); ++ i)
     {
-        if(i [0] == '.' && i [1] == '.')
+        if(URL [i] == '.' && URL [i + 1] == '.')
             return false;
-
-        if(*i == '\\')
-            *i = '/';
     }
 
     /* Now hand it over to the URL parser */
 
     http_parser_url parsed;
 
-    if (http_parser_parse_url (URL, strlen (URL), 0, &parsed))
+    if (http_parser_parse_url (URL, length, 0, &parsed))
         return false;
 
 
@@ -259,7 +400,7 @@ bool Webserver::Request::Internal::In_URL (char * URL)
 
     *this->URL = 0;
 
-    {   char * path;
+    {   const char * path;
         int path_length;
 
         if (GetField (URL, parsed, UF_PATH, path, path_length))
@@ -267,22 +408,18 @@ bool Webserver::Request::Internal::In_URL (char * URL)
             if (*path == '/')
                 ++ path;
 
-            char * end = path + path_length, b = *end;
-
-            if (!URLDecode (path, path_length, this->URL, sizeof (this->URL)))
+            if (!lwp_urldecode
+                  (path, path_length, this->URL, sizeof (this->URL)))
             {
-                *end = b;
                 return false;
             }
-            
-            *end = b;
         }
     }
 
 
     /* Host */
 
-    {   char * host;
+    {   const char * host;
         int host_length;
 
         if (GetField (URL, parsed, UF_HOST, host, host_length))
@@ -294,34 +431,26 @@ bool Webserver::Request::Internal::In_URL (char * URL)
                 host_length += 1 + parsed.field_data [UF_PORT].off;
             }
 
-            char * end = host + host_length, b = *end;
-
-            *end = 0;
-            In_Header ("Host", host);
-            *end = b;
+            In_Header (4, "Host", host_length, host);
         }
     }
 
 
     /* GET data */
 
-    {   char * get_data;
+    {   const char * get_data;
         int get_data_length;
 
         if (GetField (URL, parsed, UF_QUERY, get_data, get_data_length))
         {
-            char * end = get_data + get_data_length, b = *end;
-
-            *end = 0;
-
             for (;;)
             {
-                char * name = get_data, * value = strchr (get_data, '=');
+                const char * name = get_data, * value = strchr (get_data, '=');
 
                 if (!value ++)
                     break;
 
-                char * next = strchr (value, '&');
+                const char * next = strchr (value, '&');
 
                 int name_length = (value - name) - 1,
                     value_length = next ? next - value : strlen (value);
@@ -329,20 +458,21 @@ bool Webserver::Request::Internal::In_URL (char * URL)
                 char * name_decoded = (char *) malloc (name_length + 1),
                      * value_decoded = (char *) malloc (value_length + 1);
 
-                if(!URLDecode (name, name_length, name_decoded, name_length + 1)
-                        || !URLDecode (value, value_length, value_decoded, value_length + 1))
+                if(!lwp_urldecode (name, name_length, name_decoded, name_length + 1)
+                    || !lwp_urldecode (value, value_length, value_decoded, value_length + 1))
                 {
                     free (name_decoded);
                     free (value_decoded);
                 }
                 else
-                    GetItems.Set (name_decoded, value_decoded, false);
+                {
+                    lw_nvhash_set
+                        (GetItems, name_decoded, value_decoded, lw_false);
+                }
 
                 if(!(get_data = next))
                     break;
             }
-
-            *end = b;
         }
     }
 
@@ -351,25 +481,26 @@ bool Webserver::Request::Internal::In_URL (char * URL)
 
 void Webserver::Request::Internal::Respond ()
 {
-    LacewingAssert (!Responded);
+    assert (!Responded);
+
+    /* Respond may delete us w/ SPDY blah blah */
 
     Client.Respond (*this);
-    Responded = true;
 }
 
 Address &Webserver::Request::GetAddress ()
 {
-    return ((Webserver::Request::Internal *) internal)->Client.Socket.GetAddress ();
+    return internal->Client.Socket.GetAddress ();
 }
 
 void Webserver::Request::Disconnect ()
 {
-    ((Webserver::Request::Internal *) internal)->Client.Socket.Close ();
+    internal->Client.Socket.Close ();
 }
 
-void Webserver::Request::GuessMimeType (const char * Filename)
+void Webserver::Request::GuessMimeType (const char * filename)
 {
-    SetMimeType(Lacewing::GuessMimeType(Filename));
+    SetMimeType (lw_guess_mime_type (filename));
 }
 
 void Webserver::Request::SetMimeType (const char * MimeType, const char * Charset)
@@ -382,7 +513,7 @@ void Webserver::Request::SetMimeType (const char * MimeType, const char * Charse
 
      char Type [256];
 
-     lw_snprintf (Type, sizeof (Type), "%s; charset=%s", MimeType, Charset);
+     lwp_snprintf (Type, sizeof (Type), "%s; charset=%s", MimeType, Charset);
      Header ("Content-Type", Type);
 }
 
@@ -397,9 +528,41 @@ void Webserver::Request::DisableCache ()
     Header("Cache-Control", "no-cache");
 }
 
-void Webserver::Request::Header (const char * Name, const char * Value)
+void Webserver::Request::Header (const char * name, const char * value)
 {
-    ((Webserver::Request::Internal *) internal)->OutHeaders.Set (Name, Value);
+    for (List <WebserverHeader>::Element * E
+            = internal->OutHeaders.First; E; E = E->Next)
+    {
+        WebserverHeader &header = (** E);
+
+        if (!strcasecmp (header.Name, name))
+        {
+            free (header.Value);
+            header.Value = strdup (value);
+
+            return;
+        }
+    }
+
+    AddHeader (name, value);
+}
+
+void Webserver::Request::AddHeader (const char * name, const char * value)
+{
+    size_t name_len = strlen (name);
+
+    WebserverHeader header;
+
+    header.Name = (char *) malloc (name_len + 1);
+
+    header.Name [name_len] = 0;
+
+    for (size_t i = 0; i < name_len; ++ i)
+        header.Name [i] = tolower (name [i]);
+
+    header.Value = strdup (value);
+
+    internal->OutHeaders.Push (header);
 }
 
 void Webserver::Request::Cookie (const char * Name, const char * Value)
@@ -407,26 +570,34 @@ void Webserver::Request::Cookie (const char * Name, const char * Value)
     Cookie (Name, Value, Secure () ? "Secure; HttpOnly" : "HttpOnly");
 }
 
-void Webserver::Request::Cookie (const char * Name, const char * Value, const char * Attributes)
+void Webserver::Request::Cookie (const char * name, const char * value,
+                                 const char * attr)
 {
-    if (!*Attributes)
+    Request::Internal::Cookie * cookie;
+
+    HASH_FIND_STR (internal->Cookies, name, cookie);
+
+    if (!cookie)
     {
-        ((Webserver::Request::Internal *) internal)->OutCookies.Set (Name, Value);
-        return;
+        cookie = (Request::Internal::Cookie *) malloc (sizeof (*cookie));
+        cookie->Name = strdup (name);
+
+        HASH_ADD_KEYPTR (hh, internal->Cookies, name, strlen (name), cookie);
     }
+    
+    cookie->Changed = true;
+    cookie->Value = (char *) malloc (strlen (value) + strlen (attr) + 4);
 
-    char * Buffer = (char *) malloc (strlen (Value) + strlen (Attributes) + 4);
-
-    strcpy (Buffer, Value);
-    strcat (Buffer, "; ");
-    strcat (Buffer, Attributes);
-
-    ((Webserver::Request::Internal *) internal)->OutCookies.Set (strdup (Name), Buffer, false);
+    strcpy (cookie->Value, value);
+    strcat (cookie->Value, "; ");
+    strcat (cookie->Value, attr);
 }
 
-void Webserver::Request::Status (int Code, const char * Message)
+void Webserver::Request::Status (int code, const char * message)
 {
-    sprintf (((Webserver::Request::Internal *) internal)->Status, "%d %s", Code, Message);
+    /* TODO : prevent buffer overrun */
+
+    sprintf (internal->Status, "%d %s", code, message);
 }
 
 void Webserver::Request::SetUnmodified ()
@@ -434,75 +605,92 @@ void Webserver::Request::SetUnmodified ()
     Status (304, "Not Modified");
 }
 
-void Webserver::Request::LastModified (lw_i64 Time)
+void Webserver::Request::LastModified (lw_i64 _time)
 {
-    tm TM;
+    struct tm tm;
+    time_t time;
 
-    time_t TimeT = (time_t) Time;
-    gmtime_r(&TimeT, &TM);
+    time = (time_t) _time;
+
+    #ifdef _WIN32
+        memcpy (&tm, gmtime (&time), sizeof (struct tm));
+    #else
+        gmtime_r (&time, &tm);
+    #endif
 
     char LastModified [128];
-    sprintf (LastModified, "%s, %02d %s %d %02d:%02d:%02d GMT", Weekdays [TM.tm_wday], TM.tm_mday,
-                            Months [TM.tm_mon], TM.tm_year + 1900, TM.tm_hour, TM.tm_min, TM.tm_sec);
+    sprintf (LastModified, "%s, %02d %s %d %02d:%02d:%02d GMT", lwp_weekdays [tm.tm_wday], tm.tm_mday,
+                            lwp_months [tm.tm_mon], tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
     Header("Last-Modified", LastModified);
 }
 
 void Webserver::Request::Finish ()
 {
-    ((Webserver::Request::Internal *) internal)->Respond ();
+    internal->Respond ();
 }
 
-const char * Webserver::Request::Header (const char * Name)
+const char * Webserver::Request::Header (const char * name)
 {
-    return ((Webserver::Request::Internal *) internal)->InHeaders.Get (Name);
+    for (List <WebserverHeader>::Element * E
+            = internal->InHeaders.First; E; E = E->Next)
+    {
+        if (!strcasecmp ((** E).Name, name))
+            return (** E).Value;
+    }
+
+    return "";
 }
 
 struct Webserver::Request::Header * Webserver::Request::FirstHeader ()
 {
-    return (struct Webserver::Request::Header *)
-                ((Webserver::Request::Internal *) internal)->InHeaders.First;
+    return (struct Webserver::Request::Header *) internal->InHeaders.First;
 }
 
 const char * Webserver::Request::Header::Name ()
 {
-    return ((Map::Item *) this)->Key;
+    return (** (List <WebserverHeader>::Element *) this).Name;
 }
 
 const char * Webserver::Request::Header::Value ()
 {
-    return ((Map::Item *) this)->Value;
+    return (** (List <WebserverHeader>::Element *) this).Value;
 }
 
 struct Webserver::Request::Header * Webserver::Request::Header::Next ()
 {
-    return (struct Webserver::Request::Header *) ((Map::Item *) this)->Next;
+    return (struct Webserver::Request::Header *)
+              ((List <WebserverHeader>::Element *) this)->Next;
 }
 
-const char * Webserver::Request::Cookie (const char * Name)
+const char * Webserver::Request::Cookie (const char * name)
 {
-    return ((Webserver::Request::Internal *) internal)->InCookies.Get (Name);
+    Request::Internal::Cookie * cookie;
+
+    HASH_FIND_STR (internal->Cookies, name, cookie);
+
+    return cookie ? cookie->Value : "";
 }
 
 struct Webserver::Request::Cookie * Webserver::Request::FirstCookie ()
 {
-    return (struct Webserver::Request::Cookie *)
-                ((Webserver::Request::Internal *) internal)->InCookies.First;
+    return (struct Webserver::Request::Cookie *) internal->Cookies;
 }
 
 struct Webserver::Request::Cookie * Webserver::Request::Cookie::Next ()
 {
-    return (struct Webserver::Request::Cookie *) ((Map::Item *) this)->Next;
+    return (struct Webserver::Request::Cookie *)
+                ((Request::Internal::Cookie *) this)->hh.next;
 }
 
 const char * Webserver::Request::Cookie::Name ()
 {
-    return ((Map::Item *) this)->Key;
+    return ((Request::Internal::Cookie *) this)->Name;
 }
 
 const char * Webserver::Request::Cookie::Value ()
 {
-    return ((Map::Item *) this)->Value;
+    return ((Request::Internal::Cookie *) this)->Value;
 }
 
 const char * Webserver::Request::Body ()
@@ -510,9 +698,9 @@ const char * Webserver::Request::Body ()
     return internal->Buffer.Buffer;
 }
 
-const char * Webserver::Request::GET (const char * Name)
+const char * Webserver::Request::GET (const char * name)
 {
-    return internal->GetItems.Get (Name);
+    return lw_nvhash_get (internal->GetItems, name, "");
 }
 
 void Webserver::Request::Internal::ParsePostData ()
@@ -522,8 +710,11 @@ void Webserver::Request::Internal::ParsePostData ()
 
     ParsedPostData = true;
 
-    if (!BeginsWith (InHeaders.Get ("Content-Type"), "application/x-www-form-urlencoded"))
+    if (!lwp_begins_with
+            (Header ("content-type"), "application/x-www-form-urlencoded"))
+    {
         return;
+    }
 
     char * post_data = Buffer.Buffer,
              * end = post_data + Buffer.Size, b = *end;
@@ -545,15 +736,15 @@ void Webserver::Request::Internal::ParsePostData ()
         char * name_decoded = (char *) malloc (name_length + 1),
              * value_decoded = (char *) malloc (value_length + 1);
 
-        if(!URLDecode (name, name_length, name_decoded, name_length + 1)
-                || !URLDecode (value, value_length, value_decoded, value_length + 1))
+        if(!lwp_urldecode (name, name_length, name_decoded, name_length + 1)
+                || !lwp_urldecode (value, value_length, value_decoded, value_length + 1))
         {
             free (name_decoded);
             free (value_decoded);
         }
         else
         {
-            PostItems.Set (name_decoded, value_decoded, false);
+            lw_nvhash_set (PostItems, name_decoded, value_decoded, false);
         }
 
         if(!(post_data = next))
@@ -563,39 +754,39 @@ void Webserver::Request::Internal::ParsePostData ()
     *end = b;
 }
 
-const char * Webserver::Request::POST (const char * Name)
+const char * Webserver::Request::POST (const char * name)
 {
     internal->ParsePostData ();
 
-    return internal->PostItems.Get (Name);
+    return lw_nvhash_get (internal->PostItems, name, "");
 }
 
 Webserver::Request::Parameter * Webserver::Request::GET ()
 {
-    return (Webserver::Request::Parameter *) internal->GetItems.First;
+    return (Webserver::Request::Parameter *) internal->GetItems;
 }
 
 Webserver::Request::Parameter * Webserver::Request::POST ()
 {
     internal->ParsePostData ();
 
-    return (Webserver::Request::Parameter *) internal->PostItems.First;
+    return (Webserver::Request::Parameter *) internal->PostItems;
 }
 
 Webserver::Request::Parameter *
         Webserver::Request::Parameter::Next ()
 {
-    return (Webserver::Request::Parameter *) ((Map::Item *) this)->Next;
+    return (Webserver::Request::Parameter *) ((lw_nvhash *) this)->hh.next;
 }
 
 const char * Webserver::Request::Parameter::Name ()
 {
-    return ((Map::Item *) this)->Key;
+    return ((lw_nvhash *) this)->key;
 }
 
 const char * Webserver::Request::Parameter::Value ()
 {
-    return ((Map::Item *) this)->Value;
+    return ((lw_nvhash *) this)->value;
 }
 
 lw_i64 Webserver::Request::LastModified ()
@@ -603,32 +794,34 @@ lw_i64 Webserver::Request::LastModified ()
     const char * LastModified = Header("If-Modified-Since");
 
     if(*LastModified)
-        return ParseTimeString(LastModified);
+        return lwp_parse_time (LastModified);
 
     return 0;
 }
 
 bool Webserver::Request::Secure ()
 {
-    return ((Webserver::Request::Internal *) internal)->Client.Secure;
+    return internal->Client.Secure;
 }
 
 const char * Webserver::Request::Hostname ()
 {
-    return ((Webserver::Request::Internal *) internal)->Hostname;
+    return internal->Hostname;
 }
 
 const char * Webserver::Request::URL ()
 {
-    return ((Webserver::Request::Internal *) internal)->URL;
+    return internal->URL;
 }
 
 int Webserver::Request::IdleTimeout ()
 {
-    return ((Webserver::Request::Internal *) internal)->Client.Timeout;
+    return internal->Client.Timeout;
 }
 
-void Webserver::Request::IdleTimeout (int Seconds)
+void Webserver::Request::IdleTimeout (int seconds)
 {
-    ((Webserver::Request::Internal *) internal)->Client.Timeout = Seconds;
+    internal->Client.Timeout = seconds;
 }
+
+

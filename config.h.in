@@ -22,10 +22,6 @@
    don't. */
 #undef HAVE_DECL_SO_NOSIGPIPE
 
-/* Define to 1 if you have the declaration of `SSL_MODE_RELEASE_BUFFERS', and
-   to 0 if you don't. */
-#undef HAVE_DECL_SSL_MODE_RELEASE_BUFFERS
-
 /* Define to 1 if you have the declaration of `TCP_CORK', and to 0 if you
    don't. */
 #undef HAVE_DECL_TCP_CORK

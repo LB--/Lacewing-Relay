@@ -27,7 +27,8 @@
  * SUCH DAMAGE.
  */
 
-#include "Common.h"
+#include "lw_common.h"
+#include "Stream.h"
 
 Stream::Stream ()
 {
@@ -47,12 +48,67 @@ Stream::Stream (Lacewing::Pump &Pump)
 
 Stream::~ Stream ()
 {
-    Close ();
-
     internal->DataHandlers.Clear ();
 
     internal->Graph->ClearExpanded ();
+
+    Close ();
+
+    internal->Closing = true;
+
+    /* If we are a root in the graph, remove us */
+
     internal->Graph->Roots.Remove (internal);
+
+
+    /* If we are filtering any other streams, remove us from their filter list */
+
+    while (internal->Filtering.Size)
+    {
+        Internal::Filter * filter = (** internal->Filtering.First);
+        internal->Filtering.PopFront ();
+
+        filter->StreamPtr->FiltersUpstream.Remove (filter);
+        filter->StreamPtr->FiltersDownstream.Remove (filter);
+
+        delete filter;
+    }
+
+    
+    /* If we are being filtered upstream by any other streams, remove us from
+     * their filtering list.
+     */
+
+    while (internal->FiltersUpstream.Size)
+    {
+        Internal::Filter * filter = (** internal->FiltersUpstream.First);
+        internal->FiltersUpstream.PopFront ();
+
+        filter->FilterPtr->Filtering.Remove (filter);
+
+        if (filter->DeleteWithStream)
+            delete &filter->FilterPtr->Public;
+
+        delete filter;
+    }
+
+
+    /* If we are being filtered downstream by any other streams, remove us from
+     * their filtering list.
+     */
+
+    while (internal->FiltersDownstream.Size)
+    {
+        Internal::Filter * filter = (** internal->FiltersDownstream.First);
+        internal->FiltersDownstream.PopFront ();
+
+        filter->FilterPtr->Filtering.Remove (filter);
+
+        if (filter->DeleteWithStream)
+            delete &filter->FilterPtr->Public;
+
+        delete filter;
+    }
 
     /* Is the graph empty now? */
 
@@ -61,19 +117,6 @@ Stream::~ Stream ()
     else
         internal->Graph->Expand ();
 
-    for (List <Internal::Filter>::Element * E =
-            internal->FiltersUpstream.First; E; E = E->Next)
-    {
-        if ((** E).Owned)
-            delete (** E).StreamPtr->Public;
-    }
-
-    for (List <Internal::Filter>::Element * E
-            = internal->FiltersDownstream.First; E; E = E->Next)
-    {
-        if ((** E).Owned)
-            delete (** E).StreamPtr->Public;
-    }
 
     /* TODO : clear queues */
 
@@ -93,6 +136,8 @@ Stream::Internal::Internal (Stream * _Public) : Public (_Public)
     UserCount = 0;
 
     Queueing = false;
+    Retry = Stream::Retry_Never;
+
     Closing = false;
 
     HeadUpstream = 0;
@@ -126,16 +171,28 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
     if (size == -1)
         size = strlen (buffer);
 
+    lwp_trace ("Writing " lwp_fmt_size " bytes", size);
+
     if (size == 0)
         return size; /* nothing to do */
 
     if ((! (flags & Write_IgnoreFilters)) && HeadUpstream)
     {
+        lwp_trace ("%p is filtered upstream by %p; writing " lwp_fmt_size " to that", this, HeadUpstream, size);
+
+        /* There's a filter to write the data to first.  At the end of the
+         * chain of filters, the data will be written back to us again
+         * with the Write_IgnoreFilters flag.
+         */
+
+        if (flags & Write_Partial)
+            return HeadUpstream->Write (buffer, size, Write_Partial);
+
         HeadUpstream->Write (buffer, size, 0);
         return size;
     }
 
-    if (PrevExpanded.Size)
+    if (Prev.Size)
     {
         if (! (flags & Write_IgnoreBusy))
         {
@@ -156,28 +213,28 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
 
         /* Something is behind us and gave us this data. */
 
-        if ((! (flags & Write_IgnoreQueue)) && FrontQueue.Size)
+        if ((! (flags & Write_IgnoreQueue)) && (Queueing || FrontQueue.Size))
         {
             if (flags & Write_Partial)
                 return 0;
 
             (** FrontQueue.Last).Buffer.Add (buffer, size);
+
+            if (Retry == Stream::Retry_MoreData)
+                Public->Retry ();
+
             return size;
         }
 
-        if (IsTransparent ())
+        if (Public->IsTransparent ())
         {
-            Push (buffer, size);
-            return size;
-        }
-
-        if ((! (flags & Write_IgnoreFilters)) && HeadUpstream)
-        {
-            HeadUpstream->Write (buffer, size, 0);
+            Data (buffer, size);
             return size;
         }
 
         size_t written = Public->Put (buffer, size);
+
+        lwp_trace ("Put wrote " lwp_fmt_size " of " lwp_fmt_size, written, size);
 
         if (flags & Write_Partial)
             return written;
@@ -204,12 +261,15 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
 
         (** BackQueue.Last).Buffer.Add (buffer, size);
 
+        if (Retry == Stream::Retry_MoreData)
+            Public->Retry ();
+
         return size;
     }
 
-    if (IsTransparent ())
+    if (Public->IsTransparent ())
     {
-        Push (buffer, size);
+        Data (buffer, size);
         return size;
     }
 
@@ -246,13 +306,22 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
 
 void Stream::Write (Stream &stream, size_t size, bool delete_when_finished)
 {
+    if (size == 0)
+    {
+        if (delete_when_finished)
+            delete &stream;
+        
+        return;
+    }
+
     internal->Write (stream.internal, size,
             delete_when_finished ? Internal::Write_DeleteStream : 0);
 }
 
 void Stream::Internal::Write (Stream::Internal * stream, size_t size, int flags)
 {
-    if ( (!(flags & Write_IgnoreQueue)) && (BackQueue.Size || Queueing))
+    if ( ( (! (flags & Write_IgnoreQueue)) && (BackQueue.Size || Queueing))
+         || ( (! (flags & Write_IgnoreBusy)) && Prev.Size))
     {
         Queued &queued = ** BackQueue.Push ();
 
@@ -270,10 +339,10 @@ void Stream::Internal::Write (Stream::Internal * stream, size_t size, int flags)
     if (stream->Graph != Graph)
         stream->Graph->Swallow (Graph);
 
-    LacewingAssert (stream->Graph == Graph);
+    assert (stream->Graph == Graph);
 
     StreamGraph::Link * link = new (std::nothrow) StreamGraph::Link
-                (stream, 0, this, 0, size, 0, flags & Write_DeleteStream);
+                (stream, 0, this, 0, size, flags & Write_DeleteStream);
 
     stream->Next.Push (link);
     Prev.Push (link);
@@ -290,7 +359,7 @@ void Stream::WriteFile (const char * filename)
 {
     /* This method may only be used when the stream is associated with a pump */
 
-    LacewingAssert (internal->Pump);
+    assert (internal->Pump);
 
     File * file = new File (*internal->Pump, filename, "r");
 
@@ -300,13 +369,20 @@ void Stream::WriteFile (const char * filename)
     Write (*file, file->BytesLeft (), true);
 }
 
-void Stream::AddFilterUpstream (Stream &filter, bool delete_with_stream)
+void Stream::AddFilterUpstream
+    (Stream &filter, bool delete_with_stream, bool close_together)
 {
-    Internal::Filter _filter = { filter.internal, delete_with_stream };
+    Internal::Filter * _filter = new (std::nothrow) Internal::Filter;
+
+    _filter->StreamPtr = internal;
+    _filter->FilterPtr = filter.internal;
+    _filter->DeleteWithStream = delete_with_stream;
+    _filter->CloseTogether = close_together;
 
     /* Upstream data passes through the most recently added filter first */
 
     internal->FiltersUpstream.PushFront (_filter);
+    filter.internal->Filtering.Push (_filter);
 
     if (filter.internal->Graph != internal->Graph)
         internal->Graph->Swallow (filter.internal->Graph);
@@ -315,13 +391,20 @@ void Stream::AddFilterUpstream (Stream &filter, bool delete_with_stream)
     internal->Graph->Read ();
 }
 
-void Stream::AddFilterDownstream (Stream &filter, bool delete_with_stream)
+void Stream::AddFilterDownstream
+    (Stream &filter, bool delete_with_stream, bool close_together)
 {
-    Internal::Filter _filter = { filter.internal, delete_with_stream };
+    Internal::Filter * _filter = new (std::nothrow) Internal::Filter;
+
+    _filter->StreamPtr = internal;
+    _filter->FilterPtr = filter.internal;
+    _filter->DeleteWithStream = delete_with_stream;
+    _filter->CloseTogether = close_together;
 
     /* Downstream data passes through the most recently added filter last */
 
     internal->FiltersDownstream.Push (_filter);
+    filter.internal->Filtering.Push (_filter);
 
     if (filter.internal->Graph != internal->Graph)
         internal->Graph->Swallow (filter.internal->Graph);
@@ -337,105 +420,95 @@ size_t Stream::BytesLeft ()
 
 void Stream::Read (size_t bytes)
 {
+    lwp_trace ("Base stream Read called? (" lwp_fmt_size ")", bytes);
 }
 
-void Stream::Internal::Data (char * buffer, size_t size)
+void Stream::Internal::Data (const char * buffer, size_t size)
 {
+    int num_data_handlers = ExpDataHandlers.Size, i = 0;
+
     ++ UserCount;
 
-    switch (ExpDataHandlers.Size)
+    DataHandler * data_handlers = (DataHandler *)
+        alloca (ExpDataHandlers.Size * sizeof (DataHandler));
+
+    for (List <DataHandler>::Element * E
+                = ExpDataHandlers.First; E; E = E->Next)
     {
-        case 0:
-            break;
+        DataHandler &handler = (** E);
 
-        case 1:
-        {
-            /* If there's only one handler, there's no need to copy the data */
+        data_handlers [i ++] = handler;
 
-            DataHandler &handler = ** ExpDataHandlers.First;
+        ++ handler.StreamPtr->UserCount;
+    }
 
-            handler.Proc (*handler.StreamPtr->Public,
-                                handler.Tag, buffer, size);
+    for (int i = 0; i < num_data_handlers; ++ i)
+    {
+        DataHandler &handler = data_handlers [i];
 
-            /* Handler may destroy the stream */
+        if (handler.StreamPtr->Public)
+            handler.Proc (*handler.StreamPtr->Public, handler.Tag, buffer, size);
 
-            if (!Public)
-            {
-                delete this;
-                return;
-            }
+        if ((-- handler.StreamPtr->UserCount) == 0)
+            delete handler.StreamPtr;
+    }
 
-            break;
-        }
+    /* Write the data to any streams next in the (expanded) graph, if this
+     * stream still exists.
+     */
 
-        default:
-        {
-            /* Otherwise, copy the data for each handler (thus allowing it to
-             * be modified without consequence).  TODO : limit on size for
-             * stack copy?
-             */
-
-            char * copy = (char *) alloca (size);
-
-            for (List <DataHandler>::Element * E
-                    = ExpDataHandlers.First; E; E = E->Next)
-            {
-                DataHandler &handler = (** E);
-
-                memcpy (copy, buffer, size);
-
-                handler.Proc (*handler.StreamPtr->Public,
-                                    handler.Tag, copy, size);
-
-                if (!Public)
-                {
-                    delete this;
-                    return;
-                }
-            }
-
-            break;
-        }
-    };
-
-    /* Write the data to any streams next in the (expanded) graph */
-
-    Push (buffer, size);
-
-    -- UserCount;
+    if (Public)
+        Push (buffer, size);
 
     /* Pushing data may result in stream destruction */
 
-    if (UserCount == 0 && !Public)
+    if ((-- UserCount) == 0 && !Public)
     {
         delete this;
         return;
     }
-
 }
 
-void Stream::Data (char * buffer, size_t size)
+void Stream::Data (const char * buffer, size_t size)
 {
     internal->Data (buffer, size);
 }
 
 void Stream::Internal::Push (const char * buffer, size_t size)
 {
-    ++ Graph->LastPush;
+    int num_links = NextExpanded.Size;
 
-PushLoop:
+    if (!num_links)
+        return; /* nothing to do */
 
-    int LastExpand = Graph->LastExpand;
+    ++ UserCount;
+
+    StreamGraph::Link ** links = (StreamGraph::Link **)
+        alloca (num_links * sizeof (StreamGraph::Link *));
+
+    int i = 0;
+
+    /* Copy the link dest pointers into our local array */
 
     for (List <StreamGraph::Link *>::Element * E
                 = NextExpanded.First; E; E = E->Next)
     {
-        StreamGraph::Link * link = (** E);
+        links [i ++] = (** E);
+    }
 
-        if (link->LastPush == Graph->LastPush)
+    int LastExpand = Graph->LastExpand;
+
+    for (i = 0; i < num_links; ++ i)
+    {
+        StreamGraph::Link * link = links [i];
+
+        if (!link)
+        {
+            lwp_trace ("Link %d in the local Push list is now dead; skipping", i);
             continue;
+        }
 
-        link->LastPush = Graph->LastPush;
+        lwp_trace ("Pushing to link %d of %d (%p)", i, num_links, link);
 
         size_t to_write = link->BytesLeft != -1 &&
                             size > link->BytesLeft ? link->BytesLeft : size;
@@ -443,6 +516,8 @@ PushLoop:
         if (!link->ToExp->IsTransparent ())
         {
             /* If we have some actual data, write it to the target stream */
+
+            lwp_trace ("Link target is not transparent; buffer = %p", buffer);
 
             if (buffer)
             {
@@ -452,17 +527,41 @@ PushLoop:
         }
         else
         {
+            lwp_trace ("Link target is transparent; pushing data forward");
+
             /* Target stream is transparent - have it push the data forward */
 
             link->ToExp->Push (buffer, to_write);
         }
 
-        /* Calling Write() or Push() on the next stream may have caused the
-         * graph to re-expand (rendering our iterator invalid).
-         */
+        /* Pushing data may have caused this stream to be deleted */
+
+        if (!Public)
+            break;
 
         if (Graph->LastExpand != LastExpand)
-            goto PushLoop;
+        {
+            lwp_trace ("Graph has re-expanded - checking local Push list...");
+
+            /* If any new links have been added to NextExpanded, this Push will
+             * not write to them.  However, if any links in our local array
+             * (yet to be written to) have disappeared, they must be removed.
+             */
+
+            for (int x = i; x < num_links; ++ x)
+            {
+                if (!NextExpanded.Find (links [x]))
+                {
+                    if (link == links [x])
+                        link = 0;
+
+                    links [x] = 0;
+                }
+            }
+
+            if (!link)
+                continue;
+        }
 
         if (!link->To)
             continue; /* filters cannot expire */
@@ -481,8 +580,6 @@ PushLoop:
         if (link->DeleteStream)
         {
             delete link->From->Public; /* will re-expand the graph */
-
-            break;
         }
         else
         {
@@ -502,15 +599,28 @@ PushLoop:
             delete link;
 
             Graph->Read ();
-
-            goto PushLoop;
         }
-    }
-}
 
-size_t Stream::PutWritable (char * buffer, size_t size)
-{
-    return Put (buffer, size);
+        /* Maybe deleting the source stream caused this stream to be
+         * deleted, too?
+         */
+
+        if (!Public)
+            break;
+
+        lwp_trace ("Graph re-expanded by Push - checking local list...");
+
+        /* Since the graph has re-expanded, check the rest of the links we
+         * intend to write to are still present in the list.
+         */
+
+        for (int x = i; x < num_links; ++ x)
+            if (!NextExpanded.Find (links [x]))
+                links [x] = 0;
+    }
+
+    if ((-- UserCount) == 0 && (!Public))
+        delete this;
 }
 
 size_t Stream::Put (Stream &, size_t size)
@@ -518,29 +628,43 @@ size_t Stream::Put (Stream &, size_t size)
     return -1;
 }
 
-void Stream::WriteReady ()
+void Stream::Retry (int when)
 {
-    if (!internal->WriteDirect ())
+    if (when == Retry_Now)
     {
-        /* TODO: ??? */
+        if (!internal->WriteDirect ())
+        {
+            /* TODO: ??? */
+        }
+
+        internal->WriteQueued ();
+
+        return;
     }
 
-    internal->WriteQueued ();
+    internal->Retry = when;
 }
 
 void Stream::Internal::WriteQueued ()
 {
     if (!Queueing)
     {
+        lwp_trace ("%p : Writing FrontQueue (size = %d)", this, FrontQueue.Size);
+
         WriteQueued (FrontQueue);
 
-        if (FrontQueue.Size == 0 && !PrevExpanded.Size)
+        lwp_trace ("%p : FrontQueue size is now %d, Prev.Size is %d, %d in back queue",
+                        this, FrontQueue.Size, Prev.Size, BackQueue.Size);
+
+        if (FrontQueue.Size == 0 && !Prev.Size)
             WriteQueued (BackQueue);
     }
 }
 
 void Stream::Internal::WriteQueued (List <Queued> &queue)
 {
+    lwp_trace ("%p : WriteQueued : %d to write", this, queue.Size);
+
     while (queue.Size)
     {
         Queued &queued = ** queue.First;
@@ -620,7 +744,15 @@ void Stream::Internal::Close ()
     ++ UserCount;
 
 
-    Graph->ClearExpanded ();
+    /* If RootsExpanded is already empty, something else has already cleared
+     * the expanded graph (e.g. another stream closing) and should re-expand
+     * later (meaning we don't have to bother)
+     */
+
+    bool already_cleared = (Graph->RootsExpanded.Size == 0);
+
+    if (!already_cleared)
+        Graph->ClearExpanded ();
 
 
     /* Anything that comes before us can no longer link here */
@@ -655,12 +787,76 @@ void Stream::Internal::Close ()
     Next.Clear ();
 
 
-    if (!Graph->Roots.Find (this))
-        Graph->Roots.Push (this);
+    /* If we're set to close together with any filters, close those too (this
+     * is the reason for the already_cleared check)
+     */
 
-    Graph->Expand ();
+    Stream::Internal ** to_close =
+        (Stream::Internal **) alloca (sizeof (Stream::Internal *) *
+         (Filtering.Size + FiltersUpstream.Size + FiltersDownstream.Size));
 
-    /* TODO : Should Read be called here? */
+    int n = 0;
+
+    for (List <Filter *>::Element * E = Filtering.First; E; E = E->Next)
+    {
+        Filter * filter = (** E);
+
+        if (filter->CloseTogether)
+        {
+            ++ filter->StreamPtr->UserCount;
+            to_close [n ++] = filter->StreamPtr;
+        }
+    }
+
+    for (List <Filter *>::Element * E = FiltersUpstream.First; E; E = E->Next)
+    {
+        Filter * filter = (** E);
+
+        if (filter->CloseTogether)
+        {
+            ++ filter->FilterPtr->UserCount;
+            to_close [n ++] = filter->FilterPtr;
+        }
+    }
+
+    for (List <Filter *>::Element * E = FiltersDownstream.First; E; E = E->Next)
+    {
+        Filter * filter = (** E);
+
+        if (filter->CloseTogether)
+        {
+            ++ filter->FilterPtr->UserCount;
+            to_close [n ++] = filter->FilterPtr;
+        }
+    }
+
+    for (int i = 0; i < n; ++ i)
+    {
+        Stream::Internal * stream = to_close [i];
+
+        -- stream->UserCount;
+
+        if (!stream->Public)
+        {
+            if (stream->UserCount == 0)
+                delete stream;
+        }
+        else
+        {
+            stream->Public->Close ();
+        }
+    }
+
+
+    if (!already_cleared)
+    {
+        if (!Graph->Roots.Find (this))
+            Graph->Roots.Push (this);
+
+        Graph->Expand ();
+
+        /* TODO : Should Read be called here? */
+    }
 
 
     /* Have to make a local copy of the close handlers as
@@ -767,9 +963,11 @@ void Stream::EndQueue
 
 void Stream::EndQueue ()
 {
+    lwp_trace ("%p : EndQueue", internal);
+
     /* TODO : Look for a queued item w/ Flag_BeginQueue if Queueing is false? */
 
-    LacewingAssert (internal->Queueing);
+    assert (internal->Queueing);
 
     internal->Queueing = false;
 
@@ -778,9 +976,10 @@ void Stream::EndQueue ()
 
 bool Stream::Internal::IsTransparent ()
 {
-    LacewingAssert (Public);
+    assert (Public);
 
-    return (!ExpDataHandlers.Size) && (!Queueing) && Public->IsTransparent ();
+    return (!ExpDataHandlers.Size) && (BackQueue.Size + FrontQueue.Size) == 0
+                    && (!Queueing) && Public->IsTransparent ();
 }
 
 bool Stream::IsTransparent ()

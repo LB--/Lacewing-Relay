@@ -91,18 +91,21 @@ namespace Lacewing
         }
 
         inline HeapBuffer &operator << (char * s)                   
-        {   Add (s, -1);                                      
+        {   
+            Add (s, -1);                                      
             return *this;                                   
         }                                                   
 
         inline HeapBuffer &operator << (const char * s)             
-        {   Add (s, -1);                                      
+        {   
+            Add (s, -1);                                      
             return *this;                                   
         }                                                   
 
         inline HeapBuffer &operator << (lw_i64 v)                   
-        {   char buffer [128];
-            sprintf (buffer, lw_fmt_size, v);
+        {   
+            char buffer [128];
+            sprintf (buffer, lwp_fmt_size, v);
             Add (buffer, -1);
             return *this;                                   
         }                                                   

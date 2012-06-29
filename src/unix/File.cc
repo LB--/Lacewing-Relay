@@ -27,28 +27,44 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
+
+struct File::Internal
+{
+    char Name [lwp_max_path];
+
+    Internal ()
+    {
+        *Name = 0;
+    }
+};
 
 static int GetFlags (const char * mode);
 
 File::File (Lacewing::Pump &Pump) : FDStream (Pump)
 {
+    internal = new Internal;
 }
 
 File::File (Lacewing::Pump &Pump, const char * filename, const char * mode)
                 : FDStream (Pump)
 {
+    internal = new Internal;
+
     Open (filename, mode);
 }
 
 File::~ File ()
 {
+    delete internal;
 }
 
 bool File::Open (const char * filename, const char * mode)
 {
-    DebugOut ("%p : File::Open \"%s\", \"%s\"",
+    lwp_trace ("%p : File::Open \"%s\", \"%s\"",
                     ((Stream *) (FDStream *) this)->internal, filename, mode);
+
+    *internal->Name = 0;
 
     int flags = GetFlags (mode);
 
@@ -62,7 +78,13 @@ bool File::Open (const char * filename, const char * mode)
 
     SetFD (FD);
 
-    return Valid ();
+    if (Valid ())
+    {
+        strcpy (internal->Name, filename);
+        return true;
+    }
+
+    return false;
 }
 
 int GetFlags (const char * mode)
@@ -112,4 +134,28 @@ int GetFlags (const char * mode)
     return flags;
 }
 
+bool File::OpenTemp ()
+{
+    char name [lwp_max_path];
+    char random [16];
+    size_t i = 0;
+
+    lw_temp_path (name);
+    lw_random (random, sizeof (random));
+
+    while (i < sizeof (random))
+    {
+        sprintf (name + strlen (name) - 1, "%02x", random [i]);
+        ++ i;
+    }
+
+    lwp_trace ("Opening temp file: %s", name);
+
+    return Open (name, "wb");
+}
+
+const char * File::Name ()
+{
+    return internal->Name;
+}
 

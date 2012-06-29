@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,81 +29,67 @@
 
 #include "Common.h"
 
-const char * const SessionCookie = "LacewingSession";
+const char * const SessionCookie = "lw_session";
 
-void Webserver::Request::Session (const char * Key, const char * Value)
+void Webserver::Request::Session (const char * key, const char * value)
 {
+    const char * cookie = Cookie (SessionCookie);
 
-    Webserver::Internal::Session * Session = internal->Server.FindSession (Cookie (SessionCookie));
+    Webserver::Internal::Session * session;
 
-    if (!Session)
-    {
-        char SessionID [128];
-
-        sprintf (SessionID, "Session-%s-%d%d%d",
-            internal->Client.Socket.GetAddress ().ToString (), (int) time (0),
-                rand (), (int) (lw_iptr) this);
-
-        MD5 (SessionID, SessionID);
-
-        {   char SessionID_Hex [40];
-            
-            for(int i = 0; i < 16; ++ i)
-                sprintf (SessionID_Hex + (i * 2), "%02x", ((unsigned char *) SessionID) [i]);
-
-            Cookie (SessionCookie, SessionID_Hex);
-        }
-
-        Session = new Webserver::Internal::Session;
-
-        Session->ID_Part1 = ((lw_i64 *) SessionID) [0];
-        Session->ID_Part2 = ((lw_i64 *) SessionID) [1];
-
-        if (internal->Server.FirstSession)
-        {
-            Session->Next = internal->Server.FirstSession;
-            internal->Server.FirstSession = Session;
-        }
-        else
-        {
-            Session->Next = 0;
-            internal->Server.FirstSession = Session;
-        }
+    if (*cookie)
+    {   HASH_FIND_STR (internal->Server.Sessions, cookie, session);
+    }
+    else
+    {   session = 0;
     }
 
-    Session->Data.Set (Key, Value);
+    if (!session)
+    {
+        char session_id [32];
+        char session_id_hex [sizeof (session_id) * 2 + 1];
+
+        lw_random (session_id, sizeof (session_id));
+
+        for (int i = 0; i < sizeof (session_id); ++ i)
+            sprintf (session_id_hex + i * 2, "%02x", session_id [i]);
+
+        session = new Webserver::Internal::Session;
+
+        HASH_ADD_KEYPTR
+            (hh, internal->Server.Sessions,
+                session_id_hex, sizeof (session_id_hex), session);
+    }
+
+    lw_nvhash_set (session->data, key, value, lw_true);
 }
 
-const char * Webserver::Request::Session (const char * Key)
+const char * Webserver::Request::Session (const char * key)
 {
-    Webserver::Internal::Session * Session
-        = internal->Server.FindSession (Cookie (SessionCookie));
+    const char * cookie = Cookie (SessionCookie);
 
-    if (!Session)
+    if (!*cookie)
         return "";
 
-    return Session->Data.Get (Key);
+    Webserver::Internal::Session * session;
+    HASH_FIND_STR (internal->Server.Sessions, cookie, session);
+
+    if (!session)
+        return "";
+
+    return lw_nvhash_get (session->data, key, "");
 }
 
-void Webserver::CloseSession (const char * ID)
+void Webserver::CloseSession (const char * id)
 {
-    Webserver::Internal::Session * Session = internal->FindSession (ID);
+    Webserver::Internal::Session * session;
+    HASH_FIND_STR (internal->Sessions, id, session);
 
-    if (Session == internal->FirstSession)
-        internal->FirstSession = Session->Next;
-    else
-    {
-        for (Webserver::Internal::Session * S = internal->FirstSession; S; S = S->Next)
-        {
-            if (S->Next == Session)
-            {
-                S->Next = Session->Next;
-                break;
-            }
-        }
-    }
+    if (!session)
+        return;
 
-    delete Session;
+    lw_nvhash_clear (session->data);
+    HASH_DEL (internal->Sessions, session);
 }
 
 void Webserver::Request::CloseSession ()
@@ -116,73 +102,35 @@ const char * Webserver::Request::Session ()
     return Cookie (SessionCookie);
 }
 
-Webserver::Internal::Session * Webserver::Internal::FindSession (const char * SessionID_Hex)
-{
-    if (strlen (SessionID_Hex) != 32)
-        return 0;
-
-    union
-    {
-        char SessionID_Bytes [16];
-        
-        struct
-        {
-            lw_i64 Part1;
-            lw_i64 Part2;
-
-        } SessionID;
-    };
-
-    char hex [3];
-    hex [2] = 0;
-
-    for (int i = 0, c = 0; i < 16; ++ i, c += 2)
-    {
-        hex [0] = SessionID_Hex [c];
-        hex [1] = SessionID_Hex [c + 1];
-
-        SessionID_Bytes [i] = (char) strtol (hex, 0, 16);
-    }
-
-    Webserver::Internal::Session * Session;
-
-    for (Session = FirstSession; Session; Session = Session->Next)
-    {
-        if (Session->ID_Part1 == SessionID.Part1 &&
-                Session->ID_Part2 == SessionID.Part2)
-        {
-            break;
-        }
-    }
-
-    return Session;
-}
-
-
 Webserver::Request::SessionItem * Webserver::Request::FirstSessionItem ()
 {
+    const char * cookie = Cookie (SessionCookie);
 
-    Webserver::Internal::Session * Session = internal->Server.FindSession (Cookie (SessionCookie));
-
-    if (!Session)
+    if (!*cookie)
         return 0;
 
-    return (Webserver::Request::SessionItem *) Session->Data.First;
+    Webserver::Internal::Session * session;
+    HASH_FIND_STR (internal->Server.Sessions, cookie, session);
+
+    if (!session)
+        return 0;
+
+    return (SessionItem *) session->data;
 }
 
 Webserver::Request::SessionItem *
         Webserver::Request::SessionItem::Next ()
 {
-    return (Webserver::Request::SessionItem *) ((Map::Item *) this)->Next;
+    return (SessionItem *) ((lw_nvhash *) this)->hh.next;
 }
 
 const char * Webserver::Request::SessionItem::Name ()
 {
-    return ((Map::Item *) this)->Key;
+    return ((lw_nvhash *) this)->key;
 }
 
 const char * Webserver::Request::SessionItem::Value ()
 {
-    return ((Map::Item *) this)->Value;
+    return ((lw_nvhash *) this)->value;
 }
 

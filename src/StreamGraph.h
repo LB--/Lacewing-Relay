@@ -27,7 +27,7 @@
  * SUCH DAMAGE.
  */
 
-#include "Common.h"
+#pragma once
 
 struct StreamGraph
 {
@@ -48,12 +48,18 @@ struct StreamGraph
     {
         inline Link (Stream::Internal * _From, Stream::Internal * _FromExp, 
                         Stream::Internal * _To, Stream::Internal * _ToExp,
-                           size_t _BytesLeft, int _LastPush, bool _DeleteStream)
+                           size_t _BytesLeft, bool _DeleteStream)
 
             : From (_From), FromExp (_FromExp), To (_To), ToExp (_ToExp),
-                BytesLeft (_BytesLeft), LastPush (_LastPush),
-                    DeleteStream (_DeleteStream)
+                BytesLeft (_BytesLeft), DeleteStream (_DeleteStream)
         {
+        }
+
+        inline Link ()
+        {
+            memset (this, 0, sizeof (StreamGraph::Link));
+
+            BytesLeft = -1;
         }
 
         Stream::Internal * To;
@@ -63,7 +69,6 @@ struct StreamGraph
         Stream::Internal * FromExp;
 
         size_t BytesLeft;
-        int LastPush;
 
         bool DeleteStream;
     };
@@ -76,11 +81,9 @@ struct StreamGraph
     void Expand ();
     void Read ();
 
-    int LastPush;
-    int LastRead;
     int LastExpand;
 
-    /* Print the graph to DebugOut */
+    /* Print the graph to lwp_trace */
 
     void Print ();
 };

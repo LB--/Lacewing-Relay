@@ -35,14 +35,23 @@ namespace Lacewing
         BIO * InternalBIO, * ExternalBIO;
 
         void Pump ();
-        bool Pumping;
 
         int WriteCondition;
 
     public:
 
+        bool Handshook, Pumping, Dead;
+
+        void * tag;
+        void (* onHandshook) (SSLClient &);
+
+        #ifdef LacewingNPN
+            unsigned char NPN [32];
+        #endif
+
         SSLClient (SSL_CTX *);
         ~ SSLClient ();
+
 
 
         /* Data coming from the network passes through this Stream first */

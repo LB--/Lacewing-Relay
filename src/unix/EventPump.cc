@@ -27,7 +27,8 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
+#include "EventPump.h"
 
 const char SigExitEventLoop  = 1;
 const char SigRemove         = 2;
@@ -106,7 +107,7 @@ bool EventPump::Internal::Ready
             Pump::Watch * ToRemove = (Pump::Watch *) (** SignalParams.First);
             SignalParams.PopFront ();
 
-            WatchBacklog.Return (*ToRemove);
+            delete ToRemove;
 
             this->EventPump.RemoveUser ();
 
@@ -277,22 +278,26 @@ Pump::Watch * EventPump::Add (int FD, void * tag, Pump::Callback onReadReady,
     if ((!onReadReady) && (!onWriteReady))
         return 0;
 
-    Pump::Watch &watch = internal->WatchBacklog.Borrow ();
-    memset (&watch, 0, sizeof (Pump::Watch));
+    Pump::Watch * watch = new (std::nothrow) Pump::Watch;
 
-    watch.FD = FD;
+    if (!watch)
+        return 0;
+
+    memset (watch, 0, sizeof (Pump::Watch));
+
+    watch->FD = FD;
 
     #if defined (LacewingUseEPoll)
     
-        watch.onReadReady = onReadReady;
-        watch.onWriteReady = onWriteReady;
-        watch.EdgeTriggered = edge_triggered;
-        watch.Tag = tag;
+        watch->onReadReady = onReadReady;
+        watch->onWriteReady = onWriteReady;
+        watch->EdgeTriggered = edge_triggered;
+        watch->Tag = tag;
 
         epoll_event event;
         memset (&event, 0, sizeof (event));
 
-        event.data.ptr = &watch;
+        event.data.ptr = watch;
         
         event.events = (onReadReady ? EPOLLIN : 0) |
                             (onWriteReady ? EPOLLOUT : 0) |
@@ -302,14 +307,13 @@ Pump::Watch * EventPump::Add (int FD, void * tag, Pump::Callback onReadReady,
 
     #elif defined (LacewingUseKQueue)
 
-        UpdateCallbacks (&watch, tag, onReadReady,
-                            onWriteReady, edge_triggered);
+        UpdateCallbacks (watch, tag, onReadReady, onWriteReady, edge_triggered);
 
     #endif
 
     AddUser ();
 
-    return &watch;
+    return watch;
 }
 
 void EventPump::UpdateCallbacks

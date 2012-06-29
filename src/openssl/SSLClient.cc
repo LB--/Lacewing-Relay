@@ -27,7 +27,8 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
+#include "SSLClient.h"
 
 SSLClient::Downstream::Downstream (SSLClient &_Client)
     : Client (_Client)
@@ -42,8 +43,15 @@ SSLClient::Upstream::Upstream (SSLClient &_Client)
 SSLClient::SSLClient (SSL_CTX * context)
     : Downstream (*this), Upstream (*this)
 {
+    Handshook = false;
     Pumping = false;
+    Dead = false;
+
     WriteCondition = -1;
+
+    #ifdef LacewingNPN
+        *NPN = 0;
+    #endif
 
     SSL = SSL_new (context);
 
@@ -55,6 +63,10 @@ SSLClient::SSLClient (SSL_CTX * context)
     SSL_set_bio (SSL, InternalBIO, InternalBIO);
 
     SSL_set_accept_state (SSL);
+
+    Pump ();
+
+    assert (!Dead);
 }
 
 SSLClient::~ SSLClient ()
@@ -65,14 +77,29 @@ SSLClient::~ SSLClient ()
 
 size_t SSLClient::Downstream::Put (const char * buffer, size_t size)
 {
+    fprintf (stderr, "From the network:");
+    lw_dump (buffer, size);
+
     int bytes = BIO_write (Client.ExternalBIO, buffer, size);
 
     Client.Pump ();
 
-    if (bytes < 0)
-        return 0;
+    if (Client.Dead)
+    {
+        delete &Client;
+        return size;
+    }
 
-    LacewingAssert (bytes == size);
+    if (bytes < 0)
+    {
+        lwp_trace ("SSL downstream write error!");
+
+        Close ();
+
+        return size;
+    }
+
+    assert (bytes == size);
 
     /* If OpenSSL was waiting for some more incoming data before we could
      * write something, signal Stream::WriteReady to have Put called again.
@@ -81,7 +108,7 @@ size_t SSLClient::Downstream::Put (const char * buffer, size_t size)
     if (Client.WriteCondition == SSL_ERROR_WANT_READ)
     {
         Client.WriteCondition = -1;
-        Client.Upstream.WriteReady ();
+        Client.Upstream.Retry (Stream::Retry_Now);
     }
 
     return bytes;
@@ -94,13 +121,23 @@ size_t SSLClient::Upstream::Put (const char * buffer, size_t size)
 
     Client.Pump ();
 
+    if (Client.Dead)
+    {
+        delete &Client;
+        return size;
+    }
+
     if (error != -1)
     {
         if (error == SSL_ERROR_WANT_READ)
             Client.WriteCondition = error;
 
+        lwp_trace ("SSL upstream write error!");
+
         return 0;
     }
+
+    assert (bytes == size);
 
     return bytes;
 }
@@ -112,37 +149,109 @@ void SSLClient::Pump ()
 
     Pumping = true;
 
-    {   char buffer [DefaultBufferSize];
+    {   char buffer [lwp_default_buffer_size];
+        int bytes;
 
         for (;;)
         {
+            if (!Handshook)
+            {
+                if (SSL_do_handshake (SSL) > 0)
+                {
+                    Handshook = true;
+
+                    #ifdef LacewingNPN
+ 
+                       const unsigned char * npn = 0;
+                       unsigned int npn_length = 0;
+
+                       SSL_get0_next_proto_negotiated (SSL, &npn, &npn_length);
+
+                       if (npn)
+                       {
+                           if (npn_length >= sizeof (NPN))
+                               npn_length = sizeof (NPN) - 1;
+
+                           memcpy (NPN, npn, npn_length);
+                           NPN [npn_length] = 0;
+                       }
+
+                    #endif
+
+                    if (onHandshook)
+                        onHandshook (*this);
+                }
+            }
+
+
             bool exit = true;
+
 
             /* First check for any new data destined for the network */
 
-            {   int bytes = BIO_read (ExternalBIO, buffer, sizeof (buffer));
+            bytes = BIO_read (ExternalBIO, buffer, sizeof (buffer));
 
-                if (bytes > 0)
+            lwp_trace ("Pump: BIO_read returned %d", bytes);
+
+            if (bytes > 0)
+            {
+                fprintf (stderr, "To the network:");
+                lw_dump (buffer, bytes);
+
+                exit = false;
+                Upstream.Data (buffer, bytes);
+
+                /* Pushing data may end up destroying the SSLClient user, which
+                 * will then set Dead to true.
+                 */
+
+                if (Dead)
+                    return;
+            }
+            else
+            {
+                if (!BIO_should_retry (ExternalBIO))
                 {
-                    exit = false;
-                    Upstream.Data (buffer, bytes);
+                    lwp_trace ("BIO_should_retry = false");
                 }
             }
 
 
             /* Now check for any data that's been decrypted and is ready to use */
 
-            {   int bytes = SSL_read (SSL, buffer, sizeof (buffer));
+            bytes = SSL_read (SSL, buffer, sizeof (buffer));
 
-                if (bytes > 0)
+            lwp_trace ("Pump: SSL_read returned %d", bytes);
+
+            if (bytes > 0)
+            {
+                lw_dump (buffer, bytes);
+
+                exit = false;
+                Downstream.Data (buffer, bytes);
+
+                if (Dead)
+                    return;
+            }
+            else
+            {
+                if (!bytes)
                 {
-                    exit = false;
-                    Downstream.Data (buffer, bytes);
+                    lwp_trace ("SSL shutdown!");
+
+                    Downstream.Close ();
                 }
                 else
                 {
-                    if (SSL_get_error (SSL, bytes) == SSL_ERROR_WANT_WRITE)
+                    int error = SSL_get_error (SSL, bytes);
+
+                    if (error == SSL_ERROR_WANT_WRITE)
                         continue;
+
+                    if (error != SSL_ERROR_WANT_READ)
+                    {
+                        lwp_trace ("SSL error: %s", ERR_error_string (error, 0));
+                    }
                 }
             }
 

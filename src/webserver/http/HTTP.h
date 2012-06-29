@@ -27,6 +27,17 @@
  * SUCH DAMAGE.
  */
 
+#include "../../../deps/http-parser/http_parser.h"
+
+struct HTTPRequest : public Webserver::Request::Internal
+{
+    HTTPRequest (Webserver::Internal &, WebserverClient &);
+
+    size_t Put (const char * buffer, size_t size);
+
+    bool IsTransparent ();
+};
+
 class HTTPClient : public WebserverClient
 {
     time_t LastActivityTime;
@@ -39,12 +50,12 @@ class HTTPClient : public WebserverClient
 
 public:
 
-    Webserver::Request::Internal Request; /* HTTP is one request at a time, so this is just reused */
+    HTTPRequest Request; /* HTTP is one request at a time, so this is just reused */
 
     HTTPClient (Webserver::Internal &, Lacewing::Server::Client &, bool Secure);
     ~ HTTPClient ();
 
-    void Process (char * buffer, size_t Size);
+    size_t Put (const char * buffer, size_t size);
 
     /* Called by the HTTP parser */
 
@@ -58,16 +69,17 @@ public:
     int onHeaderValue (char *, size_t);
 
     void Respond (Webserver::Request::Internal &);
-    void Dead ();
 
     void Tick ();
 
-    bool IsSPDY ();
-
     struct HTTPUpload : public Webserver::Upload::Internal
     {
+        HTTPUpload (Webserver::Request::Internal &);
+
         const char * Header (const char * Name);
     };
+
+    /* TODO : rewrite the multipart stuff */
 
     struct MultipartProcessor
     {
@@ -88,18 +100,17 @@ public:
         MultipartProcessor (HTTPClient &, const char * ContentType);
         ~ MultipartProcessor ();
 
-        int Process (char *, size_t);
+        size_t Process (char *, size_t);
         void CallRequestHandler ();
 
         void ProcessDispositionPair(char * Pair);
         void ToFile(const char *, size_t);
 
-        Map Disposition, Headers;
+        List <WebserverHeader> Headers;
+        lw_nvhash * Disposition;
 
         Array <Lacewing::Webserver::Upload *> Uploads;
         HTTPUpload * CurrentUpload;
-
-        HeapBuffer Buffer;
 
     } * Multipart;
 };

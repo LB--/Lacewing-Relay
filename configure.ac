@@ -19,12 +19,19 @@ AC_ARG_ENABLE([i486],
 	[enable_i486=no]
 )
 
+AC_ARG_ENABLE([spdy],
+	[AS_HELP_STRING([--enable-spdy],
+		 [Enable SPDY support @<:@default=enabled@:>@])],
+	[enable_spdy="$enableval"],
+	[enable_spdy=yes]
+)
+
 CFLAGS="$CFLAGS -DLacewingLibrary -DHAVE_CONFIG_H -fvisibility=hidden"
 
 if test "x$enable_debug" = xyes; then
-	CFLAGS="$CFLAGS -DPOSIX_SOURCE -DDEBUG -DLacewingDebug -DHTTP_PARSER_STRICT=1 -DHTTP_PARSER_DEBUG=1 -g -O0"
+	CFLAGS="$CFLAGS -DDEBUG -DLacewingDebug -DHTTP_PARSER_STRICT=1 -DHTTP_PARSER_DEBUG=1 -g -O0"
 else
-	CFLAGS="$CFLAGS -DPOSIX_SOURCE -DHTTP_PARSER_STRICT=0 -DHTTP_PARSER_DEBUG=0 -O2"
+	CFLAGS="$CFLAGS -DHTTP_PARSER_STRICT=0 -DHTTP_PARSER_DEBUG=0 -O2"
 fi
 
 if test "x$enable_i486" = xyes; then
@@ -33,26 +40,29 @@ fi
 
 SO_EXT="so"
 
-OBJECTS="build/Global.o build/Sync.o build/Filter.o build/Address.o build/StreamGraph.o \
-    build/Stream.o build/Error.o build/Webserver.o build/HTTP.o build/Multipart.o build/http-parser.o \
-    build/MimeTypes.o build/Request.o build/Sessions.o build/Pipe.o \
-    build/addr_flat.o build/eventpump_flat.o build/global_flat.o build/server_flat.o build/timer_flat.o \
-    build/webserver_flat.o build/filter_flat.o build/udp_flat.o build/client_flat.o \
-    build/error_flat.o build/sync_flat.o build/thread_flat.o build/FlashPolicy.o \
-    build/Pump.o build/flashpolicy_flat.o build/stream_flat.o build/fdstream_flat.o \
-    build/file_flat.o build/pipe_flat.o build/pump_flat.o"
+if test "x$enable_spdy" = xyes; then
 
-COMMONDEPS="include/Lacewing.h src/Common.h src/Backlog.h src/HeapBuffer.h \
-    src/TimeHelper.h src/Utility.h src/webserver/Common.h src/webserver/Map.h \
-    src/webserver/http/HTTP.h src/Address.h src/Stream.h"
+    OBJECTS="$OBJECTS build/spdy_bytes.o build/spdy_control.o \
+             build/spdy_credential.o build/spdy_ctx.o build/spdy_goaway.o \
+             build/spdy_headers.o build/spdy_nv_block.o build/spdy_ping.o \
+             build/spdy_rst_stream.o build/spdy_settings.o build/spdy_stream.o \
+             build/spdy_strings.o build/spdy_syn_reply.o build/spdy_syn_stream.o \
+             build/spdy_zlib.o build/spdy_window_update.o build/SPDY.o"
+else
+    CFLAGS="$CFLAGS -DLacewingNoSPDY"
+fi
 
 if test "x$EXEEXT" = "x.exe"; then
 
-    OBJECTS="$OBJECTS build/windows-Client.o build/windows-Compat.o build/windows-Event.o build/windows-EventPump.o \
-        build/windows-Server.o build/windows-Thread.o build/windows-Timer.o build/windows-UDP.o \
-        build/windows-FDStream.o build/windows-File.o build/windows-WinSSLClient.o"
+    OBJECTS="$OBJECTS build/windows-Client.o build/windows-Compat.o \
+             build/windows-Event.o build/windows-EventPump.o \
+             build/windows-Server.o build/windows-Thread.o \
+             build/windows-Timer.o build/windows-UDP.o \
+             build/windows-FDStream.o build/windows-File.o \
+             build/windows-WinSSLClient.o build/windows-Sync.o \
+             build/windows-lw_global.o"
 
-    COMMONDEPS="$COMMONDEPS src/windows/Compat.h"
+    COMMONDEPS="$COMMONDEPS src/windows/Compat.h src/windows/lw_common.h"
 
     SO_EXT="dll"
     LIBS="$LIBS -lmswsock -lws2_32 -lcrypt32 -lsecur32"
@@ -63,9 +73,10 @@ else
 
 	OBJECTS="$OBJECTS build/unix-Client.o build/unix-Event.o build/unix-EventPump.o \
         build/unix-Server.o build/unix-Thread.o build/unix-Timer.o build/unix-UDP.o \
-        build/unix-FDStream.o build/unix-File.o build/openssl-SSLClient.o"
+        build/unix-FDStream.o build/unix-File.o build/openssl-SSLClient.o \
+        build/unix-Sync.o build/unix-lw_global.o"
 
-	COMMONDEPS="$COMMONDEPS src/unix/SendFile.h src/unix/EventPump.h"
+	COMMONDEPS="$COMMONDEPS src/unix/EventPump.h src/unix/lw_common.h"
 
 	AC_CHECK_HEADERS([malloc.h sys/epoll.h sys/prctl.h sys/sendfile.h \
 						  netdb.h openssl/md5.h sys/timerfd.h])
@@ -92,13 +103,10 @@ else
 
 	AC_CHECK_DECLS([EPOLLRDHUP], [], [], [AC_INCLUDES_DEFAULT
 	[#include <sys/epoll.h>]])
-
-	AC_CHECK_DECLS([SSL_MODE_RELEASE_BUFFERS], [], [], [AC_INCLUDES_DEFAULT
-	[#include <openssl/ssl.h>]])
-
 fi
 
 CXXFLAGS="$CFLAGS -fno-exceptions -fno-rtti"
+CFLAGS="-ansi -Wall -Wno-format $CFLAGS"
 
 AC_SUBST(OBJECTS, $OBJECTS)
 AC_SUBST(COMMONDEPS, $COMMONDEPS)

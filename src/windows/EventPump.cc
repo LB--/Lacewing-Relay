@@ -27,7 +27,7 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
 
 #define SigExitEventLoop     ((OVERLAPPED *) 1)
 #define SigRemove            ((OVERLAPPED *) 2)
@@ -54,8 +54,6 @@ struct EventPump::Internal
         HandlerTickNeeded  = 0;
     }
 
-    Backlog <Pump::Watch> WatchBacklog;
-
     void (LacewingHandler * HandlerTickNeeded) (Lacewing::EventPump &EventPump);
 
     static bool Process (EventPump::Internal * internal, OVERLAPPED * Overlapped,
@@ -72,7 +70,7 @@ struct EventPump::Internal
 
         if (Overlapped == SigRemove)
         {
-            internal->WatchBacklog.Return (*Watch);
+            delete Watch;
             internal->Pump.RemoveUser ();
 
             return true;
@@ -124,6 +122,8 @@ struct EventPump::Internal
 
 EventPump::EventPump (int)
 {
+    lwp_init ();
+    
     internal = new EventPump::Internal (*this);
     Tag = 0;
 }
@@ -229,26 +229,29 @@ Error * EventPump::StartSleepyTicking (void (LacewingHandler * onTickNeeded) (Ev
 
 Pump::Watch * EventPump::Add (HANDLE Handle, void * Tag, Pump::Callback Callback)
 {
-    LacewingAssert (Callback != 0);
+    assert (Callback != 0);
 
-    Pump::Watch &watch = internal->WatchBacklog.Borrow ();
+    Pump::Watch * watch = new (std::nothrow) Pump::Watch;
 
-    watch.onCompletion = Callback;
-    watch.Tag = Tag;
+    if (!watch)
+        return 0;
+
+    watch->onCompletion = Callback;
+    watch->Tag = Tag;
 
     if (CreateIoCompletionPort (Handle,
-            internal->CompletionPort, (ULONG_PTR) &watch, 0) != 0)
+            internal->CompletionPort, (ULONG_PTR) watch, 0) != 0)
     {
         /* success */
     }
     else
     {
-        LacewingAssert (false);
+        assert (false);
     }
     
     AddUser ();
 
-    return &watch;
+    return watch;
 }
 
 void EventPump::Remove (Pump::Watch * Watch)

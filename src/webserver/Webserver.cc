@@ -38,39 +38,54 @@ WebserverClient::~ WebserverClient ()
 {
 }
 
-void Webserver::Internal::SocketConnect (Server &Server, Server::Client &Client)
+void Webserver::Internal::SocketConnect (Server &server, Server::Client &client_socket)
 {
+    Webserver::Internal &webserver = *(Webserver::Internal *) server.Tag;
+
+    bool secure = (&server == webserver.SecureSocket);
+
+    WebserverClient * client;
+
+    do
+    {
+        #ifndef LacewingNoSPDY
+
+           if (!strcasecmp (client_socket.NPN (), "spdy/3"))
+           {
+               client = new (std::nothrow) SPDYClient
+                   (webserver, client_socket, secure, 3);
+
+               break;
+           }
+
+           if (!strcasecmp (client_socket.NPN (), "spdy/2"))
+           {
+               client = new (std::nothrow) SPDYClient
+                   (webserver, client_socket, secure, 2);
+
+               break;
+           }
+
+        #endif
+
+        client = new (std::nothrow) HTTPClient
+            (webserver,client_socket, secure);
+
+    } while (0);
+
+    if (!client)
+    {
+        client_socket.Close ();
+        return;
+    }
+
+    client_socket.Tag = client;
+
+    client->Write (client_socket);
 }
 
 void Webserver::Internal::SocketDisconnect (Server &Server, Server::Client &Client)
 {
-    if (!Client.Tag)
-        return;
-    
-    ((WebserverClient *) Client.Tag)->Dead ();
-
-    delete ((WebserverClient *) Client.Tag);
-}
-
-void Webserver::Internal::SocketReceive (Server &Server, Server::Client &Client, char * Buffer, size_t Size)
-{
-    Webserver::Internal &Webserver = *(Webserver::Internal *) Server.Tag;
-
-    if (!Client.Tag)
-    {
-        HTTPClient * client = new (std::nothrow) HTTPClient
-            (Webserver, Client, &Server == Webserver.SecureSocket);
-
-        Client.Tag = (WebserverClient *) client;
-
-        if (!Client.Tag)
-            return;
-
-        Client.Write (client->Request.Public);
-        client->Request.Public.BeginQueue ();
-    }
-
-    ((WebserverClient *) Client.Tag)->Process(Buffer, Size);
 }
 
 void Webserver::Internal::SocketError (Server &Server, Error &Error)
@@ -117,7 +132,7 @@ void Webserver::Internal::TimerTick ()
 
 Webserver::Webserver (Lacewing::Pump &Pump)
 {
-    LacewingInitialise();
+    lwp_init ();
     
     internal = new Webserver::Internal (*this, Pump);
     Tag = 0;
@@ -273,40 +288,40 @@ const char * Webserver::Upload::Header (const char * Name)
 
 struct Webserver::Upload::Header * Webserver::Upload::FirstHeader ()
 {
-    return (struct Webserver::Upload::Header *)
-                internal->Headers.First;
+    return (struct Webserver::Upload::Header *) internal->Headers.First;
 }
 
 const char * Webserver::Upload::Header::Name ()
 {
-    return ((Map::Item *) this)->Key;
+    return (** (List <WebserverHeader>::Element *) this).Name;
 }
 
 const char * Webserver::Upload::Header::Value ()
 {
-    return ((Map::Item *) this)->Value;
+    return (** (List <WebserverHeader>::Element *) this).Value;
 }
 
 struct Webserver::Upload::Header * Webserver::Upload::Header::Next ()
 {
-    return (struct Webserver::Upload::Header *) ((Map::Item *) this)->Next;
+    return (struct Webserver::Upload::Header *)
+                ((List <WebserverHeader>::Element *) this)->Next;
 }
 
 void Webserver::Upload::SetAutoSave ()
 {
-    if (*internal->AutoSaveFilename)
+    if (internal->AutoSaveFile)
         return;
 
-    char Filename [lw_max_path];
-    NewTempFile (Filename);
-
-    internal->AutoSaveFilename = internal->Copier.Set ("AutoSaveFilename", Filename)->Value;
-    internal->AutoSaveFile     = fopen (Filename, "wb");
+    internal->AutoSaveFile = new File (internal->Request.Server.Pump);
+    internal->AutoSaveFile->OpenTemp ();
 }
 
 const char * Webserver::Upload::GetAutoSaveFilename ()
 {
-    return internal->AutoSaveFilename;
+    if (!internal->AutoSaveFile)
+        return "";
+
+    return internal->AutoSaveFile->Name ();
 }
 
 AutoHandlerFunctions (Webserver, Get)

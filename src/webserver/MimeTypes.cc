@@ -1,7 +1,7 @@
 
 /* vim: set et ts=4 sw=4 ft=cpp:
  *
- * Copyright (C) 2011 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012 James McLaughlin et al.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,9 +27,9 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
 
-const char * const MimeTypes [] =
+const char * const mime_types [] =
 {
     "323",            "text/h323",
     "acx",            "application/internet-property-stream",
@@ -215,22 +215,20 @@ const char * const MimeTypes [] =
     "zip",            "application/zip",
 0 };
 
-const char * Lacewing::GuessMimeType (const char * Filename)
+const char * lw_guess_mime_type (const char * filename)
 {
-    if(*Filename)
+    if (*filename)
     {
-        const char * Extension = strrchr (Filename, '.');
+        const char * extension = strrchr (filename, '.');
 
-        if (!Extension)
-            Extension = Filename;
+        if (!extension)
+            extension = filename;
         else
-            ++ Extension;
+            ++ extension;
 
-        DebugOut ("Guess mime type for %s", Extension);
-
-        for(const char * const * Iterator = MimeTypes; *Iterator; Iterator += 2)
-            if(!strcasecmp (*Iterator, Extension))
-                return *++ Iterator;
+        for(const char * const * i = mime_types; *i; i += 2)
+            if(!strcasecmp (*i, extension))
+                return *++ i;
     }
 
     return "application/octet-stream";

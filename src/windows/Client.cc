@@ -27,7 +27,8 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
+#include "../Address.h"
 
 struct Client::Internal
 {
@@ -76,7 +77,7 @@ struct Client::Internal
 
 Client::Client (Lacewing::Pump &Pump) : FDStream (Pump)
 {
-    LacewingInitialise ();
+    lwp_init ();
 
     internal = new Internal (*this, Pump);
 }
@@ -97,7 +98,7 @@ static void Completion (void * tag, OVERLAPPED * overlapped,
 {
     Client::Internal * internal = (Client::Internal *) tag;
 
-    LacewingAssert (internal->Connecting);
+    assert (internal->Connecting);
 
     if(error)
     {
@@ -169,7 +170,7 @@ void Client::Connect (Address &Address)
     {
         Lacewing::Error Error;
        
-        Error.Add(LacewingGetSocketError ());        
+        Error.Add(WSAGetLastError ());        
         Error.Add("Error creating socket");
         
         if (internal->Handlers.Error)
@@ -178,7 +179,7 @@ void Client::Connect (Address &Address)
         return;
     }
 
-    DisableIPV6Only ((lw_socket) internal->Socket);
+    lwp_disable_ipv6_only ((lwp_socket) internal->Socket);
 
     internal->Watch = internal->Pump.Add
         (internal->Socket, internal, ::Completion);
@@ -194,7 +195,6 @@ void Client::Connect (Address &Address)
         DWORD dwSendDataLength,
         LPDWORD lpdwBytesSent,
         LPOVERLAPPED lpOverlapped
-
     );
 
     GUID ID = {0x25a207b9,0xddf3,0x4660,
@@ -206,7 +206,7 @@ void Client::Connect (Address &Address)
                     &ID, sizeof (ID), &lw_ConnectEx, sizeof (lw_ConnectEx),
                         &bytes, 0, 0);
 
-    LacewingAssert (lw_ConnectEx);
+    assert (lw_ConnectEx);
 
     sockaddr_storage LocalAddress;
         memset (&LocalAddress, 0, sizeof (LocalAddress));
@@ -227,7 +227,7 @@ void Client::Connect (Address &Address)
     {
         Lacewing::Error Error;
        
-        Error.Add (LacewingGetSocketError ());        
+        Error.Add (WSAGetLastError ());        
         Error.Add ("Error binding socket");
         
         if (internal->Handlers.Error)
@@ -245,9 +245,9 @@ void Client::Connect (Address &Address)
     if (!lw_ConnectEx ((SOCKET) internal->Socket, Address.internal->Info->ai_addr,
                         Address.internal->Info->ai_addrlen, 0, 0, 0, overlapped))
     {
-        int Code = LacewingGetSocketError();
+        int Code = WSAGetLastError ();
 
-        LacewingAssert(Code == WSA_IO_PENDING);
+        assert(Code == WSA_IO_PENDING);
     }
 }
 
@@ -266,7 +266,7 @@ Address &Client::ServerAddress ()
     return *internal->Address;
 }
 
-static void onData (Stream &, void * tag, char * buffer, size_t size)
+static void onData (Stream &, void * tag, const char * buffer, size_t size)
 {
     Client::Internal * internal = (Client::Internal *) tag;
 

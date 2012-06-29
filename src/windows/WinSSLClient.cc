@@ -27,7 +27,8 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
+#include "WinSSLClient.h"
 
 WinSSLClient::Downstream::Downstream (WinSSLClient &_Client)
     : Client (_Client)
@@ -290,7 +291,7 @@ size_t WinSSLClient::Downstream::ProcMessageData (const char * buffer, size_t si
 
         /* Lacewing::Error Error;
         Error.Add(Status);
-        DebugOut("Error decrypting the message: %s", Error.ToString ());
+        lwp_trace("Error decrypting the message: %s", Error.ToString ());
 
         Client.Public.Disconnect(); */
 

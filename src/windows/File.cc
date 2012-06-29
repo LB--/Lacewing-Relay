@@ -27,24 +27,41 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
+
+struct File::Internal
+{
+    char Name [lwp_max_path];
+
+    Internal ()
+    {
+        *Name = 0;
+    }
+};
 
 File::File (Lacewing::Pump &Pump) : FDStream (Pump)
 {
+    internal = new File::Internal;
 }
 
 File::File (Lacewing::Pump &Pump, const char * filename, const char * mode)
                 : FDStream (Pump)
 {
+    internal = new File::Internal;
+
     Open (filename, mode);
 }
 
 File::~ File ()
 {
+    delete internal;
 }
 
 bool File::Open (const char * filename, const char * mode)
 {
+    *internal->Name = 0;
+    SetFD (INVALID_HANDLE_VALUE);
+
     DWORD dwDesiredAccess, dwShareMode, dwCreationDisposition;
 
     switch (*mode ++)
@@ -54,7 +71,6 @@ bool File::Open (const char * filename, const char * mode)
             dwDesiredAccess = GENERIC_READ;
             dwCreationDisposition = OPEN_EXISTING;
             dwShareMode = FILE_SHARE_READ;
-
             break;
 
         case 'w':
@@ -62,7 +78,6 @@ bool File::Open (const char * filename, const char * mode)
             dwDesiredAccess = GENERIC_WRITE;
             dwCreationDisposition = CREATE_ALWAYS;
             dwShareMode = 0;
-
             break;
 
         case 'a':
@@ -70,11 +85,9 @@ bool File::Open (const char * filename, const char * mode)
             dwDesiredAccess = GENERIC_WRITE;
             dwCreationDisposition = OPEN_ALWAYS;
             dwShareMode = 0;
-
             break;
 
         default:
-
             return false;
     };
 
@@ -109,6 +122,37 @@ bool File::Open (const char * filename, const char * mode)
 
     SetFD (FD);
 
-    return Valid ();
+    if (Valid ())
+    {
+        strcpy (internal->Name, filename);
+        return true;
+    }
+
+    return false;
+}
+
+bool File::OpenTemp ()
+{
+    char name [lwp_max_path];
+    char random [16];
+    size_t i = 0;
+
+    lw_temp_path (name);
+    lw_random (random, sizeof (random));
+
+    while (i < sizeof (random))
+    {
+        sprintf (name + strlen (name) - 1, "%02x", random [i]);
+        ++ i;
+    }
+
+    lwp_trace ("Opening temp file: %s", name);
+
+    return Open (name, "wb");
+}
+
+const char * File::Name ()
+{
+    return internal->Name;
 }
 

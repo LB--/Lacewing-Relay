@@ -27,7 +27,8 @@
  * SUCH DAMAGE.
  */
 
-#include "Common.h"
+#include "lw_common.h"
+#include "Address.h"
 
 struct Filter::Internal
 {
@@ -184,7 +185,8 @@ void Filter::RemotePort (int Port)
 
 /* Used internally by the library to create a server socket from a Filter */
 
-int Lacewing::CreateServerSocket (Lacewing::Filter &Filter, int Type, int Protocol, Lacewing::Error &Error)
+int lwp_create_server_socket (Lacewing::Filter &Filter, int Type, int Protocol,
+                              Lacewing::Error &Error)
 {
     if ((!Filter.IPv6 ()) && ( (Filter.Local () && Filter.Local ()->IPv6 ())
                                || (Filter.Remote () && Filter.Remote ()->IPv6 ()) ))
@@ -195,10 +197,10 @@ int Lacewing::CreateServerSocket (Lacewing::Filter &Filter, int Type, int Protoc
         return -1;
     }
 
-    lw_socket Socket;
+    lwp_socket Socket;
     bool IPv6 = Filter.IPv6 ();
 
-    #ifdef LacewingWindows
+    #ifdef _WIN32
 
         if (IPv6)
         {
@@ -231,12 +233,31 @@ int Lacewing::CreateServerSocket (Lacewing::Filter &Filter, int Type, int Protoc
 
     #else
 
-        if ((Socket = socket (Filter.IPv6 () ? AF_INET6 : AF_INET, Type, Protocol)) == -1)
+        if (IPv6)
         {
-            Error.Add (LacewingGetLastError ());
-            Error.Add ("Error creating socket");
+            if ((Socket = socket (AF_INET6, Type, Protocol)) == -1)
+            {
+                if (errno != EAFNOSUPPORT)
+                {
+                    Error.Add (errno);
+                    Error.Add ("Error creating socket");
 
-            return -1;
+                    return -1;
+                }
+
+                IPv6 = false;
+            }
+        }
+
+        if (!IPv6)
+        {
+            if ((Socket = socket (AF_INET, Type, Protocol)) == -1)
+            {
+                Error.Add (errno);
+                Error.Add ("Error creating socket");
+
+                return -1;
+            }
         }
 
         fcntl (Socket, F_SETFL, fcntl (Socket, F_GETFL, 0) | O_NONBLOCK);
@@ -244,7 +265,7 @@ int Lacewing::CreateServerSocket (Lacewing::Filter &Filter, int Type, int Protoc
     #endif
 
     if (IPv6)
-        DisableIPV6Only (Socket);
+        lwp_disable_ipv6_only (Socket);
 
     {   int reuse = Filter.Reuse () ? 1 : 0;
         setsockopt (Socket, SOL_SOCKET, SO_REUSEADDR, (char *) &reuse, sizeof (reuse));
@@ -298,10 +319,10 @@ int Lacewing::CreateServerSocket (Lacewing::Filter &Filter, int Type, int Protoc
 
     if (bind (Socket, (sockaddr *) &addr, addr_len) == -1)
     {
-        Error.Add (LacewingGetLastError ());
+        Error.Add (lwp_last_socket_error);
         Error.Add ("Error binding socket");
 
-        LacewingCloseSocket (Socket);
+        lwp_close_socket (Socket);
 
         return -1;
     }

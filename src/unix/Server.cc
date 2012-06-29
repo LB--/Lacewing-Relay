@@ -27,10 +27,12 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
+#include "../openssl/SSLClient.h"
+#include "../Address.h"
 
 static void onClientClose (Stream &, void * tag);
-static void onClientData (Stream &, void * tag, char * buffer, size_t size);
+static void onClientData (Stream &, void * tag, const char * buffer, size_t size);
 
 struct Server::Internal
 {
@@ -57,6 +59,10 @@ struct Server::Internal
         memset (&Handlers, 0, sizeof (Handlers));
 
         Context = 0;
+
+        #ifdef LacewingNPN
+            *NPN = 0;
+        #endif
     }
 
     ~ Internal ()
@@ -67,6 +73,10 @@ struct Server::Internal
 
     SSL_CTX * Context;
     char Passphrase [128];
+
+    #ifdef LacewingNPN
+        unsigned char NPN [128];
+    #endif
 };
     
 struct Server::Client::Internal
@@ -78,27 +88,33 @@ struct Server::Client::Internal
     Internal (Lacewing::Server::Internal &_Server, int _FD)
         : Server (_Server), FD (_FD), Public (_Server.Pump, _FD)
     {
-        Disconnecting = false;
+        UserCount = 0;
+        Dead = false;
 
         Public.internal = this;
         Public.Tag = 0;
+
+        Element = 0;
 
         /* The first added close handler is always the last called.
          * This is important, because ours will destroy the client.
          */
 
-        Public.AddHandlerClose (onClientClose, &Server);
+        Public.AddHandlerClose (onClientClose, this);
 
         if (Server.Context)
         {
             /* TODO : negates the std::nothrow when accepting a client */
 
             SSL = new SSLClient (Server.Context);
-            
-            Public.AddFilterDownstream (SSL->Downstream);
-            Public.AddFilterUpstream (SSL->Upstream);
 
-            DebugOut ("SSL filters added");
+            SSL->tag = this;
+            SSL->onHandshook = onSSLHandshook;
+            
+            Public.AddFilterDownstream (SSL->Downstream, false, true);
+            Public.AddFilterUpstream (SSL->Upstream, false, true);
+
+            lwp_trace ("SSL filters added");
         }
         else
         {   SSL = 0;
@@ -107,7 +123,9 @@ struct Server::Client::Internal
 
     ~ Internal ()
     {
-        DebugOut ("Terminate %d", &Public);
+        lwp_trace ("Terminate %d", &Public);
+
+        ++ UserCount;
 
         FD = -1;
         
@@ -118,9 +136,15 @@ struct Server::Client::Internal
 
             Server.Clients.Erase (Element);
         }
+
+        if (SSL->Pumping)
+            SSL->Dead = true;
+        else
+            delete SSL;
     }
 
-    bool Disconnecting;
+    int UserCount;
+    bool Dead;
 
     SSLClient * SSL;
 
@@ -130,6 +154,36 @@ struct Server::Client::Internal
 
     int FD;
     void * GoneKey;
+
+    static void onSSLHandshook (SSLClient &ssl_client)
+    {
+        Internal &client = *(Internal *) ssl_client.tag;
+        Server::Internal &server = client.Server;
+
+        #ifdef LacewingNPN
+            lwp_trace ("onSSLHandshook for %p, NPN is %s",
+                            &client, ssl_client.NPN);
+        #endif
+
+        assert (!client.Element);
+
+        ++ client.UserCount;
+
+        if (server.Handlers.Connect)
+        {
+            server.Handlers.Connect
+                (server.Server, client.Public);
+        }
+
+        if (client.Dead)
+        {
+            delete &client;
+            return;
+        }
+
+        -- client.UserCount;
+        client.Element = server.Clients.Push (&client);
+    }
 };
 
 Server::Client::Client (Lacewing::Pump &Pump, int FD) : FDStream (Pump)
@@ -139,7 +193,13 @@ Server::Client::Client (Lacewing::Pump &Pump, int FD) : FDStream (Pump)
 
 Server::Server (Lacewing::Pump &Pump)
 {
-    LacewingInitialise();
+    lwp_init ();
+
+    #ifdef LacewingNPN
+        lwp_trace ("NPN is available\n");
+    #else
+        lwp_trace ("NPN is NOT available\n");
+    #endif
     
     internal = new Server::Internal (*this, Pump);
     Tag = 0;
@@ -163,49 +223,66 @@ static void ListenSocketReadReady (void * tag)
     {
         int FD;
             
-        DebugOut ("Trying to accept...");
+        lwp_trace ("Trying to accept...");
 
         if ((FD = accept
             (internal->Socket, (sockaddr *) &Address, &AddressLength)) == -1)
         {
-            DebugOut ("Failed to accept: %s", strerror (errno));
+            lwp_trace ("Failed to accept: %s", strerror (errno));
             break;
         }
         
-        DebugOut ("Accepted FD %d", FD);
+        lwp_trace ("Accepted FD %d", FD);
 
         Server::Client::Internal * client
                 = new (std::nothrow) Server::Client::Internal (*internal, FD);
 
         if (!client)
         {
-            DebugOut ("Failed allocating client");
+            lwp_trace ("Failed allocating client");
             break;
         }
 
         client->Address.Set (&Address);
 
-        if (internal->Handlers.Connect)
-            internal->Handlers.Connect (internal->Server, client->Public);
-        
-        /* Did the client get disconnected by the connect handler? */
+        ++ client->UserCount;
 
-        if (! ((FDStream *) client)->Valid () )
+        if (!client->SSL)
         {
-            delete client;
-            continue;
+            if (internal->Handlers.Connect)
+                internal->Handlers.Connect (internal->Server, client->Public);
+            
+            /* Did the client get disconnected by the connect handler? */
+
+            if (client->Dead)
+            {
+                delete client;
+                continue;
+            }
+
+            client->Element = internal->Clients.Push (client);
+        }
+        else
+        {
+            client->Public.Read (-1);
+            
+            /* Did the client get disconnected when attempting to read? */
+
+            if (client->Dead)
+            {
+                delete client;
+                continue;
+            }
         }
 
-        /* TODO : What if the connect handler called disconnect? */
-
-        client->Element = internal->Clients.Push (client);
+        -- client->UserCount;
 
         if (internal->Handlers.Receive)
         {
-            DebugOut ("*** READING on behalf of the handler, client tag %p",
+            lwp_trace ("*** READING on behalf of the handler, client tag %p",
                             client->Public.Tag);
 
-            client->Public.AddHandlerData (onClientData, internal);
+            client->Public.AddHandlerData (onClientData, client);
             client->Public.Read (-1);
         }
     }
@@ -225,7 +302,7 @@ void Server::Host (Filter &Filter)
     
     {   Lacewing::Error Error;
 
-        if ((internal->Socket = CreateServerSocket
+        if ((internal->Socket = lwp_create_server_socket
                 (Filter, SOCK_STREAM, IPPROTO_TCP, Error)) == -1)
         {
             if (internal->Handlers.Error)
@@ -273,7 +350,7 @@ int Server::ClientCount ()
 
 int Server::Port ()
 {
-    return GetSocketPort (internal->Socket);
+    return lwp_socket_port (internal->Socket);
 }
 
 bool Server::CertificateLoaded ()
@@ -289,6 +366,31 @@ static int PasswordCallback (char * Buffer, int, int, void * Tag)
     return strlen (internal->Passphrase);
 }
 
+#ifdef LacewingNPN
+
+    static int NPN_Advertise (SSL * ssl, const unsigned char ** data,
+                            unsigned int * len, void * tag)
+    {
+        Server::Internal * internal = (Server::Internal *) tag;
+
+        *len = 0;
+
+        for (unsigned char * i = internal->NPN; *i; )
+        {
+            *len += 1 + *i;
+            i += 1 + *i;
+        }
+
+        *data = internal->NPN;
+
+        lwp_trace ("Advertising for NPN...");
+
+        return SSL_TLSEXT_ERR_OK;
+    }
+
+#endif
+
+
 bool Server::LoadCertificateFile
         (const char * Filename, const char * Passphrase)
 {
@@ -296,17 +398,22 @@ bool Server::LoadCertificateFile
 
     internal->Context = SSL_CTX_new (SSLv23_server_method ());
 
-    LacewingAssert (internal->Context);
+    assert (internal->Context);
 
     strcpy (internal->Passphrase, Passphrase);
 
     SSL_CTX_set_mode (internal->Context,
         SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER
 
-        #if HAVE_DECL_SSL_MODE_RELEASE_BUFFERS
+        #ifdef SSL_MODE_RELEASE_BUFFERS
              | SSL_MODE_RELEASE_BUFFERS
         #endif
     );
+
+    #ifdef LacewingNPN
+        SSL_CTX_set_next_protos_advertised_cb
+            (internal->Context, NPN_Advertise, internal);
+    #endif
 
     SSL_CTX_set_quiet_shutdown (internal->Context, 1);
 
@@ -315,7 +422,7 @@ bool Server::LoadCertificateFile
 
     if (SSL_CTX_use_certificate_chain_file (internal->Context, Filename) != 1)
     {
-        DebugOut("Failed to load certificate chain file: %s",
+        lwp_trace("Failed to load certificate chain file: %s",
                         ERR_error_string(ERR_get_error(), 0));
 
         internal->Context = 0;
@@ -325,7 +432,7 @@ bool Server::LoadCertificateFile
     if (SSL_CTX_use_PrivateKey_file
             (internal->Context, Filename, SSL_FILETYPE_PEM) != 1)
     {
-        DebugOut("Failed to load private key file: %s",
+        lwp_trace("Failed to load private key file: %s",
                         ERR_error_string(ERR_get_error(), 0));
 
         internal->Context = 0;
@@ -346,6 +453,58 @@ bool Server::LoadSystemCertificate (const char *, const char *, const char *)
     return false;
 }
 
+bool Server::CanNPN ()
+{
+    #ifdef LacewingNPN
+        return true;
+    #endif
+
+    return false;
+}
+
+void Server::AddNPN (const char * protocol)
+{
+    #ifdef LacewingNPN
+
+        size_t length = strlen (protocol);
+
+        if (length > 0xFF)
+        {
+            lwp_trace ("NPN protocol too long: %s", protocol);
+            return;
+        }
+
+        unsigned char * end = internal->NPN;
+
+        while (*end)
+            end += 1 + *end;
+
+        if ((end + length + 2) > (internal->NPN + sizeof (internal->NPN)))
+        {
+            lwp_trace ("NPN list would have overflowed adding %s", protocol);
+            return;
+        }
+
+        *end ++ = ((unsigned char) length);
+        memcpy (end, protocol, length + 1);
+
+    #endif
+}
+
+const char * Server::Client::NPN ()
+{
+    #ifndef LacewingNPN
+        return "";
+    #else
+
+        if (internal->SSL)
+            return (const char *) internal->SSL->NPN;
+
+        return "";
+
+    #endif
+}
+
 Address &Server::Client::GetAddress ()
 {
     return internal->Address;
@@ -363,26 +522,25 @@ Server::Client * Server::FirstClient ()
             &(** internal->Clients.First)->Public : 0;
 }
 
-void onClientData (Stream &stream, void * tag, char * buffer, size_t size)
+void onClientData (Stream &stream, void * tag, const char * buffer, size_t size)
 {
-    Server::Internal * internal = (Server::Internal *) tag;
+    Server::Client::Internal * client = (Server::Client::Internal *) tag;
+    Server::Internal &server = client->Server;
 
-    internal->Handlers.Receive
-        (internal->Server, *(Server::Client *) &stream, buffer, size);
+    assert ( (!client->SSL) || client->SSL->Handshook );
+    assert (server.Handlers.Receive);
+
+    server.Handlers.Receive (server.Server, client->Public, buffer, size);
 }
 
 void onClientClose (Stream &stream, void * tag)
 {
-    Server::Client::Internal * client = (Server::Client::Internal *) &stream;
+    Server::Client::Internal * client = (Server::Client::Internal *) tag;
 
-    /* If the client doesn't have a list element, we're still inside
-     * the connect handler (so shouldn't delete the client)
-     */
-
-    if (!client->Element)
-        return;
-
-    delete client;
+    if (client->UserCount > 0)
+        client->Dead = false;
+    else
+        delete client;
 }
 
 void Server::onReceive (Server::HandlerReceive onReceive)
@@ -398,7 +556,7 @@ void Server::onReceive (Server::HandlerReceive onReceive)
             for (List <Server::Client::Internal *>::Element * E
                     = internal->Clients.First; E; E = E->Next)
             {
-                (** E)->Public.AddHandlerData (onClientData, internal);
+                (** E)->Public.AddHandlerData (onClientData, (** E));
                 (** E)->Public.Read (-1);
             }
         }
@@ -411,7 +569,7 @@ void Server::onReceive (Server::HandlerReceive onReceive)
     for (List <Server::Client::Internal *>::Element * E
             = internal->Clients.First; E; E = E->Next)
     {
-        (** E)->Public.RemoveHandlerData (onClientData, internal);
+        (** E)->Public.RemoveHandlerData (onClientData, (** E));
     }
 }
 

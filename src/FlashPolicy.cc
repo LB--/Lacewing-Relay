@@ -27,7 +27,7 @@
  * SUCH DAMAGE.
  */
 
-#include "Common.h"
+#include "lw_common.h"
 
 struct FlashPolicy::Internal
 {
@@ -54,16 +54,17 @@ struct FlashPolicy::Internal
     }
 };
 
-void SocketReceive (Server &Socket, Server::Client &Client, char * Buffer, size_t Size)
+void SocketReceive (Server &server, Server::Client &client,
+                    const char * buffer, size_t size)
 {
-    FlashPolicy::Internal * internal = (FlashPolicy::Internal *) Socket.Tag;
+    FlashPolicy::Internal * internal = (FlashPolicy::Internal *) server.Tag;
 
-    for(int i = 0; i < Size; ++i)
+    for (size_t i = 0; i < size; ++i)
     {
-        if(!Buffer [i])
+        if (!buffer [i])
         {
-            Client.Write(internal->Buffer, internal->Size);
-            Client.Write("\0", 1);
+            client.Write (internal->Buffer, internal->Size);
+            client.Write ("\0", 1);
 
             return;
         }
@@ -113,7 +114,7 @@ void FlashPolicy::Host (const char * Filename, Filter &Filter)
         {
             Lacewing::Error Error;
 
-            Error.Add (LacewingGetLastError());
+            Error.Add (lwp_last_socket_error);
             Error.Add ("Error opening file: %s", Filename);
                 
             if (internal->Handlers.Error)
@@ -139,7 +140,7 @@ void FlashPolicy::Host (const char * Filename, Filter &Filter)
             {
                 Lacewing::Error Error;
                 
-                Error.Add (LacewingGetLastError());
+                Error.Add (lwp_last_error);
                 Error.Add ("Error reading file: %s", Filename);
 
                 if (internal->Handlers.Error)

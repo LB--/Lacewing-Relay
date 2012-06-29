@@ -27,37 +27,42 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
-#include "../../deps/http-parser/http_parser.h"
-
-#include "Map.h"
+#include "../lw_common.h"
+#include "../HeapBuffer.h"
 
 class HTTPClient;
+
+struct WebserverHeader
+{
+    char * Name, * Value;
+    WebserverHeader * Next;
+};
 
 struct Webserver::Upload::Internal
 {
     Lacewing::Webserver::Upload Upload;
 
-    const char * FormElement;
-    const char * Filename;
+    Webserver::Request::Internal &Request;
+
+    char * FormElement;
+    char * Filename;
     
-    const char * AutoSaveFilename;
-    FILE * AutoSaveFile;
+    File * AutoSaveFile;
 
-    Map Headers, Copier;
+    List <WebserverHeader> Headers;
 
-    inline Internal ()
+    inline Internal (Webserver::Request::Internal &_Request)
+        : Request (_Request)
     {
         Upload.internal = this;
-        Upload.Tag         = 0;
+        Upload.Tag = 0;
 
-        AutoSaveFilename = "";
-        AutoSaveFile     = 0;
+        AutoSaveFile = 0;
     }
 
     virtual inline ~ Internal ()
     {
-        DebugOut("Free upload!");
+        lwp_trace("Free upload!");
     }
 
     virtual const char * Header (const char * Name) = 0;
@@ -72,16 +77,11 @@ struct Webserver::Internal
 
     struct Session
     {
-        lw_i64 ID_Part1;
-        lw_i64 ID_Part2;
-
-        Session * Next;
-
-        Map Data;
-
-    } * FirstSession;
-
-    Session * FindSession (const char * SessionID_Hex);
+        lw_nvhash * data;
+        UT_hash_handle hh;
+    };
+    
+    Session * Sessions;
 
     bool AutoFinish;
 
@@ -100,7 +100,6 @@ struct Webserver::Internal
 
             Socket->onConnect    (SocketConnect);
             Socket->onDisconnect (SocketDisconnect);
-            Socket->onReceive    (SocketReceive);
             Socket->onError      (SocketError);
         }
 
@@ -117,8 +116,15 @@ struct Webserver::Internal
 
             SecureSocket->onConnect    (SocketConnect);
             SecureSocket->onDisconnect (SocketDisconnect);
-            SecureSocket->onReceive    (SocketReceive);
             SecureSocket->onError      (SocketError);
+
+            #ifndef LacewingNoSPDY
+                SecureSocket->AddNPN ("spdy/3");
+                SecureSocket->AddNPN ("spdy/2");
+            #endif
+
+            SecureSocket->AddNPN ("http/1.1");
+            SecureSocket->AddNPN ("http/1.0");
         }
         
         StartTimer ();
@@ -167,7 +173,7 @@ struct Webserver::Internal
         memset (&Handlers, 0, sizeof (Handlers));
 
         AutoFinish = true;
-        FirstSession = 0;
+        Sessions = 0;
 
         Timeout = 5;
 
@@ -181,30 +187,49 @@ struct Webserver::Internal
 
 class WebserverClient;
 
-struct Webserver::Request::Internal
+struct Webserver::Request::Internal : public Webserver::Request
 {
-    Lacewing::Webserver::Request Public; 
+    void * Tag;
 
     Webserver::Internal &Server;
     WebserverClient &Client;
 
-    Internal (Webserver::Internal &_Server, WebserverClient &_Client);
+    Internal (Webserver::Internal &, WebserverClient &);
     ~ Internal ();
 
     void Clean ();
-    
+
+    struct Cookie
+    {
+        char * Name;
+        char * Value;
+
+        bool Changed;
+
+        UT_hash_handle hh;
+
+    } * Cookies;
+
 
     /* Input */
+
+    char Version_Major, Version_Minor;
 
     char Method     [16];
     char URL        [4096];
     char Hostname   [128];
 
-    Map InHeaders, InCookies, GetItems, PostItems;
-    
-    void In_Method (const char * Method);
-    void In_Header (const char * Name, char * Value);
-    bool In_URL (char * URL);
+    List <WebserverHeader> InHeaders;
+    lw_nvhash * GetItems, * PostItems;
+
+    bool In_Version (size_t len, const char * version);
+
+    bool In_Method (size_t len, const char * method);
+
+    bool In_Header (size_t name_len, const char * name,
+                    size_t value_len, const char * value);
+
+    bool In_URL (size_t len, const char * URL);
     
     /* The protocol implementation can use this for any intermediate
      * buffering, providing it contains the request body (if any) when
@@ -221,7 +246,7 @@ struct Webserver::Request::Internal
 
     char Status [64];
 
-    Map OutHeaders, OutCookies;
+    List <WebserverHeader> OutHeaders;
     
     void BeforeHandler ();
     void AfterHandler ();
@@ -232,7 +257,7 @@ struct Webserver::Request::Internal
     void Respond ();
 };
 
-class WebserverClient
+class WebserverClient : public Stream
 {
 public:
 
@@ -248,13 +273,12 @@ public:
 
     virtual void Tick () = 0;
 
-    virtual void Process (char * Buffer, size_t Size) = 0;
     virtual void Respond (Webserver::Request::Internal &Request) = 0;
-    virtual void Dead () = 0;
-    
-    virtual bool IsSPDY () = 0;
 };
 
 #include "http/HTTP.h"
 
+#ifndef LacewingNoSPDY
+    #include "spdy/SPDY.h"
+#endif
 

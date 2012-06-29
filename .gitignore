@@ -1,5 +1,9 @@
 bin/*
 build/*
+*.a
+*.o
+*.so
+*.dylib
 *.ncb
 *.user
 *.suo

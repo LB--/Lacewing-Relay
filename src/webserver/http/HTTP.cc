@@ -67,17 +67,30 @@ HTTPClient::HTTPClient (Webserver::Internal &_Server, Server::Client &_Socket, b
 
     ParsingHeaders = true;
     SignalEOF = false;
+
+    _Socket.Write (Request);
+    Request.BeginQueue ();
 }
 
 HTTPClient::~HTTPClient ()
 {
+    /* Only call the disconnect handler for requests that have not yet been
+     * completed (Responded == false)
+     */
+
+    if (!Request.Responded)
+    {
+        if (Server.Handlers.Disconnect)
+            Server.Handlers.Disconnect (Server.Webserver, Request);
+    }
+
     delete Multipart;
 }
 
-void HTTPClient::Process (char * buffer, size_t size)
+size_t HTTPClient::Put (const char * buffer, size_t size)
 {
     if (!size)
-        return;
+        return 0;
 
     if (!ParserSettings.on_message_begin)
     {
@@ -100,12 +113,12 @@ void HTTPClient::Process (char * buffer, size_t size)
            can't be processed.  Buffer it to process when Finish() is called. */
 
         Request.Buffer.Add (buffer, size);
-        return;
+        return size;
     }
 
     if (ParsingHeaders)
     {
-        for (int i = 0; i < size; )
+        for (size_t i = 0; i < size; )
         {
             {   char b = buffer [i];
 
@@ -151,10 +164,10 @@ void HTTPClient::Process (char * buffer, size_t size)
 
             if (error || Parser.upgrade)
             {
-                DebugOut ("HTTP error, closing socket...");
+                lwp_trace ("HTTP error %d, closing socket...", error);
 
                 Socket.Close ();
-                return;
+                return size;
             }
 
             i = 0;
@@ -165,7 +178,7 @@ void HTTPClient::Process (char * buffer, size_t size)
             /* TODO : max line length */
 
             Request.Buffer.Add (buffer, size);
-            return;
+            return size;
         }
     }
 
@@ -180,8 +193,10 @@ void HTTPClient::Process (char * buffer, size_t size)
     if (parsed != size || Parser.upgrade)
     {
         Socket.Close ();
-        return;
+        return size;
     }
+
+    return size;
 }
 
 int HTTPClient::onMessageBegin ()
@@ -193,23 +208,31 @@ int HTTPClient::onMessageBegin ()
 
 int HTTPClient::onURL (char * URL, size_t length)
 {
-    /* Writing a null terminator to the end and then restoring it afterwards.
-     * This assumes the byte after the URL is writable (it should be a space)
-     */
+    if (!Request.In_URL (length, URL))
+    {
+        lwp_trace ("HTTP: Bad URL");
+        return -1;
+    }
 
-    char * end = URL + length, b = *end;
-
-    LacewingAssert (b == ' ');
-
-    *end = 0;
-    bool success = Request.In_URL (URL);
-    *end = b;
-
-    return success ? 0 : -1;
+    return 0;
 }
 
 int HTTPClient::onHeaderField (char * buffer, size_t length)
 {
+    if (!Request.Version_Major)
+    {
+        char version [16];
+
+        lwp_snprintf (version, sizeof (version), "HTTP/%d.%d",
+                (int) Parser.http_major, (int) Parser.http_minor);
+
+        if (!Request.In_Version (strlen (version), version))
+        {
+            lwp_trace ("HTTP: Bad version");
+            return -1;
+        }
+    }
+
     /* Since we already ensure the parser receives entire lines while processing
      * headers, it's safe to just save the pointer and size from onHeaderField
      * and use them in onHeaderValue.
@@ -223,35 +246,28 @@ int HTTPClient::onHeaderField (char * buffer, size_t length)
 
 int HTTPClient::onHeaderValue (char * value, size_t length)
 {
-    /* The parser never reads back, so might as well destroy the byte following
-     * the header name (it can't be anything to do with the value, because
-     * there has to be a `:` in the middle)
-     */
-
-    CurHeaderName [CurHeaderNameLength] = 0;
-
-    char * end = value + length, b = *end;
-
-    LacewingAssert (b == '\r' || b == '\n');
-
-    *end = 0;
-    Request.In_Header (CurHeaderName, value);
-    *end = b;
-
-    return 0;
+    return Request.In_Header
+        (CurHeaderNameLength, CurHeaderName, length, value) ? 0 : -1;
 }
 
 int HTTPClient::onHeadersComplete ()
 {
     ParsingHeaders = false;
 
-    Request.In_Method
-        (http_method_str ((http_method) Parser.method));
+    const char * method = http_method_str ((http_method) Parser.method);
+    
+    if (!Request.In_Method (strlen (method), method))
+        return -1;
 
-    {   const char * ContentType = Request.InHeaders.Get ("Content-Type");
+    const char * content_type = Request.Header ("Content-Type");
 
-        if (BeginsWith (ContentType, "multipart"))
-            Multipart = new MultipartProcessor (*this, ContentType);
+    if (lwp_begins_with (content_type, "multipart"))
+    {
+        if (! (Multipart = new (std::nothrow)
+                    MultipartProcessor (*this, content_type)))
+        {
+            return -1;
+        }
     }
 
     return 0;
@@ -309,65 +325,69 @@ void HTTPClient::Respond (Webserver::Request::Internal &) /* request parameter i
 
     buffer.Reset ();
 
-    buffer << "HTTP/" << Parser.http_major << "." << Parser.http_minor << " " << Request.Status;
+    buffer << "HTTP/" << Request.Version_Major << "." <<
+                Request.Version_Minor << " " << Request.Status;
     
-    for(Map::Item * Current = Request.OutHeaders.First; Current; Current = Current->Next)
-        buffer << "\r\n" << Current->Key << ": " << Current->Value;
-
-    for(Map::Item * Current = Request.OutCookies.First; Current; Current = Current->Next)
+    for(List <WebserverHeader>::Element * E
+            = Request.OutHeaders.First; E; E = E->Next)
     {
-        const char * OldValue = Request.InCookies.Get(Current->Key);
-        
-        int ValueSize = (int) (strchr (Current->Value, ';') - Current->Value);
-
-        if (ValueSize < 0)
-            ValueSize = strlen (Current->Value);
-
-        if (ValueSize == strlen (OldValue) && memcmp (OldValue, Current->Value, ValueSize) == 0)
-            continue;
-
-        buffer << "\r\nSet-Cookie: " << Current->Key << "=" << Current->Value;
+        buffer << "\r\n" << (** E).Name << ": " << (** E).Value;
     }
 
-    buffer << "\r\nContent-Length: " << Request.Public.Queued () << "\r\n\r\n";
+    for (Webserver::Request::Internal::Cookie * cookie = Request.Cookies;
+            cookie; cookie = (Webserver::Request::Internal::Cookie *) cookie->hh.next)
+    {
+        if (!cookie->Changed)
+            continue;
+
+        buffer << "\r\nset-cookie: " << cookie->Name << "=" << cookie->Value;
+    }
+
+    buffer << "\r\ncontent-length: " << Request.Queued () << "\r\n\r\n";
 
     Socket.Cork ();
 
-    Request.Public.EndQueue
+    Request.EndQueue
         (1, (const char **) &buffer.Buffer, &buffer.Size);
 
-    Request.Public.BeginQueue ();
+    Request.BeginQueue ();
 
     buffer.Reset ();
     Socket.Uncork ();
 
     if (!http_should_keep_alive (&Parser))
         Socket.Close ();
-}
 
-void HTTPClient::Dead ()
-{
-    if (Request.Responded)
-    {
-        /* The request isn't unfinished - don't call the disconnect handler */
-        return;
-    }
-
-    if (Server.Handlers.Disconnect)
-        Server.Handlers.Disconnect (Server.Webserver, Request.Public);
-}
-
-bool HTTPClient::IsSPDY ()
-{
-    return false;
+    Request.Responded = true;
 }
 
 void HTTPClient::Tick ()
 {
     if (Request.Responded && (time(0) - LastActivityTime) > Timeout)
     {
-        DebugOut ("Dropping HTTP connection due to inactivity (%s/%d)", Socket.GetAddress().ToString(), &Socket.GetAddress());
+        lwp_trace ("Dropping HTTP connection due to inactivity (%s/%p)",
+                Socket.GetAddress().ToString(), &Socket.GetAddress());
+
         Socket.Close ();
     }
 }
+
+HTTPRequest::HTTPRequest
+    (Webserver::Internal &server, WebserverClient &client)
+        : Webserver::Request::Internal (server, client)
+{
+}
+
+size_t HTTPRequest::Put (const char * buffer, size_t size)
+{
+    assert (false);
+
+    return size;
+}
+
+bool HTTPRequest::IsTransparent ()
+{
+    return true;
+}
+
 

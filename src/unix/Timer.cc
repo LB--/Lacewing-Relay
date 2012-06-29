@@ -27,7 +27,7 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
 
 struct Timer::Internal
 {
@@ -131,7 +131,7 @@ void Timer::Start (int Interval)
             
             if (kevent (EventPump->Queue, &Change, 1, 0, 0, 0) == -1)
             {
-                DebugOut("Timer: Failed to add timer to kqueue: %s", strerror(errno));
+                lwp_trace("Timer: Failed to add timer to kqueue: %s", strerror(errno));
                 return;
             }
         }

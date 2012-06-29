@@ -45,8 +45,6 @@ struct EventPump::Internal
 
     Internal (Lacewing::EventPump &_EventPump, int MaxHint);
 
-    Backlog <Pump::Watch> WatchBacklog;
-
     bool Ready (Pump::Watch *, bool ReadReady, bool WriteReady);
 
     Lacewing::Sync Sync_Signals;

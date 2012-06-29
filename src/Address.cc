@@ -27,7 +27,8 @@
  * SUCH DAMAGE.
  */
 
-#include "Common.h"
+#include "lw_common.h"
+#include "Address.h"
 
 static void Resolver (Address::Internal *);
 
@@ -50,8 +51,8 @@ Address::Internal::~ Internal ()
 
     if (InfoList)
     {
-        #ifdef LacewingWindows
-            Compat::fn_freeaddrinfo freeaddrinfo = Compat::freeaddrinfo ();
+        #ifdef _WIN32
+            fn_freeaddrinfo freeaddrinfo = compat_freeaddrinfo ();
         #endif
 
         freeaddrinfo (InfoList);
@@ -76,7 +77,7 @@ const char * Address::Internal::ToString ()
     {
         case AF_INET:
 
-            lw_snprintf (Buffer, sizeof (Buffer), "%s:%d",
+            lwp_snprintf (Buffer, sizeof (Buffer), "%s:%d",
                                 inet_ntoa (((sockaddr_in *) Info->ai_addr)->sin_addr),
                                         ntohs (((sockaddr_in *) Info->ai_addr)->sin_port));
 
@@ -86,7 +87,7 @@ const char * Address::Internal::ToString ()
         {             
             int Length = sizeof (Buffer) - 1;
 
-            #ifdef LacewingWindows
+            #ifdef _WIN32
 
                 WSAAddressToStringA
                     ((LPSOCKADDR) Info->ai_addr, (DWORD) Info->ai_addrlen, 0, Buffer,
@@ -99,9 +100,9 @@ const char * Address::Internal::ToString ()
 
             #endif
 
-            lw_snprintf (Buffer + strlen (Buffer) - 1,
-                sizeof (Buffer) - strlen (Buffer), ":%d",
-                    ntohs (((sockaddr_in6 *) Info->ai_addr)->sin6_port));
+                lwp_snprintf (Buffer + strlen (Buffer) - 1,
+                    sizeof (Buffer) - strlen (Buffer), ":%d",
+                        ntohs (((sockaddr_in6 *) Info->ai_addr)->sin6_port));
 
             break;
         }
@@ -134,8 +135,8 @@ void Resolver (Address::Internal * internal)
     else
         Hints.ai_family = AF_INET6;
 
-    #ifdef LacewingWindows
-        Compat::fn_getaddrinfo getaddrinfo = Compat::getaddrinfo ();
+    #ifdef _WIN32
+        fn_getaddrinfo getaddrinfo = compat_getaddrinfo ();
     #endif
 
     int result = getaddrinfo
@@ -176,7 +177,7 @@ Address::Address (const char * Hostname, int Port, int Hints)
     Tag = 0;
 
     char Service [64];
-    lw_snprintf (Service, sizeof (Service), "%d", Port);
+    lwp_snprintf (Service, sizeof (Service), "%d", Port);
 
     internal->Init (Hostname, Service, Hints);
 }
@@ -194,7 +195,13 @@ void Address::Internal::Init (const char * _Hostname, const char * Service, int 
 {
     this->Hints = Hints;
 
-    HostnameToFree = Hostname = Trim (_Hostname);
+    HostnameToFree = Hostname = strdup (_Hostname);
+
+    while (isspace (*Hostname))
+        ++ Hostname;
+
+    while (isspace (Hostname [strlen (Hostname) - 1]))
+        Hostname [strlen (Hostname) - 1] = 0;
 
     for (char * it = Hostname; *it; ++ it)
     {
@@ -215,7 +222,7 @@ void Address::Internal::Init (const char * _Hostname, const char * Service, int 
         }
     }
 
-    CopyString (this->Service, Service, sizeof (this->Service)); 
+    lwp_copy_string (this->Service, Service, sizeof (this->Service)); 
 
     ResolverThread.Join (); /* block if the thread is already running */
     ResolverThread.Start (this);

@@ -35,6 +35,10 @@
 
 #ifndef _MSC_VER
 
+    #ifndef __STDC_FORMAT_MACROS
+        #define __STDC_FORMAT_MACROS
+    #endif
+
     #include <inttypes.h>
     
     #define lw_i64   int64_t
@@ -42,6 +46,9 @@
     #define lw_i32   int32_t
     #define lw_i16   int16_t
     #define lw_i8    int8_t
+
+    #define lw_PRId64 PRId64
+    #define lw_PRIu64 PRIu64
 
 #else
 
@@ -55,6 +62,9 @@
     #define lw_i32  __int32
     #define lw_i16  __int16
     #define lw_i8   __int8
+
+    #define lw_PRId64 "I64d"
+    #define lw_PRIu64 "I64u"
     
 #endif
 
@@ -85,8 +95,8 @@
 
 typedef lw_i8 lw_bool;
 
-const lw_bool lw_true  = (lw_bool) 1;
-const lw_bool lw_false = (lw_bool) 0;
+#define lw_true   ((lw_bool) 1)
+#define lw_false  ((lw_bool) 0)
 
 #ifdef _WIN32
     typedef HANDLE lw_fd;
@@ -100,22 +110,21 @@ extern "C"
 #endif /* __cplusplus */
 
 #define LacewingFlat(c) \
-    typedef struct { void * reserved; void * tag; } c;
+    typedef struct { void * reserved; void * tag; } c
 
 LacewingFunction    const char* lw_version                  ();
-LacewingFunction        lw_i64  lw_current_thread_id        ();
 LacewingFunction        lw_i64  lw_file_last_modified       (const char * filename);
 LacewingFunction       lw_bool  lw_file_exists              (const char * filename);
 LacewingFunction        size_t  lw_file_size                (const char * filename);
 LacewingFunction       lw_bool  lw_path_exists              (const char * filename);
 LacewingFunction          void  lw_temp_path                (char * buffer);
-LacewingFunction          void  lw_new_temp_file            (char * buffer);
 LacewingFunction    const char* lw_guess_mime_type          (const char * filename);
-LacewingFunction          void  lw_md5                      (char * output, const char * input, long length);
-LacewingFunction          void  lw_md5_hex                  (char * output, const char * input, long length);
-LacewingFunction          void  lw_sha1                     (char * output, const char * input, long length);
-LacewingFunction          void  lw_sha1_hex                 (char * output, const char * input, long length);
+LacewingFunction          void  lw_md5                      (char * output, const char * input, size_t length);
+LacewingFunction          void  lw_md5_hex                  (char * output, const char * input, size_t length);
+LacewingFunction          void  lw_sha1                     (char * output, const char * input, size_t length);
+LacewingFunction          void  lw_sha1_hex                 (char * output, const char * input, size_t length);
 LacewingFunction          void  lw_dump                     (const char * buffer, size_t size);
+LacewingFunction       lw_bool  lw_random                   (char * buffer, size_t size);
 
 /* Thread */
 
@@ -224,10 +233,10 @@ LacewingFunction          void  lw_dump                     (const char * buffer
   LacewingFunction      void  lw_stream_writef                (lw_stream *, const char * format, ...);
   LacewingFunction      void  lw_stream_write_stream          (lw_stream *, lw_stream * src, size_t size, lw_bool delete_when_finished);
   LacewingFunction      void  lw_stream_write_file            (lw_stream * stream, const char * filename);
-  LacewingFunction      void  lw_stream_add_filter_upstream   (lw_stream * stream, lw_stream * filter, lw_bool delete_with_stream);
-  LacewingFunction      void  lw_stream_add_filter_downstream (lw_stream * stream, lw_stream * filter, lw_bool delete_with_stream);
+  LacewingFunction      void  lw_stream_add_filter_upstream   (lw_stream * stream, lw_stream * filter, lw_bool close_together);
+  LacewingFunction      void  lw_stream_add_filter_downstream (lw_stream * stream, lw_stream * filter, lw_bool close_together);
   LacewingFunction   lw_bool  lw_stream_is_transparent        (lw_stream * stream);
-  LacewingFunction      void* lw_stream_type                  (lw_stream * stream);
+  LacewingFunction      void* lw_stream_cast                  (lw_stream * stream, void * type);
   LacewingFunction      void  lw_stream_close                 (lw_stream * stream);
 
   typedef void (LacewingHandler * lw_stream_handler_data) (lw_stream *, void * tag, char * buffer, size_t length);
@@ -321,7 +330,7 @@ LacewingFunction          void  lw_dump                     (const char * buffer
   typedef void (LacewingHandler * lw_client_handler_disconnect) (lw_stream *);
   LacewingFunction void lw_client_ondisconnect (lw_stream *, lw_client_handler_disconnect);
 
-  typedef void (LacewingHandler * lw_client_handler_receive) (lw_stream *, char * buffer, long size);
+  typedef void (LacewingHandler * lw_client_handler_receive) (lw_stream *, const char * buffer, long size);
   LacewingFunction void lw_client_onreceive (lw_stream *, lw_client_handler_receive);
 
   typedef void (LacewingHandler * lw_client_handler_error) (lw_stream *, lw_error *);
@@ -350,7 +359,7 @@ LacewingFunction          void  lw_dump                     (const char * buffer
   typedef void (LacewingHandler * lw_server_handler_disconnect) (lw_server *, lw_stream * client);
   LacewingFunction void lw_server_ondisconnect (lw_server *, lw_server_handler_disconnect);
 
-  typedef void (LacewingHandler * lw_server_handler_receive) (lw_server *, lw_stream * client, char * buffer, size_t size);
+  typedef void (LacewingHandler * lw_server_handler_receive) (lw_server *, lw_stream * client, const char * buffer, size_t size);
   LacewingFunction void lw_server_onreceive (lw_server *, lw_server_handler_receive);
   
   typedef void (LacewingHandler * lw_server_handler_error) (lw_server *, lw_error *);
@@ -370,7 +379,7 @@ LacewingFunction          void  lw_dump                     (const char * buffer
   LacewingFunction           long  lw_udp_port                  (lw_udp *);
   LacewingFunction           void  lw_udp_write                 (lw_udp *, lw_addr *, const char * buffer, size_t size);
 
-  typedef void (LacewingHandler * lw_udp_handler_receive) (lw_udp *, lw_addr *, char * buffer, size_t size);
+  typedef void (LacewingHandler * lw_udp_handler_receive)(lw_udp *, lw_addr *, const char * buffer, size_t size);
   LacewingFunction void lw_udp_onreceive (lw_udp *, lw_udp_handler_receive);
 
   typedef void (LacewingHandler * lw_udp_handler_error) (lw_udp *, lw_error *);
@@ -519,21 +528,6 @@ LacewingFunction          void  lw_dump                     (const char * buffer
 
 namespace Lacewing
 {
-
-LacewingFunction   const char* Version                 ();
-LacewingFunction       lw_i64  CurrentThreadID         ();
-LacewingFunction       lw_i64  LastModified            (const char * Filename);
-LacewingFunction         bool  FileExists              (const char * Filename);
-LacewingFunction       size_t  FileSize                (const char * Filename);
-LacewingFunction         bool  PathExists              (const char * Filename);
-LacewingFunction         void  Int64ToString           (lw_i64, char *);
-LacewingFunction         void  TempPath                (char * Buffer);
-LacewingFunction         void  NewTempFile             (char * Buffer);
-LacewingFunction   const char* GuessMimeType           (const char * Filename);
-LacewingFunction         void  MD5                     (char * Output, const char * Input, int Length = -1);
-LacewingFunction         void  MD5_Hex                 (char * Output, const char * Input, int Length = -1);
-LacewingFunction         void  SHA1                    (char * Output, const char * Input, int Length = -1);
-LacewingFunction         void  SHA1_Hex                (char * Output, const char * Input, int Length = -1);
 
 struct Error
 {
@@ -715,7 +709,7 @@ struct Stream
     LacewingFunction virtual ~ Stream ();
 
     typedef void (LacewingHandler * HandlerData)
-        (Stream &, void * tag, char * buffer, size_t size);
+        (Stream &, void * tag, const char * buffer, size_t size);
 
     LacewingFunction void AddHandlerData (HandlerData, void * tag = 0);
     LacewingFunction void RemoveHandlerData (HandlerData, void * tag = 0);
@@ -759,7 +753,7 @@ struct Stream
 
     inline Stream &operator << (lw_i64 v)                   
     {   char buffer [128];
-        sprintf (buffer, "%lld", v);
+        sprintf (buffer, "%" lw_PRId64, v);
         Write (buffer);
         return *this;                                   
     }                                                   
@@ -770,10 +764,10 @@ struct Stream
     LacewingFunction void WriteFile (const char * filename);
 
     LacewingFunction void AddFilterUpstream
-            (Stream &, bool delete_with_stream = false);
+      (Stream &, bool delete_with_stream = false, bool close_together = false);
 
     LacewingFunction void AddFilterDownstream
-            (Stream &, bool delete_with_stream = false);
+      (Stream &, bool delete_with_stream = false, bool close_together = false);
 
     LacewingFunction virtual bool IsTransparent ();
 
@@ -785,12 +779,12 @@ struct Stream
 
 protected:
  
-    LacewingFunction void Data (char * buffer, size_t size);
+    LacewingFunction void Data (const char * buffer, size_t size);
 
-    LacewingFunction virtual void WriteReady ();
+    const static int Retry_Now = 1,  Retry_Never = 2,  Retry_MoreData = 3;
+    LacewingFunction virtual void Retry (int when = Retry_Now);
 
     LacewingFunction virtual size_t Put (const char * buffer, size_t size) = 0;
-    LacewingFunction virtual size_t PutWritable (char * buffer, size_t size);
 
     LacewingFunction virtual size_t Put (Stream &, size_t size);
 };
@@ -803,7 +797,6 @@ struct Pipe : public Stream
     LacewingFunction ~ Pipe ();
 
     LacewingFunction size_t Put (const char * buffer, size_t size);
-    LacewingFunction size_t PutWritable (char * buffer, size_t size);
 
     LacewingFunction bool IsTransparent ();
 };
@@ -853,11 +846,14 @@ struct File : public FDStream
         (Lacewing::Pump &);
 
     LacewingFunction File
-        (Lacewing::Pump &, const char * Filename, const char * Mode = "rb");
+        (Lacewing::Pump &, const char * filename, const char * mode = "rb");
     
     LacewingFunction virtual ~ File ();
 
-    LacewingFunction bool Open (const char * Filename, const char * Mode = "rb");
+    LacewingFunction bool Open (const char * filename, const char * mode = "rb");
+    LacewingFunction bool OpenTemp ();
+
+    LacewingFunction const char * Name ();
 };
 
 struct Address
@@ -932,10 +928,17 @@ struct Client : public FDStream
     
     LacewingFunction Lacewing::Address &ServerAddress ();
 
-    typedef void (LacewingHandler * HandlerConnect)         (Lacewing::Client &Client);
-    typedef void (LacewingHandler * HandlerDisconnect)      (Lacewing::Client &Client);
-    typedef void (LacewingHandler * HandlerReceive)         (Lacewing::Client &Client, char * Data, size_t Size);
-    typedef void (LacewingHandler * HandlerError)           (Lacewing::Client &Client, Lacewing::Error &);
+    typedef void (LacewingHandler * HandlerConnect)
+        (Lacewing::Client &client);
+
+    typedef void (LacewingHandler * HandlerDisconnect)
+        (Lacewing::Client &client);
+
+    typedef void (LacewingHandler * HandlerReceive)
+        (Lacewing::Client &client, const char * buffer, size_t size);
+
+    typedef void (LacewingHandler * HandlerError)
+        (Lacewing::Client &client, Lacewing::Error &error);
 
     LacewingFunction void onConnect    (HandlerConnect);
     LacewingFunction void onDisconnect (HandlerDisconnect);
@@ -957,9 +960,17 @@ struct Server
     LacewingFunction bool Hosting ();
     LacewingFunction int  Port    ();
 
-    LacewingFunction bool LoadCertificateFile   (const char * Filename,  const char * Passphrase = "");
-    LacewingFunction bool LoadSystemCertificate (const char * StoreName, const char * CommonName, const char * Location = "CurrentUser");
-    LacewingFunction bool CertificateLoaded     ();
+    LacewingFunction bool LoadCertificateFile
+        (const char * filename, const char * passphrase = "");
+
+    LacewingFunction bool LoadSystemCertificate
+        (const char * storeName, const char * common_name,
+         const char * location = "CurrentUser");
+
+    LacewingFunction bool CertificateLoaded ();
+
+    LacewingFunction bool CanNPN ();
+    LacewingFunction void AddNPN (const char *);
 
     struct Client : public FDStream
     {
@@ -970,15 +981,25 @@ struct Server
         LacewingFunction Lacewing::Address &GetAddress ();
 
         LacewingFunction Client * Next ();
+
+        LacewingFunction const char * NPN ();
     };
 
     LacewingFunction int ClientCount ();
     LacewingFunction Client * FirstClient ();
 
-    typedef void (LacewingHandler * HandlerConnect)     (Lacewing::Server &Server, Lacewing::Server::Client &Client);
-    typedef void (LacewingHandler * HandlerDisconnect)  (Lacewing::Server &Server, Lacewing::Server::Client &Client);
-    typedef void (LacewingHandler * HandlerReceive)     (Lacewing::Server &Server, Lacewing::Server::Client &Client, char * Data, size_t Size);
-    typedef void (LacewingHandler * HandlerError)       (Lacewing::Server &Server, Lacewing::Error &);
+    typedef void (LacewingHandler * HandlerConnect)
+        (Lacewing::Server &server, Lacewing::Server::Client &client);
+
+    typedef void (LacewingHandler * HandlerDisconnect)
+        (Lacewing::Server &server, Lacewing::Server::Client &client);
+
+    typedef void (LacewingHandler * HandlerReceive)
+        (Lacewing::Server &server, Lacewing::Server::Client &client,
+             const char * data, size_t size);
+
+    typedef void (LacewingHandler * HandlerError)
+        (Lacewing::Server &server, Lacewing::Error &error);
     
     LacewingFunction void onConnect     (HandlerConnect);
     LacewingFunction void onDisconnect  (HandlerDisconnect);
@@ -1004,8 +1025,11 @@ struct UDP
 
     LacewingFunction void Write (Lacewing::Address &Address, const char * Data, size_t Size = -1);
 
-    typedef void (LacewingHandler * HandlerReceive)          (Lacewing::UDP &UDP, Lacewing::Address &From, char * Data, size_t Size);
-    typedef void (LacewingHandler * HandlerError)            (Lacewing::UDP &UDP, Lacewing::Error &);
+    typedef void (LacewingHandler * HandlerReceive)
+        (Lacewing::UDP &UDP, Lacewing::Address &from, char * data, size_t size);
+
+    typedef void (LacewingHandler * HandlerError)
+        (Lacewing::UDP &UDP, Lacewing::Error &error);
     
     LacewingFunction void onReceive (HandlerReceive);
     LacewingFunction void onError  (HandlerError);
@@ -1033,16 +1057,21 @@ struct Webserver
     LacewingFunction int  Port          ();
     LacewingFunction int  SecurePort    ();
 
-    LacewingFunction bool LoadCertificateFile   (const char * Filename, const char * Passphrase = "");
-    LacewingFunction bool LoadSystemCertificate (const char * StoreName, const char * CommonName, const char * Location = "CurrentUser");
-    LacewingFunction bool CertificateLoaded     ();
+    LacewingFunction bool LoadCertificateFile
+        (const char * filename, const char * passphrase = "");
+
+    LacewingFunction bool LoadSystemCertificate
+        (const char * storeName, const char * common_name,
+         const char * location = "CurrentUser");
+
+    LacewingFunction bool CertificateLoaded ();
 
     LacewingFunction void EnableManualRequestFinish ();
 
     LacewingFunction int  IdleTimeout ();
     LacewingFunction void IdleTimeout (int Seconds);
 
-    struct Request : public Pipe
+    struct Request : public Stream
     {
         LacewingClassTag;
 
@@ -1095,6 +1124,11 @@ struct Webserver
 
         LacewingFunction const char * Header (const char * Name);
         LacewingFunction void Header (const char * Name, const char * Value);
+
+        /* Does not overwrite an existing header with the same name */
+
+        LacewingFunction void AddHeader
+            (const char * Name, const char * Value);
 
     
         /** Cookies **/

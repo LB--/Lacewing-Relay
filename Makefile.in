@@ -14,8 +14,18 @@ SONAME_FLAGS = @SONAME_FLAGS@
 SO_NAME = @SO_NAME@
 REAL_NAME = liblacewing.@SO_EXT@.0.3.1
 
-COMMONDEPS = @COMMONDEPS@
-OBJECTS = @OBJECTS@
+OBJECTS = build/lw_global.o build/lw_nvhash.o build/Filter.o build/Address.o build/StreamGraph.o \
+    build/Stream.o build/Error.o build/Webserver.o build/HTTP.o build/Multipart.o build/http-parser.o \
+    build/MimeTypes.o build/Request.o build/Sessions.o build/Pipe.o \
+    build/addr_flat.o build/eventpump_flat.o build/server_flat.o build/timer_flat.o \
+    build/webserver_flat.o build/filter_flat.o build/udp_flat.o build/client_flat.o \
+    build/error_flat.o build/sync_flat.o build/thread_flat.o build/FlashPolicy.o \
+    build/Pump.o build/flashpolicy_flat.o build/stream_flat.o build/fdstream_flat.o \
+    build/file_flat.o build/pipe_flat.o build/pump_flat.o build/lw_util.o @OBJECTS@
+
+COMMONDEPS = include/Lacewing.h src/lw_common.h src/HeapBuffer.h  src/Utility.h \
+			 src/webserver/Common.h src/webserver/http/HTTP.h src/Address.h \
+			 src/Stream.h @COMMONDEPS@
 
 ###########
 
@@ -29,10 +39,12 @@ liblacewing.a: $(OBJECTS)
 	@echo Linking static library...
 	@ar rcs liblacewing.a ./build/*.o
 
-build/Global.o: src/Global.cc $(COMMONDEPS) 
-	$(CXX) $(CXXFLAGS) -c -o $@ src/Global.cc
-build/Sync.o: src/Sync.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/Sync.cc
+build/lw_global.o: src/lw_global.c $(COMMONDEPS) 
+	$(CC) $(CFLAGS) -c -o $@ src/lw_global.c
+build/lw_nvhash.o: src/lw_nvhash.c $(COMMONDEPS) 
+	$(CC) $(CFLAGS) -c -o $@ src/lw_nvhash.c
+build/lw_util.o: src/lw_util.c $(COMMONDEPS) 
+	$(CC) $(CFLAGS) -c -o $@ src/lw_util.c
 build/Filter.o: src/Filter.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/Filter.cc
 build/Address.o: src/Address.cc $(COMMONDEPS)
@@ -57,49 +69,49 @@ build/MimeTypes.o: src/webserver/MimeTypes.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/MimeTypes.cc
 build/HTTP.o: src/webserver/http/HTTP.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/http/HTTP.cc
+build/SPDY.o: src/webserver/spdy/SPDY.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/spdy/SPDY.cc
 build/http-parser.o: deps/http-parser/http_parser.c deps/http-parser/http_parser.h
-	$(CXX) $(CXXFLAGS) -c -o $@ deps/http-parser/http_parser.c
+	$(CC) $(CFLAGS) -c -o $@ deps/http-parser/http_parser.c
 build/Multipart.o: src/webserver/http/Multipart.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/http/Multipart.cc
 build/FlashPolicy.o: src/FlashPolicy.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/FlashPolicy.cc
 
-build/addr_flat.o: src/c/addr_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/addr_flat.cc
-build/pump_flat.o: src/c/pump_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/pump_flat.cc
-build/eventpump_flat.o: src/c/eventpump_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/eventpump_flat.cc
-build/pipe_flat.o: src/c/pipe_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/pipe_flat.cc
-build/global_flat.o: src/c/global_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/global_flat.cc
-build/server_flat.o: src/c/server_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/server_flat.cc
-build/timer_flat.o: src/c/timer_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/timer_flat.cc
-build/webserver_flat.o: src/c/webserver_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/webserver_flat.cc
-build/filter_flat.o: src/c/filter_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/filter_flat.cc
-build/udp_flat.o: src/c/udp_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/udp_flat.cc
-build/client_flat.o: src/c/client_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/client_flat.cc
-build/error_flat.o: src/c/error_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/error_flat.cc
-build/sync_flat.o: src/c/sync_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/sync_flat.cc
-build/thread_flat.o: src/c/thread_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/thread_flat.cc
-build/flashpolicy_flat.o: src/c/flashpolicy_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/flashpolicy_flat.cc
-build/stream_flat.o: src/c/stream_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/stream_flat.cc
-build/fdstream_flat.o: src/c/fdstream_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/fdstream_flat.cc
-build/file_flat.o: src/c/file_flat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/c/file_flat.cc
+build/addr_flat.o: src/wrappers-c/addr_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/addr_flat.cc
+build/pump_flat.o: src/wrappers-c/pump_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/pump_flat.cc
+build/eventpump_flat.o: src/wrappers-c/eventpump_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/eventpump_flat.cc
+build/pipe_flat.o: src/wrappers-c/pipe_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/pipe_flat.cc
+build/server_flat.o: src/wrappers-c/server_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/server_flat.cc
+build/timer_flat.o: src/wrappers-c/timer_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/timer_flat.cc
+build/webserver_flat.o: src/wrappers-c/webserver_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/webserver_flat.cc
+build/filter_flat.o: src/wrappers-c/filter_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/filter_flat.cc
+build/udp_flat.o: src/wrappers-c/udp_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/udp_flat.cc
+build/client_flat.o: src/wrappers-c/client_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/client_flat.cc
+build/error_flat.o: src/wrappers-c/error_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/error_flat.cc
+build/sync_flat.o: src/wrappers-c/sync_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/sync_flat.cc
+build/thread_flat.o: src/wrappers-c/thread_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/thread_flat.cc
+build/flashpolicy_flat.o: src/wrappers-c/flashpolicy_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/flashpolicy_flat.cc
+build/stream_flat.o: src/wrappers-c/stream_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/stream_flat.cc
+build/fdstream_flat.o: src/wrappers-c/fdstream_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/fdstream_flat.cc
+build/file_flat.o: src/wrappers-c/file_flat.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/wrappers-c/file_flat.cc
 
 build/openssl-SSLClient.o: src/openssl/SSLClient.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/openssl/SSLClient.cc
@@ -122,6 +134,10 @@ build/unix-FDStream.o: src/unix/FDStream.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/unix/FDStream.cc
 build/unix-File.o: src/unix/File.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/unix/File.cc
+build/unix-Sync.o: src/unix/Sync.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/unix/Sync.cc
+build/unix-lw_global.o: src/unix/lw_global.c $(COMMONDEPS)
+	$(CC) $(CFLAGS) -c -o $@ src/unix/lw_global.c
 
 build/windows-Event.o: src/windows/Event.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/Event.cc
@@ -143,13 +159,50 @@ build/windows-FDStream.o: src/windows/FDStream.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/FDStream.cc
 build/windows-File.o: src/windows/File.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/File.cc
+build/windows-Sync.o: src/windows/Sync.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/Sync.cc
 build/windows-WinSSLClient.o: src/windows/WinSSLClient.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/WinSSLClient.cc
+build/windows-lw_global.o: src/windows/lw_global_win.c $(COMMONDEPS)
+	$(CC) $(CFLAGS) -c -o $@ src/windows/lw_global_win.c
+
+build/spdy_bytes.o: deps/spdy/src/spdy_bytes.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_bytes.c
+build/spdy_control.o: deps/spdy/src/spdy_control.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_control.c
+build/spdy_credential.o: deps/spdy/src/spdy_credential.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_credential.c
+build/spdy_ctx.o: deps/spdy/src/spdy_ctx.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_ctx.c
+build/spdy_goaway.o: deps/spdy/src/spdy_goaway.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_goaway.c
+build/spdy_headers.o: deps/spdy/src/spdy_headers.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_headers.c
+build/spdy_window_update.o: deps/spdy/src/spdy_window_update.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_window_update.c
+build/spdy_nv_block.o: deps/spdy/src/spdy_nv_block.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_nv_block.c
+build/spdy_ping.o: deps/spdy/src/spdy_ping.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_ping.c
+build/spdy_rst_stream.o: deps/spdy/src/spdy_rst_stream.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_rst_stream.c
+build/spdy_settings.o: deps/spdy/src/spdy_settings.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_settings.c
+build/spdy_stream.o: deps/spdy/src/spdy_stream.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_stream.c
+build/spdy_syn_reply.o: deps/spdy/src/spdy_syn_reply.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_syn_reply.c
+build/spdy_syn_stream.o: deps/spdy/src/spdy_syn_stream.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_syn_stream.c
+build/spdy_zlib.o: deps/spdy/src/spdy_zlib.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_zlib.c
+build/spdy_strings.o: deps/spdy/src/spdy_strings.c
+	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_strings.c
 
 ############
 	
 clean:
-	rm -f liblacewing.@SO_EXT@* liblacewing.a ./build/*.o
+	rm -f liblacewing.@SO_EXT@* liblacewing.a $(OBJECTS)
 
 install: liblacewing.@SO_EXT@ liblacewing.a
 	@echo -----

@@ -27,7 +27,7 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
 
 static void * FDStreamType = (void *) "FDStream";
 
@@ -63,7 +63,7 @@ struct FDStream::Internal
 
     Lacewing::Pump &Pump;
 
-    char Buffer [DefaultBufferSize];
+    char Buffer [lwp_default_buffer_size];
 
     HANDLE FD;
 
@@ -143,7 +143,8 @@ struct FDStream::Internal
         FDStream::Internal * internal = (FDStream::Internal *) tag;
         Overlapped * overlapped = (Overlapped *) _overlapped;
 
-        LacewingAssert (! (internal->Flags & Flag_CompletionProc));
+        assert (! (internal->Flags & Flag_CompletionProc));
+
         internal->Flags |= Flag_CompletionProc;
 
         switch (overlapped->Type)
@@ -295,12 +296,16 @@ void FDStream::SetFD (HANDLE FD, Pump::Watch * watch)
     {
         LARGE_INTEGER size;
 
-        if (!Compat::GetFileSizeEx () (internal->FD, &size))
+        if (!compat_GetFileSizeEx () (internal->FD, &size))
             return;
 
         internal->Size = (size_t) size.QuadPart;
         
+<<<<<<< HEAD
         LacewingAssert (internal->Size != -1);
+=======
+        assert (internal->Size != -1);
+>>>>>>> Major general source cleanup, SPDY support
     }
 
     if (watch)

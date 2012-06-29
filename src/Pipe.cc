@@ -27,7 +27,7 @@
  * SUCH DAMAGE.
  */
 
-#include "Common.h"
+#include "lw_common.h"
 
 Pipe::Pipe ()
 {
@@ -41,35 +41,11 @@ Pipe::~ Pipe ()
 {
 }
 
-/* Because pipes are considered transparent, Pipe::Put will never actually be
- * called in most applications.  The data will be pushed directly to the next
- * stream in the graph.
- */
-
 size_t Pipe::Put (const char * buffer, size_t size)
 {
-    if (!internal->DataHandlers.Size)
-    {
-        /* Skip Data() to avoid copying the buffer */
+    /* Put should never be called when IsTransparent returns true */
 
-        internal->Push (buffer, size);
-    }
-    else
-    {
-        /* TODO : Limit on stack copy? */
-
-        char * copy = (char *) alloca (size);
-        memcpy (copy, buffer, size);
-
-        Data (copy, size);
-    }
-
-    return size;
-}
-
-size_t Pipe::PutWritable (char * buffer, size_t size)
-{
-    Data (buffer, size);
+    assert (false);
 
     return size;
 }

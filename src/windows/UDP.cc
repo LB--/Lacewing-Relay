@@ -27,7 +27,8 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
+#include "../Address.h"
 
 const int IdealPendingReceiveCount = 16;
 
@@ -55,7 +56,7 @@ struct UDPOverlapped
 
 struct UDPReceiveInformation
 {
-    char Buffer [DefaultBufferSize];
+    char Buffer [lwp_default_buffer_size];
     WSABUF WinsockBuffer;
 
     UDPReceiveInformation ()
@@ -99,26 +100,32 @@ struct UDP::Internal
 
     SOCKET Socket;
 
-    Backlog <UDPOverlapped> OverlappedBacklog;
-    Backlog <UDPReceiveInformation> ReceiveInformationBacklog;
-
-    volatile long ReceivesPosted;
+    long ReceivesPosted;
 
     void PostReceives()
     {
         while(ReceivesPosted < IdealPendingReceiveCount)
         {
-            UDPReceiveInformation &ReceiveInformation = ReceiveInformationBacklog.Borrow ();
-            UDPOverlapped &Overlapped = OverlappedBacklog.Borrow ();
+            UDPReceiveInformation * ReceiveInformation
+                = new (std::nothrow) UDPReceiveInformation;
 
-            Overlapped.Type = OverlappedType::Receive;
-            Overlapped.Tag = &ReceiveInformation;
+            if (!ReceiveInformation)
+                break;
+
+            UDPOverlapped * Overlapped = new (std::nothrow) UDPOverlapped;
+
+            if (!Overlapped)
+                break;
+
+            Overlapped->Type = OverlappedType::Receive;
+            Overlapped->Tag = &ReceiveInformation;
 
             DWORD Flags = 0;
 
-            if(WSARecvFrom (Socket, &ReceiveInformation.WinsockBuffer,
-                            1, 0, &Flags, (sockaddr *) &ReceiveInformation.From, &ReceiveInformation.FromLength,
-                            (OVERLAPPED *) &Overlapped, 0) == -1)
+            if(WSARecvFrom (Socket, &ReceiveInformation->WinsockBuffer,
+                            1, 0, &Flags, (sockaddr *) &ReceiveInformation->From,
+                            &ReceiveInformation->FromLength,
+                            (OVERLAPPED *) Overlapped, 0) == -1)
             {
                 int Error = WSAGetLastError();
 
@@ -126,14 +133,15 @@ struct UDP::Internal
                     break;
             }
 
-            InterlockedIncrement(&ReceivesPosted);
+            ++ ReceivesPosted;
         }
     }
 };
 
-static void UDPSocketCompletion (UDP::Internal * internal, UDPOverlapped &Overlapped, unsigned int BytesTransferred, int Error)
+static void UDPSocketCompletion (UDP::Internal * internal, UDPOverlapped  * Overlapped,
+                                 unsigned int BytesTransferred, int Error)
 {
-    switch(Overlapped.Type)
+    switch(Overlapped->Type)
     {
         case OverlappedType::Send:
         {
@@ -142,12 +150,12 @@ static void UDPSocketCompletion (UDP::Internal * internal, UDPOverlapped &Overla
 
         case OverlappedType::Receive:
         {
-            UDPReceiveInformation &ReceiveInformation = *(UDPReceiveInformation *) Overlapped.Tag;
+            UDPReceiveInformation * info = (UDPReceiveInformation *) Overlapped->Tag;
 
-            ReceiveInformation.Buffer [BytesTransferred] = 0;
+            info->Buffer [BytesTransferred] = 0;
 
             {   AddressWrapper Address;                
-                Address.Set (&ReceiveInformation.From);
+                Address.Set (&info->From);
 
                 Lacewing::Address * FilterAddress = internal->Filter.Remote ();
 
@@ -155,20 +163,23 @@ static void UDPSocketCompletion (UDP::Internal * internal, UDPOverlapped &Overla
                     break;
 
                 if (internal->Handlers.Receive)
-                    internal->Handlers.Receive (internal->Public, (Lacewing::Address &) Address,
-                                                        ReceiveInformation.Buffer, BytesTransferred);
+                {
+                    internal->Handlers.Receive
+                        (internal->Public, (Lacewing::Address &) Address,
+                             info->Buffer, BytesTransferred);
+                }
             }
 
-            internal->ReceiveInformationBacklog.Return (ReceiveInformation);
+            delete info;
 
-            InterlockedDecrement(&internal->ReceivesPosted);
+            -- internal->ReceivesPosted;
             internal->PostReceives();
 
             break;
         }
     };
 
-    internal->OverlappedBacklog.Return (Overlapped);
+    delete Overlapped;
 }
 
 void UDP::Host (int Port)
@@ -191,20 +202,9 @@ void UDP::Host (Filter &Filter)
 {
     Unhost();
 
-    if (Hosting())
-    {
-        Lacewing::Error Error;
-        Error.Add("Already hosting");
-        
-        if (internal->Handlers.Error)
-            internal->Handlers.Error (*this, Error);
-
-        return;    
-    }
-
     {   Lacewing::Error Error;
 
-        if ((internal->Socket = CreateServerSocket
+        if ((internal->Socket = lwp_create_server_socket
                 (Filter, SOCK_DGRAM, IPPROTO_UDP, Error)) == -1)
         {
             if (internal->Handlers.Error)
@@ -220,7 +220,7 @@ void UDP::Host (Filter &Filter)
     internal->Pump.Add ((HANDLE) internal->Socket,
             internal, (Lacewing::Pump::Callback) UDPSocketCompletion);
 
-    internal->Port = GetSocketPort (internal->Socket);
+    internal->Port = lwp_socket_port (internal->Socket);
 
     internal->PostReceives ();
 }
@@ -232,7 +232,7 @@ bool UDP::Hosting ()
 
 void UDP::Unhost ()
 {
-    LacewingCloseSocket (internal->Socket);
+    lwp_close_socket (internal->Socket);
     internal->Socket = -1;
 }
 
@@ -243,7 +243,7 @@ int UDP::Port ()
 
 UDP::UDP (Lacewing::Pump &Pump)
 {
-    LacewingInitialise ();  
+    lwp_init ();  
     internal = new UDP::Internal (*this, Pump);
 }
 
@@ -272,10 +272,10 @@ void UDP::Write (Address &Address, const char * Data, size_t Size)
 
     WSABUF Buffer = { Size, (CHAR *) Data };
 
-    UDPOverlapped &Overlapped = internal->OverlappedBacklog.Borrow ();
-
-    Overlapped.Type = OverlappedType::Send;
-    Overlapped.Tag  = 0;
+    UDPOverlapped * Overlapped = new (std::nothrow) UDPOverlapped;
+    
+    Overlapped->Type = OverlappedType::Send;
+    Overlapped->Tag  = 0;
 
     addrinfo * Info = Address.internal->Info;
 
@@ -283,7 +283,7 @@ void UDP::Write (Address &Address, const char * Data, size_t Size)
         return;
 
     if (WSASendTo (internal->Socket, &Buffer, 1, 0, 0, Info->ai_addr,
-                        Info->ai_addrlen, (OVERLAPPED *) &Overlapped, 0) == -1)
+                        Info->ai_addrlen, (OVERLAPPED *) Overlapped, 0) == -1)
     {
         int Code = WSAGetLastError();
 

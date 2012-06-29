@@ -27,6 +27,8 @@
  * SUCH DAMAGE.
  */
 
+/* TODO : rewrite this */
+
 #include "../Common.h"
 
 HTTPClient::MultipartProcessor::MultipartProcessor
@@ -74,7 +76,7 @@ HTTPClient::MultipartProcessor::~MultipartProcessor()
     Uploads.Clear ();
 }
 
-int HTTPClient::MultipartProcessor::Process(char * Data, size_t Size)
+size_t HTTPClient::MultipartProcessor::Process(char * Data, size_t Size)
 {
     if(InFile && Child)
     {
@@ -90,7 +92,7 @@ int HTTPClient::MultipartProcessor::Process(char * Data, size_t Size)
         }
     }
 
-    int InFileOffset = InFile ? 0 : -1;
+    size_t InFileOffset = InFile ? 0 : -1;
 
     for(size_t i = 0; i < Size; ++ i)
     {
@@ -100,7 +102,7 @@ int HTTPClient::MultipartProcessor::Process(char * Data, size_t Size)
             {
                 /* Before headers */
 
-                if(BeginsWith(Data + i, this->Boundary))
+                if(lwp_begins_with(Data + i, this->Boundary))
                 {
                     InHeaders = true;
                     i += strlen(this->Boundary);
@@ -137,7 +139,7 @@ int HTTPClient::MultipartProcessor::Process(char * Data, size_t Size)
 
         /* In file */
 
-        if(BeginsWith(Data + i, this->CRLFThenBoundary))
+        if(lwp_begins_with(Data + i, this->CRLFThenBoundary))
         {
             ToFile(Data + InFileOffset, i - InFileOffset);
 
@@ -155,16 +157,16 @@ int HTTPClient::MultipartProcessor::Process(char * Data, size_t Size)
                     if (Client.Server.Handlers.UploadDone)
                     {
                         Client.Server.Handlers.UploadDone
-                            (Client.Server.Webserver, Client.Request.Public, CurrentUpload->Upload);
+                            (Client.Server.Webserver, Client.Request, CurrentUpload->Upload);
                     }
                 }
                 else
                 {
                     /* Auto save */
 
-                    DebugOut("Closing auto save file");
+                    lwp_trace("Closing auto save file");
 
-                    fclose(CurrentUpload->AutoSaveFile);
+                    delete CurrentUpload->AutoSaveFile;
                     CurrentUpload->AutoSaveFile = 0;
                 }
 
@@ -172,15 +174,20 @@ int HTTPClient::MultipartProcessor::Process(char * Data, size_t Size)
             }
             else
             {
-                Buffer.Add <char> (0);
+                HeapBuffer &buffer = Client.Request.Buffer;
 
-                Client.Request.PostItems.Set(Disposition.Get("name"), Buffer.Buffer);
-                Buffer.Reset();
+                buffer.Add <char> (0);
+
+                lw_nvhash_set (Client.Request.PostItems,
+                               lw_nvhash_get (Disposition, "name", ""),
+                               buffer.Buffer, lw_true);
+
+                buffer.Reset();
             }
 
-            Disposition.Clear();
+            lw_nvhash_clear (Disposition);
 
-            if(BeginsWith(Data + i + 2, this->FinalBoundary))
+            if(lwp_begins_with(Data + i + 2, this->FinalBoundary))
             {
                 State = Done;
                 return Size - i - (strlen(this->FinalBoundary) + 2);
@@ -207,32 +214,38 @@ void HTTPClient::MultipartProcessor::ProcessHeader()
         InHeaders = false;
         InFile    = true;
 
-        /* If a filename is specified, the data is handled by the PreFilePost/FilePostChunk/FilePostComplete
-           handlers, and is assigned an Upload structure. */
+        /* If a filename is specified, the data is handled by the file upload
+         * handlers, and is assigned an Upload structure.
+         */
+        
+        const char * filename = lw_nvhash_get (Disposition, "filename", 0);
 
-        if(*Disposition.Get("filename"))
+        if (filename)
         {
-            CurrentUpload = new HTTPUpload;
+            CurrentUpload = new HTTPUpload (Client.Request);
             
-            CurrentUpload->Filename =
-                CurrentUpload->Copier.Set("filename", Disposition.Get("filename"))->Value;
+            CurrentUpload->Filename = strdup (filename);
 
+            /* If this is a child multipart, the upload takes the form element
+             * name from the parent disposition.
+             */
 
-            /* If this is a child multipart, the upload takes the form element name from the parent disposition */
-
-            CurrentUpload->FormElement = CurrentUpload->Copier.Set("name",
-                                                    Parent ? Parent->Disposition.Get("name") : Disposition.Get("name"))->Value;
+            CurrentUpload->FormElement
+                = strdup (lw_nvhash_get (Parent ?
+                            Parent->Disposition : Disposition, "name", ""));
         
             if(Client.Server.Handlers.UploadStart)
             {
                 Client.Server.Handlers.UploadStart
-                    (Client.Server.Webserver, Client.Request.Public, CurrentUpload->Upload);
+                    (Client.Server.Webserver, Client.Request, CurrentUpload->Upload);
             }
 
             return;
         }
 
-        /* If a filename is not specified, the data is retrieved like a normal form post item via POST(). */
+        /* If a filename is not specified, the data is retrieved like a normal
+         * form post item via POST().
+         */
         
         return;
     }
@@ -250,7 +263,9 @@ void HTTPClient::MultipartProcessor::ProcessHeader()
     while(*Header == ' ')
         ++ Header;
 
-    Headers.Set(Name, Header);
+    {  WebserverHeader header = { Name, Header };
+       Headers.Push (header);
+    }
 
     if(!strcasecmp(Name, "Content-Disposition"))
     {
@@ -264,7 +279,7 @@ void HTTPClient::MultipartProcessor::ProcessHeader()
 
         *(i ++) = 0;
         
-        Disposition.Set("Type", Header);
+        lw_nvhash_set (Disposition, "Type", Header, lw_true);
 
         char * Begin = i;
 
@@ -288,7 +303,7 @@ void HTTPClient::MultipartProcessor::ProcessHeader()
 
     if(!strcasecmp(Name, "Content-Type"))
     {
-        if(BeginsWith(Header, "multipart"))
+        if(lwp_begins_with(Header, "multipart"))
         {
             if(Parent)
             {
@@ -337,7 +352,7 @@ void HTTPClient::MultipartProcessor::ProcessDispositionPair(char * Pair)
         ++ Pair;
     }
     
-    Disposition.Set(Name, Pair);
+    lw_nvhash_set (Disposition, Name, Pair, lw_true);
 }
 
 void HTTPClient::MultipartProcessor::ToFile(const char * Data, size_t Size)
@@ -353,23 +368,18 @@ void HTTPClient::MultipartProcessor::ToFile(const char * Data, size_t Size)
 
             if(Client.Server.Handlers.UploadChunk)
                 Client.Server.Handlers.UploadChunk(Client.Server.Webserver,
-                        Client.Request.Public, CurrentUpload->Upload, Data, Size);
+                        Client.Request, CurrentUpload->Upload, Data, Size);
 
             return;
         }
 
         /* Auto save */
 
-        if(fwrite(Data, 1, Size, CurrentUpload->AutoSaveFile) != Size)
-        {
-            CurrentUpload->AutoSaveFile = 0;
-            Client.Socket.Close ();
-        }
-
+        CurrentUpload->AutoSaveFile->Write (Data, Size);
         return;
     }
 
-    Buffer.Add(Data, Size);
+    Client.Request.Buffer.Add (Data, Size);
 }
 
 void HTTPClient::MultipartProcessor::CallRequestHandler()
@@ -379,14 +389,23 @@ void HTTPClient::MultipartProcessor::CallRequestHandler()
     if(Client.Server.Handlers.UploadPost)
     {
         Client.Server.Handlers.UploadPost
-           (Client.Server.Webserver, Client.Request.Public, Uploads.Items, Uploads.Size);
+           (Client.Server.Webserver, Client.Request, Uploads.Items, Uploads.Size);
     }
 
     Client.Request.AfterHandler ();
 }
 
-const char * HTTPClient::HTTPUpload::Header (const char * Name)
+HTTPClient::HTTPUpload::HTTPUpload (Webserver::Request::Internal &request)
+    : Webserver::Upload::Internal (request)
 {
-    return Headers.Get (Name);
+}
+
+const char * HTTPClient::HTTPUpload::Header (const char * name)
+{
+    for (List <WebserverHeader>::Element * E = Headers.First; E; E = E->Next)
+        if (!strcasecmp ((** E).Name, name))
+            return (** E).Value;
+
+    return "";
 }
 

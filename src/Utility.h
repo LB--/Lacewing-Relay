@@ -182,7 +182,7 @@ namespace Lacewing
 
             -- Size;
             
-            LacewingAssert (Size >= 0);
+            assert (Size >= 0);
 
             return next;
         }

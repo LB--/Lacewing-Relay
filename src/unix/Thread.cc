@@ -27,7 +27,7 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
 
 struct Thread::Internal
 {

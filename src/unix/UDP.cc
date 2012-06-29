@@ -27,7 +27,8 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
+#include "../Address.h"
 
 struct UDP::Internal
 {
@@ -60,7 +61,7 @@ static void ReadReady (UDP::Internal * internal, bool)
     sockaddr_storage From;
     socklen_t FromSize = sizeof (From);
 
-    char Buffer [DefaultBufferSize];
+    char Buffer [lwp_default_buffer_size];
     
     for(;;)
     {
@@ -106,7 +107,8 @@ void UDP::Host (Filter &Filter)
 
     {   Lacewing::Error Error;
 
-        if ((internal->Socket = CreateServerSocket (Filter, SOCK_DGRAM, IPPROTO_UDP, Error)) == -1)
+        if ((internal->Socket = lwp_create_server_socket
+                    (Filter, SOCK_DGRAM, IPPROTO_UDP, Error)) == -1)
         {
             if (internal->Handlers.Error)
                 internal->Handlers.Error (*this, Error);
@@ -125,18 +127,18 @@ bool UDP::Hosting ()
 
 int UDP::Port ()
 {
-    return GetSocketPort (internal->Socket);
+    return lwp_socket_port (internal->Socket);
 }
 
 void UDP::Unhost ()
 {
-    LacewingCloseSocket (internal->Socket);
+    lwp_close_socket (internal->Socket);
     internal->Socket = -1;
 }
 
 UDP::UDP (Lacewing::Pump &Pump)
 {
-    LacewingInitialise ();  
+    lwp_init ();  
     internal = new UDP::Internal (*this, Pump);
 }
 

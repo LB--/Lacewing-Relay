@@ -27,12 +27,12 @@
  * SUCH DAMAGE.
  */
 
-#include "Common.h"
+#include "lw_common.h"
+#include "StreamGraph.h"
+#include "Stream.h"
 
 StreamGraph::StreamGraph ()
 {
-    LastPush = 0;
-    LastRead = 0;
     LastExpand = 0;
 }
 
@@ -43,22 +43,31 @@ StreamGraph::~ StreamGraph ()
 
 static void Swallow (StreamGraph * graph, Stream::Internal * stream)
 {
-    LacewingAssert (graph);
-    LacewingAssert (stream->Graph);
+    assert (graph);
+    assert (stream->Graph);
+
+    if (stream->Graph == graph)
+        return;
 
     stream->Graph = graph;
     stream->LastExpand = graph->LastExpand;
    
-    for (List <Stream::Internal::Filter>::Element * E
+    for (List <Stream::Internal::Filter *>::Element * E
             = stream->FiltersUpstream.First; E; E = E->Next)
     {
-        Swallow (graph, (** E).StreamPtr);
+        Swallow (graph, (** E)->FilterPtr);
     }
 
-    for (List <Stream::Internal::Filter>::Element * E
+    for (List <Stream::Internal::Filter *>::Element * E
             = stream->FiltersDownstream.First; E; E = E->Next)
     {
-        Swallow (graph, (** E).StreamPtr);
+        Swallow (graph, (** E)->FilterPtr);
+    }
+
+    for (List <Stream::Internal::Filter *>::Element * E
+            = stream->Filtering.First; E; E = E->Next)
+    {
+        Swallow (graph, (** E)->StreamPtr);
     }
 
     for (List <StreamGraph::Link *>::Element * E
@@ -70,7 +79,7 @@ static void Swallow (StreamGraph * graph, Stream::Internal * stream)
 
 void StreamGraph::Swallow (StreamGraph * graph)
 {
-    LacewingAssert (graph != this);
+    assert (graph != this);
 
     for (List <Stream::Internal *>::Element * E
                 = graph->Roots.First; E; E = E->Next)
@@ -93,10 +102,11 @@ static void Expand (StreamGraph * graph, Stream::Internal * stream,
 
     /* Upstream filters come first */
 
-    for (List <Stream::Internal::Filter>::Element * E
+    for (List <Stream::Internal::Filter *>::Element * E
             = stream->FiltersUpstream.First; E; E = E->Next)
     {
-        Stream::Internal * stream = (** E).StreamPtr, * expanded, * next;
+        Stream::Internal::Filter * filter = (** E);
+        Stream::Internal * stream = filter->FilterPtr, * expanded, * next;
        
         stream->LastExpand = graph->LastExpand;
 
@@ -106,11 +116,11 @@ static void Expand (StreamGraph * graph, Stream::Internal * stream,
             first = expanded;
         else
         {
-            StreamGraph::Link * link = new (std::nothrow) StreamGraph::Link
-                (0, last, 0, expanded, -1, stream->Graph->LastPush, false);
+            filter->Link.FromExp = last;
+            filter->Link.ToExp = expanded;
 
-            last->NextExpanded.Push (link);
-            expanded->PrevExpanded.Push (link);
+            last->NextExpanded.Push (&filter->Link);
+            expanded->PrevExpanded.Push (&filter->Link);
         }
 
         last = next;
@@ -127,7 +137,7 @@ static void Expand (StreamGraph * graph, Stream::Internal * stream,
     {
         StreamGraph::Link * link
             = new (std::nothrow) StreamGraph::Link
-                (0, last, 0, stream, -1, stream->Graph->LastPush, false);
+                (0, last, 0, stream, -1, false);
 
         last->NextExpanded.Push (link);
         stream->PrevExpanded.Push (link);
@@ -142,10 +152,11 @@ static void Expand (StreamGraph * graph, Stream::Internal * stream,
 
     /* And downstream filters afterwards */
 
-    for (List <Stream::Internal::Filter>::Element * E
+    for (List <Stream::Internal::Filter *>::Element * E
             = stream->FiltersDownstream.First; E; E = E->Next)
     {
-        Stream::Internal * stream = (** E).StreamPtr, * expanded, * next;
+        Stream::Internal::Filter * filter = (** E);
+        Stream::Internal * stream = filter->FilterPtr, * expanded, * next;
        
         stream->LastExpand = graph->LastExpand;
 
@@ -153,12 +164,11 @@ static void Expand (StreamGraph * graph, Stream::Internal * stream,
 
         if (last)
         {
-            StreamGraph::Link * link
-                = new (std::nothrow) StreamGraph::Link
-                    (0, last, 0, expanded, -1, stream->Graph->LastPush, false);
+            filter->Link.FromExp = last;
+            filter->Link.ToExp = expanded;
 
-            last->NextExpanded.Push (link);
-            expanded->PrevExpanded.Push (link);
+            last->NextExpanded.Push (&filter->Link);
+            expanded->PrevExpanded.Push (&filter->Link);
         }
         
         last = next;
@@ -235,9 +245,9 @@ void StreamGraph::Expand ()
             E = E->Next;
     }
 
-    /* #ifdef LacewingDebug
+    #ifdef LacewingDebug
         Print ();
-    #endif */
+    #endif
 }
 
 static bool FindNextDirect
@@ -271,14 +281,14 @@ static bool FindNextDirect
     return true;
 }
 
-static void Read (StreamGraph * graph, int this_read,
+static void Read (StreamGraph * graph, int this_expand,
                     Stream::Internal * stream, size_t bytes)
 {
     /* Note that we're checking Next instead of NextExpanded here.  The
      * presence of a filter doesn't force a read.
      */
 
-    if ( (!stream->Next.Size) && (!stream->ExpDataHandlers.Size) )
+    if (!stream->Next.Size)
         return;
 
     if (bytes == -1)
@@ -301,6 +311,8 @@ static void Read (StreamGraph * graph, int this_read,
         }
     }
 
+    lwp_trace ("Reading " lwp_fmt_size " from %p", bytes, stream);
+
     bool wrote_direct = false;
 
     do
@@ -314,33 +326,29 @@ static void Read (StreamGraph * graph, int this_read,
 
         FindNextDirect (stream, next, direct_bytes);
 
-        if (next)
-        {
-            /* Only one non-transparent stream follows.  It may be possible to
-             * shift the data directly (without having to read it first).
-             *
-             * Note that we don't have to check next's queue is empty, because
-             * we're already being written (the queue is behind us).
-             */
+        if (!next)
+            break;
 
-            next->PrevDirect = stream;
-            next->DirectBytesLeft = direct_bytes;
+        /* Only one non-transparent stream follows.  It may be possible to
+         * shift the data directly (without having to read it first).
+         *
+         * Note that we don't have to check next's queue is empty, because
+         * we're already being written (the queue is behind us).
+         */
 
-            if (next->WriteDirect ())
-            {
-                wrote_direct = true;
-                break;
-            }
-        }
-        else
+        next->PrevDirect = stream;
+        next->DirectBytesLeft = direct_bytes;
+
+        if (next->WriteDirect ())
         {
-            stream->Public->Read (bytes);
+            wrote_direct = true;
+            break;
         }
 
     } while (0);
 
-    if (wrote_direct)
-        return;
+    if (!wrote_direct)
+        stream->Public->Read (bytes);
 
     /* Calling Push or Read may well run user code, or expire a link.  If this
      * causes the graph to re-expand, Read() will be called again and this one
@@ -349,31 +357,36 @@ static void Read (StreamGraph * graph, int this_read,
      * TODO: What if this graph gets swallowed?
      */
 
-    if (this_read != graph->LastRead)
+    if (this_expand != graph->LastExpand)
+    {
+        lwp_trace ("LastExpand changed after Read; aborting");
         return;
+    }
 
     for (List <StreamGraph::Link *>::Element * E
             = stream->NextExpanded.First; E; E = E->Next)
     {
         StreamGraph::Link * link = (** E);
 
-        Read (graph, this_read, link->ToExp, link->BytesLeft);
+        Read (graph, this_expand, link->ToExp, link->BytesLeft);
 
-        if (this_read != graph->LastRead)
+        if (this_expand != graph->LastExpand)
             return;
     }
 }
 
 void StreamGraph::Read ()
 {
-    int this_read = LastRead ++;
+    lwp_trace ("StreamGraph::Read");
+
+    int this_expand = LastExpand;
 
     for (List <Stream::Internal *>::Element * E
             = RootsExpanded.First; E; E = E->Next)
     {
-        ::Read (this, this_read, (** E), -1);
+        ::Read (this, this_expand, (** E), -1);
 
-        if (LastRead != this_read)
+        if (LastExpand != this_expand)
             break;
     }
 }
@@ -388,14 +401,7 @@ static void ClearExpanded (Stream::Internal * stream)
         if (link->ToExp)
             ClearExpanded (link->ToExp);
 
-        /* If this link only exists in the expanded graph, delete it */
-
-        if (!link->To)
-            delete link;
-        else
-        {
-            link->ToExp = link->FromExp = 0;
-        }
+        link->ToExp = link->FromExp = 0;
     }
 
     stream->PrevExpanded.Clear ();
@@ -424,9 +430,9 @@ void StreamGraph::ClearExpanded ()
 
 static void Print (StreamGraph * graph, Stream::Internal * stream, int depth)
 {
-    LacewingAssert (stream->Graph == graph);
+    assert (stream->Graph == graph);
 
-    fprintf (stderr, "stream @ %p (" lw_fmt_size " bytes, %d handlers)\n",
+    fprintf (stderr, "stream @ %p (" lwp_fmt_size " bytes, %d handlers)\n",
                stream, stream->Public->BytesLeft (), stream->DataHandlers.Size);
 
     for (List <StreamGraph::Link *>::Element * E
@@ -435,7 +441,8 @@ static void Print (StreamGraph * graph, Stream::Internal * stream, int depth)
         for (int i = 0; i < depth; ++ i)
             fprintf (stderr, "  ");
 
-        fprintf (stderr, "link %p ==> ", (** E));
+        fprintf (stderr, "link (" lwp_fmt_size ") %p ==> ",
+                    (** E)->BytesLeft, (** E));
 
         Print (graph, (** E)->To, depth + 1);
     }
@@ -443,9 +450,9 @@ static void Print (StreamGraph * graph, Stream::Internal * stream, int depth)
 
 static void PrintExpanded (StreamGraph * graph, Stream::Internal * stream, int depth)
 {
-    LacewingAssert (stream->Graph == graph);
+    assert (stream->Graph == graph);
 
-    fprintf (stderr, "stream @ %p (" lw_fmt_size " bytes, %d handlers)\n",
+    fprintf (stderr, "stream @ %p (" lwp_fmt_size " bytes, %d handlers)\n",
                 stream, stream->Public->BytesLeft (), stream->ExpDataHandlers.Size);
 
     for (List <StreamGraph::Link *>::Element * E
@@ -454,9 +461,10 @@ static void PrintExpanded (StreamGraph * graph, Stream::Internal * stream, int d
         for (int i = 0; i < depth; ++ i)
             fprintf (stderr, "  ");
 
-        fprintf (stderr, "link %p ==> ", (** E));
+        fprintf (stderr, "link (" lwp_fmt_size ") %p ==> ",
+                    (** E)->BytesLeft, (** E));
 
-        LacewingAssert ((** E)->FromExp == stream);
+        assert ((** E)->FromExp == stream);
 
         PrintExpanded (graph, (** E)->ToExp, depth + 1);
     }

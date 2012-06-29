@@ -27,7 +27,10 @@
  * SUCH DAMAGE.
  */
 
-#include "Common.h"
+#pragma once
+
+#include "HeapBuffer.h"
+#include "StreamGraph.h"
 
 struct Stream::Internal
 {
@@ -56,18 +59,55 @@ struct Stream::Internal
 
     List <CloseHandler> CloseHandlers;
 
-    void Data (char * buffer, size_t size);
+
+    /* Calls any data handlers, then pushes the data forward */
+
+    void Data (const char * buffer, size_t size);
+
+
+    /* Returns true if this stream should be considered transparent, based on
+     * whether the public IsTransparent returns true, no data handlers are
+     * registered, and the queue is empty.
+     */
 
     bool IsTransparent ();
+
+    
+    /* Pushes data forward to any streams next in the graph.  buffer may be
+     * 0, in which case this is used to indicate the success of a direct write
+     */
+
+    void Push (const char * buffer, size_t size);
+
 
     struct Filter
     {
         Stream::Internal * StreamPtr;
-        bool Owned;
+        Stream::Internal * FilterPtr;
+
+        bool DeleteWithStream;
+        bool CloseTogether;
+
+        /* Having a pre-allocated link here saves StreamGraph from having to
+         * allocate one for each filter.
+         */
+
+        StreamGraph::Link Link;
     };
 
-    List <Filter> FiltersUpstream;
-    List <Filter> FiltersDownstream;
+
+    /* Filters affecting this stream (StreamPtr == this).  The Filter should be
+     * freed when removed from these lists.
+     */
+
+    List <Filter *> FiltersUpstream;
+    List <Filter *> FiltersDownstream;
+
+
+    /* Streams we are a filter for (FilterPtr == this) */
+
+    List <Filter *> Filtering;
+
 
     /* StreamGraph::Expand sets HeadUpstream to the head of the expanded
      * first filter, and fills ExpDataHandlers with the data handlers this
@@ -109,6 +149,8 @@ struct Stream::Internal
     void WriteQueued (List <Queued> &);
     void WriteQueued ();
 
+    int Retry;
+
     const static int Write_IgnoreFilters = 1;
     const static int Write_IgnoreBusy = 2;
     const static int Write_IgnoreQueue = 4;
@@ -128,12 +170,20 @@ struct Stream::Internal
     Stream::Internal * PrevDirect;
     size_t DirectBytesLeft;
 
-    void Push (const char * buffer, size_t size);
+    /* Attempts to write data from PrevDirect, returning false on failure. If
+     * successful, DirectBytesLeft will be adjusted.
+     */
 
     bool WriteDirect ();
 
     void Close ();
     bool Closing;
+
+
+    /* If UserCount is > 0 and the Stream is deleted, the internal structure
+     * will not be freed.  Anything decrementing UserCount should be prepared
+     * to delete the Stream if necessary.
+     */
 
     int UserCount;
 };

@@ -27,7 +27,8 @@
  * SUCH DAMAGE.
  */
 
-#include "../Common.h"
+#include "../lw_common.h"
+#include "../Address.h"
 
 struct Client::Internal
 {
@@ -74,7 +75,7 @@ struct Client::Internal
 
 Client::Client (Lacewing::Pump &Pump) : FDStream (Pump)
 {
-    LacewingInitialise ();
+    lwp_init ();
 
     internal = new Internal (*this, Pump);
 }
@@ -94,7 +95,7 @@ void Client::Connect (const char * Host, int Port)
 
 void Client::Internal::WriteReady ()
 {
-    LacewingAssert (Connecting);
+    assert (Connecting);
 
     int Error;
     
@@ -168,7 +169,7 @@ void Client::Connect (Address &Address)
     {
         Lacewing::Error Error;
        
-        Error.Add(LacewingGetSocketError ());        
+        Error.Add(errno);        
         Error.Add("Error creating socket");
         
         if (internal->Handlers.Error)
@@ -228,7 +229,7 @@ Address &Client::ServerAddress ()
     return *internal->Address;
 }
 
-static void onData (Stream &, void * tag, char * buffer, size_t size)
+static void onData (Stream &, void * tag, const char * buffer, size_t size)
 {
     Client::Internal * internal = (Client::Internal *) tag;
 
