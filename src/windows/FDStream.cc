@@ -79,7 +79,7 @@ struct FDStream::Internal
 
     ~ Internal ()
     {
-        Public.SetFD (INVALID_HANDLE_VALUE);
+        Public.Close ();
     }
 
     size_t Size;
