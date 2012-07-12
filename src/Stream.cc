@@ -294,6 +294,9 @@ void Stream::WriteFile (const char * filename)
 
     File * file = new File (*internal->Pump, filename, "r");
 
+    if (!file->Valid ())
+        return;
+
     Write (*file, file->BytesLeft (), true);
 }
 
