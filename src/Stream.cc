@@ -788,7 +788,7 @@ bool Stream::IsTransparent ()
     return false;
 }
 
-void * Stream::Type ()
+void * Stream::Cast (void *)
 {
     return 0;
 }

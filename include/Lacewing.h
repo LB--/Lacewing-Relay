@@ -781,7 +781,7 @@ struct Stream
 
     /* Since we don't compile with RTTI (and this is the only place it would be needed) */
 
-    LacewingFunction virtual void * Type ();
+    LacewingFunction virtual void * Cast (void * type);
 
 protected:
  
@@ -837,7 +837,7 @@ public:
 
     LacewingFunction void Close ();
 
-    LacewingFunction virtual void * Type ();
+    LacewingFunction virtual void * Cast (void *);
 
 protected:
 

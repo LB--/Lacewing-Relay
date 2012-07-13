@@ -426,9 +426,8 @@ static void Print (StreamGraph * graph, Stream::Internal * stream, int depth)
 {
     LacewingAssert (stream->Graph == graph);
 
-    fprintf (stderr, "stream @ %p (type %p, " lw_fmt_size " bytes, %d handlers)\n",
-                stream, stream->Public->Type (), stream->Public->BytesLeft (),
-                            stream->DataHandlers.Size);
+    fprintf (stderr, "stream @ %p (" lw_fmt_size " bytes, %d handlers)\n",
+               stream, stream->Public->BytesLeft (), stream->DataHandlers.Size);
 
     for (List <StreamGraph::Link *>::Element * E
             = stream->Next.First; E; E = E->Next)
@@ -446,9 +445,8 @@ static void PrintExpanded (StreamGraph * graph, Stream::Internal * stream, int d
 {
     LacewingAssert (stream->Graph == graph);
 
-    fprintf (stderr, "stream @ %p (type %p, " lw_fmt_size " bytes, %d handlers)\n",
-                stream, stream->Public->Type (), stream->Public->BytesLeft (),
-                            stream->ExpDataHandlers.Size);
+    fprintf (stderr, "stream @ %p (" lw_fmt_size " bytes, %d handlers)\n",
+                stream, stream->Public->BytesLeft (), stream->ExpDataHandlers.Size);
 
     for (List <StreamGraph::Link *>::Element * E
             = stream->NextExpanded.First; E; E = E->Next)

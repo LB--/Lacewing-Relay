@@ -31,24 +31,34 @@
 
 static void * FDStreamType = (void *) "FDStream";
 
-void * FDStream::Type ()
+void * FDStream::Cast (void * type)
 {
-    return FDStreamType;
+    if (type == FDStreamType)
+        return this;
+
+    return Stream::Cast (type);
 }
-
-struct FDStreamOverlapped
-{
-    OVERLAPPED Overlapped;
-
-    char Type;
-
-    const static char Type_Read          = 1;
-    const static char Type_Write         = 2;
-    const static char Type_TransmitFile  = 3;
-};
 
 struct FDStream::Internal
 {
+    struct Overlapped
+    {
+        OVERLAPPED _Overlapped;
+
+        char Type;
+
+        const static char Type_Read          = 1;
+        const static char Type_Write         = 2;
+        const static char Type_TransmitFile  = 3;
+    };
+
+    struct TransmitFileOverlapped
+    {
+        Overlapped _Overlapped;
+
+        FDStream::Internal * Source;
+    };
+
     FDStream &Public;
 
     Lacewing::Pump &Pump;
@@ -62,47 +72,45 @@ struct FDStream::Internal
     Internal (Lacewing::Pump &_Pump, FDStream &_Public)
         : Pump (_Pump), Public (_Public)
     {
-        Nagle = true;
-
         ReadingSize = 0;
         FD = INVALID_HANDLE_VALUE;
 
-        ReceivePending = false;
-        CompletionProc = false;
+        Flags = Flag_Nagle;
 
         Size = -1;
 
-        Dead = false;
-
         Watch = 0;
+        
+        PendingWrites = 0;
     }
 
     ~ Internal ()
     {
-        Public.Close ();
+        CloseFD ();
     }
 
     size_t Size;
 
     size_t ReadingSize;
 
-    /* TODO : Use flags instead? */
+    const static char Flag_ReceivePending  = 1;
+    const static char Flag_CompletionProc  = 2;
+    const static char Flag_Nagle           = 4;
+    const static char Flag_IsSocket        = 8;
+    const static char Flag_Dead            = 16; /* public destroyed? */
+    const static char Flag_Closed          = 32; /* FD close pending on write? */
 
-    bool ReceivePending;
-    bool CompletionProc;
-    bool Dead;
-    bool Nagle;
-    bool IsSocket;
+    char Flags;
 
-    FDStreamOverlapped ReceiveOverlapped;
+    Overlapped ReceiveOverlapped;
 
     void IssueRead ()
     {
-        if (ReceivePending)
+        if (Flags & Flag_ReceivePending)
             return;
 
         memset (&ReceiveOverlapped, 0, sizeof (ReceiveOverlapped));
-        ReceiveOverlapped.Type = FDStreamOverlapped::Type_Read;
+        ReceiveOverlapped.Type = Overlapped::Type_Read;
 
         size_t to_read = sizeof (Buffer);
 
@@ -123,25 +131,26 @@ struct FDStream::Internal
             }
         }
 
-        ReceivePending = true;
+        Flags |= Flag_ReceivePending;
     }
+
+    int PendingWrites;
 
     static void Completion
         (void * tag, OVERLAPPED * _overlapped,
                 unsigned int bytes_transferred, int error)
     {
         FDStream::Internal * internal = (FDStream::Internal *) tag;
-        FDStreamOverlapped * overlapped = (FDStreamOverlapped *) _overlapped;
+        Overlapped * overlapped = (Overlapped *) _overlapped;
 
-        LacewingAssert (!internal->CompletionProc);
-
-        internal->CompletionProc = true;
+        LacewingAssert (! (internal->Flags & Flag_CompletionProc));
+        internal->Flags |= Flag_CompletionProc;
 
         switch (overlapped->Type)
         {
-            case FDStreamOverlapped::Type_Read:
+            case Overlapped::Type_Read:
 
-                internal->ReceivePending = false;
+                internal->Flags &= ~ Flag_ReceivePending;
 
                 if (error || !bytes_transferred)
                 {
@@ -153,7 +162,7 @@ struct FDStream::Internal
 
                 /* Calling Data may result in stream destruction */
 
-                if (internal->Dead)
+                if (internal->Flags & Flag_Dead)
                 {
                     delete internal;
                     return;
@@ -163,18 +172,69 @@ struct FDStream::Internal
 
                 break;
 
-            case FDStreamOverlapped::Type_Write:
-
+            case Overlapped::Type_Write:
+                
                 delete overlapped;
+
+                if (internal->WriteCompleted ())
+                {
+                    delete internal;
+                    return;
+                }
+
                 break;
 
-            case FDStreamOverlapped::Type_TransmitFile:
+            case Overlapped::Type_TransmitFile:
+            {
+                ((TransmitFileOverlapped *) overlapped)
+                    ->Source->WriteCompleted ();
 
-                delete overlapped;
+                delete ((TransmitFileOverlapped *) overlapped);
+
+                if (internal->WriteCompleted ())
+                {
+                    delete internal;
+                    return;
+                }
+
                 break;
+            }
         };
 
-        internal->CompletionProc = false;
+        internal->Flags &= ~ Flag_CompletionProc;
+
+        if (internal->Flags & Flag_Dead
+                && internal->PendingWrites == 0)
+        {
+            delete internal;
+        }
+    }
+
+    void CloseFD ()
+    {
+        if (Flags & Flag_IsSocket)
+            closesocket ((SOCKET) FD);
+        else
+            CloseHandle (FD);
+
+        FD = INVALID_HANDLE_VALUE;
+    }
+
+    bool WriteCompleted ()
+    {
+        -- PendingWrites;
+
+        /* Was this the last write finishing? */
+
+        if ( (Flags & (Flag_Closed | Flag_Dead)) && PendingWrites == 0)
+        {
+            CloseFD ();
+            
+            if (Flags & Flag_Dead)
+                return true;
+        }
+
+        return false;
     }
 };
 
@@ -185,8 +245,13 @@ FDStream::FDStream (Lacewing::Pump &Pump) : Stream (Pump)
 
 FDStream::~ FDStream ()
 {
-    if (internal->CompletionProc)
-        internal->Dead = true;
+    Close ();
+
+    if (internal->Flags & Internal::Flag_CompletionProc
+            || internal->PendingWrites > 0)
+    {
+        internal->Flags |= Internal::Flag_Dead;
+    }
     else
         delete internal;
 }
@@ -203,7 +268,7 @@ void FDStream::SetFD (HANDLE FD, Pump::Watch * watch)
 
     WSAPROTOCOL_INFO info;
 
-    internal->IsSocket = true;
+    internal->Flags |= Internal::Flag_IsSocket;
 
     if (WSADuplicateSocket
             ((SOCKET) FD, GetCurrentProcessId (), &info) == SOCKET_ERROR)
@@ -212,15 +277,15 @@ void FDStream::SetFD (HANDLE FD, Pump::Watch * watch)
 
         if (error == WSAENOTSOCK || error == WSAEINVAL)
         { 
-            internal->IsSocket = false;
+            internal->Flags &= ~ Internal::Flag_IsSocket;
         }
     }
  
-    if (internal->IsSocket)
+    if (internal->Flags & Internal::Flag_IsSocket)
     {
         internal->Size = -1;
 
-        {   int b = internal->Nagle ? 0 : 1;
+        {   int b = (internal->Flags & Internal::Flag_Nagle) ? 0 : 1;
 
             setsockopt ((SOCKET) FD, SOL_SOCKET,
                             TCP_NODELAY, (char *) &b, sizeof (b));
@@ -233,8 +298,8 @@ void FDStream::SetFD (HANDLE FD, Pump::Watch * watch)
         if (!Compat::GetFileSizeEx () (internal->FD, &size))
             return;
 
-        internal->Size = size.QuadPart;
-
+        internal->Size = (size_t) size.QuadPart;
+        
         LacewingAssert (internal->Size != -1);
     }
 
@@ -252,7 +317,8 @@ void FDStream::SetFD (HANDLE FD, Pump::Watch * watch)
 
 bool FDStream::Valid ()
 {
-    return internal->FD != INVALID_HANDLE_VALUE;
+    return (! (internal->Flags & (Internal::Flag_Closed | Internal::Flag_Dead)))
+                && internal->FD != INVALID_HANDLE_VALUE;
 }
 
 /* Note that this always swallows all of the data (unlike on *nix where it
@@ -268,13 +334,15 @@ size_t FDStream::Put (const char * buffer, size_t size)
 
     /* TODO : Pre-allocate a bunch of these and reuse them? */
 
-    FDStreamOverlapped * overlapped
-        = new (std::nothrow) FDStreamOverlapped ();
+    Internal::Overlapped * overlapped
+        = new (std::nothrow) Internal::Overlapped;
 
     if (!overlapped)
         return size; 
 
-    overlapped->Type = FDStreamOverlapped::Type_Write;
+    memset (overlapped, 0, sizeof (*overlapped));
+
+    overlapped->Type = Internal::Overlapped::Type_Write;
 
     /* TODO : Assuming WriteFile is going to copy the buffer immediately.  I
      * don't know if that's guaranteed (but it seems to be the case).
@@ -297,40 +365,50 @@ size_t FDStream::Put (const char * buffer, size_t size)
         }
     }
 
+    ++ internal->PendingWrites;
+
     return size;
 }
 
-size_t FDStream::Put (Stream &stream, size_t size)
+size_t FDStream::Put (Stream &_stream, size_t size)
 {
-    if (size == -1)
-        size = stream.BytesLeft ();
+    FDStream * stream = (FDStream *) _stream.Cast (::FDStreamType);
 
-    if (stream.Type () != ::FDStreamType)
-        return -1; 
+    if (!stream)
+        return -1;
+
+    if (!stream->Valid ())
+        return -1;
+
+    if (size == -1)
+        size = stream->BytesLeft ();
 
     if (size >= (((size_t) 1024) * 1024 * 1024 * 2))
         return -1; 
 
     /* TransmitFile can only send from a file to a socket */
 
-    if (((FDStream *) &stream)->internal->IsSocket)
+    if (stream->internal->Flags & Internal::Flag_IsSocket)
         return -1;
 
-    if (!internal->IsSocket)
+    if (! (internal->Flags & Internal::Flag_IsSocket))
         return -1;
     
-    FDStreamOverlapped * overlapped
-        = new (std::nothrow) FDStreamOverlapped ();
+    Internal::TransmitFileOverlapped * overlapped
+        = new (std::nothrow) Internal::TransmitFileOverlapped;
 
     if (!overlapped)
         return -1;
 
-    overlapped->Type = FDStreamOverlapped::Type_TransmitFile;
+    memset (overlapped, 0, sizeof (*overlapped));
+
+    overlapped->_Overlapped.Type = Internal::Overlapped::Type_TransmitFile;
+    overlapped->Source = stream->internal;
 
     /* TODO : Can we make use of the head buffers somehow? */
 
     if (!TransmitFile
-            ((SOCKET) internal->FD, ((FDStream *) &stream)->internal->FD,
+            ((SOCKET) internal->FD, stream->internal->FD,
                 (DWORD) size, 0, (OVERLAPPED *) overlapped, 0, 0))
     {
         int error = WSAGetLastError ();
@@ -338,6 +416,9 @@ size_t FDStream::Put (Stream &stream, size_t size)
         if (error != WSA_IO_PENDING)
             return -1;
     }
+
+    ++ internal->PendingWrites;
+    ++ stream->internal->PendingWrites;
 
     return size;
 }
@@ -357,7 +438,7 @@ void FDStream::Read (size_t bytes)
 
 size_t FDStream::BytesLeft ()
 {
-    if (internal->FD == INVALID_HANDLE_VALUE)
+    if (! Valid ())
         return -1;
 
     if (internal->Size == -1)
@@ -370,24 +451,32 @@ size_t FDStream::BytesLeft ()
 
     SetFilePointerEx (internal->FD, zero, &offset, FILE_CURRENT);
     
-    return internal->Size - offset.QuadPart;
+    return internal->Size - ((size_t) offset.QuadPart);
 }
 
 void FDStream::Close ()
 {
-    if (internal->IsSocket)
-        closesocket ((SOCKET) internal->FD);
+    if (internal->Flags & (Internal::Flag_Closed | Internal::Flag_Dead))
+        return;
+
+    if (internal->PendingWrites > 0)
+    {
+        /* Leave the FD around while the remaining writes finish */
+    }
     else
-        CloseHandle (internal->FD);
+        internal->CloseFD ();
 
     Stream::Close ();
 }
 
 void FDStream::Nagle (bool enabled)
 {
-    internal->Nagle = enabled;
+    if (enabled)
+        internal->Flags |= Internal::Flag_Nagle;
+    else
+        internal->Flags &= ~ Internal::Flag_Nagle;
 
-    if (internal->FD != INVALID_HANDLE_VALUE)
+    if (Valid ())
     {
         int b = enabled ? 0 : 1;
 
