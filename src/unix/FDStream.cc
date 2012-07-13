@@ -31,9 +31,12 @@
 
 static void * FDStreamType = (void *) "FDStream";
 
-void * FDStream::Type ()
+void * FDStream::Cast (void * type)
 {
-    return FDStreamType;
+    if (type == FDStreamType)
+        return this;
+
+    return Stream::Cast (type);
 }
 
 struct FDStream::Internal
@@ -244,16 +247,17 @@ size_t FDStream::Put (const char * buffer, size_t size)
     return written;
 }
 
-size_t FDStream::Put (Stream &stream, size_t size)
+size_t FDStream::Put (Stream &_stream, size_t size)
 {
+    FDStream * stream = (FDStream *) _stream.Cast (::FDStreamType);
+
+    if (!stream)
+        return -1;
+
     if (size == -1)
-        size = stream.BytesLeft ();
+        size = stream->BytesLeft ();
 
-    if (stream.Type () != ::FDStreamType)
-        return -1; 
-
-    return LacewingSendFile
-        (((FDStream *) &stream)->internal->FD, internal->FD, size);
+    return LacewingSendFile (stream->internal->FD, internal->FD, size);
 }
 
 void FDStream::Read (size_t bytes)
