@@ -99,11 +99,6 @@ lw_bool lw_stream_is_transparent (lw_stream * stream)
     return ((Stream *) stream)->IsTransparent ();
 }
 
-void * lw_stream_type (lw_stream * stream)
-{
-    return ((Stream *) stream)->Type ();
-}
-
 void lw_stream_add_handler_data
         (lw_stream * stream, lw_stream_handler_data proc, void * tag)
 {
