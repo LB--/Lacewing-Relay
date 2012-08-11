@@ -152,6 +152,8 @@ void lw_sha1_hex (char * output, const char * input, size_t length)
     strcpy (output, hex);
 }
 
+#ifndef lwp_trace
+
 void lwp_trace (const char * format, ...)
 {
    va_list args;
@@ -189,5 +191,7 @@ void lwp_trace (const char * format, ...)
 
    va_end (args);
 }
+
+#endif
 
 
