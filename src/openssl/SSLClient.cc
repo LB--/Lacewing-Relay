@@ -77,9 +77,6 @@ SSLClient::~ SSLClient ()
 
 size_t SSLClient::Downstream::Put (const char * buffer, size_t size)
 {
-    fprintf (stderr, "From the network:");
-    lw_dump (buffer, size);
-
     int bytes = BIO_write (Client.ExternalBIO, buffer, size);
 
     Client.Pump ();
@@ -195,9 +192,6 @@ void SSLClient::Pump ()
 
             if (bytes > 0)
             {
-                fprintf (stderr, "To the network:");
-                lw_dump (buffer, bytes);
-
                 exit = false;
                 Upstream.Data (buffer, bytes);
 
@@ -225,8 +219,6 @@ void SSLClient::Pump ()
 
             if (bytes > 0)
             {
-                lw_dump (buffer, bytes);
-
                 exit = false;
                 Downstream.Data (buffer, bytes);
 

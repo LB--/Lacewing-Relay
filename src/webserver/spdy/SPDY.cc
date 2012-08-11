@@ -31,9 +31,6 @@
 
 static void spdy_emit (spdy_ctx * ctx, const char * buffer, size_t size)
 {
-    lwp_trace ("SPDY emit " lwp_fmt_size " bytes", size);
-    lw_dump (buffer, size);
-
     ((SPDYClient *) spdy_ctx_get_tag (ctx))->Socket.Write (buffer, size);
 }
 
@@ -111,9 +108,6 @@ SPDYClient::~SPDYClient ()
 
 size_t SPDYClient::Put (const char * buffer, size_t size)
 {
-    lwp_trace (lwp_fmt_size " bytes -> SPDY", size);
-    lw_dump (buffer, size);
-
     int res = spdy_data (spdy, buffer, &size);
 
     lwp_trace ("SPDY processed " lwp_fmt_size " bytes", size);

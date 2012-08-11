@@ -246,8 +246,13 @@ int HTTPClient::onHeaderField (char * buffer, size_t length)
 
 int HTTPClient::onHeaderValue (char * value, size_t length)
 {
-    return Request.In_Header
-        (CurHeaderNameLength, CurHeaderName, length, value) ? 0 : -1;
+    if (!Request.In_Header (CurHeaderNameLength, CurHeaderName, length, value))
+    {
+        lwp_trace ("HTTP: Bad header");
+        return -1;
+    }
+
+    return 0;
 }
 
 int HTTPClient::onHeadersComplete ()
@@ -257,7 +262,10 @@ int HTTPClient::onHeadersComplete ()
     const char * method = http_method_str ((http_method) Parser.method);
     
     if (!Request.In_Method (strlen (method), method))
+    {
+        lwp_trace ("HTTP: Bad method");
         return -1;
+    }
 
     const char * content_type = Request.Header ("Content-Type");
 
