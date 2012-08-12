@@ -35,7 +35,7 @@
 int spdy_proc_window_update (spdy_ctx * ctx, int8_t flags, spdy_buffer * buffer)
 {
    spdy_stream * stream;
-   int32_t status_code;
+   int32_t delta_window_size;
 
    if (buffer->size != 8)
       return SPDY_E_PROTOCOL;
@@ -47,11 +47,9 @@ int spdy_proc_window_update (spdy_ctx * ctx, int8_t flags, spdy_buffer * buffer)
       return spdy_soft_error (ctx);
    }
 
-   status_code = spdy_read_int32 (buffer);
+   delta_window_size = spdy_read_int31 (buffer);
 
-   ctx->config->on_stream_close (ctx, stream, status_code);
-
-   spdy_stream_delete (ctx, stream);
+   /* TODO */
 
    return SPDY_E_OK;
 }

@@ -69,20 +69,28 @@ bool File::Open (const char * filename, const char * mode)
     int flags = GetFlags (mode);
 
     if (flags == -1)
+    {
+        lwp_trace ("Error parsing mode");
         return false;
+    }
 
-    int FD = open (filename, flags);
+    int FD = open (filename, flags, S_IRWXU);
 
     if (FD == -1)
+    {
+        lwp_trace ("open() failed: %s", strerror (errno));
         return false;
+    }
 
-    SetFD (FD);
+    SetFD (FD, 0, true);
 
     if (Valid ())
     {
         strcpy (internal->Name, filename);
         return true;
     }
+
+    lwp_trace ("Valid() returned false");
 
     return false;
 }
@@ -137,7 +145,7 @@ int GetFlags (const char * mode)
 bool File::OpenTemp ()
 {
     char name [lwp_max_path];
-    char random [16];
+    char random [8];
     size_t i = 0;
 
     lw_temp_path (name);
@@ -145,7 +153,7 @@ bool File::OpenTemp ()
 
     while (i < sizeof (random))
     {
-        sprintf (name + strlen (name) - 1, "%02x", random [i]);
+        sprintf (name + strlen (name), "%02x", random [i]);
         ++ i;
     }
 

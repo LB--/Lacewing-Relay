@@ -118,7 +118,7 @@ void Client::Internal::WriteReady ()
         return;
     }
 
-    Public.SetFD (Socket, Watch);
+    Public.SetFD (Socket, Watch, true);
 
     Connecting = false;
 

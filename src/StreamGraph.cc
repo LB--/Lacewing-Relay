@@ -34,11 +34,22 @@
 StreamGraph::StreamGraph ()
 {
     LastExpand = 0;
+
+    UserCount = 0;
+    Dead = false;
 }
 
 StreamGraph::~ StreamGraph ()
 {
     ClearExpanded ();
+}
+
+void StreamGraph::Delete ()
+{
+    if (UserCount == 0)
+        delete this;
+    else
+        Dead = true;
 }
 
 static void Swallow (StreamGraph * graph, Stream::Internal * stream)
@@ -91,7 +102,7 @@ void StreamGraph::Swallow (StreamGraph * graph)
         ::Swallow (this, stream);
     }
 
-    delete graph;
+    graph->Delete ();
 }
 
 static void Expand (StreamGraph * graph, Stream::Internal * stream,
@@ -353,13 +364,13 @@ static void Read (StreamGraph * graph, int this_expand,
     /* Calling Push or Read may well run user code, or expire a link.  If this
      * causes the graph to re-expand, Read() will be called again and this one
      * must abort.
-     *
-     * TODO: What if this graph gets swallowed?
      */
 
-    if (this_expand != graph->LastExpand)
+    if (this_expand != graph->LastExpand || graph->Dead)
     {
-        lwp_trace ("LastExpand changed after Read; aborting");
+        lwp_trace ("LastExpand %d changed to %d after Read; aborting",
+                        this_expand, graph->LastExpand);
+
         return;
     }
 
@@ -370,24 +381,33 @@ static void Read (StreamGraph * graph, int this_expand,
 
         Read (graph, this_expand, link->ToExp, link->BytesLeft);
 
-        if (this_expand != graph->LastExpand)
+        if (this_expand != graph->LastExpand || graph->Dead)
             return;
     }
 }
 
 void StreamGraph::Read ()
 {
-    lwp_trace ("StreamGraph::Read");
+    ++ UserCount;
 
     int this_expand = LastExpand;
+
+    lwp_trace ("StreamGraph::Read with LastExpand %d", this_expand);
 
     for (List <Stream::Internal *>::Element * E
             = RootsExpanded.First; E; E = E->Next)
     {
         ::Read (this, this_expand, (** E), -1);
 
-        if (LastExpand != this_expand)
-            break;
+        if (LastExpand != this_expand || Dead)
+        {
+            lwp_trace ("Abort StreamGraph::Read with LastExpand %d", this_expand);
+
+            if ((-- UserCount) == 0 && Dead)
+                delete this;
+
+            return;
+        }
     }
 }
 

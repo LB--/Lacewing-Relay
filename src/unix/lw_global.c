@@ -94,18 +94,15 @@ void lw_temp_path (char * buffer)
    char * path = getenv ("TMPDIR");
 
    if (path)
-   {
       strcpy (buffer, path);
-      return;
-   }
-
-   if (P_tmpdir)
-   {
+   else if (P_tmpdir)
       strcpy (buffer, P_tmpdir);
-      return;
-   }
+   else
+      strcpy (buffer, "/tmp/");
 
-   strcpy (buffer, "/tmp/");
+   if (*buffer && buffer [strlen (buffer) - 1] != '/')
+      strcat (buffer, "/");
+
    return;
 }
 

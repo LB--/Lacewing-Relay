@@ -85,17 +85,16 @@ void Webserver::Request::Internal::Clean ()
 
     if (Cookies)
     {
-        Cookie * last_cookie;
+        Cookie * cookie, * tmp;
 
-        while ((last_cookie = (Cookie *) Cookies->hh.tbl->tail))
+        HASH_ITER (hh, Cookies, cookie, tmp)
         {
-            free (last_cookie->Name);
-            free (last_cookie->Value);
+            HASH_DEL (Cookies, cookie);
 
-            HASH_DEL (Cookies, last_cookie);
+            free (cookie->Name);
+            free (cookie->Value);
 
-            if (last_cookie == Cookies)
-                break;
+            free (cookie);
         }
     }
     
@@ -824,6 +823,80 @@ int Webserver::Request::IdleTimeout ()
 void Webserver::Request::IdleTimeout (int seconds)
 {
     internal->Client.Timeout = seconds;
+}
+
+const char * Webserver::Upload::Filename ()
+{
+    const char * filename = lw_nvhash_get
+        (&internal->Disposition, "filename", ""), * slash;
+
+    /* Old versions of IE send the absolute path */
+
+    if ((slash = strrchr (filename, '/')))
+        return slash + 1;
+
+    if ((slash = strrchr (filename, '\\')))
+        return slash + 1;
+
+    return filename;
+}
+
+const char * Webserver::Upload::FormElementName ()
+{
+    return lw_nvhash_get (&internal->Disposition, "name", "");
+}
+
+const char * Webserver::Upload::Header (const char * name)
+{
+    for (List <WebserverHeader>::Element * E
+            = internal->Headers.First; E; E = E->Next)
+    {
+        if (!strcasecmp ((** E).Name, name))
+            return (** E).Value;
+    }
+
+    return "";
+}
+
+struct Webserver::Upload::Header * Webserver::Upload::FirstHeader ()
+{
+    return (struct Webserver::Upload::Header *) internal->Headers.First;
+}
+
+const char * Webserver::Upload::Header::Name ()
+{
+    return (** (List <WebserverHeader>::Element *) this).Name;
+}
+
+const char * Webserver::Upload::Header::Value ()
+{
+    return (** (List <WebserverHeader>::Element *) this).Value;
+}
+
+struct Webserver::Upload::Header * Webserver::Upload::Header::Next ()
+{
+    return (struct Webserver::Upload::Header *)
+                ((List <WebserverHeader>::Element *) this)->Next;
+}
+
+void Webserver::Upload::SetAutoSave ()
+{
+    if (internal->AutoSaveFile)
+        return;
+
+    internal->AutoSaveFile = new File (internal->Request.Server.Pump);
+    internal->AutoSaveFile->OpenTemp ();
+
+    free (internal->AutoSaveFilename);
+    internal->AutoSaveFilename = strdup (internal->AutoSaveFile->Name ());
+}
+
+const char * Webserver::Upload::GetAutoSaveFilename ()
+{
+    if (!internal->AutoSaveFilename)
+        return "";
+
+    return internal->AutoSaveFilename;
 }
 
 

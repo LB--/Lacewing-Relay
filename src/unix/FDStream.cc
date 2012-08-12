@@ -93,13 +93,18 @@ struct FDStream::Internal
 
     int FD;
 
+    bool IsSocket;
+    bool AutoClose;
+
     Internal (Lacewing::Pump &_Pump, FDStream &_Public)
         : Pump (_Pump), Public (_Public)
     {
         Nagle = true;
 
         ReadingSize = 0;
+
         FD = -1;
+        AutoClose = false;
 
         Watch = 0;
 
@@ -218,7 +223,7 @@ FDStream::~ FDStream ()
     delete internal;
 }
 
-void FDStream::SetFD (int FD, Pump::Watch * watch)
+void FDStream::SetFD (int FD, Pump::Watch * watch, bool auto_close)
 {
     if (internal->Watch)
     {
@@ -226,7 +231,11 @@ void FDStream::SetFD (int FD, Pump::Watch * watch)
         internal->Watch = 0;
     }
 
+    if (internal->AutoClose && internal->FD != -1)
+        internal->Close ();
+
     internal->FD = FD;
+    internal->AutoClose = auto_close;
 
     if (FD == -1)
         return;
@@ -247,6 +256,8 @@ void FDStream::SetFD (int FD, Pump::Watch * watch)
 
     struct stat stat;
     fstat (FD, &stat);
+
+    internal->IsSocket = S_ISSOCK (stat.st_mode);
 
     if ((internal->Size = stat.st_size) > 0)
         return;
@@ -287,7 +298,10 @@ size_t FDStream::Put (const char * buffer, size_t size)
     #if HAVE_DECL_SO_NOSIGPIPE
         written = write (internal->FD, buffer, size);
     #else
-        written = send (internal->FD, buffer, size, MSG_NOSIGNAL);
+        if (internal->IsSocket)
+            written = send (internal->FD, buffer, size, MSG_NOSIGNAL);
+        else
+            written = write (internal->FD, buffer, size);
     #endif
 
     if (written == -1)
@@ -360,8 +374,11 @@ void FDStream::Internal::Close ()
             Watch = 0;
         }
 
-        shutdown (FD, SHUT_RDWR);
-        close (FD);
+        if (AutoClose)
+        {
+            shutdown (FD, SHUT_RDWR);
+            close (FD);
+        }
     }
 }
 

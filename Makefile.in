@@ -12,16 +12,17 @@ SO_EXT = @SO_EXT@
 SONAME_FLAGS = @SONAME_FLAGS@
 
 SO_NAME = @SO_NAME@
-REAL_NAME = liblacewing.@SO_EXT@.0.3.1
+REAL_NAME = liblacewing.@SO_EXT@.0.4.0
 
 OBJECTS = build/lw_global.o build/lw_nvhash.o build/Filter.o build/Address.o build/StreamGraph.o \
-    build/Stream.o build/Error.o build/Webserver.o build/HTTP.o build/Multipart.o build/http-parser.o \
-    build/MimeTypes.o build/Request.o build/Sessions.o build/Pipe.o \
+    build/Stream.o build/Error.o build/Webserver.o build/HTTP.o build/http-parser.o \
+    build/MimeTypes.o build/Request.o build/Sessions.o build/Pipe.o build/Multipart.o \
     build/addr_flat.o build/eventpump_flat.o build/server_flat.o build/timer_flat.o \
     build/webserver_flat.o build/filter_flat.o build/udp_flat.o build/client_flat.o \
     build/error_flat.o build/sync_flat.o build/thread_flat.o build/FlashPolicy.o \
     build/Pump.o build/flashpolicy_flat.o build/stream_flat.o build/fdstream_flat.o \
-    build/file_flat.o build/pipe_flat.o build/pump_flat.o build/lw_util.o @OBJECTS@
+    build/file_flat.o build/pipe_flat.o build/pump_flat.o build/lw_util.o \
+	build/multipart_parser.o @OBJECTS@
 
 COMMONDEPS = include/Lacewing.h src/lw_common.h src/HeapBuffer.h  src/Utility.h \
 			 src/webserver/Common.h src/webserver/http/HTTP.h src/Address.h \
@@ -67,14 +68,16 @@ build/Sessions.o: src/webserver/Sessions.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/Sessions.cc
 build/MimeTypes.o: src/webserver/MimeTypes.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/MimeTypes.cc
+build/Multipart.o: src/webserver/Multipart.cc $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/Multipart.cc
 build/HTTP.o: src/webserver/http/HTTP.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/http/HTTP.cc
 build/SPDY.o: src/webserver/spdy/SPDY.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/spdy/SPDY.cc
 build/http-parser.o: deps/http-parser/http_parser.c deps/http-parser/http_parser.h
 	$(CC) $(CFLAGS) -c -o $@ deps/http-parser/http_parser.c
-build/Multipart.o: src/webserver/http/Multipart.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/webserver/http/Multipart.cc
+build/multipart_parser.o: deps/multipart-parser/multipart_parser.c deps/multipart-parser/multipart_parser.h
+	$(CC) $(CFLAGS) -c -o $@ deps/multipart-parser/multipart_parser.c
 build/FlashPolicy.o: src/FlashPolicy.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/FlashPolicy.cc
 

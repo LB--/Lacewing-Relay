@@ -99,6 +99,7 @@ struct FDStream::Internal
     const static char Flag_IsSocket        = 8;
     const static char Flag_Dead            = 16; /* public destroyed? */
     const static char Flag_Closed          = 32; /* FD close pending on write? */
+    const static char Flag_AutoClose       = 64;
 
     char Flags;
 
@@ -213,10 +214,13 @@ struct FDStream::Internal
 
     void CloseFD ()
     {
-        if (Flags & Flag_IsSocket)
-            closesocket ((SOCKET) FD);
-        else
-            CloseHandle (FD);
+        if (Flags & Flag_AutoClose)
+        {
+            if (Flags & Flag_IsSocket)
+                closesocket ((SOCKET) FD);
+            else
+                CloseHandle (FD);
+        }
 
         FD = INVALID_HANDLE_VALUE;
     }
@@ -257,7 +261,7 @@ FDStream::~ FDStream ()
         delete internal;
 }
 
-void FDStream::SetFD (HANDLE FD, Pump::Watch * watch)
+void FDStream::SetFD (HANDLE FD, Pump::Watch * watch, bool auto_close)
 {
     if (internal->Watch)
         internal->Pump.Remove (internal->Watch);
@@ -270,6 +274,9 @@ void FDStream::SetFD (HANDLE FD, Pump::Watch * watch)
     WSAPROTOCOL_INFO info;
 
     internal->Flags |= Internal::Flag_IsSocket;
+    
+    if (auto_close)
+        internal->Flags |= Internal::Flag_AutoClose;
 
     if (WSADuplicateSocket
             ((SOCKET) FD, GetCurrentProcessId (), &info) == SOCKET_ERROR)
@@ -301,11 +308,7 @@ void FDStream::SetFD (HANDLE FD, Pump::Watch * watch)
 
         internal->Size = (size_t) size.QuadPart;
         
-<<<<<<< HEAD
-        LacewingAssert (internal->Size != -1);
-=======
         assert (internal->Size != -1);
->>>>>>> Major general source cleanup, SPDY support
     }
 
     if (watch)

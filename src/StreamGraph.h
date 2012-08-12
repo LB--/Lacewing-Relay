@@ -83,6 +83,11 @@ struct StreamGraph
 
     int LastExpand;
 
+    int UserCount;
+    bool Dead;
+    
+    void Delete ();
+
     /* Print the graph to lwp_trace */
 
     void Print ();

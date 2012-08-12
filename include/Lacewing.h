@@ -816,7 +816,8 @@ public:
     LacewingFunction FDStream (Lacewing::Pump &);
     LacewingFunction virtual ~ FDStream ();
 
-    LacewingFunction void SetFD (lw_fd, Pump::Watch * watch = 0);
+    LacewingFunction void SetFD
+        (lw_fd, Pump::Watch * watch = 0, bool auto_close = false);
 
     LacewingFunction bool Valid ();
 
@@ -1173,6 +1174,7 @@ struct Webserver
         {
             LacewingFunction const char * Name ();
             LacewingFunction const char * Value ();
+            LacewingFunction const char * ContentType ();
 
             LacewingFunction Parameter * Next ();
         };

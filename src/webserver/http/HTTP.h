@@ -43,6 +43,7 @@ class HTTPClient : public WebserverClient
     time_t LastActivityTime;
 
     http_parser Parser;
+
     bool ParsingHeaders, SignalEOF;
     
     char * CurHeaderName;
@@ -57,7 +58,8 @@ public:
 
     size_t Put (const char * buffer, size_t size);
 
-    /* Called by the HTTP parser */
+
+    /* HTTP parser callbacks */
 
     int onMessageBegin ();
     int onHeadersComplete ();
@@ -68,50 +70,9 @@ public:
     int onHeaderField (char *, size_t);
     int onHeaderValue (char *, size_t);
 
+
     void Respond (Webserver::Request::Internal &);
 
     void Tick ();
-
-    struct HTTPUpload : public Webserver::Upload::Internal
-    {
-        HTTPUpload (Webserver::Request::Internal &);
-
-        const char * Header (const char * Name);
-    };
-
-    /* TODO : rewrite the multipart stuff */
-
-    struct MultipartProcessor
-    {
-        enum { Error, Continue, Done } State;
-
-        HTTPClient &Client;
-
-        char Boundary         [256];
-        char FinalBoundary    [256];
-        char CRLFThenBoundary [256];
-
-        bool   InHeaders, InFile;
-        char * Header;
-        void   ProcessHeader();
-
-        MultipartProcessor * Child, * Parent;
-
-        MultipartProcessor (HTTPClient &, const char * ContentType);
-        ~ MultipartProcessor ();
-
-        size_t Process (char *, size_t);
-        void CallRequestHandler ();
-
-        void ProcessDispositionPair(char * Pair);
-        void ToFile(const char *, size_t);
-
-        List <WebserverHeader> Headers;
-        lw_nvhash * Disposition;
-
-        Array <Lacewing::Webserver::Upload *> Uploads;
-        HTTPUpload * CurrentUpload;
-
-    } * Multipart;
 };
 

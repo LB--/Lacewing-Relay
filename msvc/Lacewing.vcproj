@@ -1251,6 +1251,18 @@
 					</FileConfiguration>
 				</File>
 			</Filter>
+			<Filter
+				Name="multipart-parser"
+				>
+				<File
+					RelativePath="..\deps\multipart-parser\multipart_parser.c"
+					>
+				</File>
+				<File
+					RelativePath="..\deps\multipart-parser\multipart_parser.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="openssl"
@@ -1812,6 +1824,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\webserver\Multipart.cc"
+				>
+			</File>
+			<File
 				RelativePath="..\src\webserver\Request.cc"
 				>
 			</File>
@@ -1832,10 +1848,6 @@
 				</File>
 				<File
 					RelativePath="..\src\webserver\http\HTTP.h"
-					>
-				</File>
-				<File
-					RelativePath="..\src\webserver\http\Multipart.cc"
 					>
 				</File>
 			</Filter>

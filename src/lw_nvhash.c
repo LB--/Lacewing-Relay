@@ -36,7 +36,8 @@ void lw_nvhash_set (lw_nvhash ** hash, const char * key, const char * value,
 }
 
 void lw_nvhash_set_ex (lw_nvhash ** hash, size_t key_len, const char * key,
-                       size_t value_len, const char * value, lw_bool copy)
+                       size_t value_len, const char * value,
+                       lw_bool copy)
 {
    lw_nvhash * item;
 
@@ -78,7 +79,7 @@ void lw_nvhash_set_ex (lw_nvhash ** hash, size_t key_len, const char * key,
       item->value = (char *) value;
    }
 
-   HASH_ADD_KEYPTR (hh, *hash, key, key_len, item);
+   HASH_ADD_KEYPTR (hh, *hash, item->key, key_len, item);
 }
 
 const char * lw_nvhash_get (lw_nvhash ** hash, const char * key,
@@ -96,20 +97,26 @@ const char * lw_nvhash_get (lw_nvhash ** hash, const char * key,
 
 void lw_nvhash_clear (lw_nvhash ** hash)
 {
-   lw_nvhash * tail;
+   lw_nvhash * tail, * item, * tmp;
 
-   if (!*hash)
-      return;
-
-   while ((tail = (lw_nvhash *) (*hash)->hh.tbl->tail))
+   HASH_ITER (hh, *hash, item, tmp)
    {
-      free (tail->key);
-      free (tail->value);
+      HASH_DEL (*hash, item);
+
+      free (item->key);
+      free (item->value);
+
+      free (item);
+   }
+
+   while (*hash)
+   {
+      tail = (lw_nvhash *) (*hash)->hh.tbl->tail;
 
       HASH_DEL (*hash, tail);
 
-      if (tail == *hash)
-         break;
+      free (tail->key);
+      free (tail->value);
    }
 }
 

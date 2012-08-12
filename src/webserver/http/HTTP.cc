@@ -59,7 +59,6 @@ static http_parser_settings ParserSettings = { 0 };
 HTTPClient::HTTPClient (Webserver::Internal &_Server, Server::Client &_Socket, bool Secure)
     : Request (_Server, *this), WebserverClient (_Server, _Socket, Secure)
 {
-    Multipart = 0;
     Request.Clean ();
 
     http_parser_init (&Parser, HTTP_REQUEST);
@@ -87,8 +86,12 @@ HTTPClient::~HTTPClient ()
     delete Multipart;
 }
 
-size_t HTTPClient::Put (const char * buffer, size_t size)
+size_t HTTPClient::Put (const char * buffer, size_t buffer_size)
 {
+    size_t size = buffer_size;
+
+    lwp_trace ("HTTP got " lwp_fmt_size " bytes", size);
+
     if (!size)
         return 0;
 
@@ -113,7 +116,7 @@ size_t HTTPClient::Put (const char * buffer, size_t size)
            can't be processed.  Buffer it to process when Finish() is called. */
 
         Request.Buffer.Add (buffer, size);
-        return size;
+        return buffer_size;
     }
 
     if (ParsingHeaders)
@@ -167,8 +170,11 @@ size_t HTTPClient::Put (const char * buffer, size_t size)
                 lwp_trace ("HTTP error %d, closing socket...", error);
 
                 Socket.Close ();
-                return size;
+                return buffer_size;
             }
+
+            if (!ParsingHeaders)
+                break;
 
             i = 0;
         }
@@ -178,7 +184,7 @@ size_t HTTPClient::Put (const char * buffer, size_t size)
             /* TODO : max line length */
 
             Request.Buffer.Add (buffer, size);
-            return size;
+            return buffer_size;
         }
     }
 
@@ -193,10 +199,10 @@ size_t HTTPClient::Put (const char * buffer, size_t size)
     if (parsed != size || Parser.upgrade)
     {
         Socket.Close ();
-        return size;
+        return buffer_size;
     }
 
-    return size;
+    return buffer_size;
 }
 
 int HTTPClient::onMessageBegin ()
@@ -269,10 +275,14 @@ int HTTPClient::onHeadersComplete ()
 
     const char * content_type = Request.Header ("Content-Type");
 
+    lwp_trace ("Content-Type is %s", content_type);
+
     if (lwp_begins_with (content_type, "multipart"))
     {
+        lwp_trace ("Creating Multipart...");
+
         if (! (Multipart = new (std::nothrow)
-                    MultipartProcessor (*this, content_type)))
+                    struct Multipart (Server, Request, content_type)))
         {
             return -1;
         }
@@ -293,20 +303,18 @@ int HTTPClient::onBody (char * buffer, size_t size)
 
     /* Multipart request body - hand it over to Multipart */
 
-    Multipart->Process (buffer, size);
- 
-    if (Multipart->State == MultipartProcessor::Error)
+    if (Multipart->Process (buffer, size) != size)
     {
+        lwp_trace ("Error w/ multipart form data");
+
         delete Multipart;
         Multipart = 0;
 
         return -1;
     }
 
-    if (Multipart->State == MultipartProcessor::Done)
+    if (Multipart->Done)
     {
-        Multipart->CallRequestHandler ();
- 
         delete Multipart;
         Multipart = 0;
 
@@ -397,5 +405,4 @@ bool HTTPRequest::IsTransparent ()
 {
     return true;
 }
-
 

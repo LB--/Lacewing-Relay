@@ -32,10 +32,12 @@
 WebserverClient::WebserverClient (Webserver::Internal &_Server, Server::Client &_Socket, bool _Secure)
     : Server (_Server), Socket (_Socket), Secure (_Secure), Timeout (_Server.Timeout)
 {
+    Multipart = 0;
 }
 
 WebserverClient::~ WebserverClient ()
 {
+    delete Multipart;
 }
 
 void Webserver::Internal::SocketConnect (Server &server, Server::Client &client_socket)
@@ -90,6 +92,8 @@ void Webserver::Internal::SocketDisconnect (Server &Server, Server::Client &Clie
 
 void Webserver::Internal::SocketError (Server &Server, Error &Error)
 {
+    lwp_trace ("Webserver: Socket error: %s", Error.ToString ());
+
     Error.Add("Socket error");
 
     Webserver::Internal &Webserver = *(Webserver::Internal *) Server.Tag;
@@ -269,59 +273,6 @@ void Webserver::IdleTimeout (int Seconds)
 int Webserver::IdleTimeout ()
 {
     return internal->Timeout;
-}
-
-const char * Webserver::Upload::Filename ()
-{
-    return internal->Filename;
-}
-
-const char * Webserver::Upload::FormElementName ()
-{
-    return internal->FormElement;
-}
-
-const char * Webserver::Upload::Header (const char * Name)
-{
-    return internal->Header (Name);
-}
-
-struct Webserver::Upload::Header * Webserver::Upload::FirstHeader ()
-{
-    return (struct Webserver::Upload::Header *) internal->Headers.First;
-}
-
-const char * Webserver::Upload::Header::Name ()
-{
-    return (** (List <WebserverHeader>::Element *) this).Name;
-}
-
-const char * Webserver::Upload::Header::Value ()
-{
-    return (** (List <WebserverHeader>::Element *) this).Value;
-}
-
-struct Webserver::Upload::Header * Webserver::Upload::Header::Next ()
-{
-    return (struct Webserver::Upload::Header *)
-                ((List <WebserverHeader>::Element *) this)->Next;
-}
-
-void Webserver::Upload::SetAutoSave ()
-{
-    if (internal->AutoSaveFile)
-        return;
-
-    internal->AutoSaveFile = new File (internal->Request.Server.Pump);
-    internal->AutoSaveFile->OpenTemp ();
-}
-
-const char * Webserver::Upload::GetAutoSaveFilename ()
-{
-    if (!internal->AutoSaveFile)
-        return "";
-
-    return internal->AutoSaveFile->Name ();
 }
 
 AutoHandlerFunctions (Webserver, Get)

@@ -29,8 +29,9 @@
 
 #include "../lw_common.h"
 #include "../HeapBuffer.h"
+#include "../../deps/multipart-parser/multipart_parser.h"
 
-class HTTPClient;
+class WebserverClient;
 
 struct WebserverHeader
 {
@@ -38,34 +39,91 @@ struct WebserverHeader
     WebserverHeader * Next;
 };
 
-struct Webserver::Upload::Internal
+struct Webserver::Upload::Internal : public Webserver::Upload
 {
-    Lacewing::Webserver::Upload Upload;
-
     Webserver::Request::Internal &Request;
 
-    char * FormElement;
-    char * Filename;
+    lw_nvhash * Disposition;
     
     File * AutoSaveFile;
+    char * AutoSaveFilename;
 
     List <WebserverHeader> Headers;
 
     inline Internal (Webserver::Request::Internal &_Request)
         : Request (_Request)
     {
-        Upload.internal = this;
-        Upload.Tag = 0;
+        internal = this;
+        Tag = 0;
 
         AutoSaveFile = 0;
+        AutoSaveFilename = 0;
     }
 
     virtual inline ~ Internal ()
     {
         lwp_trace("Free upload!");
-    }
 
-    virtual const char * Header (const char * Name) = 0;
+        lw_nvhash_clear (&Disposition);
+
+        while (Headers.Last)
+        {
+            WebserverHeader &header = (** Headers.Last);
+
+            free (header.Name);
+            free (header.Value);
+
+            Headers.Pop ();
+        }
+
+        delete AutoSaveFile;
+
+        free (AutoSaveFilename);
+    }
+};
+
+struct Multipart
+{
+    Webserver::Internal &Server;
+    Webserver::Request::Internal &Request;
+
+    Multipart * Parent, * Child;
+
+    multipart_parser * Parser;
+
+    Multipart (Webserver::Internal &, Webserver::Request::Internal &,
+               const char * content_type);
+
+    ~ Multipart ();
+
+    size_t Process (const char * buffer, size_t size);
+    bool Done;
+
+    lw_nvhash * Disposition;
+
+    /* Multipart parser callbacks */
+
+    int onHeaderField (const char * at, size_t length);
+    int onHeaderValue (const char * at, size_t length);
+    int onPartData (const char * at, size_t length);
+    int onPartDataBegin ();
+    int onHeadersComplete ();
+    int onPartDataEnd ();
+    int onBodyEnd ();
+
+protected:
+
+    bool ParsingHeaders;
+
+    const char * CurHeaderName;
+    size_t CurHeaderNameLength;
+    
+    List <WebserverHeader> Headers;
+
+    Webserver::Upload::Internal * CurUpload;
+    Array <Webserver::Upload *> Uploads;
+
+    bool ParseDisposition (size_t length, const char * disposition);
 };
 
 struct Webserver::Internal
@@ -274,6 +332,8 @@ public:
     virtual void Tick () = 0;
 
     virtual void Respond (Webserver::Request::Internal &Request) = 0;
+
+    struct Multipart * Multipart;
 };
 
 #include "http/HTTP.h"

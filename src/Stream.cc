@@ -113,7 +113,7 @@ Stream::~ Stream ()
     /* Is the graph empty now? */
 
     if (internal->Graph->Roots.Size == 0)
-        delete internal->Graph;
+        internal->Graph->Delete ();
     else
         internal->Graph->Expand ();
 
@@ -196,6 +196,8 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
     {
         if (! (flags & Write_IgnoreBusy))
         {
+            lwp_trace ("Busy: Adding to back queue");
+
             if (flags & Write_Partial)
                 return 0;
 
@@ -203,8 +205,8 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
              * Queue the data to write when we're not busy.
              */
 
-            if (!BackQueue.Size)
-                BackQueue.Push ();
+            if ( (!BackQueue.Size) || (** BackQueue.Last).Type != Queued::Type_Data)
+                (** BackQueue.Push ()).Type = Queued::Type_Data;
 
             (** BackQueue.Last).Buffer.Add (buffer, size);
 
@@ -215,8 +217,14 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
 
         if ((! (flags & Write_IgnoreQueue)) && (Queueing || FrontQueue.Size))
         {
+            lwp_trace ("%p : Adding to front queue (Queueing = %d, FrontQueue.Size = %d)",
+                                this, (int) Queueing, FrontQueue.Size);
+
             if (flags & Write_Partial)
                 return 0;
+
+            if ( (!FrontQueue.Size) || (** FrontQueue.Last).Type != Queued::Type_Data)
+                (** FrontQueue.Push ()).Type = Queued::Type_Data;
 
             (** FrontQueue.Last).Buffer.Add (buffer, size);
 
@@ -241,8 +249,8 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
 
         if (written < size)
         {
-            if (!FrontQueue.Size)
-                FrontQueue.Push ();
+            if ( (!FrontQueue.Size) || (** FrontQueue.Last).Type != Queued::Type_Data)
+                (** FrontQueue.Push ()).Type = Queued::Type_Data;
 
             (** FrontQueue.Last).Buffer.Add
                     (buffer + written, size - written);
@@ -253,11 +261,14 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
 
     if ( (! (flags & Write_IgnoreQueue)) && (Queueing || BackQueue.Size))
     {
+        lwp_trace ("%p : Adding to back queue (Queueing = %d, FrontQueue.Size = %d)",
+                this, (int) Queueing, FrontQueue.Size);
+
         if (flags & Write_Partial)
             return 0;
 
-        if (!BackQueue.Size)
-            BackQueue.Push ();
+        if ( (!BackQueue.Size) || (** BackQueue.Last).Type != Queued::Type_Data)
+            (** BackQueue.Push ()).Type = Queued::Type_Data;
 
         (** BackQueue.Last).Buffer.Add (buffer, size);
 
@@ -280,8 +291,8 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
 
     if (written < size)
     {
-        if (!BackQueue.Size)
-            BackQueue.Push ();
+        if ( (!BackQueue.Size) || (** BackQueue.Last).Type != Queued::Type_Data)
+            (** BackQueue.Push ()).Type = Queued::Type_Data;
 
         if (flags & Write_IgnoreQueue)
         {
@@ -293,8 +304,10 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
             {
                 /* TODO : rewind offset where possible instead of creating a new Queued? */
 
-                (** BackQueue.PushFront ()).Buffer.Add
-                    (buffer + written, size - written);
+                Queued &queued = (** BackQueue.PushFront ());
+                
+                queued.Type = Queued::Type_Data;
+                queued.Buffer.Add (buffer + written, size - written);
             }
         }
         else
@@ -324,6 +337,8 @@ void Stream::Internal::Write (Stream::Internal * stream, size_t size, int flags)
          || ( (! (flags & Write_IgnoreBusy)) && Prev.Size))
     {
         Queued &queued = ** BackQueue.Push ();
+
+        queued.Type = Queued::Type_Stream;
 
         queued.StreamPtr = stream;
         queued.StreamBytesLeft = size;
@@ -669,7 +684,7 @@ void Stream::Internal::WriteQueued (List <Queued> &queue)
     {
         Queued &queued = ** queue.First;
 
-        if (queued.Flags & Queued::Flag_BeginQueue)
+        if (queued.Type == Queued::Type_BeginMarker)
         {
             queue.PopFront ();
             Queueing = true;
@@ -677,40 +692,44 @@ void Stream::Internal::WriteQueued (List <Queued> &queue)
             return;
         }
 
-        if ((queued.Buffer.Size - queued.Buffer.Offset) > 0)
+        if (queued.Type == Queued::Type_Data)
         {
-            /* There's still something in the buffer that needs to be written */
+            if ((queued.Buffer.Size - queued.Buffer.Offset) > 0)
+            {
+                /* There's still something in the buffer that needs to be written */
 
-            int written = Write (queued.Buffer.Buffer + queued.Buffer.Offset,
-                                      queued.Buffer.Size - queued.Buffer.Offset,
-                                            Write_IgnoreQueue | Write_Partial |
-                                                  Write_IgnoreBusy);
+                int written = Write (queued.Buffer.Buffer + queued.Buffer.Offset,
+                                          queued.Buffer.Size - queued.Buffer.Offset,
+                                                Write_IgnoreQueue | Write_Partial |
+                                                      Write_IgnoreBusy);
 
-            if ((queued.Buffer.Offset += written) < queued.Buffer.Size)
-                break; /* couldn't write everything */
+                if ((queued.Buffer.Offset += written) < queued.Buffer.Size)
+                    break; /* couldn't write everything */
 
-            queued.Buffer.Reset ();
-        }
+                queued.Buffer.Reset ();
+            }
 
-        if (!queued.StreamPtr)
-        {
             queue.PopFront ();
+
             continue;
         }
-        
-        /* There's a Stream to write now */
 
-        Stream::Internal * stream = queued.StreamPtr;
-        size_t bytes = queued.StreamBytesLeft;
+        if (queued.Type == Queued::Type_Stream)
+        {
+            Stream::Internal * stream = queued.StreamPtr;
+            size_t bytes = queued.StreamBytesLeft;
 
-        int flags = Write_IgnoreQueue;
+            int flags = Write_IgnoreQueue;
 
-        if (queued.Flags & Queued::Flag_DeleteStream)
-            flags |= Write_DeleteStream;
+            if (queued.Flags & Queued::Flag_DeleteStream)
+                flags |= Write_DeleteStream;
 
-        queue.PopFront ();
+            queue.PopFront ();
 
-        Write (stream, bytes, flags);
+            Write (stream, bytes, flags);
+
+            continue;
+        }
     }
 }
 
@@ -899,16 +918,11 @@ void Stream::BeginQueue ()
     {
         /* Although we're going to start queueing any new data, whatever is
          * currently in the queue still needs to be written.  A Queued with
-         * this flag set indicates where the stream should stop writing and
-         * set Queueing to true.
+         * the BeginMarker type indicates where the stream should stop writing
+         * and set Queueing to true.
          */
 
-        internal->BackQueue.Push ();
-
-        (** internal->BackQueue.Last).Flags |=
-                    Internal::Queued::Flag_BeginQueue;
-
-        internal->BackQueue.Push ();
+        (** internal->BackQueue.Push ()).Type = Internal::Queued::Type_BeginMarker;
     }
     else
     {
@@ -925,25 +939,34 @@ size_t Stream::Queued ()
     {
         Internal::Queued &queued = ** E;
 
-        size += queued.Buffer.Size - queued.Buffer.Offset;
-
-        Stream::Internal * stream = queued.StreamPtr;
-
-        if (!stream)
-            continue;
-
-        if (queued.StreamBytesLeft != -1)
+        if (queued.Type == Internal::Queued::Type_Data)
         {
-            size += (** E).StreamBytesLeft;
+            size += queued.Buffer.Size - queued.Buffer.Offset;
             continue;
         }
 
-        size_t bytes = stream->Public->BytesLeft ();
+        if (queued.Type == Internal::Queued::Type_Stream)
+        {
+            Stream::Internal * stream = queued.StreamPtr;
 
-        if (bytes == -1)
-            return -1;
+            if (!stream)
+                continue;
 
-        size += bytes;
+            if (queued.StreamBytesLeft != -1)
+            {
+                size += (** E).StreamBytesLeft;
+                continue;
+            }
+
+            size_t bytes = stream->Public->BytesLeft ();
+
+            if (bytes == -1)
+                return -1;
+
+            size += bytes;
+            
+            continue;
+        }
     }
 
     return size;

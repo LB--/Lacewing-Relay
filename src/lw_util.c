@@ -101,15 +101,13 @@ lw_bool lwp_urldecode (const char * in, size_t in_length,
 
 lw_bool lwp_begins_with (const char * string, const char * substring)
 {
-   size_t string_length, substring_length;
+   while (*substring)
+   {
+      if (*string ++ != *substring ++)
+         return lw_false;
+   }
 
-   string_length = strlen (string);
-   substring_length = strlen (substring);
-
-   if (substring_length > string_length)
-      return lw_false;
-
-   return !strcasecmp ((string + string_length) - substring_length, substring);
+   return lw_true;
 }
 
 void lwp_copy_string (char * dest, const char * source, size_t size)

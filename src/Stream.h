@@ -120,10 +120,12 @@ struct Stream::Internal
 
     struct Queued
     {
-        /* For each Queued in the queue, the contents of Buffer will be written
-         * first, and then the Stream.
-         */
+        char Type;
          
+        const static char Type_Data = 1;
+        const static char Type_Stream = 2;
+        const static char Type_BeginMarker = 3;
+
         HeapBuffer Buffer;
 
         Stream::Internal * StreamPtr;
@@ -136,9 +138,7 @@ struct Stream::Internal
         }
 
         char Flags;
-
-        const static int Flag_BeginQueue = 1;
-        const static int Flag_DeleteStream = 2;
+        const static int Flag_DeleteStream = 1;
     };
 
     List <Queued> FrontQueue; /* to be written before current source stream */
