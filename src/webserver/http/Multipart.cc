@@ -178,14 +178,14 @@ size_t HTTPClient::MultipartProcessor::Process(char * Data, size_t Size)
 
                 buffer.Add <char> (0);
 
-                lw_nvhash_set (Client.Request.PostItems,
-                               lw_nvhash_get (Disposition, "name", ""),
+                lw_nvhash_set (&Client.Request.PostItems,
+                               lw_nvhash_get (&Disposition, "name", ""),
                                buffer.Buffer, lw_true);
 
                 buffer.Reset();
             }
 
-            lw_nvhash_clear (Disposition);
+            lw_nvhash_clear (&Disposition);
 
             if(lwp_begins_with(Data + i + 2, this->FinalBoundary))
             {
@@ -218,7 +218,7 @@ void HTTPClient::MultipartProcessor::ProcessHeader()
          * handlers, and is assigned an Upload structure.
          */
         
-        const char * filename = lw_nvhash_get (Disposition, "filename", 0);
+        const char * filename = lw_nvhash_get (&Disposition, "filename", 0);
 
         if (filename)
         {
@@ -232,7 +232,7 @@ void HTTPClient::MultipartProcessor::ProcessHeader()
 
             CurrentUpload->FormElement
                 = strdup (lw_nvhash_get (Parent ?
-                            Parent->Disposition : Disposition, "name", ""));
+                            &Parent->Disposition : &Disposition, "name", ""));
         
             if(Client.Server.Handlers.UploadStart)
             {
@@ -279,7 +279,7 @@ void HTTPClient::MultipartProcessor::ProcessHeader()
 
         *(i ++) = 0;
         
-        lw_nvhash_set (Disposition, "Type", Header, lw_true);
+        lw_nvhash_set (&Disposition, "Type", Header, lw_true);
 
         char * Begin = i;
 
@@ -352,7 +352,7 @@ void HTTPClient::MultipartProcessor::ProcessDispositionPair(char * Pair)
         ++ Pair;
     }
     
-    lw_nvhash_set (Disposition, Name, Pair, lw_true);
+    lw_nvhash_set (&Disposition, Name, Pair, lw_true);
 }
 
 void HTTPClient::MultipartProcessor::ToFile(const char * Data, size_t Size)

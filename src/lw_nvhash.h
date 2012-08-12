@@ -36,13 +36,13 @@ typedef struct _lw_nvhash
 
 } lw_nvhash;
 
-void lw_nvhash_set (lw_nvhash *, const char * key, const char * value,
+void lw_nvhash_set (lw_nvhash **, const char * key, const char * value,
                     lw_bool copy);
 
-void lw_nvhash_set_ex (lw_nvhash *, size_t key_len, const char * key,
+void lw_nvhash_set_ex (lw_nvhash **, size_t key_len, const char * key,
                        size_t value_len, const char * value, lw_bool copy);
 
-const char * lw_nvhash_get (lw_nvhash *, const char * key, const char * def);
+const char * lw_nvhash_get (lw_nvhash **, const char * key, const char * def);
 
-void lw_nvhash_clear (lw_nvhash *);
+void lw_nvhash_clear (lw_nvhash **);
 

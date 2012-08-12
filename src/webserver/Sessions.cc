@@ -61,7 +61,7 @@ void Webserver::Request::Session (const char * key, const char * value)
                 session_id_hex, sizeof (session_id_hex), session);
     }
 
-    lw_nvhash_set (session->data, key, value, lw_true);
+    lw_nvhash_set (&session->data, key, value, lw_true);
 }
 
 const char * Webserver::Request::Session (const char * key)
@@ -77,7 +77,7 @@ const char * Webserver::Request::Session (const char * key)
     if (!session)
         return "";
 
-    return lw_nvhash_get (session->data, key, "");
+    return lw_nvhash_get (&session->data, key, "");
 }
 
 void Webserver::CloseSession (const char * id)
@@ -88,7 +88,7 @@ void Webserver::CloseSession (const char * id)
     if (!session)
         return;
 
-    lw_nvhash_clear (session->data);
+    lw_nvhash_clear (&session->data);
     HASH_DEL (internal->Sessions, session);
 }
 

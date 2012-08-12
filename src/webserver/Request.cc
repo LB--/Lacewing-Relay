@@ -99,8 +99,8 @@ void Webserver::Request::Internal::Clean ()
         }
     }
     
-    lw_nvhash_clear (GetItems);
-    lw_nvhash_clear (PostItems);
+    lw_nvhash_clear (&GetItems);
+    lw_nvhash_clear (&PostItems);
 
     Cookies    = 0;
     GetItems   = 0;
@@ -467,7 +467,7 @@ bool Webserver::Request::Internal::In_URL (size_t length, const char * URL)
                 else
                 {
                     lw_nvhash_set
-                        (GetItems, name_decoded, value_decoded, lw_false);
+                        (&GetItems, name_decoded, value_decoded, lw_false);
                 }
 
                 if(!(get_data = next))
@@ -700,7 +700,7 @@ const char * Webserver::Request::Body ()
 
 const char * Webserver::Request::GET (const char * name)
 {
-    return lw_nvhash_get (internal->GetItems, name, "");
+    return lw_nvhash_get (&internal->GetItems, name, "");
 }
 
 void Webserver::Request::Internal::ParsePostData ()
@@ -744,11 +744,13 @@ void Webserver::Request::Internal::ParsePostData ()
         }
         else
         {
-            lw_nvhash_set (PostItems, name_decoded, value_decoded, false);
+            lw_nvhash_set (&PostItems, name_decoded, value_decoded, lw_true);
         }
 
-        if(!(post_data = next))
+        if (!next)
             break;
+
+        post_data = next + 1;
     }
 
     *end = b;
@@ -758,7 +760,7 @@ const char * Webserver::Request::POST (const char * name)
 {
     internal->ParsePostData ();
 
-    return lw_nvhash_get (internal->PostItems, name, "");
+    return lw_nvhash_get (&internal->PostItems, name, "");
 }
 
 Webserver::Request::Parameter * Webserver::Request::GET ()
