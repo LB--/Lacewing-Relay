@@ -137,10 +137,13 @@ struct Server::Client::Internal
             Server.Clients.Erase (Element);
         }
 
-        if (SSL->Pumping)
-            SSL->Dead = true;
-        else
-            delete SSL;
+        if (SSL)
+        {
+            if (SSL->Pumping)
+                SSL->Dead = true;
+            else
+                delete SSL;
+        }
     }
 
     int UserCount;
