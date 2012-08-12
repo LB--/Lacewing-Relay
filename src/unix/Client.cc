@@ -165,7 +165,8 @@ void Client::Connect (Address &Address)
     delete internal->Address;
     internal->Address = new Lacewing::Address (Address);
 
-    if ((internal->Socket = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
+    if ((internal->Socket = socket (Address.IPv6 () ? AF_INET6 : AF_INET,
+                                        SOCK_STREAM, IPPROTO_TCP)) == -1)
     {
         Lacewing::Error Error;
        

@@ -165,7 +165,7 @@ void Client::Connect (Address &Address)
     }
 
     if ((internal->Socket = (HANDLE) WSASocket
-            (AF_INET6, SOCK_STREAM, IPPROTO_TCP,
+            (Address.IPv6 () ? AF_INET6 : AF_INET, SOCK_STREAM, IPPROTO_TCP,
                     0, 0, WSA_FLAG_OVERLAPPED)) == INVALID_HANDLE_VALUE)
     {
         Lacewing::Error Error;
