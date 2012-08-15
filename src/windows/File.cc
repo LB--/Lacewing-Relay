@@ -120,7 +120,7 @@ bool File::Open (const char * filename, const char * mode)
     if (FD == INVALID_HANDLE_VALUE)
         return false;
 
-    SetFD (FD);
+    SetFD (FD, 0, true);
 
     if (Valid ())
     {
@@ -139,6 +139,7 @@ bool File::OpenTemp ()
 
     lw_temp_path (name);
     lw_random (random, sizeof (random));
+
 
     while (i < sizeof (random))
     {
