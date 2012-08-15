@@ -142,7 +142,7 @@ bool File::OpenTemp ()
 
     while (i < sizeof (random))
     {
-        sprintf (name + strlen (name) - 1, "%02x", random [i]);
+        sprintf (name + strlen (name), "%02x", random [i]);
         ++ i;
     }
 
