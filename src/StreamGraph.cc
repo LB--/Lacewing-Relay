@@ -92,6 +92,8 @@ void StreamGraph::Swallow (StreamGraph * graph)
 {
     assert (graph != this);
 
+    graph->ClearExpanded ();
+
     for (List <Stream::Internal *>::Element * E
                 = graph->Roots.First; E; E = E->Next)
     {
@@ -210,6 +212,9 @@ static void Expand (StreamGraph * graph, Stream::Internal * last,
         expanded_first->PrevExpanded.Push (link);
 
         link->FromExp = last;
+
+        assert (!last->NextExpanded.Find (link));
+
         last->NextExpanded.Push (link);
     }
     else
@@ -218,9 +223,12 @@ static void Expand (StreamGraph * graph, Stream::Internal * last,
     }
 
     last = expanded_last;
+    last_link = link;
 
-    for (List <StreamGraph::Link *>::Element * E = stream->Next.First;
-            E; E = E->Next)
+    assert (!stream->NextExpanded.Size);
+
+    for (List <StreamGraph::Link *>::Element * E
+                = stream->Next.First; E; E = E->Next)
     {
         StreamGraph::Link * link = (** E);
 
@@ -354,6 +362,10 @@ static void Read (StreamGraph * graph, int this_expand,
         {
             wrote_direct = true;
             break;
+        }
+        else
+        {
+            next->PrevDirect = 0;
         }
 
     } while (0);

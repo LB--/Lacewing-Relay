@@ -215,7 +215,7 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
 
         /* Something is behind us and gave us this data. */
 
-        if ((! (flags & Write_IgnoreQueue)) && (Queueing || FrontQueue.Size))
+        if ((! (flags & Write_IgnoreQueue)) && FrontQueue.Size)
         {
             lwp_trace ("%p : Adding to front queue (Queueing = %d, FrontQueue.Size = %d)",
                                 this, (int) Queueing, FrontQueue.Size);
@@ -473,14 +473,16 @@ void Stream::Internal::Data (const char * buffer, size_t size)
      */
 
     if (Public)
+    {
         Push (buffer, size);
 
-    /* Pushing data may result in stream destruction */
+        /* Pushing data may result in stream destruction */
 
-    if ((-- UserCount) == 0 && !Public)
-    {
-        delete this;
-        return;
+        if ((-- UserCount) == 0 && !Public)
+        {
+            delete this;
+            return;
+        }
     }
 }
 
@@ -914,7 +916,7 @@ void Stream::Close ()
 
 void Stream::BeginQueue ()
 {
-    if (internal->BackQueue.Size)
+    if (internal->BackQueue.Size || internal->FrontQueue.Size)
     {
         /* Although we're going to start queueing any new data, whatever is
          * currently in the queue still needs to be written.  A Queued with

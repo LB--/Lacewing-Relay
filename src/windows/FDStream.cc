@@ -50,6 +50,8 @@ struct FDStream::Internal
         const static char Type_Read          = 1;
         const static char Type_Write         = 2;
         const static char Type_TransmitFile  = 3;
+
+        char Data [1];
     };
 
     struct TransmitFileOverlapped
@@ -176,7 +178,7 @@ struct FDStream::Internal
 
             case Overlapped::Type_Write:
                 
-                delete overlapped;
+                free (overlapped);
 
                 if (internal->WriteCompleted ())
                 {
@@ -342,25 +344,25 @@ size_t FDStream::Put (const char * buffer, size_t size)
 
     /* TODO : Pre-allocate a bunch of these and reuse them? */
 
-    Internal::Overlapped * overlapped
-        = new (std::nothrow) Internal::Overlapped;
+    Internal::Overlapped * overlapped =
+        (Internal::Overlapped *) malloc (sizeof (Internal::Overlapped) + size);
 
     if (!overlapped)
         return size; 
 
-    memset (overlapped, 0, sizeof (*overlapped));
+    memset (overlapped, 0, sizeof (Internal::Overlapped));
 
     overlapped->Type = Internal::Overlapped::Type_Write;
 
-    /* TODO : Assuming WriteFile is going to copy the buffer immediately.  I
-     * don't know if that's guaranteed (but it seems to be the case).
-     */
+    /* TODO : Find a way to avoid copying the data. */
+
+    memcpy (overlapped->Data, buffer, size);
 
     /* TODO : Use WSASend if IsSocket == true?  (for better error messages.)
      * Same goes for ReadFile and WSARecv.
      */
 
-    if (::WriteFile (internal->FD, buffer, size,
+    if (::WriteFile (internal->FD, overlapped->Data, size,
                         0, (OVERLAPPED *) overlapped) == -1)
     {
         int error = GetLastError ();
