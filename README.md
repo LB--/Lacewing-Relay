@@ -49,6 +49,8 @@ Changes in 0.4.0 (2012-Aug-21)
 
 - `File::OpenTemp` used incorrect filenames on Windows 
 
+[0.4.0 Release Notes](http://lacewing-project.org/release/0.4.0.html)
+
 
 Changes in 0.3.1 (2012-Jun-29)
 =============================
