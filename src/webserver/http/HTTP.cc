@@ -186,6 +186,11 @@ size_t HTTPClient::Put (const char * buffer, size_t buffer_size)
             Request.Buffer.Add (buffer, size);
             return buffer_size;
         }
+        else
+        {
+            if (!size)
+                return buffer_size;
+        }
     }
 
     int parsed = http_parser_execute (&Parser, &ParserSettings, buffer, size);

@@ -242,7 +242,7 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
 
         size_t written = Public->Put (buffer, size);
 
-        lwp_trace ("Put wrote " lwp_fmt_size " of " lwp_fmt_size, written, size);
+        lwp_trace ("%p : Put wrote " lwp_fmt_size " of " lwp_fmt_size, this, written, size);
 
         if (flags & Write_Partial)
             return written;

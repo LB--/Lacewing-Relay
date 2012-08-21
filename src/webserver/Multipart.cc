@@ -517,6 +517,11 @@ size_t Multipart::Process (const char * buffer, size_t buffer_size)
             Request.Buffer.Add (buffer, size);
             return buffer_size;
         }
+        else
+        {
+            if (!size)
+                return buffer_size;
+        }
     }
 
     size_t parsed = multipart_parser_execute (Parser, buffer, size);
