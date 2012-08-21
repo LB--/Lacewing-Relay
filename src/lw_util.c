@@ -72,8 +72,11 @@ lw_bool lwp_urldecode (const char * in, size_t in_length,
 
    n [2] = 0;
 
-   while(in < in_end)
+   while (1)
    {
+      if (out >= out_end)
+         return lw_false;
+
       if(*in == '%')
       {
          if ((++ in) + 2 >= in_end)
@@ -89,10 +92,10 @@ lw_bool lwp_urldecode (const char * in, size_t in_length,
       else
          *out = *in == '+' ? ' ' : *in;
 
-      if (out ++ >= out_end)
-         return lw_false;
+      if (++ in >= in_end)
+         break;
 
-      ++ in;
+      ++ out;
    }
 
    *out = 0;
