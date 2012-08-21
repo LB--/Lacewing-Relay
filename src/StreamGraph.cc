@@ -225,8 +225,6 @@ static void Expand (StreamGraph * graph, Stream::Internal * last,
     last = expanded_last;
     last_link = link;
 
-    assert (!stream->NextExpanded.Size);
-
     for (List <StreamGraph::Link *>::Element * E
                 = stream->Next.First; E; E = E->Next)
     {
@@ -343,9 +341,15 @@ static void Read (StreamGraph * graph, int this_expand,
 
         size_t direct_bytes = bytes;
 
+        /* TODO : Skip to next direct instead of trying to read direct from 
+         * intermediate streams?
+         */
+
         FindNextDirect (stream, next, direct_bytes);
 
-        if (!next)
+        lwp_trace ("Next direct from %p -> %p", stream, next);
+
+        if ( (!next) || next->PrevDirect)
             break;
 
         /* Only one non-transparent stream follows.  It may be possible to
@@ -358,13 +362,19 @@ static void Read (StreamGraph * graph, int this_expand,
         next->PrevDirect = stream;
         next->DirectBytesLeft = direct_bytes;
 
+        lwp_trace ("Attempting to read direct for %p -> %p", stream, next);
+
         if (next->WriteDirect ())
         {
+            lwp_trace ("WriteDirect succeeded for %p -> %p", stream, next);
+
             wrote_direct = true;
             break;
         }
         else
         {
+            lwp_trace ("WriteDirect failed for %p -> %p", stream, next);
+
             next->PrevDirect = 0;
         }
 

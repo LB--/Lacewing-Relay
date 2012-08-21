@@ -647,6 +647,8 @@ size_t Stream::Put (Stream &, size_t size)
 
 void Stream::Retry (int when)
 {
+    lwp_trace ("Stream::Retry for %p (PrevDirect %p)", internal, internal->PrevDirect);
+
     if (when == Retry_Now)
     {
         if (!internal->WriteDirect ())
@@ -876,7 +878,7 @@ void Stream::Internal::Close ()
 
         Graph->Expand ();
 
-        /* TODO : Should Read be called here? */
+        Graph->Read ();
     }
 
 

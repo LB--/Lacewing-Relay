@@ -37,7 +37,7 @@ static lw_i64 lwp_sendfile (int from, int dest, lw_i64 size)
 {
    #if defined (__linux__)
 
-      ssize_t sent;
+      ssize_t sent = 0;
       
       if ((sent = sendfile (dest, from, 0, size)) == -1)
          return errno == EAGAIN ? 0 : -1;
@@ -46,7 +46,7 @@ static lw_i64 lwp_sendfile (int from, int dest, lw_i64 size)
 
    #elif defined (__FreeBSD__)
 
-      off_t sent;
+      off_t sent = 0;
 
       if (sendfile (from, dest, lseek (from, 0, SEEK_CUR), size, 0, &sent, 0) != 0)
          if (errno != EAGAIN)
@@ -320,7 +320,12 @@ size_t FDStream::Put (Stream &_stream, size_t size)
     if (size == -1)
         size = stream->BytesLeft ();
 
-    return lwp_sendfile (stream->internal->FD, internal->FD, size);
+    lw_i64 sent = lwp_sendfile (stream->internal->FD, internal->FD, size);
+
+    lwp_trace ("lwp_sendfile sent " lwp_fmt_size " of " lwp_fmt_size,
+                    ((size_t) sent), (size_t) size);
+
+    return sent;
 }
 
 void FDStream::Read (size_t bytes)
