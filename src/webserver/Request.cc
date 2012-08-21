@@ -743,7 +743,7 @@ void Webserver::Request::Internal::ParsePostData ()
         }
         else
         {
-            lw_nvhash_set (&PostItems, name_decoded, value_decoded, lw_true);
+            lw_nvhash_set (&PostItems, name_decoded, value_decoded, lw_false);
         }
 
         if (!next)
