@@ -219,8 +219,6 @@ void spdy_nv_free (size_t count, spdy_nv_pair * pairs)
    free (pairs);
 }
 
-#include <stdio.h>
-
 int spdy_pack_nv_block (spdy_ctx * ctx, char ** buffer, size_t * deflate_size,
                         spdy_nv_pair * pairs, size_t count)
 {
