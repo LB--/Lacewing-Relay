@@ -30,6 +30,26 @@ Issues with the documentation can be reported in the [gh-pages branch](https://g
 of the liblacewing GitHub repository.
 
 
+Changes in 0.4.0 (2012-Aug-21)
+==============================
+
+- `Webserver` now supports the SPDY protocol, and much of the HTTP code has been improved
+
+- Resolve various issues with the stream system
+
+- New option in `FDStream::SetFD` to close the FD on destruction, which is now used by `File`
+
+- If `Stream::WriteFile` failed to open a file, the stream would be permanently blocked
+
+- `Server` now supports TLS NPN where available
+
+- The code for multipart POST data handling has been replaced with [multipart-parser-c](https://github.com/iafonov/multipart-parser-c)
+
+- Fixed IPv4 support in `Client`
+
+- `File::OpenTemp` used incorrect filenames on Windows 
+
+
 Changes in 0.3.1 (2012-Jun-29)
 =============================
 
