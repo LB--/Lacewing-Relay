@@ -1,3 +1,5 @@
+- SPDY support for Windows
+- HTTP post arrays
 - Support for /dev/poll in EventPump
 - EventPump::StartSleepyTicking on *nix
 - Use OS X security APIs instead of disabling the warnings for OpenSSL
