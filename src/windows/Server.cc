@@ -504,7 +504,7 @@ bool Server::LoadSystemCertificate (const char * StoreName, const char * CommonN
     Creds.dwVersion = SCHANNEL_CRED_VERSION;
     Creds.cCreds = 1;
     Creds.paCred = &Context;
-    Creds.grbitEnabledProtocols = 0xF0; /* SP_PROT_SSL3TLS1 */
+    Creds.grbitEnabledProtocols = (0x80 | 0x40); /* SP_PROT_TLS1 */
 
     {   TimeStamp ExpiryTime;
 

@@ -261,6 +261,7 @@ struct Webserver::Request::Internal : public Webserver::Request
     {
         char * Name;
         char * Value;
+        char * Attr;
 
         bool Changed;
 
@@ -268,6 +269,9 @@ struct Webserver::Request::Internal : public Webserver::Request
 
     } * Cookies;
 
+    void SetCookie (size_t name_len, const char * name,
+                    size_t value_len, const char * value,
+                    size_t attr_len, const char * attr, bool changed);
 
     /* Input */
 

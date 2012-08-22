@@ -228,9 +228,8 @@ bool Webserver::Request::Internal::In_Method (size_t len, const char * method)
     return true;
 }
 
-static lw_bool parse_cookie_header
-    (size_t length, const char * value,
-        Webserver::Request::Internal::Cookie * cookies)
+static lw_bool parse_cookie_header (Webserver::Request::Internal * internal,
+                                    size_t header_len, const char * header)
 {
     size_t name_begin, name_len, value_begin, value_len;
 
@@ -242,10 +241,10 @@ static lw_bool parse_cookie_header
         {
         case 0: /* seeking name */
 
-            if (i >= value_len)
+            if (i >= header_len)
                 return lw_true;
 
-            if (value [i] == ' ' || value [i] == '\t')
+            if (header [i] == ' ' || header [i] == '\t')
                 break;
 
             name_begin = i;
@@ -257,10 +256,10 @@ static lw_bool parse_cookie_header
 
         case 1: /* seeking name/value separator */
 
-            if (i >= value_len)
+            if (i >= header_len)
                 return lw_false;
 
-            if (value [i] == '=')
+            if (header [i] == '=')
             {
                 value_begin = i + 1;
                 value_len = 0;
@@ -274,28 +273,13 @@ static lw_bool parse_cookie_header
 
         case 2: /* seeking end of value */
 
-            if (i >= value_len || value [i] == ';')
+            if (i >= header_len || header [i] == ';')
             {
-                Webserver::Request::Internal::Cookie cookie;
-
-                cookie.Changed = false;
-
-                if (! (cookie.Name = (char *) malloc (name_len + 1)))
-                    return lw_false;
-
-                if (! (cookie.Value = (char *) malloc (value_len + 1)))
-                {
-                    free (cookie.Name);
-                    return lw_false;
-                }
- 
-                cookie.Name [name_len] = 0;
-                cookie.Value [value_len] = 0;
-
-                memcpy (cookie.Name, value + name_begin, name_len);
-                memcpy (cookie.Value, value + value_begin, value_len);
-
-                if (i >= value_len)
+                internal->SetCookie
+                    (name_len, header + name_begin,
+                        value_len, header + value_begin, 0, "", false);
+        
+                if (i >= header_len)
                     return lw_true;
 
                 state = 0;
@@ -334,7 +318,7 @@ bool Webserver::Request::Internal::In_Header
     }
 
     if (!strcmp (name, "cookie"))
-        return parse_cookie_header (value_len, value, Cookies);
+        return parse_cookie_header (internal, value_len, value);
 
     if (!strcmp (name, "host"))
     {
@@ -407,7 +391,10 @@ bool Webserver::Request::Internal::In_URL (size_t length, const char * URL)
             lw_dump (path, path_length);
 
             if (*path == '/')
+            {
                 ++ path;
+                -- path_length;
+            }
 
             if (!lwp_urldecode
                   (path, path_length, this->URL, sizeof (this->URL)))
@@ -571,27 +558,55 @@ void Webserver::Request::Cookie (const char * Name, const char * Value)
     Cookie (Name, Value, Secure () ? "Secure; HttpOnly" : "HttpOnly");
 }
 
-void Webserver::Request::Cookie (const char * name, const char * value,
-                                 const char * attr)
+void Webserver::Request::Cookie
+        (const char * name, const char * value, const char * attr)
+{
+    internal->SetCookie (strlen (name), name,
+                         strlen (value), value,
+                         strlen (attr), attr, true);
+}
+
+void Webserver::Request::Internal::SetCookie
+        (size_t name_len, const char * name,
+         size_t value_len, const char * value,
+         size_t attr_len, const char * attr, bool changed)
 {
     Request::Internal::Cookie * cookie;
 
-    HASH_FIND_STR (internal->Cookies, name, cookie);
+    HASH_FIND (hh, Cookies, name, name_len, cookie);
 
     if (!cookie)
     {
         cookie = (Request::Internal::Cookie *) malloc (sizeof (*cookie));
-        cookie->Name = strdup (name);
 
-        HASH_ADD_KEYPTR (hh, internal->Cookies, name, strlen (name), cookie);
+        cookie->Changed = changed;
+
+        cookie->Name = (char *) malloc (name_len + 1);
+        memcpy (cookie->Name, name, name_len);
+        cookie->Name [name_len] = 0;
+
+        cookie->Value = (char *) malloc (value_len + 1);
+        memcpy (cookie->Value, value, value_len);
+        cookie->Value [value_len] = 0;
+
+        cookie->Attr = (char *) malloc (attr_len + 1);
+        memcpy (cookie->Attr, attr, attr_len);
+        cookie->Attr [attr_len] = 0;
+
+        HASH_ADD_KEYPTR (hh, Cookies, cookie->Name, name_len, cookie);
+
+        return;
     }
     
-    cookie->Changed = true;
-    cookie->Value = (char *) malloc (strlen (value) + strlen (attr) + 4);
+    cookie->Changed = changed;
 
-    strcpy (cookie->Value, value);
-    strcat (cookie->Value, "; ");
-    strcat (cookie->Value, attr);
+    cookie->Value = (char *) realloc (cookie->Value, value_len + 1);
+    memcpy (cookie->Value, value, value_len);
+    cookie->Value [value_len] = 0;
+
+    cookie->Attr = (char *) realloc (cookie->Attr, attr_len + 1);
+    memcpy (cookie->Attr, attr, attr_len);
+    cookie->Attr [attr_len] = 0;
 }
 
 void Webserver::Request::Status (int code, const char * message)
@@ -726,19 +741,20 @@ void Webserver::Request::Internal::ParsePostData ()
     {
         char * name = post_data, * value = strchr (post_data, '=');
 
+        size_t name_length = value - name;
+
         if (!value ++)
             break;
 
         char * next = strchr (value, '&');
 
-        int name_length = (value - name) - 1,
-            value_length = next ? next - value : strlen (value);
+        size_t value_length = next ? next - value : strlen (value);
 
         char * name_decoded = (char *) malloc (name_length + 1),
              * value_decoded = (char *) malloc (value_length + 1);
 
-        if(!lwp_urldecode (name, name_length, name_decoded, name_length + 1)
-                || !lwp_urldecode (value, value_length, value_decoded, value_length + 1))
+        if(!lwp_urldecode (name, name_length, name_decoded, name_length)
+                || !lwp_urldecode (value, value_length, value_decoded, value_length))
         {
             free (name_decoded);
             free (value_decoded);

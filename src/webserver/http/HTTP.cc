@@ -362,6 +362,9 @@ void HTTPClient::Respond (Webserver::Request::Internal &) /* request parameter i
             continue;
 
         buffer << "\r\nset-cookie: " << cookie->Name << "=" << cookie->Value;
+
+        if (*cookie->Attr)
+            buffer << "; " << cookie->Attr;
     }
 
     buffer << "\r\ncontent-length: " << Request.Queued () << "\r\n\r\n";
