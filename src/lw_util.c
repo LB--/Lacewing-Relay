@@ -63,42 +63,36 @@ long lwp_socket_port (lwp_socket socket)
 lw_bool lwp_urldecode (const char * in, size_t in_length,
                        char * out, size_t out_length)
 {
-   char * out_end;
-   const char * in_end;
    char n [3];
-
-   out_end = out + out_length;
-   in_end = in + in_length;
+   size_t cur_in = 0, cur_out = 0;
 
    n [2] = 0;
 
-   while (1)
+   while (cur_in < in_length)
    {
-      if (out >= out_end)
+      if (cur_out >= out_length)
          return lw_false;
 
-      if(*in == '%')
+      if( (n[0] = in [cur_in]) == '%')
       {
-         if ((++ in) + 2 >= in_end)
+         if ((cur_in + 2) > in_length)
             return lw_false;
 
-         n [0] = in [0]; 
-         n [1] = in [1];
+         n [0] = in [++ cur_in]; 
+         n [1] = in [++ cur_in];
 
-         *out = (char) strtol (n, 0, 16);
-
-         ++ in;
+         out [cur_out ++] = (char) strtol (n, 0, 16);
+         
+         continue;
       }
-      else
-         *out = *in == '+' ? ' ' : *in;
 
-      if (++ in >= in_end)
-         break;
+      out [cur_out ++] = n [0] == '+' ? ' ' : n [0];
 
-      ++ out;
+      ++ cur_in;
    }
 
-   *out = 0;
+   out [cur_out] = 0;
+
    return lw_true;
 }
 
