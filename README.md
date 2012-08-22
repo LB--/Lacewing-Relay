@@ -30,6 +30,16 @@ Issues with the documentation can be reported in the [gh-pages branch](https://g
 of the liblacewing GitHub repository.
 
 
+Changes in 0.4.1 (2012-Aug-22)
+==============================
+
+- Fix issue with HTTP data not always being completely processed
+
+- Fix error with URL decoding function which lead to trailing garbage in decoded strings 
+
+[0.4.1 Release Notes](http://lacewing-project.org/release/0.4.1.html)
+
+
 Changes in 0.4.0 (2012-Aug-21)
 ==============================
 

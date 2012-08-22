@@ -404,6 +404,8 @@ bool Webserver::Request::Internal::In_URL (size_t length, const char * URL)
 
         if (GetField (URL, parsed, UF_PATH, path, path_length))
         {
+            lw_dump (path, path_length);
+
             if (*path == '/')
                 ++ path;
 
