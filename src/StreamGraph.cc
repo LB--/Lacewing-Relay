@@ -301,11 +301,9 @@ static bool FindNextDirect
 static void Read (StreamGraph * graph, int this_expand,
                     Stream::Internal * stream, size_t bytes)
 {
-    /* Note that we're checking Next instead of NextExpanded here.  The
-     * presence of a filter doesn't force a read.
-     */
+    /* TODO : Currently, the presence of a filter forces a read */
 
-    if (!stream->Next.Size)
+    if (!stream->NextExpanded.Size)
         return;
 
     if (bytes == -1)
@@ -345,7 +343,8 @@ static void Read (StreamGraph * graph, int this_expand,
          * intermediate streams?
          */
 
-        FindNextDirect (stream, next, direct_bytes);
+        if (!FindNextDirect (stream, next, direct_bytes))
+            break;
 
         lwp_trace ("Next direct from %p -> %p", stream, next);
 
