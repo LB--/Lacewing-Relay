@@ -1,13 +1,12 @@
 - Support for /dev/poll in EventPump
+- EventPump::StartSleepyTicking on *nix
 - Use OS X security APIs instead of disabling the warnings for OpenSSL
+- Xcode project/framework
+- Check iOS compatibility
 - HTTP client
 - WebSockets
-- SPDY support
 - Try to get SWIG working with liblacewing's nested classes
-- Check iOS compatibility
-- EventPump::StartSleepyTicking on *nix
-- Support for HTTP POST arrays
 - writev style Put overload?
-- Xcode project/framework
+
 
 
