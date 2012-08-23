@@ -30,6 +30,18 @@ Issues with the documentation can be reported in the [gh-pages branch](https://g
 of the liblacewing GitHub repository.
 
 
+Changes in 0.4.2 (2012-Aug-23)
+==============================
+
+- Fix issue with POST data truncation (0.4.1 regression)
+
+- Cookies were not correctly parsed
+
+- StreamGraph did not read beyond any filters present in a graph
+
+[0.4.2 Release Notes](http://lacewing-project.org/release/0.4.2.html)
+
+
 Changes in 0.4.1 (2012-Aug-22)
 ==============================
 

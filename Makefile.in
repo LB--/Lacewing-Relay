@@ -12,7 +12,7 @@ SO_EXT = @SO_EXT@
 SONAME_FLAGS = @SONAME_FLAGS@
 
 SO_NAME = @SO_NAME@
-REAL_NAME = liblacewing.@SO_EXT@.0.4.1
+REAL_NAME = liblacewing.@SO_EXT@.0.4.2
 
 OBJECTS = build/lw_global.o build/lw_nvhash.o build/Filter.o build/Address.o build/StreamGraph.o \
     build/Stream.o build/Error.o build/Webserver.o build/HTTP.o build/http-parser.o \

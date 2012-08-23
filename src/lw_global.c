@@ -50,7 +50,7 @@ const char * lw_version ()
          platform = name.sysname;
       #endif
 
-      sprintf (version, "liblacewing 0.4.1 (%s, %s)",
+      sprintf (version, "liblacewing 0.4.2 (%s, %s)",
                      platform, sizeof(void *) == 8 ? "64-bit" : "32-bit");
    }
 
