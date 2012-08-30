@@ -36,8 +36,7 @@ namespace Lacewing
         char Flags;
 
         const static char Flag_GotContext = 1;
-        const static char Flag_GotHello = 2;
-        const static char Flag_HandshakeComplete = 4;
+        const static char Flag_HandshakeComplete = 2;
 
         CredHandle ServerCreds;
         

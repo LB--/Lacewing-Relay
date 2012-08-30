@@ -138,11 +138,13 @@ long lwp_socket_port (lwp_socket socket);
 void lwp_close_socket (lwp_socket socket);
 
 lw_bool lwp_urldecode (const char * in, size_t in_length,
-                       char * out, size_t out_length);
+                       char * out, size_t out_length, lw_bool plus_spaces);
 
 lw_bool lwp_begins_with (const char * string, const char * substring);
 
 void lwp_copy_string (char * dest, const char * source, size_t size);
+
+lw_bool lwp_find_char (const char ** str, size_t * len, char c);
 
 ssize_t lwp_format (char ** output, const char * format, va_list args);
 

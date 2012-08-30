@@ -194,22 +194,6 @@ size_t WinSSLClient::Downstream::ProcHandshakeData (const char * buffer, size_t 
     if (Client.Status == SEC_E_OK
             || Client.Status == SEC_I_CONTINUE_NEEDED)
     {
-        if (! (Client.Flags & Flag_GotHello))
-        {
-            Client.Flags |= Flag_GotHello;
-
-            /* This must be the ClientHello message.  We're only interested in
-             * the extensions.
-             */
-
-            do
-            {
-
-                break;
-
-            } while (0);
-        }
-
         /* Did AcceptSecurityContext give us back a response to send? */
 
         if (out [0].cbBuffer && out [0].pvBuffer)

@@ -61,7 +61,7 @@ long lwp_socket_port (lwp_socket socket)
 }
 
 lw_bool lwp_urldecode (const char * in, size_t in_length,
-                       char * out, size_t out_length)
+                       char * out, size_t out_length, lw_bool plus_spaces)
 {
    char n [3];
    size_t cur_in = 0, cur_out = 0;
@@ -82,11 +82,11 @@ lw_bool lwp_urldecode (const char * in, size_t in_length,
          n [1] = in [++ cur_in];
 
          out [cur_out ++] = (char) strtol (n, 0, 16);
-         
-         continue;
       }
-
-      out [cur_out ++] = n [0] == '+' ? ' ' : n [0];
+      else
+      {
+         out [cur_out ++] = (plus_spaces && n [0] == '+') ? ' ' : n [0];
+      }
 
       ++ cur_in;
    }
@@ -116,6 +116,20 @@ void lwp_copy_string (char * dest, const char * source, size_t size)
 
    memcpy (dest, source, length);
    dest [length] = 0;
+}
+
+lw_bool lwp_find_char (const char ** str, size_t * len, char c)
+{
+   while (*len > 0)
+   {
+      if (**str == c)
+         return lw_true;
+
+      ++ (*str);
+      -- (*len);
+   }
+
+   return lw_false;
 }
 
 void lwp_close_socket (lwp_socket socket)

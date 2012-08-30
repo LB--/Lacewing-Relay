@@ -350,7 +350,7 @@ bool Webserver::Request::Internal::In_Header
 }
 
 static inline bool GetField (const char * URL, http_parser_url &parsed,
-                             int field, const char * &buf, int &length)
+                             int field, const char * &buf, size_t &length)
 {
     if (! (parsed.field_set & (1 << field)))
         return false;
@@ -384,12 +384,10 @@ bool Webserver::Request::Internal::In_URL (size_t length, const char * URL)
     *this->URL = 0;
 
     {   const char * path;
-        int path_length;
+        size_t path_length;
 
         if (GetField (URL, parsed, UF_PATH, path, path_length))
         {
-            lw_dump (path, path_length);
-
             if (*path == '/')
             {
                 ++ path;
@@ -397,7 +395,7 @@ bool Webserver::Request::Internal::In_URL (size_t length, const char * URL)
             }
 
             if (!lwp_urldecode
-                  (path, path_length, this->URL, sizeof (this->URL)))
+                  (path, path_length, this->URL, sizeof (this->URL), lw_false))
             {
                 return false;
             }
@@ -408,7 +406,7 @@ bool Webserver::Request::Internal::In_URL (size_t length, const char * URL)
     /* Host */
 
     {   const char * host;
-        int host_length;
+        size_t host_length;
 
         if (GetField (URL, parsed, UF_HOST, host, host_length))
         {
@@ -426,40 +424,55 @@ bool Webserver::Request::Internal::In_URL (size_t length, const char * URL)
 
     /* GET data */
 
-    {   const char * get_data;
-        int get_data_length;
+    {   const char * data;
+        size_t length;
 
-        if (GetField (URL, parsed, UF_QUERY, get_data, get_data_length))
+        if (GetField (URL, parsed, UF_QUERY, data, length))
         {
             for (;;)
             {
-                const char * name = get_data, * value = strchr (get_data, '=');
+                const char * name = data;
 
-                if (!value ++)
+                if (!lwp_find_char (&data, &length, '='))
                     break;
 
-                const char * next = strchr (value, '&');
+                size_t name_length = data - name;
 
-                int name_length = (value - name) - 1,
-                    value_length = next ? next - value : strlen (value);
+                /* skip the = character */
+
+                ++ data;
+                -- length;
+
+                const char * value = data;
+                size_t value_length;
+
+                const char * next;
+
+                value_length = length;
+
+                if (lwp_find_char (&data, &length, '&'))
+                {
+                    value_length = data - value;
+
+                    /* skip the & character */
+
+                    ++ data;
+                    -- length;
+                }
 
                 char * name_decoded = (char *) malloc (name_length + 1),
                      * value_decoded = (char *) malloc (value_length + 1);
 
-                if(!lwp_urldecode (name, name_length, name_decoded, name_length + 1)
-                    || !lwp_urldecode (value, value_length, value_decoded, value_length + 1))
+                if(!lwp_urldecode (name, name_length, name_decoded, name_length + 1, lw_true)
+                    || !lwp_urldecode (value, value_length, value_decoded, value_length + 1, lw_true))
                 {
                     free (name_decoded);
                     free (value_decoded);
                 }
                 else
                 {
-                    lw_nvhash_set
-                        (&GetItems, name_decoded, value_decoded, lw_false);
+                    lw_nvhash_set (&GetItems, name_decoded, value_decoded, lw_false);
                 }
-
-                if(!(get_data = next))
-                    break;
             }
         }
     }
@@ -753,8 +766,8 @@ void Webserver::Request::Internal::ParsePostData ()
         char * name_decoded = (char *) malloc (name_length + 1),
              * value_decoded = (char *) malloc (value_length + 1);
 
-        if(!lwp_urldecode (name, name_length, name_decoded, name_length)
-                || !lwp_urldecode (value, value_length, value_decoded, value_length))
+        if(!lwp_urldecode (name, name_length, name_decoded, name_length, lw_true)
+                || !lwp_urldecode (value, value_length, value_decoded, value_length, lw_true))
         {
             free (name_decoded);
             free (value_decoded);
