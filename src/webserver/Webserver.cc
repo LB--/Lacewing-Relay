@@ -86,8 +86,9 @@ void Webserver::Internal::SocketConnect (Server &server, Server::Client &client_
     client->Write (client_socket);
 }
 
-void Webserver::Internal::SocketDisconnect (Server &Server, Server::Client &Client)
+void Webserver::Internal::SocketDisconnect (Server &server, Server::Client &client)
 {
+    delete ((WebserverClient *) client.Tag);
 }
 
 void Webserver::Internal::SocketError (Server &Server, Error &Error)
