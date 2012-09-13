@@ -48,6 +48,9 @@ if test "x$enable_spdy" = xyes; then
              build/spdy_rst_stream.o build/spdy_settings.o build/spdy_stream.o \
              build/spdy_strings.o build/spdy_syn_reply.o build/spdy_syn_stream.o \
              build/spdy_zlib.o build/spdy_window_update.o build/SPDY.o"
+
+	AC_CHECK_LIB([z], [inflate])
+
 else
     CFLAGS="$CFLAGS -DLacewingNoSPDY"
 fi
