@@ -28,6 +28,7 @@
  */
 
 #include "../lw_common.h"
+#include "EventPump.h"
 
 struct Timer::Internal
 {
