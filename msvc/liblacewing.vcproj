@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="Lacewing"
+	Name="liblacewing"
 	ProjectGUID="{522C3F0C-C515-4722-A30B-98D2D156E907}"
-	RootNamespace="Lacewing"
+	RootNamespace="liblacewing"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>
@@ -44,7 +44,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName="../build/Lacewing.tlb"
+				TypeLibraryName="../build/liblacewing.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -56,7 +56,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				PrecompiledHeaderFile="../build/Lacewing.pch"
+				PrecompiledHeaderFile="../build/liblacewing.pch"
 				AssemblerListingLocation="../build/"
 				ObjectFile="../build/"
 				ProgramDataBaseFileName="../build/"
@@ -84,7 +84,7 @@
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="../"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="../bin/Lacewing.pdb"
+				ProgramDatabaseFile="../bin/liblacewing.pdb"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				ImportLibrary="../bin/liblacewing-debug.lib"
@@ -102,7 +102,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile="../build/Lacewing.bsc"
+				OutputFile="../build/liblacewing.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -144,7 +144,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName="../build/Lacewing.tlb"
+				TypeLibraryName="../build/liblacewing.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -161,7 +161,7 @@
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="false"
-				PrecompiledHeaderFile="../build/Lacewing.pch"
+				PrecompiledHeaderFile="../build/liblacewing.pch"
 				AssemblerListingLocation="../build/"
 				ObjectFile="../build/"
 				ProgramDataBaseFileName="../build/"
@@ -187,7 +187,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="../"
-				ProgramDatabaseFile="../build/Lacewing.pdb"
+				ProgramDatabaseFile="../build/liblacewing.pdb"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				OptimizeForWindows98="1"
@@ -209,7 +209,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile="../build/Lacewing.bsc"
+				OutputFile="../build/liblacewing.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -250,7 +250,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName="../build/Lacewing.tlb"
+				TypeLibraryName="../build/liblacewing.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -262,7 +262,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				PrecompiledHeaderFile="../build/Lacewing.pch"
+				PrecompiledHeaderFile="../build/liblacewing.pch"
 				AssemblerListingLocation="../build/"
 				ObjectFile="../build/"
 				ProgramDataBaseFileName="../build/"
@@ -295,7 +295,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile="../build/Lacewing.bsc"
+				OutputFile="../build/liblacewing.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -334,7 +334,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName="../build/Lacewing.tlb"
+				TypeLibraryName="../build/liblacewing.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -351,7 +351,7 @@
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="false"
-				PrecompiledHeaderFile="../build/Lacewing.pch"
+				PrecompiledHeaderFile="../build/liblacewing.pch"
 				AssemblerListingLocation="../build/"
 				ObjectFile="../build/"
 				ProgramDataBaseFileName="../build/"
@@ -383,7 +383,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile="../build/Lacewing.bsc"
+				OutputFile="../build/liblacewing.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
