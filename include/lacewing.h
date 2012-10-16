@@ -403,7 +403,6 @@ LacewingFunction       lw_bool  lw_random                   (char * buffer, size
 /* Webserver */
 
   LacewingFlat (lw_ws);
-  LacewingFlat (lw_ws_req);
   LacewingFlat (lw_ws_req_hdr);
   LacewingFlat (lw_ws_req_param);
   LacewingFlat (lw_ws_req_cookie);
@@ -505,16 +504,16 @@ LacewingFunction       lw_bool  lw_random                   (char * buffer, size
   typedef void (LacewingHandler * lw_ws_handler_disconnect) (lw_ws *, lw_stream * req);
   LacewingFunction void lw_ws_ondisconnect (lw_ws *, lw_ws_handler_disconnect);
 
-  typedef void (LacewingHandler * lw_ws_handler_upload_start) (lw_ws *, lw_ws_req *, lw_ws_upload *);
+  typedef void (LacewingHandler * lw_ws_handler_upload_start) (lw_ws *, lw_stream * req, lw_ws_upload *);
   LacewingFunction void lw_ws_onuploadstart (lw_ws *, lw_ws_handler_upload_start);
 
-  typedef void (LacewingHandler * lw_ws_handler_upload_chunk) (lw_ws *, lw_ws_req *, lw_ws_upload *, const char * buffer, size_t size);
+  typedef void (LacewingHandler * lw_ws_handler_upload_chunk) (lw_ws *, lw_stream * req, lw_ws_upload *, const char * buffer, size_t size);
   LacewingFunction void lw_ws_onuploadchunk (lw_ws *, lw_ws_handler_upload_chunk);
 
-  typedef void (LacewingHandler * lw_ws_handler_upload_done) (lw_ws *, lw_ws_req *, lw_ws_upload *);
+  typedef void (LacewingHandler * lw_ws_handler_upload_done) (lw_ws *, lw_stream * req, lw_ws_upload *);
   LacewingFunction void lw_ws_onuploaddone (lw_ws *, lw_ws_handler_upload_done);
 
-  typedef void (LacewingHandler * lw_ws_handler_upload_post) (lw_ws *, lw_ws_req *, lw_ws_upload * uploads [], long upload_count);
+  typedef void (LacewingHandler * lw_ws_handler_upload_post) (lw_ws *, lw_stream * req, lw_ws_upload * uploads [], long upload_count);
   LacewingFunction void lw_ws_onuploadpost (lw_ws *, lw_ws_handler_upload_post);
 
 

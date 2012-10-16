@@ -135,10 +135,9 @@ void lw_stream_writef (lw_stream * stream, const char * format, ...)
     va_end (args);
 }
 
-
-
-
-
-
+void lw_stream_delete (lw_stream * stream)
+{
+    delete ((Stream *) stream);
+}
 
 

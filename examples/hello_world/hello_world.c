@@ -5,7 +5,7 @@
 
 void onGet(lw_ws * webserver, lw_ws_req * request)
 {
-    lw_ws_req_writef(request, "Hello world from %s", lw_version());
+    lw_stream_writef(request, "Hello world from %s", lw_version());
 }
 
 int main(int argc, char * argv[])

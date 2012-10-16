@@ -444,11 +444,7 @@ bool Webserver::Request::Internal::In_URL (size_t length, const char * URL)
                 -- length;
 
                 const char * value = data;
-                size_t value_length;
-
-                const char * next;
-
-                value_length = length;
+                size_t value_length = length;
 
                 if (lwp_find_char (&data, &length, '&'))
                 {

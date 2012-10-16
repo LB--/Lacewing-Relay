@@ -218,7 +218,7 @@ const char* lw_ws_req_cookie_value (lw_ws_req_cookie * cookie)
 lw_ws_req_cookie * lw_ws_req_cookie_next (lw_ws_req_cookie * cookie)
     { return (lw_ws_req_cookie *) ((struct Webserver::Request::Cookie *) cookie)->Next ();
     }
-const char* lw_ws_req_body (lw_ws_req * request)
+const char* lw_ws_req_body (lw_stream * request)
     { return ((Webserver::Request *) request)->Body ();
     }
 void lw_ws_req_disable_cache (lw_stream * request)

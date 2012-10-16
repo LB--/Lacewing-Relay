@@ -20,8 +20,8 @@ void onGet(lw_ws * webserver, lw_ws_req * request)
      * row, etc etc - liblacewing will keep everything in order.
      */
        
-    lw_ws_req_writef(request, "Here's my source:\r\n\r\n");
-    lw_ws_req_write_file(request, "send_file.c");
+    lw_stream_writef(request, "Here's my source:\r\n\r\n");
+    lw_stream_write_file(request, "send_file.c");
 }
 
 int main(int argc, char * argv[])
