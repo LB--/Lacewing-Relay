@@ -20,4 +20,7 @@ build/*
 *.swc
 *.swp
 a.out
+*manifest*
+Debug
+Release
 
