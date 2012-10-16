@@ -238,6 +238,7 @@ LacewingFunction       lw_bool  lw_random                   (char * buffer, size
   LacewingFunction   lw_bool  lw_stream_is_transparent        (lw_stream * stream);
   LacewingFunction      void* lw_stream_cast                  (lw_stream * stream, void * type);
   LacewingFunction      void  lw_stream_close                 (lw_stream * stream);
+  LacewingFunction      void  lw_stream_delete                (lw_stream * stream);
 
   typedef void (LacewingHandler * lw_stream_handler_data) (lw_stream *, void * tag, char * buffer, size_t length);
 

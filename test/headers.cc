@@ -1,5 +1,5 @@
 
-#include <Lacewing.h>
+#include <lacewing.h>
 
 #include <assert.h>
 #include <string.h>

@@ -1,7 +1,7 @@
 
 /* See `send_file.cc` for a C++ version */
 
-#include <Lacewing.h>
+#include <lacewing.h>
 
 void onGet(lw_ws * webserver, lw_ws_req * request)
 {

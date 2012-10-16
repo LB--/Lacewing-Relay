@@ -85,7 +85,7 @@
    #define LacewingFunction
 #endif
 
-#include "../include/Lacewing.h"
+#include "../include/lacewing.h"
 
 #ifdef __cplusplus
    extern "C" {

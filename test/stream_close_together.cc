@@ -1,6 +1,6 @@
 
 #include <stdio.h>
-#include <Lacewing.h>
+#include <lacewing.h>
 
 void stream_a_close (Lacewing::Stream &, void *)
 {

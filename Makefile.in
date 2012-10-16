@@ -24,7 +24,7 @@ OBJECTS = build/lw_global.o build/lw_nvhash.o build/Filter.o build/Address.o bui
     build/file_flat.o build/pipe_flat.o build/pump_flat.o build/lw_util.o \
 	build/multipart_parser.o @OBJECTS@
 
-COMMONDEPS = include/Lacewing.h src/lw_common.h src/HeapBuffer.h  src/Utility.h \
+COMMONDEPS = include/lacewing.h src/lw_common.h src/HeapBuffer.h  src/Utility.h \
 			 src/webserver/Common.h src/webserver/http/HTTP.h src/Address.h \
 			 src/Stream.h @COMMONDEPS@
 
@@ -218,9 +218,9 @@ install: liblacewing.@SO_EXT@ liblacewing.a
 	@ln -s $(SO_NAME) $(PREFIX)/lib/liblacewing.@SO_EXT@
 	@echo Installing static library: $(PREFIX)/lib/liblacewing.a
 	@install -m 0755 liblacewing.a $(PREFIX)/lib/liblacewing.a
-	@echo Installing header file: $(PREFIX)/include/Lacewing.h
+	@echo Installing header file: $(PREFIX)/include/lacewing.h
 	@install -d $(PREFIX)/include
-	@install -m 0644 ./include/Lacewing.h $(PREFIX)/include/Lacewing.h
+	@install -m 0644 ./include/lacewing.h $(PREFIX)/include/lacewing.h
 	@echo -----
 	@echo Compiler flags: -I$(PREFIX)/include
 	@echo Linker flags: -L$(PREFIX)/lib -llacewing

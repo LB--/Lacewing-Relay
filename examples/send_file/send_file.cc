@@ -1,7 +1,7 @@
 
 /* See `send_file.c` for a C version */
 
-#include <Lacewing.h>
+#include <lacewing.h>
 
 Lacewing::EventPump EventPump;
 

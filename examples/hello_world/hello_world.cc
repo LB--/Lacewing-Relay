@@ -1,7 +1,7 @@
 
 /* See `hello_world.c` for a C version */
 
-#include <Lacewing.h>
+#include <lacewing.h>
 
 void onGet(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
 {
