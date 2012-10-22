@@ -307,8 +307,7 @@ int Multipart::onPartDataEnd ()
 
             lwp_trace("Closing auto save file");
 
-            delete CurUpload->AutoSaveFile;
-            CurUpload->AutoSaveFile = 0;
+            CurUpload->AutoSaveFile->Close (false);
         }
         else
         {
@@ -348,6 +347,22 @@ int Multipart::onBodyEnd ()
 
     Done = true;
 
+    if (!Parent)
+        TryCallHandler ();
+
+    return 0;
+}
+
+void Multipart::TryCallHandler ()
+{
+    /* Only call the handler if all files are closed */
+
+    for (int i = 0; i < Uploads.Size; ++ i)
+    {
+        if (Uploads [i]->internal->AutoSaveFile)
+            return;
+    }
+
     Request.BeforeHandler ();
 
     if (Server.Handlers.UploadPost)
@@ -357,10 +372,8 @@ int Multipart::onBodyEnd ()
     }
 
     Request.AfterHandler ();
-
-    return 0;
 }
-
+    
 static int onHeaderField (multipart_parser * parser, const char * at, size_t length)
 {   return ((Multipart *) multipart_parser_get_data (parser))->onHeaderField (at, length);
 }

@@ -237,7 +237,7 @@ LacewingFunction       lw_bool  lw_random                   (char * buffer, size
   LacewingFunction      void  lw_stream_add_filter_downstream (lw_stream * stream, lw_stream * filter, lw_bool close_together);
   LacewingFunction   lw_bool  lw_stream_is_transparent        (lw_stream * stream);
   LacewingFunction      void* lw_stream_cast                  (lw_stream * stream, void * type);
-  LacewingFunction      void  lw_stream_close                 (lw_stream * stream);
+  LacewingFunction      void  lw_stream_close                 (lw_stream * stream, lw_bool immediate);
   LacewingFunction      void  lw_stream_delete                (lw_stream * stream);
 
   typedef void (LacewingHandler * lw_stream_handler_data) (lw_stream *, void * tag, char * buffer, size_t length);
@@ -771,7 +771,7 @@ struct Stream
 
     LacewingFunction virtual bool IsTransparent ();
 
-    LacewingFunction void Close ();
+    LacewingFunction virtual bool Close (bool immediate = false);
 
     /* Since we don't compile with RTTI (and this is the only place it would be needed) */
 
@@ -829,7 +829,7 @@ public:
 
     LacewingFunction void Nagle (bool);
 
-    LacewingFunction void Close ();
+    LacewingFunction bool Close (bool immediate = false);
 
     LacewingFunction virtual void * Cast (void *);
 

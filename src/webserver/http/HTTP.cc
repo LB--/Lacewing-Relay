@@ -69,6 +69,12 @@ HTTPClient::HTTPClient (Webserver::Internal &_Server, Server::Client &_Socket, b
 
     _Socket.Write (Request);
     Request.BeginQueue ();
+
+    /* When the retry mode is Retry_MoreData and Put can't consume everything,
+     * Put will be called again as soon as more data arrives.
+     */
+
+    Retry (Retry_MoreData);
 }
 
 HTTPClient::~HTTPClient ()
@@ -82,18 +88,13 @@ HTTPClient::~HTTPClient ()
         if (Server.Handlers.Disconnect)
             Server.Handlers.Disconnect (Server.Webserver, Request);
     }
-
-    delete Multipart;
 }
 
-size_t HTTPClient::Put (const char * buffer, size_t buffer_size)
+size_t HTTPClient::Put (const char * buffer, size_t size)
 {
-    size_t size = buffer_size;
-
     lwp_trace ("HTTP got " lwp_fmt_size " bytes", size);
-
-    if (!size)
-        return 0;
+    
+    size_t processed = 0;
 
     if (!ParserSettings.on_message_begin)
     {
@@ -106,108 +107,128 @@ size_t HTTPClient::Put (const char * buffer, size_t buffer_size)
         ParserSettings.on_message_complete   = ::onMessageComplete;
     }
 
-    /* TODO: A naughty client could keep the connection open by sending 1 byte every 5 seconds */
+    /* TODO: A naughty client could keep the connection open by sending 1 byte
+     * every 5 seconds.
+     */
 
     LastActivityTime = time (0);
 
-    if (!Request.Responded)
+    for (;;)
     {
-        /* The application hasn't yet called Finish() for the last request, so this data
-           can't be processed.  Buffer it to process when Finish() is called. */
-
-        Request.Buffer.Add (buffer, size);
-        return buffer_size;
-    }
-
-    if (ParsingHeaders)
-    {
-        for (size_t i = 0; i < size; )
+        if (!Request.Responded)
         {
-            {   char b = buffer [i];
+            /* The application hasn't yet called Finish() for the last request,
+             * so no more data can be processed.
+             */
 
-                if (b == '\r')
-                {
-                    if (buffer [i + 1] == '\n')
-                        ++ i;
-                }
-                else if (b != '\n')
-                {
-                    ++ i;
-                    continue;
-                }
-            }
-
-            int toParse = i + 1;
-            bool error = false;
-
-            if (Request.Buffer.Size)
-            {
-                Request.Buffer.Add (buffer, toParse);
-
-                size_t parsed = http_parser_execute
-                    (&Parser, &ParserSettings,
-                        Request.Buffer.Buffer, Request.Buffer.Size);
-
-                if (parsed != Request.Buffer.Size)
-                    error = true;
-
-                Request.Buffer.Reset ();
-            }
-            else
-            {
-                size_t parsed = http_parser_execute
-                    (&Parser, &ParserSettings, buffer, toParse);
-
-                if (parsed != toParse)
-                    error = true;
-            }
-
-            size -= toParse;
-            buffer += toParse;
-
-            if (error || Parser.upgrade)
-            {
-                lwp_trace ("HTTP error %d, closing socket...", error);
-
-                Socket.Close ();
-                return buffer_size;
-            }
-
-            if (!ParsingHeaders)
-                break;
-
-            i = 0;
+            return processed;
         }
+
+        /* Already processed everything in the last loop iteration? */
+
+        if (processed == size)
+            return processed;
+
+        /* When parsing headers, we provide the HTTP parser with complete lines
+         * to avoid getting any fragmented data.
+         *
+         * When partial lines are received, we can take advantage of the
+         * natural buffering provided by HTTPClient being a stream (by
+         * returning < size bytes from Put and calling Retry later).
+         */
+
+        /* TODO: max line length */
 
         if (ParsingHeaders)
         {
-            /* TODO : max line length */
+            for (size_t i = processed; i < size; ++ i)
+            {
+                char b = buffer [i];
 
-            Request.Buffer.Add (buffer, size);
-            return buffer_size;
+                if (b == '\r' || b == '\n')
+                {
+                    /* Reached the end of a line */
+
+                    size_t toParse = (i + 1) - processed;
+
+                    size_t parsed = http_parser_execute
+                        (&Parser, &ParserSettings, buffer + processed, toParse);
+
+                    processed += parsed;
+
+                    if (Parser.http_errno == HPE_PAUSED)
+                    {
+                        /* Paused by onMessageEnd - this has no significance, since
+                         * we're already parsing headers.
+                         */
+
+                        http_parser_pause (&Parser, 0);
+                        continue;
+                    }
+                    else if (parsed != toParse || Parser.upgrade)
+                    {
+                        lwp_trace ("HTTP error (headers), closing socket...");
+
+                        Socket.Close ();
+                        return size;
+                    }
+
+                    if (!ParsingHeaders)
+                        break;  /* headers finished */
+                }
+            }
+
+            /* Reached the end of the buffer - are we still parsing headers? */
+
+            if (ParsingHeaders)
+                return processed;
+            else
+            {
+                if (processed == size)
+                    return processed;
+            }
         }
-        else
+
+        /* Parsing the body.
+         *
+         * Note that we have no idea if the buffer we have here contains only
+         * body data - it might well contain a fragment of the next request,
+         * which we would want to pass to the HTTP parser line by line.  For
+         * this reason, the parser will always be paused in onMessageComplete
+         * so that control is returned here.
+         */
+
+        size_t parsed =
+            http_parser_execute (&Parser, &ParserSettings,
+                                   buffer + processed, size - processed);
+
+        processed += parsed;
+
+        if (Parser.http_errno == HPE_PAUSED)
         {
-            if (!size)
-                return buffer_size;
+            /* onMessageComplete always pauses the parser so that control
+             * is returned here, so that we can transition back to parsing
+             * headers.
+             */
+
+            http_parser_pause (&Parser, 0);
         }
+        else if (parsed != size || Parser.upgrade)
+        {
+            lwp_trace ("HTTP error (body), closing socket...");
+
+            Socket.Close ();
+            return size;
+        }
+
+        if (SignalEOF)
+        {
+            http_parser_execute (&Parser, &ParserSettings, 0, 0);
+            SignalEOF = false;
+        }
+
+        return processed;
     }
-
-    int parsed = http_parser_execute (&Parser, &ParserSettings, buffer, size);
-
-    if (SignalEOF)
-    {
-        http_parser_execute (&Parser, &ParserSettings, 0, 0);
-        SignalEOF = false;
-    }
-
-    if (parsed != size || Parser.upgrade)
-    {
-        Socket.Close ();
-        return buffer_size;
-    }
-
-    return buffer_size;
 }
 
 int HTTPClient::onMessageBegin ()
@@ -318,22 +339,25 @@ int HTTPClient::onBody (char * buffer, size_t size)
         return -1;
     }
 
-    if (Multipart->Done)
-    {
-        delete Multipart;
-        Multipart = 0;
-
+    if ( (!Multipart) || Multipart->Done)
         SignalEOF = true;
-    }
 
     return 0;
 }
 
 int HTTPClient::onMessageComplete ()
 {
-    Request.RunStandardHandler ();
-
+    if (!Multipart)
+        Request.RunStandardHandler ();
+  
     ParsingHeaders = true;
+
+    /* Since we're now transitioning back to parsing headers, HTTPClient::Put
+     * needs to start reading lines again (if it's currently reading the
+     * body).  Pausing the parser returns control to HTTPClient::Put.
+     */
+
+    http_parser_pause (&Parser, 1);
 
     return 0;
 }
@@ -383,6 +407,12 @@ void HTTPClient::Respond (Webserver::Request::Internal &) /* request parameter i
         Socket.Close ();
 
     Request.Responded = true;
+
+    /* If any data was queued while waiting to respond to this request, we'll
+     * be able to process it now.
+     */
+
+    Retry (Retry_Now);
 }
 
 void HTTPClient::Tick ()

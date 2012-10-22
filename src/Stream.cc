@@ -52,9 +52,12 @@ Stream::~ Stream ()
 
     internal->Graph->ClearExpanded ();
 
-    Close ();
+    Close (true);
 
-    internal->Closing = true;
+    /* Prevent any entry to Close now */
+
+    internal->Flags |= Internal::Flag_Closing;
+
 
     /* If we are a root in the graph, remove us */
 
@@ -135,10 +138,8 @@ Stream::Internal::Internal (Stream * _Public) : Public (_Public)
 {
     UserCount = 0;
 
-    Queueing = false;
+    Flags = 0;
     Retry = Stream::Retry_Never;
-
-    Closing = false;
 
     HeadUpstream = 0;
     PrevDirect = 0;
@@ -218,7 +219,7 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
         if ((! (flags & Write_IgnoreQueue)) && FrontQueue.Size)
         {
             lwp_trace ("%p : Adding to front queue (Queueing = %d, FrontQueue.Size = %d)",
-                                this, (int) Queueing, FrontQueue.Size);
+                            this, (int) ( (Flags & Flag_Queueing) != 0), FrontQueue.Size);
 
             if (flags & Write_Partial)
                 return 0;
@@ -259,10 +260,10 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
         return size;
     }
 
-    if ( (! (flags & Write_IgnoreQueue)) && (Queueing || BackQueue.Size))
+    if ( (! (flags & Write_IgnoreQueue)) && ( (Flags & Flag_Queueing) || BackQueue.Size))
     {
         lwp_trace ("%p : Adding to back queue (Queueing = %d, FrontQueue.Size = %d)",
-                this, (int) Queueing, FrontQueue.Size);
+                this, (int) ( (Flags & Flag_Queueing) != 0), FrontQueue.Size);
 
         if (flags & Write_Partial)
             return 0;
@@ -333,7 +334,7 @@ void Stream::Write (Stream &stream, size_t size, bool delete_when_finished)
 
 void Stream::Internal::Write (Stream::Internal * stream, size_t size, int flags)
 {
-    if ( ( (! (flags & Write_IgnoreQueue)) && (BackQueue.Size || Queueing))
+    if ( ( (! (flags & Write_IgnoreQueue)) && (BackQueue.Size || Flags & Flag_Queueing))
          || ( (! (flags & Write_IgnoreBusy)) && Prev.Size))
     {
         Queued &queued = ** BackQueue.Push ();
@@ -638,6 +639,9 @@ void Stream::Internal::Push (const char * buffer, size_t size)
 
     if ((-- UserCount) == 0 && (!Public))
         delete this;
+
+    if (Flags & Flag_CloseASAP && MayClose ())
+        Close (true);
 }
 
 size_t Stream::Put (Stream &, size_t size)
@@ -666,18 +670,21 @@ void Stream::Retry (int when)
 
 void Stream::Internal::WriteQueued ()
 {
-    if (!Queueing)
-    {
-        lwp_trace ("%p : Writing FrontQueue (size = %d)", this, FrontQueue.Size);
+    if (Flags & Flag_Queueing)
+        return;
 
-        WriteQueued (FrontQueue);
+    lwp_trace ("%p : Writing FrontQueue (size = %d)", this, FrontQueue.Size);
 
-        lwp_trace ("%p : FrontQueue size is now %d, Prev.Size is %d, %d in back queue",
-                        this, FrontQueue.Size, Prev.Size, BackQueue.Size);
+    WriteQueued (FrontQueue);
 
-        if (FrontQueue.Size == 0 && !Prev.Size)
-            WriteQueued (BackQueue);
-    }
+    lwp_trace ("%p : FrontQueue size is now %d, Prev.Size is %d, %d in back queue",
+                    this, FrontQueue.Size, Prev.Size, BackQueue.Size);
+
+    if (FrontQueue.Size == 0 && !Prev.Size)
+        WriteQueued (BackQueue);
+
+    if (Flags & Flag_CloseASAP && MayClose ())
+        Close (true);
 }
 
 void Stream::Internal::WriteQueued (List <Queued> &queue)
@@ -691,7 +698,7 @@ void Stream::Internal::WriteQueued (List <Queued> &queue)
         if (queued.Type == Queued::Type_BeginMarker)
         {
             queue.PopFront ();
-            Queueing = true;
+            Flags |= Flag_Queueing;
 
             return;
         }
@@ -757,12 +764,24 @@ bool Stream::Internal::WriteDirect ()
     return false;
 }
 
-void Stream::Internal::Close ()
+bool Stream::Internal::MayClose ()
 {
-    if (Closing)
-        return;
+    return Prev.Size == 0 && BackQueue.Size == 0 && FrontQueue.Size == 0;
+}
 
-    Closing = true;
+bool Stream::Internal::Close (bool immediate)
+{
+    if (Flags & Flag_Closing)
+        return false;
+
+    if ( (!immediate) && !MayClose ())
+    {
+        Flags |= Flag_CloseASAP;
+        return false;
+    }
+
+    Flags |= Flag_Closing;
+
 
     ++ UserCount;
 
@@ -882,38 +901,26 @@ void Stream::Internal::Close ()
     }
 
 
-    /* Have to make a local copy of the close handlers as
-     * a close handler may destroy the Stream.
-     */
-
-    List <Internal::CloseHandler> ToCall;
-
     for (List <Internal::CloseHandler>::Element * E =
             CloseHandlers.First; E; E = E->Next)
     {
-        ToCall.Push (** E);
-    }
-
-    for (List <Internal::CloseHandler>::Element * E =
-            ToCall.First; E; E = E->Next)
-    {
         (** E).Proc (*Public, (** E).Tag);
+
+        if (!Public)
+            break;  /* close handler destroyed the stream */
     }
 
-    Closing = false;
+    Flags &= ~ Flag_Closing;
     
-    -- UserCount;
-
-    if (UserCount == 0 && !Public) /* see Stream destructor */
-    {
+    if ((-- UserCount) == 0 && !Public) /* see Stream destructor */
         delete this;
-        return;
-    }
+
+    return true;
 }
 
-void Stream::Close ()
+bool Stream::Close (bool immediate)
 {
-    internal->Close ();
+    return internal->Close (immediate);
 }
 
 void Stream::BeginQueue ()
@@ -923,14 +930,14 @@ void Stream::BeginQueue ()
         /* Although we're going to start queueing any new data, whatever is
          * currently in the queue still needs to be written.  A Queued with
          * the BeginMarker type indicates where the stream should stop writing
-         * and set Queueing to true.
+         * and set the Queueing flag
          */
 
         (** internal->BackQueue.Push ()).Type = Internal::Queued::Type_BeginMarker;
     }
     else
     {
-        internal->Queueing = true;
+        internal->Flags |= Internal::Flag_Queueing;
     }
 }
 
@@ -994,9 +1001,9 @@ void Stream::EndQueue ()
 
     /* TODO : Look for a queued item w/ Flag_BeginQueue if Queueing is false? */
 
-    assert (internal->Queueing);
+    assert (internal->Flags & Internal::Flag_Queueing);
 
-    internal->Queueing = false;
+    internal->Flags &= ~ Internal::Flag_Queueing;
 
     internal->WriteQueued ();
 }
@@ -1006,7 +1013,7 @@ bool Stream::Internal::IsTransparent ()
     assert (Public);
 
     return (!ExpDataHandlers.Size) && (BackQueue.Size + FrontQueue.Size) == 0
-                    && (!Queueing) && Public->IsTransparent ();
+                    && (! (Flags & Flag_Queueing)) && Public->IsTransparent ();
 }
 
 bool Stream::IsTransparent ()

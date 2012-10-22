@@ -41,6 +41,20 @@ struct Stream::Internal
     Internal (Stream *);
     ~ Internal ();
 
+    char Flags;
+
+    /* BeginQueue has been called */
+      const static char Flag_Queueing = 1;
+
+    /* Close was called with immediately = false, stream was busy */
+      const static char Flag_CloseASAP = 2;
+
+    /* Currently in the process of an immediate Close (this is just to prevent
+     * re-entrance to the Close routine)
+     */
+      const static char Flag_Closing = 4;
+
+
     struct DataHandler
     {
         Stream::HandlerData Proc;
@@ -144,8 +158,6 @@ struct Stream::Internal
     List <Queued> FrontQueue; /* to be written before current source stream */
     List <Queued> BackQueue; /* to be written after current source stream */
 
-    bool Queueing;
-
     void WriteQueued (List <Queued> &);
     void WriteQueued ();
 
@@ -170,14 +182,30 @@ struct Stream::Internal
     Stream::Internal * PrevDirect;
     size_t DirectBytesLeft;
 
+
     /* Attempts to write data from PrevDirect, returning false on failure. If
      * successful, DirectBytesLeft will be adjusted.
      */
 
     bool WriteDirect ();
 
-    void Close ();
-    bool Closing;
+
+    /* Returns true if this stream is ready to be closed - i.e. nothing is
+     * queued or currently being written.
+     */
+
+    bool MayClose ();
+
+
+    /* Closes this stream.  If immediate is true, the stream will be closed
+     * regardless of what MayClose() returns.  If immediate is false and
+     * MayClose() returns false, the stream will be closed as soon as all
+     * pending data has been written (via CloseASAP flag).
+     *
+     * Returns true if the stream was closed immediately, false otherwise.
+     */
+
+    bool Close (bool immediate);
 
 
     /* If UserCount is > 0 and the Stream is deleted, the internal structure

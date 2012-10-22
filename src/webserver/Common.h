@@ -48,6 +48,8 @@ struct Webserver::Upload::Internal : public Webserver::Upload
     File * AutoSaveFile;
     char * AutoSaveFilename;
 
+    void SetAutoSave ();
+
     List <WebserverHeader> Headers;
 
     inline Internal (Webserver::Request::Internal &_Request)
@@ -100,6 +102,10 @@ struct Multipart
     bool Done;
 
     lw_nvhash * Disposition;
+
+    /* Call the handler if all auto save files are now closed */
+
+    void TryCallHandler ();
 
     /* Multipart parser callbacks */
 

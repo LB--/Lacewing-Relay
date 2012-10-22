@@ -84,45 +84,48 @@ void * FDStream::Cast (void * type)
 
 struct FDStream::Internal
 {
-    FDStream &Public;
+    FDStream * Public;
+
+    int RefCount;
 
     Lacewing::Pump &Pump;
     Pump::Watch * Watch;
 
-    bool Nagle;
-
     int FD;
 
-    bool IsSocket;
-    bool AutoClose;
+    char Flags;
 
-    Internal (Lacewing::Pump &_Pump, FDStream &_Public)
+    const static char
+        Flag_Nagle      = 1,
+        Flag_IsSocket   = 2,
+        Flag_AutoClose  = 4,
+        Flag_Reading    = 8;
+
+    Internal (Lacewing::Pump &_Pump, FDStream * _Public)
         : Pump (_Pump), Public (_Public)
     {
-        Nagle = true;
+        RefCount = 0;
+
+        Flags = Flag_Nagle;
 
         ReadingSize = 0;
 
         FD = -1;
-        AutoClose = false;
 
         Watch = 0;
-
-        Reading = false;
     }
 
     ~ Internal ()
     {
-        Close ();
     }
 
-    void Close ();
+    bool Close (bool immediate);
 
     size_t Size;
 
     static void WriteReady (void * tag)
     {
-        ((Internal *) tag)->Public.Retry (Stream::Retry_Now);
+        ((Internal *) tag)->Public->Retry (Stream::Retry_Now);
     }
 
     static void ReadReady (void * tag)
@@ -131,18 +134,18 @@ struct FDStream::Internal
     }
 
     size_t ReadingSize;
-    
-    bool Reading;
 
     void TryRead ()
     {
         if (FD == -1)
             return;
 
-        if (Reading)
+        if (Flags & Flag_Reading)
             return;
 
-        Reading = true;
+        Flags |= Flag_Reading;
+
+        ++ RefCount;
 
         /* TODO : Use a buffer on the heap instead? */
 
@@ -159,7 +162,7 @@ struct FDStream::Internal
 
             if (bytes == 0)
             {
-                Public.Close ();
+                Public->Close (true);
                 break;
             }
 
@@ -168,59 +171,43 @@ struct FDStream::Internal
                 if (errno == EAGAIN)
                     break;
 
-                Public.Close ();
+                Public->Close (true);
                 break;
             }
 
             if (ReadingSize != -1 && (ReadingSize -= bytes) < 0)
                 ReadingSize = 0;
 
-            Public.Data (buffer, bytes);
+            Public->Data (buffer, bytes);
 
             /* Calling Data or Close may result in destruction of the Stream -
              * see FDStream destructor.
              */
 
-            if (!Reading)
+            if (! (Flags & Flag_Reading))
                 break;
         }
 
-        if (!Reading)
-        {
-            delete this;
-            return;
-        }
+        Flags &= ~ Flag_Reading;
 
-        Reading = false;
+        if ((-- RefCount) == 0 && !Public)
+            delete this;
     }
 };
 
 FDStream::FDStream (Lacewing::Pump &Pump) : Stream (Pump)
 {
-    internal = new Internal (Pump, *this);
+    internal = new Internal (Pump, this);
 }
 
 FDStream::~ FDStream ()
 {
-    /* Remove the watch to make sure we don't get any more
-     * callbacks from the pump.
-     */
+    Close (true);
 
-    if (internal->Watch)
-    {
-        internal->Pump.Remove (internal->Watch);
-        internal->Watch = 0;
-    }
-
-    if (internal->Reading)
-    {
-        internal->Reading = false;
-        internal = 0;
-
-        return;
-    }
-
-    delete internal;
+    if (internal->RefCount > 0)
+        internal->Public = 0;
+    else
+        delete internal;
 }
 
 void FDStream::SetFD (int FD, Pump::Watch * watch, bool auto_close)
@@ -231,11 +218,15 @@ void FDStream::SetFD (int FD, Pump::Watch * watch, bool auto_close)
         internal->Watch = 0;
     }
 
-    if (internal->AutoClose && internal->FD != -1)
-        internal->Close ();
+    if ( (internal->Flags & Internal::Flag_AutoClose) && internal->FD != -1)
+        Close (true);
 
     internal->FD = FD;
-    internal->AutoClose = auto_close;
+
+    if (auto_close)
+        internal->Flags |= Internal::Flag_AutoClose;
+    else
+        internal->Flags &= ~ Internal::Flag_AutoClose;
 
     if (FD == -1)
         return;
@@ -248,7 +239,7 @@ void FDStream::SetFD (int FD, Pump::Watch * watch, bool auto_close)
     }
     #endif
 
-    {   int b = internal->Nagle ? 0 : 1;
+    {   int b = (internal->Flags & Internal::Flag_Nagle) ? 0 : 1;
         setsockopt (FD, SOL_SOCKET, TCP_NODELAY, (char *) &b, sizeof (b));
     }
 
@@ -257,7 +248,10 @@ void FDStream::SetFD (int FD, Pump::Watch * watch, bool auto_close)
     struct stat stat;
     fstat (FD, &stat);
 
-    internal->IsSocket = S_ISSOCK (stat.st_mode);
+    if (S_ISSOCK (stat.st_mode))
+        internal->Flags |= Internal::Flag_IsSocket;
+    else
+        internal->Flags &= ~ Internal::Flag_IsSocket;
 
     if ((internal->Size = stat.st_size) > 0)
         return;
@@ -298,7 +292,7 @@ size_t FDStream::Put (const char * buffer, size_t size)
     #if HAVE_DECL_SO_NOSIGPIPE
         written = write (internal->FD, buffer, size);
     #else
-        if (internal->IsSocket)
+        if (internal->Flags & Internal::Flag_IsSocket)
             written = send (internal->FD, buffer, size, MSG_NOSIGNAL);
         else
             written = write (internal->FD, buffer, size);
@@ -356,16 +350,31 @@ size_t FDStream::BytesLeft ()
     return internal->Size - lseek (internal->FD, 0, SEEK_CUR);
 }
 
-void FDStream::Close ()
+bool FDStream::Close (bool immediate)
 {
-    internal->Close ();
-
-    Stream::Close ();
+    return internal->Close (immediate);
 }
 
-void FDStream::Internal::Close ()
+bool FDStream::Internal::Close (bool immediate)
 {
     lwp_trace ("FDStream::Close for FD %d", FD);
+
+    ++ RefCount;
+
+    if (!Public->Stream::Close (immediate))
+        return false;
+
+    /* NOTE: Public may be deleted at this point */
+
+    /* Remove the watch to make sure we don't get any more
+     * callbacks from the pump.
+     */
+
+    if (Watch)
+    {
+        Pump.Remove (Watch);
+        Watch = 0;
+    }
 
     int FD = this->FD;
 
@@ -379,12 +388,17 @@ void FDStream::Internal::Close ()
             Watch = 0;
         }
 
-        if (AutoClose)
+        if (Flags & Flag_AutoClose)
         {
             shutdown (FD, SHUT_RDWR);
             close (FD);
         }
     }
+
+    if ((-- RefCount) == 0 && !Public)
+        delete this;
+
+    return true;
 }
 
 void FDStream::Cork ()
@@ -405,7 +419,10 @@ void FDStream::Uncork ()
 
 void FDStream::Nagle (bool enabled)
 {
-    internal->Nagle = enabled;
+    if (enabled)
+        internal->Flags |= Internal::Flag_Nagle;
+    else
+        internal->Flags &= ~ Internal::Flag_Nagle;
 
     if (internal->FD != -1)
     {

@@ -908,14 +908,31 @@ struct Webserver::Upload::Header * Webserver::Upload::Header::Next ()
 
 void Webserver::Upload::SetAutoSave ()
 {
-    if (internal->AutoSaveFile)
+    internal->SetAutoSave ();
+}
+
+static void onAutoSaveFileClose (Lacewing::Stream &stream, void * tag)
+{
+    Webserver::Upload::Internal * upload = (Webserver::Upload::Internal *) tag;
+
+    delete upload->AutoSaveFile;
+    upload->AutoSaveFile = 0;
+
+    upload->Request.Client.Multipart->TryCallHandler ();
+}
+
+void Webserver::Upload::Internal::SetAutoSave ()
+{
+    if (AutoSaveFile)
         return;
 
-    internal->AutoSaveFile = new File (internal->Request.Server.Pump);
-    internal->AutoSaveFile->OpenTemp ();
+    AutoSaveFile = new File (Request.Server.Pump);
 
-    free (internal->AutoSaveFilename);
-    internal->AutoSaveFilename = strdup (internal->AutoSaveFile->Name ());
+    AutoSaveFile->AddHandlerClose (onAutoSaveFileClose, this);
+    AutoSaveFile->OpenTemp ();
+
+    free (AutoSaveFilename);
+    AutoSaveFilename = strdup (AutoSaveFile->Name ());
 }
 
 const char * Webserver::Upload::GetAutoSaveFilename ()
