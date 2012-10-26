@@ -700,6 +700,11 @@ void Server::AddNPN (const char *)
 {
 }
 
+const char * Server::Client::NPN ()
+{
+    return "";
+}
+
 Address &Server::Client::GetAddress ()
 {
     return internal->Address;
