@@ -50,8 +50,10 @@
 
 #include "lw_compat.h"
 
-#define strcasecmp stricmp
-typedef SSIZE_T ssize_t;
+#ifdef _MSC_VER
+    #define strcasecmp stricmp
+    typedef SSIZE_T ssize_t;
+#endif
 
 typedef SOCKET lwp_socket;
 

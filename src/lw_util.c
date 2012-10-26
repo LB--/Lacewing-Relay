@@ -265,7 +265,7 @@ time_t lwp_parse_time (const char * string)
           #ifndef __MINGW_H
              return _mkgmtime64 (&tm);
           #else
-             return Compat::_mkgmtime64 () (&tm);
+             return compat_mkgmtime64 () (&tm);
           #endif
        #else
           #if HAVE_TIMEGM

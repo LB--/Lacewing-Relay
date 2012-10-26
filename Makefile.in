@@ -156,8 +156,8 @@ build/windows-Thread.o: src/windows/Thread.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/Thread.cc
 build/windows-Client.o: src/windows/Client.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/Client.cc
-build/windows-Compat.o: src/windows/Compat.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/Compat.cc
+build/windows-lw_compat.o: src/windows/lw_compat.c $(COMMONDEPS)
+	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/lw_compat.c
 build/windows-FDStream.o: src/windows/FDStream.cc $(COMMONDEPS)
 	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/FDStream.cc
 build/windows-File.o: src/windows/File.cc $(COMMONDEPS)

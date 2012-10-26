@@ -57,7 +57,7 @@ fi
 
 if test "x$EXEEXT" = "x.exe"; then
 
-    OBJECTS="$OBJECTS build/windows-Client.o build/windows-Compat.o \
+    OBJECTS="$OBJECTS build/windows-Client.o build/windows-lw_compat.o \
              build/windows-Event.o build/windows-EventPump.o \
              build/windows-Server.o build/windows-Thread.o \
              build/windows-Timer.o build/windows-UDP.o \
@@ -65,7 +65,7 @@ if test "x$EXEEXT" = "x.exe"; then
              build/windows-WinSSLClient.o build/windows-Sync.o \
              build/windows-lw_global.o"
 
-    COMMONDEPS="$COMMONDEPS src/windows/Compat.h src/windows/lw_common.h"
+    COMMONDEPS="$COMMONDEPS src/windows/lw_compat.h src/windows/lw_common.h"
 
     SO_EXT="dll"
     LIBS="$LIBS -lmswsock -lws2_32 -lcrypt32 -lsecur32"

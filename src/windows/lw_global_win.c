@@ -102,7 +102,7 @@ lw_bool lw_random (char * buffer, size_t size)
    if (!crypt_init ())
       return lw_false;
 
-   if (!CryptGenRandom (crypt_prov, size, buffer))
+   if (!CryptGenRandom (crypt_prov, size, (PBYTE) buffer))
       return lw_false;
 
    return lw_true;
