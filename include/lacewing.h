@@ -211,11 +211,11 @@ LacewingFunction       lw_bool  lw_random                   (char * buffer, size
 
 /* EventPump */
 
-  LacewingFunction        lw_pump* lw_pump_new                  ();
-  LacewingFunction           void  lw_pump_tick                 (lw_pump *);
-  LacewingFunction           void  lw_pump_start_event_loop     (lw_pump *);
-  LacewingFunction           void  lw_pump_start_sleepy_ticking (lw_pump *, void (LacewingHandler * on_tick_needed) (lw_pump *));
-  LacewingFunction           void  lw_pump_post_eventloop_exit  (lw_pump *);
+  LacewingFunction        lw_pump* lw_eventpump_new                  ();
+  LacewingFunction           void  lw_eventpump_tick                 (lw_pump *);
+  LacewingFunction           void  lw_eventpump_start_event_loop     (lw_pump *);
+  LacewingFunction           void  lw_eventpump_start_sleepy_ticking (lw_pump *, void (LacewingHandler * on_tick_needed) (lw_pump *));
+  LacewingFunction           void  lw_eventpump_post_eventloop_exit  (lw_pump *);
 
 /* Stream */
 
