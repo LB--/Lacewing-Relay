@@ -10,11 +10,17 @@ http://github.com/udp/lacewing/
 Installing
 ==========
 
-On Windows, use the MSVC project file in the `msvc` directory to build a DLL/LIB.
-
-On Linux/BSD/OS X/MinGW:
+Linux/BSD/OS X:
 
     ./configure
+    make
+    make install
+
+Windows/MSVC: Use the solution in the `msvc` directory to build a DLL/LIB.
+
+Windows/MinGW:
+
+    ./configure --disable-spdy
     make
     make install
 
@@ -28,6 +34,28 @@ The API documentation for liblacewing can be found [here](http://lacewing-projec
 
 Issues with the documentation can be reported in the [gh-pages branch](https://github.com/udp/lacewing/tree/gh-pages)
 of the liblacewing GitHub repository.
+
+
+Changes in 0.4.3 (2012-Oct-28)
+==============================
+
+- Various issues with the Windows implementation of `FDStream` resolved
+
+- Visual Studio projects added for examples
+
+- Issues with building under MinGW resolved
+
+- `Server::Client::NPN` stub added for Windows
+
+- New parameter to `Stream::Close` to allow cancellation of pending writes
+
+- Public header file renamed from `Lacewing.h` to `lacewing.h` (lowercase)
+
+- C webserver examples updated for the current C API
+
+- Updated to the latest version of [multipart-parser-c](https://github.com/iafonov/multipart-parser-c)
+
+[0.4.3 Release Notes](http://lacewing-project.org/release/0.4.3.html)
 
 
 Changes in 0.4.2 (2012-Aug-23)

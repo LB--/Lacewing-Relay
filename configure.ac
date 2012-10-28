@@ -1,5 +1,5 @@
 AC_PREREQ([2.49])
-AC_INIT([liblacewing], [0.4.2], [])
+AC_INIT([liblacewing], [0.4.3], [])
 
 AC_PROG_CXX
 
@@ -114,7 +114,7 @@ CFLAGS="-ansi -Wall -Wno-format $CFLAGS"
 AC_SUBST(OBJECTS, $OBJECTS)
 AC_SUBST(COMMONDEPS, $COMMONDEPS)
 
-SO_NAME=liblacewing.$SO_EXT.0.3
+SO_NAME=liblacewing.$SO_EXT.0.4
 
 AC_SUBST(SO_NAME, $SO_NAME)
 AC_SUBST(SO_EXT, $SO_EXT)

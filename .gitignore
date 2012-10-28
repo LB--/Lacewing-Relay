@@ -23,4 +23,8 @@ a.out
 *manifest*
 Debug
 Release
+*.sbr
+BuildLog*
+*.idb
+*.dep
 
