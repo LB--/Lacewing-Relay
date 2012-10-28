@@ -3,7 +3,7 @@
 
 #include <lacewing.h>
 
-void onGet(lw_ws * webserver, lw_ws_req * request)
+void onGet(lw_ws * webserver, lw_stream * request)
 {
     /* The MIME type defaults to "text/html" */
 
@@ -26,7 +26,7 @@ void onGet(lw_ws * webserver, lw_ws_req * request)
 
 int main(int argc, char * argv[])
 {
-    lw_eventpump * eventpump = lw_eventpump_new();
+    lw_pump * eventpump = lw_eventpump_new();
     lw_ws * webserver = lw_ws_new(eventpump);
 
     lw_ws_onget(webserver, onGet);
