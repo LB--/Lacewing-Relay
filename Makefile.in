@@ -24,7 +24,7 @@ OBJECTS = build/lw_global.o build/lw_nvhash.o build/Filter.o build/Address.o bui
     build/file_flat.o build/pipe_flat.o build/pump_flat.o build/lw_util.o \
 	build/multipart_parser.o @OBJECTS@
 
-COMMONDEPS = include/lacewing.h src/lw_common.h src/HeapBuffer.h  src/Utility.h \
+COMMONDEPS = include/lacewing.h src/lw_common.h src/HeapBuffer.h  src/List.h \
 			 src/webserver/Common.h src/webserver/http/HTTP.h src/Address.h \
 			 src/Stream.h @COMMONDEPS@
 

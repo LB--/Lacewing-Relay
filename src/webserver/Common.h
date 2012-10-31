@@ -127,7 +127,17 @@ protected:
     List <WebserverHeader> Headers;
 
     Webserver::Upload::Internal * CurUpload;
-    Array <Webserver::Upload *> Uploads;
+
+    Webserver::Upload ** Uploads;
+    int NumUploads;
+
+    inline void AddUpload (Webserver::Upload * upload)
+    {
+        Uploads = (Webserver::Upload **)
+            realloc (Uploads, sizeof (Webserver::Upload *) * (++ NumUploads));
+
+        Uploads [NumUploads - 1] = upload;
+    }
 
     bool ParseDisposition (size_t length, const char * disposition);
 };

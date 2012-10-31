@@ -27,10 +27,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef LacewingUtility
-#define LacewingUtility
-
-/* TODO : The utility classes could definitely all do with improvement. */
+#ifndef LacewingList
+#define LacewingList
 
 namespace Lacewing
 {
@@ -200,52 +198,6 @@ namespace Lacewing
             Size = 0;
         }
 
-    };
-
-    template <class T> struct Array
-    {       
-        T * Items;
-        
-        int Allocated, Size;
-
-        inline Array ()
-        {
-            Items = (T *) malloc (sizeof (T) * (Allocated = 16));
-            Size = 0;
-        }
-        
-        inline ~Array ()
-        {
-            free (Items);
-        }
-
-        inline void Push (T What)
-        {
-            if (Size + 1 >= Allocated)
-                Items = (T *) realloc (Items, sizeof (T) * (Allocated *= 3));
-
-            Items [Size ++] = What;
-        }
-
-        inline T Pop ()
-        {
-            return Items [-- Size];
-        }
-
-        inline T operator [] (int Index)
-        {
-            return Items [Index];
-        }
-
-        inline operator T * ()
-        {
-            return Items;
-        }
-
-        inline void Clear ()
-        {
-            Size = 0;
-        }
     };
 }
 

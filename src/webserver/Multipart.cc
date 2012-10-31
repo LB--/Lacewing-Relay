@@ -297,9 +297,9 @@ int Multipart::onPartDataEnd ()
     if (CurUpload)
     {
         if (Parent)
-            Parent->Uploads.Push ((Webserver::Upload *) CurUpload);
+            Parent->AddUpload ((Webserver::Upload *) CurUpload);
         else
-            Uploads.Push ((Webserver::Upload *) CurUpload);
+            AddUpload ((Webserver::Upload *) CurUpload);
 
         if (CurUpload->AutoSaveFile)
         {
@@ -357,7 +357,7 @@ void Multipart::TryCallHandler ()
 {
     /* Only call the handler if all files are closed */
 
-    for (int i = 0; i < Uploads.Size; ++ i)
+    for (int i = 0; i < NumUploads; ++ i)
     {
         if (Uploads [i]->internal->AutoSaveFile)
             return;
@@ -368,7 +368,7 @@ void Multipart::TryCallHandler ()
     if (Server.Handlers.UploadPost)
     {
         Server.Handlers.UploadPost
-           (Server.Webserver, Request, Uploads.Items, Uploads.Size);
+           (Server.Webserver, Request, Uploads, NumUploads);
     }
 
     Request.AfterHandler ();
@@ -414,6 +414,9 @@ Multipart::Multipart
 {
     Parent = Child = 0;
 
+    Uploads = 0;
+    NumUploads = 0;
+
     CurUpload = 0;
 
     Done = false;
@@ -456,6 +459,8 @@ Multipart::~ Multipart ()
 
     if (Child)
         delete Child;
+
+    free (Uploads);
 }
 
 size_t Multipart::Process (const char * buffer, size_t buffer_size)
