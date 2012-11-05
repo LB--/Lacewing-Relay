@@ -58,7 +58,7 @@ void Webserver::Request::Session (const char * key, const char * value)
  
         HASH_ADD_STR (internal->Server.Sessions, session_key, session);
 
-		Cookie(SessionCookie, session->session_key);
+	Cookie(SessionCookie, session->session_key);
     }
 
     lw_nvhash_set (&session->data, key, value, lw_true);
