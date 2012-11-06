@@ -1008,6 +1008,30 @@ void Stream::EndQueue ()
     internal->WriteQueued ();
 }
 
+void Stream::ClearQueue ()
+{
+    while (internal->BackQueue.Size > 0)
+    {
+        Internal::Queued &queued = (** internal->BackQueue.First);
+
+        if (queued.Type == Internal::Queued::Type_Stream &&
+                queued.Flags & Internal::Queued::Flag_DeleteStream)
+        {
+            ++ internal->UserCount;
+
+            delete queued.StreamPtr;
+
+            if ((-- internal->UserCount) == 0 && !internal->Public)
+            {
+                delete this;
+                return;
+            }
+        }
+
+        internal->BackQueue.PopFront ();
+    }
+}
+
 bool Stream::Internal::IsTransparent ()
 {
     assert (Public);
