@@ -3,21 +3,21 @@
 
 #include <lacewing.h>
 
-void onGet(lw_ws * webserver, lw_stream * request)
+void on_get (lw_ws webserver, lw_ws_req req)
 {
-    lw_stream_writef(request, "Hello world from %s", lw_version());
+   lw_stream_writef (req, "Hello world from %s", lw_version ());
 }
 
-int main(int argc, char * argv[])
+int main (int argc, char * argv[])
 {
-    lw_pump * eventpump = lw_eventpump_new();
-    lw_ws * webserver = lw_ws_new(eventpump);
+   lw_pump pump = lw_eventpump_new ();
+   lw_ws webserver = lw_ws_new (pump);
 
-    lw_ws_onget(webserver, onGet);
-    lw_ws_host(webserver, 8080);
+   lw_ws_on_get (webserver, on_get);
+   lw_ws_host (webserver, 8081);
     
-    lw_eventpump_start_event_loop(eventpump);
+   lw_eventpump_start_eventloop (pump);
     
-    return 0;
+   return 0;
 }
 

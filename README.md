@@ -16,8 +16,6 @@ Linux/BSD/OS X:
     make
     make install
 
-Windows/MSVC: Use the solution in the `msvc` directory to build a DLL/LIB.
-
 Windows/MinGW:
 
     ./configure --disable-spdy
