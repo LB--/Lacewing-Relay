@@ -292,14 +292,11 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
 
     if (written < size)
     {
-        if ( (!BackQueue.Size) || (** BackQueue.Last).Type != Queued::Type_Data)
-            (** BackQueue.Push ()).Type = Queued::Type_Data;
-
         if (flags & Write_IgnoreQueue)
         {
             Queued &first = (** BackQueue.First);
 
-            if (!first.Buffer.Size)
+            if (first.Type == Queued::Type_Data && !first.Buffer.Size)
                 first.Buffer.Add (buffer + written, size - written);
             else
             {
@@ -312,7 +309,12 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
             }
         }
         else
+        {
+            if ( (!BackQueue.Size) || (** BackQueue.Last).Type != Queued::Type_Data)
+                (** BackQueue.Push ()).Type = Queued::Type_Data;
+
             (** BackQueue.Last).Buffer.Add (buffer + written, size - written);
+        }
     }
 
     return size;
