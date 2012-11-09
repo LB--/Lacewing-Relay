@@ -144,7 +144,7 @@ struct Server::Client::Internal
 
 Server::Client::Client (Lacewing::Pump &Pump, HANDLE FD) : FDStream (Pump)
 {
-    SetFD (FD);
+    SetFD (FD, 0, true);
 }
 
 Server::Server (Lacewing::Pump &Pump)
