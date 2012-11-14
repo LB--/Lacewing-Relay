@@ -4,7 +4,7 @@ http://lacewing-project.org/
 
 http://github.com/udp/lacewing/
 
-[![Build Status](https://secure.travis-ci.org/udp/lacewing.png)](http://travis-ci.org/udp/lacewing)
+[![Build Status](https://secure.travis-ci.org/udp/lacewing.png?branch=master)](http://travis-ci.org/udp/lacewing)
 
 
 Installing
