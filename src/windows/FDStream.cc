@@ -118,6 +118,9 @@ struct FDStream::Internal
 
     void IssueRead ()
     {
+        if (FD == INVALID_HANDLE_VALUE)
+            return;
+
         if (Flags & Flag_ReadPending)
             return;
 
@@ -365,6 +368,9 @@ void FDStream::SetFD (HANDLE FD, Pump::Watch * watch, bool auto_close)
         internal->Watch = internal->Pump.Add
                 (FD, internal, Internal::Completion);
     }
+
+    if (internal->ReadingSize != 0)
+        internal->IssueRead ();
 }
 
 bool FDStream::Valid ()
