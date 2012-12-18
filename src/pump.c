@@ -32,14 +32,21 @@
 
 lw_pump lw_pump_new (const lw_pumpdef * def)
 {
-   lw_pump ctx = calloc (sizeof (*ctx) + def->outer_size, 1);
+   lw_pump ctx = malloc (sizeof (*ctx));
    
    if (!ctx)
       return 0;
 
-   ctx->def = def;
+   lwp_pump_init (ctx, def);
 
    return ctx;
+}
+
+void lwp_pump_init (lw_pump ctx, const lw_pumpdef * def)
+{
+   memset (ctx, 0, sizeof (*ctx));
+
+   ctx->def = def;
 }
 
 void * lw_pump_outer (lw_pump pump)

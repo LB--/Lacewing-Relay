@@ -39,10 +39,12 @@ enum
 
 lw_eventpump lw_eventpump_new ()
 {
-   lw_eventpump ctx = (lw_eventpump) lw_pump_new (&def_eventpump);
+   lw_eventpump ctx = calloc (sizeof (*ctx), 1);
 
    if (!ctx)
       return 0;
+
+   lwp_pump_init (&ctx->pump, &def_eventpump);
 
    ctx->sync_signals = lw_sync_new ();
 
@@ -305,7 +307,7 @@ static lw_pump_watch def_add (lw_pump pump, int fd, void * tag,
                               lw_pump_callback on_write_ready,
                               lw_bool edge_triggered)
 {
-   lw_eventpump ctx = lw_pump_outer (pump);
+   lw_eventpump ctx = (lw_eventpump) pump;
 
    if ((!on_read_ready) && (!on_write_ready))
       return 0;
@@ -337,7 +339,7 @@ static lw_pump_watch def_add (lw_pump pump, int fd, void * tag,
 
   #elif defined (_lacewing_use_kqueue)
 
-      lw_pump_update_callbacks (pump, watch, tag,
+      lw_pump_update_callbacks (&ctx->pump, watch, tag,
                                 on_read_ready, on_write_ready,
                                 edge_triggered);
 
@@ -354,7 +356,7 @@ static void def_update_callbacks (lw_pump pump,
                                   lw_pump_callback on_write_ready,
                                   lw_bool edge_triggered)
 {
-   lw_eventpump ctx = lw_pump_outer (pump);
+   lw_eventpump ctx = (lw_eventpump) pump;
 
    if ( ((on_read_ready != 0) != (watch->on_read_ready != 0))
          || ((on_write_ready != 0) != (watch->on_write_ready != 0))
@@ -406,7 +408,7 @@ static void def_update_callbacks (lw_pump pump,
 
 static void def_remove (lw_pump pump, lw_pump_watch watch)
 {
-   lw_eventpump ctx = lw_pump_outer (pump);
+   lw_eventpump ctx = (lw_eventpump) pump;
 
    /* TODO : Should this remove the FD from epoll/kqueue immediately? */
 
@@ -423,7 +425,7 @@ static void def_remove (lw_pump pump, lw_pump_watch watch)
 
 static void def_post (lw_pump pump, void * func, void * param)
 {
-   lw_eventpump ctx = lw_pump_outer (pump);
+   lw_eventpump ctx = (lw_eventpump) pump;
 
    lw_sync_lock (ctx->sync_signals);
 
@@ -442,8 +444,6 @@ const lw_pumpdef def_eventpump =
    .remove            = def_remove,
    .update_callbacks  = def_update_callbacks,
    .post              = def_post,
-   .cleanup           = def_cleanup,
-
-   .outer_size        = sizeof (struct lw_eventpump)
+   .cleanup           = def_cleanup
 };
 
