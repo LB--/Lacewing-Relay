@@ -538,7 +538,7 @@ void on_client_close (lw_stream stream, void * tag)
    lw_server_client client = tag;
 
    if (client->user_count > 0)
-      client->dead = false;
+      client->dead = lw_false;
    else
       lwp_server_client_delete (client);
 }

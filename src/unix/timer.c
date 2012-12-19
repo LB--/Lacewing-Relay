@@ -87,7 +87,7 @@ lw_timer lw_timer_new ()
 
    #ifdef _lacewing_use_timerfd
       ctx->fd = timerfd_create (CLOCK_MONOTONIC, TFD_NONBLOCK);
-      lw_pump_add (ctx->pump, ctx->fd, ctx, timer_tick);
+      lw_pump_add (ctx->pump, ctx->fd, ctx, (lw_pump_callback) timer_tick, 0, lw_true);
    #endif
 
    return ctx;
@@ -138,7 +138,7 @@ void lw_timer_start (lw_timer ctx, long interval)
    #else
       #ifdef _lacewing_use_timerfd
         
-            itimerspec spec;
+            struct itimerspec spec;
 
             spec.it_interval.tv_sec  = interval / 1000;
             spec.it_interval.tv_nsec = (interval % 1000) * 1000000;
@@ -176,7 +176,7 @@ void lw_timer_stop (lw_timer ctx)
 
     #else
         #ifdef _lacewing_use_timerfd
-           itimerspec spec = {};
+           struct itimerspec spec = {};
            timerfd_settime (ctx->fd, 0, &spec, 0);
         #endif
     #endif
