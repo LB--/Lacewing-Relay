@@ -410,7 +410,7 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
 
 /* Timer */
   
-  lw_import       lw_timer  lw_timer_new                  ();
+  lw_import       lw_timer  lw_timer_new                  (lw_pump);
   lw_import           void  lw_timer_delete               (lw_timer);
   lw_import           void  lw_timer_start                (lw_timer, long milliseconds);
   lw_import        lw_bool  lw_timer_started              (lw_timer);
