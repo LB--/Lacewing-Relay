@@ -1227,4 +1227,8 @@ void * lw_stream_tag (lw_stream ctx)
    return ctx->tag;
 }
 
+lw_pump lw_stream_pump (lw_stream ctx)
+{
+   return ctx->pump;
+}
 

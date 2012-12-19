@@ -337,6 +337,7 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
   lw_import   lw_bool  lw_stream_close                 (lw_stream, lw_bool immediate);
   lw_import      void* lw_stream_tag                   (lw_stream);
   lw_import      void  lw_stream_set_tag               (lw_stream, void *);
+  lw_import   lw_pump  lw_stream_pump                  (lw_stream);
 
   #define lw_stream_retry_now  1
   #define lw_stream_retry_never  2
@@ -871,6 +872,8 @@ struct _stream
      (stream, bool delete_with_stream = false, bool close_together = false);
 
    lw_import bool close (bool immediate = false);
+
+   lw_import lacewing::pump pump ();
 };
 
 lw_import stream stream_new ();

@@ -120,3 +120,9 @@ bool _stream::close (bool immediate)
    lw_stream_close ((lw_stream) this, immediate);
 }
 
+lacewing::pump _stream::pump ()
+{
+   return (lacewing::pump) lw_stream_pump ((lw_stream) this);
+}
+
+

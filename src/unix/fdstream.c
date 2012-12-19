@@ -162,7 +162,7 @@ void lw_fdstream_set_fd (lw_fdstream ctx, lw_fd fd, lw_pump_watch watch,
 {
    if (ctx->watch)
    {
-      lw_pump_remove (ctx->pump, ctx->watch);
+      lw_pump_remove (lw_stream_pump ((lw_stream) ctx), ctx->watch);
       ctx->watch = 0;
    }
 
@@ -209,19 +209,21 @@ void lw_fdstream_set_fd (lw_fdstream ctx, lw_fd fd, lw_pump_watch watch,
 
    ctx->size = -1;
 
+   lw_pump pump = lw_stream_pump ((lw_stream) ctx);
+
    if (watch)
    {
       /* Given an existing Watch - change it to our callbacks */
 
       ctx->watch = watch;
 
-      lw_pump_update_callbacks
-         (ctx->pump, ctx->watch, ctx, read_ready, write_ready, lw_true);
+      lw_pump_update_callbacks (pump, ctx->watch, ctx,
+                                read_ready, write_ready, lw_true);
    }
    else
    {
-      ctx->watch = lw_pump_add (ctx->pump, fd, ctx,
-                                read_ready, write_ready, lw_true);
+      ctx->watch = lw_pump_add (pump, fd, ctx, read_ready,
+                                write_ready, lw_true);
    }
 }
 
@@ -361,7 +363,7 @@ static lw_bool def_close (lw_stream stream_ctx, lw_bool immediate)
 
    if (ctx->watch)
    {
-      lw_pump_remove (ctx->pump, ctx->watch);
+      lw_pump_remove (lw_stream_pump ((lw_stream) ctx), ctx->watch);
       ctx->watch = 0;
    }
 

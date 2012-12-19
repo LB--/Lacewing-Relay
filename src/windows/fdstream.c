@@ -66,8 +66,6 @@ struct lw_fdstream
    lw_fdstream transmit_file_from,
                transmit_file_to;
 
-   lw_pump pump;
-
    char buffer [lwp_default_buffer_size];
 
    HANDLE fd;
@@ -256,8 +254,6 @@ void lw_fdstream_init (lw_fdstream ctx, lw_pump pump)
 {
    memset (ctx, 0, sizeof (*ctx));
 
-   ctx->pump = pump;
-
    ctx->fd     = INVALID_HANDLE_VALUE;
    ctx->flags  = lwp_fdstream_flag_nagle;
    ctx->size   = -1;
@@ -265,7 +261,7 @@ void lw_fdstream_init (lw_fdstream ctx, lw_pump pump)
    ReadOverlapped = new Overlapped ();
    TransmitFileOverlapped = new Overlapped ();
 
-   lwp_stream_init ((lw_stream) ctx);
+   lwp_stream_init ((lw_stream) ctx, pump);
 }
 
 lw_fdstream lw_fdstream_new (lw_pump pump)

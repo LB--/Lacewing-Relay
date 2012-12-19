@@ -38,7 +38,6 @@ struct lw_fdstream
 
    int ref_count;
 
-   lw_pump pump;
    lw_pump_watch watch;
 
    int fd;
