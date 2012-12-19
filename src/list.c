@@ -47,9 +47,14 @@ struct list_element
    list_element * prev, * next;
 };
 
-static list_element * get_element (list_element * elem, size_t value_size)
+static list_element * get_element (list_element * elem)
 {
-   return (list_element *) (((char *) elem) - value_size);
+   return (elem - 1);
+}
+
+static void * get_value_ptr (list_element * elem)
+{
+   return (elem + 1);
 }
 
 size_t _list_length (list_head * list)
@@ -66,10 +71,10 @@ void _list_push (list_head ** p_list, size_t value_size, void * value)
 
    ++ list->length;
 
-   list_element * elem = calloc (value_size + sizeof (*elem), 1);
-   memcpy (elem, value, value_size);
+   list_element * elem = malloc (sizeof (*elem) + value_size);
 
-   elem = get_element (elem, value_size);
+   memset (elem, 0, sizeof (*elem));
+   memcpy (get_value_ptr (elem), value, value_size);
 
    elem->list = list;
    elem->prev = list->last;
@@ -94,10 +99,10 @@ void _list_push_front (list_head ** p_list, size_t value_size, void * value)
 
    ++ list->length;
 
-   list_element * elem = calloc (value_size + sizeof (*elem), 1);
-   memcpy (elem, value, value_size);
+   list_element * elem = malloc (sizeof (*elem) + value_size);
 
-   elem = get_element (elem, value_size);
+   memset (elem, 0, sizeof (*elem));
+   memcpy (get_value_ptr (elem), value, value_size);
 
    elem->list = list;
    elem->next = list->first;
@@ -115,27 +120,33 @@ void _list_push_front (list_head ** p_list, size_t value_size, void * value)
 
 list_element * _list_front (list_head * list)
 {
-   return list ? list->first : 0;
+   return list ? get_value_ptr (list->first) : 0;
 }
 
 list_element * _list_back (list_head * list)
 {
-   return list ? list->last : 0;
+   return list ? get_value_ptr (list->last) : 0;
 }
 
-list_element * _list_next (list_element * elem, size_t value_size)
+list_element * _list_next (list_element * elem)
 {
-   return elem ? get_element (elem, value_size)->next : 0;
+   if (!elem || ! (elem = get_element (elem)->next))
+      return 0;
+
+   return get_value_ptr (elem);
 }
 
-list_element * _list_prev (list_element * elem, size_t value_size)
+list_element * _list_prev (list_element * elem)
 {
-   return elem ? get_element (elem, value_size)->prev : 0;
+   if (!elem || ! (elem = get_element (elem)->prev))
+      return 0;
+
+   return get_value_ptr (elem);
 }
 
-void _list_remove (list_element * _elem, size_t value_size)
+void _list_remove (list_element * elem)
 {
-   list_element * elem = get_element (_elem, value_size);
+   elem = get_element (elem);
 
    list_head * list = elem->list;
 
@@ -153,7 +164,7 @@ void _list_remove (list_element * _elem, size_t value_size)
    if (elem == list->last)
       list->last = 0;
 
-   free (_elem);
+   free (elem);
 }
 
 void _list_clear (list_head ** list, size_t value_size)
@@ -165,7 +176,7 @@ void _list_clear (list_head ** list, size_t value_size)
 
    while (elem)
    {
-      list_element * next = get_element (elem, value_size)->next;
+      list_element * next = elem->next;
       free (elem);
       elem = next;
    }

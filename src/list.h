@@ -124,18 +124,20 @@ typedef struct list_element list_element;
    ((typeof (list)) _list_back ((list_head *) list))                          \
 
 #define list_elem_next(elem)                                                  \
-   ((typeof (elem)) _list_next ((list_element *) elem, sizeof (*elem)))       \
+   ((typeof (elem)) _list_next ((list_element *) elem))                       \
 
 #define list_elem_prev(elem)                                                  \
-   ((typeof (elem)) _list_prev ((list_element *) elem, sizeof (*elem)))       \
+   ((typeof (elem)) _list_prev ((list_element *) elem))                       \
 
-#define list_each_elem(list, elem)                                            \
-   for (typeof (list) elem = list_elem_front (list);                          \
-           elem; elem = list_elem_next (elem))                                \
+#define list_each_elem(list, e)                                               \
+   for (typeof (list) e = list_elem_front (list),                             \
+         e##_next = list_elem_next (e); e;                                    \
+          e = e##_next, e##_next = list_elem_next (e))                        \
 
-#define list_each_r_elem(list, elem)                                          \
-   for (typeof (list) elem = list_elem_back (list);                           \
-           elem; elem = list_elem_prev (elem))                                \
+#define list_each_r_elem(list, e)                                             \
+   for (typeof (list) e = list_elem_back (list),                              \
+         e##_prev = list_elem_prev (e); e;                                    \
+          e = e##_prev, e##_prev = list_elem_prev (e))                        \
 
 #define list_each(list, e)                                                    \
    for (typeof (*list) e, * _##e = list_elem_front (list),                    \
@@ -162,38 +164,38 @@ typedef struct list_element list_element;
    elem;                                                                      \
 })                                                                            \
 
-#define list_remove(list, value) \
-   list_elem_remove (list_find (list, value))\
+#define list_remove(list, value)                                              \
+   list_elem_remove (list_find (list, value))                                 \
 
-#define list_elem_remove(elem) \
-   _list_remove ((list_element *) elem, sizeof (*elem))
+#define list_elem_remove(elem)                                                \
+   _list_remove ((list_element *) elem)                                       \
 
-#define list_length(list) \
-   _list_length ((list_head *) (list))
+#define list_length(list)                                                     \
+   _list_length ((list_head *) (list))                                        \
 
-#define list_clear(list) \
-   _list_clear ((list_head **) &(list), sizeof (*list)) 
+#define list_clear(list)                                                      \
+   _list_clear ((list_head **) &(list), sizeof (*list))                       \
 
-#define list_front(list) \
-   (*list_elem_front (list))
+#define list_front(list)                                                      \
+   (*list_elem_front (list))                                                  \
 
-#define list_back(list) \
-   (*list_elem_back (list))
+#define list_back(list)                                                       \
+   (*list_elem_back (list))                                                   \
 
-#define list_pop_front(list) \
-   list_elem_remove (list_elem_front (list)) 
+#define list_pop_front(list)                                                  \
+   list_elem_remove (list_elem_front (list))                                  \
 
-#define list_pop_back(list) \
-   list_elem_remove (list_elem_back (list)) 
+#define list_pop_back(list)                                                   \
+   list_elem_remove (list_elem_back (list))                                   \
 
 void          _list_push        (list_head **, size_t value_size, void * value);
 void          _list_push_front  (list_head **, size_t value_size, void * value);
 list_element* _list_front       (list_head *);
 list_element* _list_back        (list_head *);
-list_element* _list_next        (list_element *, size_t value_size);
-list_element* _list_prev        (list_element *, size_t value_size);
+list_element* _list_next        (list_element *);
+list_element* _list_prev        (list_element *);
 size_t        _list_length      (list_head *);
-void          _list_remove      (list_element *, size_t value_size);
+void          _list_remove      (list_element *);
 void          _list_clear       (list_head **, size_t value_size);
 
 #endif

@@ -46,10 +46,10 @@ int main (int argc, char * argv [])
    assert (list_length (list) == 10);
    assert (!list_find (list, 5));
 
-   list_each_iter (list, iter)
+   list_each_elem (list, elem)
    {
-       if (list_iter_value (iter) % 2 != 0)
-           list_iter_remove (iter);
+       if (*elem % 2 != 0)
+           list_elem_remove (elem);
    }
 
    assert (list_length (list) == 6);
