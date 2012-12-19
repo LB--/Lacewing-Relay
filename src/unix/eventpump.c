@@ -59,7 +59,7 @@ lw_eventpump lw_eventpump_new ()
 
    #if defined (_lacewing_use_epoll)
 
-      ctx->queue = epoll_create (max_hint);
+      ctx->queue = epoll_create (32);
 
       struct epoll_event event =
       {
@@ -161,12 +161,12 @@ lw_error lw_eventpump_tick (lw_eventpump ctx)
 {
    #if defined (_lacewing_use_epoll)
 
-      epoll_event epoll_events [max_events];
+      struct epoll_event epoll_events [max_events];
       int count = epoll_wait (ctx->queue, epoll_events, max_events, 0);
 
       for (int i = 0; i < count; ++ i)
       {
-         epoll_event epoll_event = epoll_events [i];
+         struct epoll_event epoll_event = epoll_events [i];
    
          ready
          (
@@ -223,12 +223,12 @@ lw_error lw_eventpump_start_eventloop (lw_eventpump ctx)
    {
       #if defined (_lacewing_use_epoll)
 
-         epoll_event epoll_events [max_events];
+         struct epoll_event epoll_events [max_events];
          int count = epoll_wait (ctx->queue, epoll_events, max_events, -1);
    
          for (int i = 0; i < count; ++ i)
          {
-            epoll_event epoll_event = epoll_events [i];
+            struct epoll_event epoll_event = epoll_events [i];
       
             if (!ready
             (
