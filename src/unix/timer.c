@@ -76,13 +76,14 @@ static void timer_thread (void * ptr)
    }
 }
 
-lw_timer lw_timer_new ()
+lw_timer lw_timer_new (lw_pump pump)
 {
    lw_timer ctx = calloc (sizeof (*ctx), 1);
 
    if (!ctx)
       return 0;
 
+   ctx->pump = pump;
    ctx->timer_thread = lw_thread_new ("timer_thread", timer_thread);
 
    #ifdef _lacewing_use_timerfd

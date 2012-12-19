@@ -29,9 +29,9 @@
 
 #include "../common.h"
 
-timer timer_new ()
+timer timer_new (lacewing::pump pump)
 {
-   return (timer) lw_timer_new ();
+   return (timer) lw_timer_new ((lw_pump) pump);
 }
 
 void timer_delete (lacewing::timer timer)
