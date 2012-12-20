@@ -241,7 +241,7 @@ void lwp_streamgraph_expand (lwp_streamgraph graph)
          list_elem_remove (elem);
    }
 
-   #ifdef LacewingDebug
+   #ifdef _lacewing_debug
       lwp_streamgraph_print (graph);
    #endif
 }
@@ -481,6 +481,12 @@ void lwp_streamgraph_print (lwp_streamgraph graph)
    fprintf (stderr, "\n--- Graph %p (%d) ---\n\n",
          graph, list_length (graph->roots));
 
+   if (list_length (graph->roots) > 0)
+   {
+      assert (list_front (graph->roots));
+      assert (list_back (graph->roots));
+   }
+
    list_each (graph->roots, root)
    {
       print (graph, root, 1);
@@ -488,6 +494,12 @@ void lwp_streamgraph_print (lwp_streamgraph graph)
 
    fprintf (stderr, "\n--- Graph %p expanded (%d) ---\n\n",
          graph, list_length (graph->roots_expanded));
+
+   if (list_length (graph->roots_expanded) > 0)
+   {
+      assert (list_front (graph->roots_expanded));
+      assert (list_back (graph->roots_expanded));
+   }
 
    list_each (graph->roots_expanded, root)
    {

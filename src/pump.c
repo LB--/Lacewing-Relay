@@ -64,7 +64,8 @@ void lw_pump_delete (lw_pump ctx)
    if (!ctx)
       return;
 
-   ctx->def->cleanup (ctx);
+   if (ctx->def->cleanup)
+      ctx->def->cleanup (ctx);
 
    free (ctx);
 }

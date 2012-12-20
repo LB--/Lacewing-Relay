@@ -161,7 +161,7 @@ cleanup:
 
    if (ctx->user_count == 0)
    {
-      if (ctx->def->cleanup (ctx))
+      if ( (!ctx->def->cleanup) || ctx->def->cleanup (ctx))
          free (ctx);
    }
 }
@@ -304,7 +304,8 @@ size_t lwp_stream_write (lw_stream ctx, const char * buffer, size_t size, int fl
          return size;
       }
 
-      size_t written = ctx->def->sink_data (ctx, buffer, size);
+      size_t written = ctx->def->sink_data ?
+         ctx->def->sink_data (ctx, buffer, size) : size;
 
       lwp_trace ("%p : Stream sank " lwp_fmt_size " of " lwp_fmt_size,
                      ctx, written, size);
@@ -347,7 +348,8 @@ size_t lwp_stream_write (lw_stream ctx, const char * buffer, size_t size, int fl
       return size;
    }
 
-   size_t written = ctx->def->sink_data (ctx, buffer, size);
+   size_t written = ctx->def->sink_data ?
+       ctx->def->sink_data (ctx, buffer, size) : size;
 
    if (flags & lwp_stream_write_partial)
       return written;
@@ -864,6 +866,9 @@ lw_bool lwp_stream_write_direct (lw_stream ctx)
 {
    if (!ctx->prev_direct)
       return lw_true;
+
+   if (!ctx->def->sink_stream)
+      return lw_false;
 
    size_t written = ctx->def->sink_stream (ctx, ctx->prev_direct,
                                            ctx->direct_bytes_left);
