@@ -49,12 +49,12 @@ struct list_element
 
 static list_element * get_element (list_element * elem)
 {
-   return (elem - 1);
+   return elem ? (elem - 1) : 0;
 }
 
 static void * get_value_ptr (list_element * elem)
 {
-   return (elem + 1);
+   return elem ? (elem + 1) : 0;
 }
 
 size_t _list_length (list_head * list)
