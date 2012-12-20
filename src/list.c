@@ -159,10 +159,10 @@ void _list_remove (list_element * elem)
       elem->prev->next = elem->next;
 
    if (elem == list->first)
-      list->first = 0;
+      list->first = elem->next;
 
    if (elem == list->last)
-      list->last = 0;
+      list->last = elem->prev;
 
    free (elem);
 }
