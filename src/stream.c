@@ -1136,8 +1136,6 @@ void lw_stream_end_queue (lw_stream ctx)
 
 lw_bool lwp_stream_is_transparent (lw_stream ctx)
 {
-   lwp_trace ("Is stream %p transparent?", ctx);
-
    assert (! (ctx->flags & lwp_stream_flag_dead));
 
    if (list_length (ctx->exp_data_hooks) > 0)
