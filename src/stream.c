@@ -32,6 +32,8 @@
 
 void lwp_stream_init (lw_stream ctx, const lw_streamdef * def, lw_pump pump)
 {
+   lwp_trace ("Stream %p created with def %p", ctx, def);
+
    memset (ctx, 0, sizeof (*ctx));
 
    ctx->def = def;
@@ -210,7 +212,7 @@ static void queue_back (lw_stream ctx, const char * buffer, size_t size)
       list_push (ctx->back_queue, queued);
    }
 
-   lwp_heapbuffer_add (list_back (ctx->back_queue).buffer, buffer, size);
+   lwp_heapbuffer_add (&list_back (ctx->back_queue).buffer, buffer, size);
 }
 
 static void queue_front (lw_stream ctx, const char * buffer, size_t size)
@@ -226,7 +228,7 @@ static void queue_front (lw_stream ctx, const char * buffer, size_t size)
       list_push (ctx->front_queue, queued);
    }
 
-   lwp_heapbuffer_add (list_back (ctx->front_queue).buffer, buffer, size);
+   lwp_heapbuffer_add (&list_back (ctx->front_queue).buffer, buffer, size);
 }
 
 size_t lwp_stream_write (lw_stream ctx, const char * buffer, size_t size, int flags)
@@ -358,9 +360,9 @@ size_t lwp_stream_write (lw_stream ctx, const char * buffer, size_t size, int fl
    {
       if (flags & lwp_stream_write_ignore_queue)
       {
-         if (lwp_heapbuffer_length (list_front (ctx->back_queue).buffer) == 0)
+         if (lwp_heapbuffer_length (&list_front (ctx->back_queue).buffer) == 0)
          {
-            lwp_heapbuffer_add (list_front (ctx->back_queue).buffer,
+            lwp_heapbuffer_add (&list_front (ctx->back_queue).buffer,
                                 buffer + written, size - written);
          }
          else
@@ -371,7 +373,7 @@ size_t lwp_stream_write (lw_stream ctx, const char * buffer, size_t size, int fl
             {  .type = lwp_stream_queued_data
             };
 
-            lwp_heapbuffer_add (queued.buffer, buffer + written, size - written);
+            lwp_heapbuffer_add (&queued.buffer, buffer + written, size - written);
 
             list_push_front (ctx->back_queue, queued);
          }
@@ -772,24 +774,24 @@ list_type (struct lwp_stream_queued) lwp_stream_write_queue
 
       if (queued.type == lwp_stream_queued_data)
       {
-         if (lwp_heapbuffer_length (queued.buffer) > 0)
+         if (lwp_heapbuffer_length (&queued.buffer) > 0)
          {
             /* There's still something in the buffer that needs to be written */
 
             size_t written = lwp_stream_write
                ( ctx,
-                 lwp_heapbuffer_buffer (queued.buffer),
-                 lwp_heapbuffer_length (queued.buffer),
+                 lwp_heapbuffer_buffer (&queued.buffer),
+                 lwp_heapbuffer_length (&queued.buffer),
                  lwp_stream_write_ignore_queue | lwp_stream_write_partial
                       | lwp_stream_write_ignore_busy
                );
 
-            lwp_heapbuffer_trim_left (queued.buffer, written);
+            lwp_heapbuffer_trim_left (&queued.buffer, written);
 
-            if (lwp_heapbuffer_length (queued.buffer) > 0)
+            if (lwp_heapbuffer_length (&queued.buffer) > 0)
                break; /* couldn't write everything */
 
-            lwp_heapbuffer_free (queued.buffer);
+            lwp_heapbuffer_free (&queued.buffer);
          }
 
          list_pop_front (queue);
@@ -1080,7 +1082,7 @@ size_t lw_stream_queued (lw_stream stream)
    {
       if (queued.type == lwp_stream_queued_data)
       {
-         size += lwp_heapbuffer_length (queued.buffer);
+         size += lwp_heapbuffer_length (&queued.buffer);
          continue;
       }
 
@@ -1107,10 +1109,10 @@ size_t lw_stream_queued (lw_stream stream)
    return size;
 }
 
-void lw_stream_end_queue_hb (lw_stream ctx, int head_buffers,
+void lw_stream_end_queue_hb (lw_stream ctx, int num_head_buffers,
                              const char ** buffers, size_t * lengths)
 {
-   for (int i = 0; i < head_buffers; ++ i)
+   for (int i = 0; i < num_head_buffers; ++ i)
    {
       lwp_stream_write (ctx, buffers [i], lengths [i],
             lwp_stream_write_ignore_queue | lwp_stream_write_ignore_busy);
@@ -1134,6 +1136,8 @@ void lw_stream_end_queue (lw_stream ctx)
 
 lw_bool lwp_stream_is_transparent (lw_stream ctx)
 {
+   lwp_trace ("Is stream %p transparent?", ctx);
+
    assert (! (ctx->flags & lwp_stream_flag_dead));
 
    if (list_length (ctx->exp_data_hooks) > 0)

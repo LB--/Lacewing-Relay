@@ -78,6 +78,7 @@ liblacewing.@SO_EXT@: $(OBJECTS)
 
 liblacewing.a: $(OBJECTS)
 	@echo Linking static library...
+	@rm -f liblacewing.a
 	@ar rcs liblacewing.a ./build/*.o
 
 build/global.o: src/global.c $(COMMONDEPS) 
@@ -257,7 +258,7 @@ build/webserver-cxx.o: src/cxx/webserver.cc $(COMMONDEPS)
 ############
 	
 clean:
-	rm -f liblacewing.@SO_EXT@* liblacewing.a $(OBJECTS)
+	rm -f liblacewing.@SO_EXT@* liblacewing.a build/*.o
 
 install: liblacewing.@SO_EXT@ liblacewing.a
 	@echo -----

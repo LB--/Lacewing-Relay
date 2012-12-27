@@ -195,17 +195,23 @@ void lw_fdstream_set_fd (lw_fdstream ctx, lw_fd fd, lw_pump_watch watch,
    fstat (fd, &stat);
 
    if (S_ISSOCK (stat.st_mode))
+   {
       ctx->flags |= lwp_fdstream_flag_is_socket;
+   }
    else
+   {
       ctx->flags &= ~ lwp_fdstream_flag_is_socket;
 
-   if ((ctx->size = stat.st_size) > 0)
-      return;
+      if ((ctx->size = stat.st_size) > 0)
+         return;
 
-   /* Size is 0.  Is it really an empty file? */
+      /* Not a socket, and size is 0.  Is it really just an empty file? */
 
-   if (S_ISREG (stat.st_mode))
-      return;
+      if (S_ISREG (stat.st_mode))
+         return;
+   }
+
+   /* Assuming this is something we can watch for readiness. */
 
    ctx->size = -1;
 
@@ -213,17 +219,17 @@ void lw_fdstream_set_fd (lw_fdstream ctx, lw_fd fd, lw_pump_watch watch,
 
    if (watch)
    {
-      /* Given an existing Watch - change it to our callbacks */
+      /* Given an existing pump watch - change it to use our callbacks */
 
       ctx->watch = watch;
 
       lw_pump_update_callbacks (pump, ctx->watch, ctx,
-                                read_ready, write_ready, lw_true);
+            read_ready, write_ready, lw_true);
    }
    else
    {
       ctx->watch = lw_pump_add (pump, fd, ctx, read_ready,
-                                write_ready, lw_true);
+            write_ready, lw_true);
    }
 }
 
@@ -267,6 +273,8 @@ void lw_fdstream_nagle (lw_fdstream ctx, lw_bool enabled)
 static size_t def_sink_data (lw_stream stream, const char * buffer, size_t size)
 {
    lw_fdstream ctx = (lw_fdstream) stream;
+
+   lwp_trace ("fdstream sink " lwp_fmt_size " bytes", size);
 
    size_t written;
 
@@ -321,7 +329,7 @@ static void def_read (lw_stream _ctx, size_t bytes)
 {
    lw_fdstream ctx = (lw_fdstream) _ctx;
 
-   lwp_trace ("FDStream (FD %d) read " lwp_fmt_size, ctx->fd, bytes);
+   lwp_trace ("FDStream %p (FD %d) read " lwp_fmt_size, ctx, ctx->fd, bytes);
 
    lw_bool was_reading = ctx->reading_size != 0;
 
@@ -343,6 +351,8 @@ static size_t def_bytes_left (lw_stream _ctx)
 
    if (ctx->size == -1)
       return -1;
+
+   lwp_trace ("lseek for FD %d, size " lwp_fmt_size, ctx->fd, ctx->size);
 
    /* TODO : lseek64? */
 
@@ -400,10 +410,10 @@ void lwp_fdstream_init (lw_fdstream ctx, lw_pump pump)
 {
    memset (ctx, 0, sizeof (*ctx));
 
-   lwp_stream_init (&ctx->stream, &def_fdstream, pump);
-
    ctx->fd = -1;
    ctx->flags = lwp_fdstream_flag_nagle;
+
+   lwp_stream_init (&ctx->stream, &def_fdstream, pump);
 }
 
 lw_fdstream lw_fdstream_new (lw_pump pump)

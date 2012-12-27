@@ -36,9 +36,7 @@ static void client_cleanup (lwp_ws_client);
 lwp_ws_client lwp_ws_httpclient_new (lw_ws ws, lw_server_client socket,
                                      lw_bool secure)
 {
-   lwp_ws_httpclient ctx;
-   
-   ctx = calloc (sizeof (*ctx), 1);
+   lwp_ws_httpclient ctx = calloc (sizeof (*ctx), 1);
 
    if (!ctx)
       return 0;
@@ -234,16 +232,15 @@ static size_t def_sink_data (lw_stream stream, const char * buffer, size_t size)
    }
 }
 
-static lw_bool def_is_transparent (lw_stream stream)
-{
-    return lw_true;
-}
-
 const lw_streamdef def_httpclient =
 {
    .sink_data = def_sink_data,
-   .is_transparent = def_is_transparent
 };
+
+static lw_bool def_is_transparent (lw_stream stream)
+{
+   return lw_true;
+}
 
 const lw_streamdef def_httprequest =
 {
@@ -264,16 +261,17 @@ void client_respond (lwp_ws_client client, lw_ws_req request)
 
    /* TODO: Eliminate the use of this buffer (use stream queueing instead) */
 
-   lwp_heapbuffer buffer = request->buffer;
-   lwp_heapbuffer_reset (buffer);
+   lwp_heapbuffer_reset (&request->buffer);
 
-   lwp_heapbuffer_addf (buffer, "HTTP/%d.%d %s", request->version_major,
-                                                 request->version_minor,
-                                                 request->status);
+   lwp_heapbuffer_addf (&request->buffer, "HTTP/%d.%d %s",
+                        (int) request->version_major,
+                        (int) request->version_minor,
+                        request->status);
 
    list_each (request->headers_out, header)
    {
-      lwp_heapbuffer_addf (buffer, "\r\n%s: %s", header.name, header.value);
+      lwp_heapbuffer_addf (&request->buffer, "\r\n%s: %s",
+                           header.name, header.value);
    }
 
    for (lw_ws_req_cookie cookie = request->cookies; cookie;
@@ -282,28 +280,27 @@ void client_respond (lwp_ws_client client, lw_ws_req request)
       if (!cookie->changed)
          continue;
 
-      lwp_heapbuffer_addf (buffer, "\r\nset-cookie: %s=%s", cookie->name,
-                                                            cookie->value);
+      lwp_heapbuffer_addf (&request->buffer, "\r\nset-cookie: %s=%s",
+                             cookie->name, cookie->value);
 
       if (*cookie->attr)
-         lwp_heapbuffer_addf (buffer, "; %s", cookie->attr);
+         lwp_heapbuffer_addf (&request->buffer, "; %s", cookie->attr);
    }
 
-   lwp_heapbuffer_addf (buffer, "\r\ncontent-length: " lwp_fmt_size "\r\n\r\n",
-                        lw_stream_queued ((lw_stream) &ctx->request));
+   lwp_heapbuffer_addf (&request->buffer, "\r\ncontent-length: " lwp_fmt_size "\r\n\r\n",
+                           lw_stream_queued ((lw_stream) &ctx->request));
 
    lw_fdstream_cork ((lw_fdstream) ctx->client.socket);
 
-   char * head_buffer = lwp_heapbuffer_buffer (buffer);
-   size_t head_length = lwp_heapbuffer_length (buffer);
+   char * head_buffer = lwp_heapbuffer_buffer (&request->buffer);
+   size_t head_length = lwp_heapbuffer_length (&request->buffer);
 
-   lw_stream_end_queue_hb ((lw_stream) ctx, 1, (const char **) &head_buffer,
-                           &head_length);
+   lw_stream_end_queue_hb ((lw_stream) &ctx->request, 1,
+                           (const char **) &head_buffer, &head_length);
 
-   lw_stream_begin_queue ((lw_stream) ctx);
    lw_stream_begin_queue ((lw_stream) &ctx->request);
 
-   lwp_heapbuffer_reset (buffer);
+   lwp_heapbuffer_reset (&request->buffer);
 
    lw_fdstream_uncork ((lw_fdstream) ctx->client.socket);
 

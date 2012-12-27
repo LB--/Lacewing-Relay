@@ -105,6 +105,8 @@ struct lw_ws_req_cookie
 
 struct lw_ws_req
 {
+   struct lw_stream stream;
+
    void * tag;
 
    lw_ws ws;
@@ -142,7 +144,6 @@ struct lw_ws_req
    list (struct lw_ws_req_hdr, headers_out);
 
    lw_bool responded;
-
 };
 
 void lwp_ws_req_init (lw_ws_req, lw_ws, lwp_ws_client, const lw_streamdef *);

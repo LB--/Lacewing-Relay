@@ -181,7 +181,7 @@ static void on_stream_data (spdy_ctx * spdy, spdy_stream * stream,
 {
    lw_ws_req request = spdy_stream_get_tag (stream);
 
-   lwp_heapbuffer_add (request->buffer, data, size);
+   lwp_heapbuffer_add (&request->buffer, data, size);
 
    if (!spdy_stream_open_remote (stream))
       on_request_complete (spdy, stream);

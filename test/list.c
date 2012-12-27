@@ -14,8 +14,8 @@ int main (int argc, char * argv [])
 
    assert (list_length (list) == 0);
 
-   list_push (list, 5);
    list_push (list, 6);
+   list_push_front (list, 5);
    list_push (list, 7);
    list_push (list, 8);
    list_push (list, 9);
@@ -61,7 +61,22 @@ int main (int argc, char * argv [])
 
    printf ("\n");
 
-   list_clear (list);
+   for (int i = 0; i < 10000; ++ i)
+   {
+       list_push_front (list, i);
+   }
+
+   assert (list_length (list) == 10006);
+
+   int n = 0;
+
+   list_each_elem (list, elem)
+   {
+       ++ n;
+       list_elem_remove (elem);
+   }
+
+   assert (n == 10006);
 
    assert (list_length (list) == 0);
 

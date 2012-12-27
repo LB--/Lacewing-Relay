@@ -29,84 +29,107 @@
 
 #include "common.h"
 
-void lwp_heapbuffer_init (lwp_heapbuffer ctx)
+void lwp_heapbuffer_free (lwp_heapbuffer * ctx)
 {
-    memset (ctx, 0, sizeof (*ctx));
+   if (!*ctx)
+      return;
+
+   free (*ctx);
+   *ctx = 0;
 }
 
-void lwp_heapbuffer_free (lwp_heapbuffer ctx)
-{
-    free (ctx);
-}
-
-lw_bool lwp_heapbuffer_add (lwp_heapbuffer ctx, const char * buffer, size_t length)
+lw_bool lwp_heapbuffer_add (lwp_heapbuffer * ctx, const char * buffer, size_t length)
 {
    /* TODO: discard data before the offset (might save a realloc) */
 
-    size_t new_length;
-    lw_bool need_realloc = lw_false;
+   if (length == -1)
+      length = strlen (buffer);
 
-    if (length == -1)
-        length = strlen (buffer);
+   if (length == 0)
+      return lw_true;  /* nothing to do */
 
-    new_length = ctx->length + length;
+   if (!*ctx)
+   {
+      size_t init_alloc = (length * 3);
 
-    while (new_length > ctx->allocated)
-    {
-       ctx->allocated = ctx->allocated > 0 ? (ctx->allocated * 3) : (1024 * 4);
-       need_realloc = lw_true;
-    }
+      if (! (*ctx = malloc (sizeof (**ctx) + init_alloc)))
+         return lw_false;
 
-    if (need_realloc)
-    {
-        ctx = realloc (ctx, sizeof (*ctx) + ctx->allocated);
+      memset (*ctx, 0, sizeof (**ctx));
 
-        if (!ctx)
-           return lw_false;
-    }
+      (*ctx)->allocated = init_alloc;
+   }
+   else
+   {
+      size_t new_length = (*ctx)->length + length;
 
-    memcpy (ctx->buffer + ctx->length, buffer, length);
-    ctx->length = new_length;
+      if (new_length > (*ctx)->allocated)
+      {
+         while (new_length > (*ctx)->allocated)
+            (*ctx)->allocated *= 3;
 
-    return lw_true;
+         if (! (*ctx = realloc (*ctx, sizeof (**ctx) + (*ctx)->allocated)))
+            return lw_false;
+      }
+   }
+
+   memcpy ((*ctx)->buffer + (*ctx)->length, buffer, length);
+   (*ctx)->length += length;
+
+   return lw_true;
 }
 
-void lwp_heapbuffer_addf (lwp_heapbuffer ctx, const char * format, ...)
+void lwp_heapbuffer_addf (lwp_heapbuffer * ctx, const char * format, ...)
 {
    va_list args;
    va_start (args, format);
-    
+
    char * buffer;
    ssize_t length = lwp_format (&buffer, format, args);
-    
-   if (ctx->length > 0)
+
+   if (length > 0)
       lwp_heapbuffer_add (ctx, buffer, length);
 
    va_end (args);
 }
 
-void lwp_heapbuffer_reset (lwp_heapbuffer ctx)
+void lwp_heapbuffer_reset (lwp_heapbuffer * ctx)
 {
-    ctx->length = ctx->offset = 0;
+   if (!*ctx)
+      return;
+
+   (*ctx)->length = (*ctx)->offset = 0;
 }
 
-size_t lwp_heapbuffer_length (lwp_heapbuffer ctx)
+size_t lwp_heapbuffer_length (lwp_heapbuffer * ctx)
 {
-   return ctx->length - ctx->offset;
+   if (!*ctx)
+      return 0;
+
+   return (*ctx)->length - (*ctx)->offset;
 }
 
-char * lwp_heapbuffer_buffer (lwp_heapbuffer ctx)
+char * lwp_heapbuffer_buffer (lwp_heapbuffer * ctx)
 {
-   return ctx->buffer + ctx->offset;
+   if (!*ctx)
+      return 0;
+
+   return (*ctx)->buffer + (*ctx)->offset;
 }
 
-void lwp_heapbuffer_trim_left (lwp_heapbuffer ctx, size_t length)
+void lwp_heapbuffer_trim_left (lwp_heapbuffer * ctx, size_t length)
 {
-   ctx->offset += length;
+   if (!*ctx)
+      return;
+
+   (*ctx)->offset += length;
 }
 
-void lwp_heapbuffer_trim_right (lwp_heapbuffer ctx, size_t length)
+void lwp_heapbuffer_trim_right (lwp_heapbuffer * ctx, size_t length)
 {
-   ctx->length -= length;
+   if (!*ctx)
+      return;
+
+   (*ctx)->length -= length;
 }
 

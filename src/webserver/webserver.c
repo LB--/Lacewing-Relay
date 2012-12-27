@@ -77,8 +77,12 @@ static void on_disconnect (lw_server server, lw_server_client client_socket)
 {
    lwp_ws_client client = lw_stream_tag ((lw_stream) client_socket);
 
+   assert (client);
+
    client->cleanup ();
    free (client);
+
+   lw_stream_set_tag ((lw_stream) client_socket, 0);
 }
 
 static void on_error (lw_server server, lw_error error)

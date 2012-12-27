@@ -34,14 +34,14 @@ void lwp_ws_req_init (lw_ws_req ctx, lw_ws ws, lwp_ws_client client,
 {
    memset (ctx, 0, sizeof (*ctx));
 
-   lwp_stream_init ((lw_stream) ctx, def, 0);
-
    ctx->ws = ws;
    ctx->client = client;
 
    ctx->responded = lw_true;
 
    lwp_ws_req_clean (ctx);
+
+   lwp_stream_init ((lw_stream) ctx, def, 0);
 }
 
 void lwp_ws_req_cleanup (lw_ws_req ctx)
@@ -98,6 +98,8 @@ void lwp_ws_req_clean (lw_ws_req ctx)
    *ctx->method     = 0;
    *ctx->url        = 0;
    *ctx->hostname   = 0;
+
+   lwp_heapbuffer_free (&ctx->buffer);
 }
 
 void lwp_ws_req_before_handler (lw_ws_req ctx)
@@ -106,7 +108,7 @@ void lwp_ws_req_before_handler (lw_ws_req ctx)
     * be in this function.
     */
 
-   lwp_heapbuffer_add (ctx->buffer, "\0", 1); /* null terminate body */
+   lwp_heapbuffer_add (&ctx->buffer, "\0", 1); /* null terminate body */
 
    strcpy (ctx->status, "200 OK");
 
@@ -143,7 +145,7 @@ void lwp_ws_req_after_handler (lw_ws_req ctx)
     * in this function.
     */
 
-   if((!ctx->responded) && ctx->ws->auto_finish)
+   if ((!ctx->responded) && ctx->ws->auto_finish)
       lwp_ws_req_respond (ctx);
 }
 
@@ -727,7 +729,7 @@ const char * lw_ws_req_cookie_value (lw_ws_req_cookie cookie)
 
 const char * lw_ws_req_body (lw_ws_req ctx)
 {
-   return lwp_heapbuffer_buffer (ctx->buffer);
+   return lwp_heapbuffer_buffer (&ctx->buffer);
 }
 
 const char * lw_ws_req_GET (lw_ws_req ctx, const char * name)
@@ -748,8 +750,8 @@ static void parse_post_data (lw_ws_req ctx)
       return;
    }
 
-   char * post_data = lwp_heapbuffer_buffer (ctx->buffer),
-        * end = post_data + lwp_heapbuffer_length (ctx->buffer),
+   char * post_data = lwp_heapbuffer_buffer (&ctx->buffer),
+        * end = post_data + lwp_heapbuffer_length (&ctx->buffer),
         b = *end;
 
    *end = 0;

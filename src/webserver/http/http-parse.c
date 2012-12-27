@@ -137,7 +137,7 @@ static int on_body (http_parser * parser, const char * buffer, size_t size)
    {
       /* Normal request body - just buffer it */
 
-      lwp_heapbuffer_add (ctx->request.buffer, buffer, size);
+      lwp_heapbuffer_add (&ctx->request.buffer, buffer, size);
       return 0;
    }
 
@@ -178,7 +178,7 @@ static int on_message_complete (http_parser * parser)
    return 0;
 }
 
-const http_parser_settings lwp_ws_http_parser_settings =
+const http_parser_settings parser_settings =
 {
    on_message_begin,
    on_url,

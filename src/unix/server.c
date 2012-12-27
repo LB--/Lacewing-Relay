@@ -94,9 +94,11 @@ static lw_server_client lwp_server_client_new (lw_server ctx, lw_pump pump, int 
    if (!client)
       return 0;
 
+   client->server = ctx;
+
    lwp_fdstream_init (&client->fdstream, pump);
 
-   /* The first added close handler is always the last called.
+   /* The first added close hook is always the last called.
     * This is important, because ours will destroy the client.
     */
 
@@ -130,7 +132,6 @@ static void lwp_server_client_delete (lw_server_client client)
    {
       if (ctx->on_disconnect)
          ctx->on_disconnect (ctx, client);
-
    }
 
    if (client->ssl)

@@ -51,7 +51,7 @@ lwp_ws_client lwp_ws_httpclient_new
 
 void lwp_ws_httpclient_delete (lw_ws, lwp_ws_httpclient);
 
-const http_parser_settings parser_settings;
+extern const http_parser_settings parser_settings;
 
 const lw_streamdef def_httpclient;
 const lw_streamdef def_httprequest;

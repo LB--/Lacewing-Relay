@@ -216,7 +216,7 @@ static int on_headers_complete (multipart_parser * parser)
    lwp_trace ("Multipart %p: on_headers_complete", ctx);
 
    ctx->parsing_headers = lw_false;
-   lwp_heapbuffer_reset (ctx->request->buffer);
+   lwp_heapbuffer_reset (&ctx->request->buffer);
 
    if (lwp_nvhash_get (&ctx->disposition, "filename", 0))
    {
@@ -274,7 +274,7 @@ static int on_part_data (multipart_parser * parser,
        * so the data must be buffered.
        */
 
-      lwp_heapbuffer_add (ctx->request->buffer, at, length);
+      lwp_heapbuffer_add (&ctx->request->buffer, at, length);
       return 0;
    }
 
@@ -351,14 +351,14 @@ static int on_part_data_end (multipart_parser * parser)
    {
       /* No upload structure - add to POST items */
 
-      lwp_heapbuffer_add (ctx->request->buffer, "\0", 1);
+      lwp_heapbuffer_add (&ctx->request->buffer, "\0", 1);
 
       lwp_nvhash_set (&ctx->request->post_items,
                       lwp_nvhash_get (&ctx->disposition, "name", ""),
-                      lwp_heapbuffer_buffer (ctx->request->buffer),
+                      lwp_heapbuffer_buffer (&ctx->request->buffer),
                       lw_true);
 
-      lwp_heapbuffer_reset (ctx->request->buffer);
+      lwp_heapbuffer_reset (&ctx->request->buffer);
    }
 
    lwp_nvhash_clear (&ctx->disposition);
@@ -493,18 +493,18 @@ size_t lwp_ws_multipart_process (lwp_ws_multipart ctx,
          int to_parse = i + 1;
          lw_bool error = lw_false;
 
-         if (lwp_heapbuffer_length (ctx->request->buffer) > 0)
+         if (lwp_heapbuffer_length (&ctx->request->buffer) > 0)
          {
-            lwp_heapbuffer_add (ctx->request->buffer, buffer, to_parse);
+            lwp_heapbuffer_add (&ctx->request->buffer, buffer, to_parse);
 
             size_t parsed = multipart_parser_execute
-               (ctx->parser, lwp_heapbuffer_buffer (ctx->request->buffer),
-                             lwp_heapbuffer_length (ctx->request->buffer));
+               (ctx->parser, lwp_heapbuffer_buffer (&ctx->request->buffer),
+                             lwp_heapbuffer_length (&ctx->request->buffer));
 
-            if (parsed != lwp_heapbuffer_length (ctx->request->buffer))
+            if (parsed != lwp_heapbuffer_length (&ctx->request->buffer))
                error = lw_true;
 
-            lwp_heapbuffer_reset (ctx->request->buffer);
+            lwp_heapbuffer_reset (&ctx->request->buffer);
          }
          else
          {
@@ -534,7 +534,7 @@ size_t lwp_ws_multipart_process (lwp_ws_multipart ctx,
       {
          /* TODO : max line length */
 
-         lwp_heapbuffer_add (ctx->request->buffer, buffer, size);
+         lwp_heapbuffer_add (&ctx->request->buffer, buffer, size);
          return buffer_size;
       }
       else

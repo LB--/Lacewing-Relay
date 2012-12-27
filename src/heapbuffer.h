@@ -37,19 +37,18 @@ typedef struct _lwp_heapbuffer
 
 } * lwp_heapbuffer;
 
-void lwp_heapbuffer_init (lwp_heapbuffer);
-void lwp_heapbuffer_free (lwp_heapbuffer);
+lw_bool lwp_heapbuffer_add (lwp_heapbuffer *, const char * buffer, size_t length);
+void lwp_heapbuffer_addf (lwp_heapbuffer *, const char * format, ...);
 
-lw_bool lwp_heapbuffer_add (lwp_heapbuffer, const char * buffer, size_t length);
-void lwp_heapbuffer_addf (lwp_heapbuffer, const char * format, ...);
+void lwp_heapbuffer_trim_left (lwp_heapbuffer *, size_t);
+void lwp_heapbuffer_trim_right (lwp_heapbuffer *, size_t);
 
-void lwp_heapbuffer_trim_left (lwp_heapbuffer, size_t);
-void lwp_heapbuffer_trim_right (lwp_heapbuffer, size_t);
+void lwp_heapbuffer_reset (lwp_heapbuffer *);
+size_t lwp_heapbuffer_length (lwp_heapbuffer *);
 
-void lwp_heapbuffer_reset (lwp_heapbuffer);
-size_t lwp_heapbuffer_length (lwp_heapbuffer);
+char * lwp_heapbuffer_buffer (lwp_heapbuffer *);
 
-char * lwp_heapbuffer_buffer (lwp_heapbuffer);
+void lwp_heapbuffer_free (lwp_heapbuffer *);
 
 #endif
 
