@@ -370,8 +370,8 @@ static void def_update_callbacks (lw_pump pump,
          event.data.ptr = watch;
 
          event.events = (on_read_ready ? EPOLLIN : 0) |
-                       (on_write_ready ? EPOLLOUT : 0) |
-                           (edge_triggered ? EPOLLET : 0);
+                          (on_write_ready ? EPOLLOUT : 0) |
+                             (edge_triggered ? EPOLLET : 0);
 
          epoll_ctl (ctx->queue, EPOLL_CTL_MOD, watch->fd, &event);
 
@@ -416,6 +416,8 @@ static void def_remove (lw_pump pump, lw_pump_watch watch)
    watch->on_write_ready = 0;
 
    lw_sync_lock (ctx->sync_signals);
+
+      list_push (ctx->signalparams, watch);
 
       char signal = sig_remove;
       write (ctx->signalpipe_write, &signal, sizeof (signal));
