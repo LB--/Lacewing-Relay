@@ -1,21 +1,29 @@
 
 PREFIX = $(DESTDIR)@prefix@
 
+CC = @CC@
+CXX = @CXX@
+
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
-CC = @CC@
-CXX = @CXX@
+# unix or windows
+PLATFORM = @PLATFORM@
+
+# 1 to compile C++ wrappers
+ENABLE_CXX = @ENABLE_CXX@
+
+# 1 to enable SPDY support
+ENABLE_SPDY = @ENABLE_SPDY@
 
 SO_EXT = @SO_EXT@
-SONAME_FLAGS = @SONAME_FLAGS@
-
 SO_NAME = @SO_NAME@
-REAL_NAME = liblacewing.@SO_EXT@.0.5.0
+SONAME_FLAGS = @SONAME_FLAGS@
+REAL_NAME = liblacewing.@SO_EXT@.@PACKAGE_VERSION@
 
-OBJECTS = \
+OBJECTS =\
 build/global.o \
 build/nvhash.o \
 build/filter.o \
@@ -38,7 +46,20 @@ build/util.o \
 build/list.o \
 build/heapbuffer.o \
 build/upload.o \
-build/multipart_parser.o \
+build/multipart_parser.o
+
+COMMONDEPS =\
+include/lacewing.h \
+src/common.h \
+src/heapbuffer.h \
+src/list.h \
+src/webserver/common.h \
+src/webserver/http/http.h \
+src/address.h \
+src/stream.h
+
+ifeq ($(ENABLE_CXX), 1)
+OBJECTS +=\
 build/address-cxx.o \
 build/client-cxx.o \
 build/error-cxx.o \
@@ -56,17 +77,69 @@ build/sync-cxx.o \
 build/thread-cxx.o \
 build/timer-cxx.o \
 build/udp-cxx.o \
-build/webserver-cxx.o @OBJECTS@
+build/webserver-cxx.o
+endif
 
-COMMONDEPS = \
-include/lacewing.h \
-src/common.h \
-src/heapbuffer.h \
-src/list.h \
-src/webserver/common.h \
-src/webserver/http/http.h \
-src/address.h \
-src/stream.h @COMMONDEPS@
+ifeq ($(PLATFORM), unix)
+OBJECTS +=\
+build/unix-client.o \
+build/unix-event.o \
+build/unix-eventpump.o \
+build/unix-server.o \
+build/unix-thread.o \
+build/unix-timer.o \
+build/unix-udp.o \
+build/unix-fdstream.o \
+build/unix-file.o \
+build/openssl-sslclient.o \
+build/unix-sync.o \
+build/unix-global.o
+COMMONDEPS +=\
+src/unix/eventpump.h \
+src/unix/common.h
+endif
+
+ifeq ($(PLATFORM), windows)
+OBJECTS +=\
+build/windows-client.o \
+build/windows-compat.o \
+build/windows-event.o \
+build/windows-eventpump.o \
+build/windows-server.o \
+build/windows-thread.o \
+build/windows-timer.o \
+build/windows-udp.o \
+build/windows-fdstream.o \
+build/windows-file.o \
+build/windows-winsslclient.o \
+build/windows-sync.o \
+build/windows-global.o
+COMMONDEPS +=\
+src/windows/compat.h \
+src/windows/common.h
+endif
+
+ifeq ($(ENABLE_SPDY), 1)
+OBJECTS +=\
+build/spdy_bytes.o \
+build/spdy_control.o \
+build/spdy_credential.o \
+build/spdy_ctx.o \
+build/spdy_goaway.o \
+build/spdy_headers.o \
+build/spdy_nv_block.o \
+build/spdy_ping.o \
+build/spdy_rst_stream.o \
+build/spdy_settings.o \
+build/spdy_stream.o \
+build/spdy_strings.o \
+build/spdy_syn_reply.o \
+build/spdy_syn_stream.o \
+build/spdy_zlib.o \
+build/spdy_window_update.o \
+build/spdy.o \
+build/spdy-client.o
+endif
 
 ###########
 
@@ -74,7 +147,11 @@ all: liblacewing.@SO_EXT@ liblacewing.a
 
 liblacewing.@SO_EXT@: $(OBJECTS)
 	@echo Linking shared library...
+ifeq ($(ENABLE_CXX), 1)
 	@$(CXX) $(CXXFLAGS) $(SONAME_FLAGS) -shared -o $(REAL_NAME) $(OBJECTS) $(LIBS)
+else
+	@$(CC) $(CFLAGS) $(SONAME_FLAGS) -shared -o $(REAL_NAME) $(OBJECTS) $(LIBS)
+endif
 
 liblacewing.a: $(OBJECTS)
 	@echo Linking static library...
@@ -158,30 +235,30 @@ build/unix-fdstream.o: src/unix/fdstream.c $(COMMONDEPS)
 build/unix-file.o: src/unix/file.c $(COMMONDEPS)
 	$(CC) $(CFLAGS) -c -o $@ src/unix/file.c
 
-build/windows-event.o: src/windows/event.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/event.cc
-build/windows-eventpump.o: src/windows/eventpump.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/eventpump.cc
-build/windows-server.o: src/windows/server.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/server.cc
-build/windows-timer.o: src/windows/timer.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/timer.cc
-build/windows-udp.o: src/windows/udp.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/udp.cc
-build/windows-thread.o: src/windows/thread.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/thread.cc
-build/windows-client.o: src/windows/client.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/client.cc
+build/windows-event.o: src/windows/event.c $(COMMONDEPS)
+	$(CC) $(CFLAGS) -c -o $@ src/windows/event.c
+build/windows-eventpump.o: src/windows/eventpump.c $(COMMONDEPS)
+	$(CC) $(CFLAGS) -c -o $@ src/windows/eventpump.c
+build/windows-server.o: src/windows/server.c $(COMMONDEPS)
+	$(CC) $(CFLAGS) -c -o $@ src/windows/server.c
+build/windows-timer.o: src/windows/timer.c $(COMMONDEPS)
+	$(CC) $(CFLAGS) -c -o $@ src/windows/timer.c
+build/windows-udp.o: src/windows/udp.c $(COMMONDEPS)
+	$(CC) $(CFLAGS) -c -o $@ src/windows/udp.c
+build/windows-thread.o: src/windows/thread.c $(COMMONDEPS)
+	$(CC) $(CFLAGS) -c -o $@ src/windows/thread.c
+build/windows-client.o: src/windows/client.c $(COMMONDEPS)
+	$(CC) $(CFLAGS) -c -o $@ src/windows/client.c
 build/windows-compat.o: src/windows/compat.c $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/compat.c
-build/windows-fdstream.o: src/windows/fdstream.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/fdstream.cc
+	$(CC) $(CFLAGS) -c -o $@ src/windows/compat.c
+build/windows-fdstream.o: src/windows/fdstream.c $(COMMONDEPS)
+	$(CC) $(CFLAGS) -c -o $@ src/windows/fdstream.c
 build/windows-file.o: src/windows/file.c $(COMMONDEPS)
 	$(CC) $(CFLAGS) -c -o $@ src/windows/file.c
-build/windows-sync.o: src/windows/sync.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/sync.cc
-build/windows-winsslclient.o: src/windows/winsslclient.cc $(COMMONDEPS)
-	$(CXX) $(CXXFLAGS) -c -o $@ src/windows/winsslclient.cc
+build/windows-sync.o: src/windows/sync.c $(COMMONDEPS)
+	$(CC) $(CFLAGS) -c -o $@ src/windows/sync.c
+build/windows-winsslclient.o: src/windows/winsslclient.c $(COMMONDEPS)
+	$(CC) $(CFLAGS) -c -o $@ src/windows/winsslclient.c
 build/windows-global.o: src/windows/global_win.c $(COMMONDEPS)
 	$(CC) $(CFLAGS) -c -o $@ src/windows/global_win.c
 

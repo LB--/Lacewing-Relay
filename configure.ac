@@ -1,9 +1,11 @@
 AC_PREREQ([2.49])
-AC_INIT([liblacewing], [0.5.0], [])
 
-AC_PROG_CXX
+AC_INIT([liblacewing], [0.5.0], [])
+VERSION_MAJOR="0.5"
 
 AC_CONFIG_MACRO_DIR([m4])
+
+AC_PROG_CC
 
 AC_ARG_ENABLE([debug],
 	[AS_HELP_STRING([--enable-debug],
@@ -12,18 +14,18 @@ AC_ARG_ENABLE([debug],
 	[enable_debug=no]
 )
 
-AC_ARG_ENABLE([i486],
-	[AS_HELP_STRING([--enable-i486],
-		 [Tell the compiler to build for i486 @<:@default=disabled@:>@])],
-	[enable_i486="$enableval"],
-	[enable_i486=no]
-)
-
 AC_ARG_ENABLE([spdy],
 	[AS_HELP_STRING([--enable-spdy],
 		 [Enable SPDY support @<:@default=enabled@:>@])],
 	[enable_spdy="$enableval"],
 	[enable_spdy=yes]
+)
+
+AC_ARG_ENABLE([cxx],
+	[AS_HELP_STRING([--enable-cxx],
+		 [Build the C++ wrappers @<:@default=enabled@:>@])],
+	[enable_cxx="$enableval"],
+	[enable_cxx=yes]
 )
 
 CFLAGS="$CFLAGS -DHAVE_CONFIG_H -fvisibility=hidden -Wno-deprecated-declarations"
@@ -34,57 +36,37 @@ else
 	CFLAGS="$CFLAGS -O2"
 fi
 
-if test "x$enable_i486" = xyes; then
-	CFLAGS="$CFLAGS -march=i486"
+if test "x$enable_cxx" = xyes; then
+    AC_PROG_CXX
+    AC_SUBST(ENABLE_CXX, 1)
 fi
 
 SO_EXT="so"
 
 if test "x$enable_spdy" = xyes; then
-
-    OBJECTS="$OBJECTS build/spdy_bytes.o build/spdy_control.o \
-             build/spdy_credential.o build/spdy_ctx.o build/spdy_goaway.o \
-             build/spdy_headers.o build/spdy_nv_block.o build/spdy_ping.o \
-             build/spdy_rst_stream.o build/spdy_settings.o build/spdy_stream.o \
-             build/spdy_strings.o build/spdy_syn_reply.o build/spdy_syn_stream.o \
-             build/spdy_zlib.o build/spdy_window_update.o build/spdy.o build/spdy-client.o"
-
+    AC_SUBST(ENABLE_SPDY, 1)
 	AC_CHECK_LIB([z], [inflate])
-
 else
     CFLAGS="$CFLAGS -D_lacewing_no_spdy"
 fi
 
 if test "x$EXEEXT" = "x.exe"; then
 
-    OBJECTS="$OBJECTS build/windows-client.o build/windows-compat.o \
-             build/windows-event.o build/windows-eventpump.o \
-             build/windows-server.o build/windows-thread.o \
-             build/windows-timer.o build/windows-udp.o \
-             build/windows-fdstream.o build/windows-file.o \
-             build/windows-winsslclient.o build/windows-sync.o \
-             build/windows-global.o"
-
-    COMMONDEPS="$COMMONDEPS src/windows/compat.h src/windows/common.h"
+    AC_SUBST(PLATFORM, windows)
 
     SO_EXT="dll"
     LIBS="$LIBS -lmswsock -lws2_32 -lcrypt32 -lsecur32"
 
 else
 
+    AC_SUBST(PLATFORM, unix)
+
 	CFLAGS="$CFLAGS -fPIC"
-
-	OBJECTS="$OBJECTS build/unix-client.o build/unix-event.o build/unix-eventpump.o \
-        build/unix-server.o build/unix-thread.o build/unix-timer.o build/unix-udp.o \
-        build/unix-fdstream.o build/unix-file.o build/openssl-sslclient.o \
-        build/unix-sync.o build/unix-global.o"
-
-	COMMONDEPS="$COMMONDEPS src/unix/eventpump.h src/unix/common.h"
 
 	AC_CHECK_HEADERS([malloc.h sys/epoll.h sys/prctl.h sys/sendfile.h \
 						  netdb.h openssl/md5.h sys/timerfd.h])
 
-	AC_CHECK_HEADERS([CoreServices/CoreServices.h], [[LIBS="$LIBS -framework CoreServices "]
+	AC_CHECK_HEADERS([CoreServices/CoreServices.h], [[LIBS="$LIBS -framework CoreServices"]
 		[SO_EXT="dylib"]])
 
 	AC_CHECK_FUNCS([timegm kqueue vasprintf])
@@ -111,10 +93,7 @@ fi
 CXXFLAGS="$CFLAGS -fno-exceptions -fno-rtti"
 CFLAGS="-std=gnu99 -Wall -Wno-format $CFLAGS"
 
-AC_SUBST(OBJECTS, $OBJECTS)
-AC_SUBST(COMMONDEPS, $COMMONDEPS)
-
-SO_NAME=liblacewing.$SO_EXT.0.5
+SO_NAME=liblacewing.$SO_EXT.$VERSION_MAJOR
 
 AC_SUBST(SO_NAME, $SO_NAME)
 AC_SUBST(SO_EXT, $SO_EXT)
