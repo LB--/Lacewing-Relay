@@ -3006,7 +3006,7 @@ else
 fi
 
 
-CFLAGS="$CFLAGS -DHAVE_CONFIG_H -fvisibility=hidden -Wno-deprecated-declarations"
+CFLAGS="$CFLAGS -DHAVE_CONFIG_H -Wno-deprecated-declarations"
 
 if test "x$enable_debug" = xyes; then
 	CFLAGS="$CFLAGS -DDEBUG -D_lacewing_debug -g -O0"
@@ -3344,7 +3344,7 @@ else
     PLATFORM=unix
 
 
-	CFLAGS="$CFLAGS -fPIC"
+	CFLAGS="$CFLAGS -fPIC -fvisibility=hidden"
 
 	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'

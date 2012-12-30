@@ -28,7 +28,7 @@ AC_ARG_ENABLE([cxx],
 	[enable_cxx=yes]
 )
 
-CFLAGS="$CFLAGS -DHAVE_CONFIG_H -fvisibility=hidden -Wno-deprecated-declarations"
+CFLAGS="$CFLAGS -DHAVE_CONFIG_H -Wno-deprecated-declarations"
 
 if test "x$enable_debug" = xyes; then
 	CFLAGS="$CFLAGS -DDEBUG -D_lacewing_debug -g -O0"
@@ -61,7 +61,7 @@ else
 
     AC_SUBST(PLATFORM, unix)
 
-	CFLAGS="$CFLAGS -fPIC"
+	CFLAGS="$CFLAGS -fPIC -fvisibility=hidden"
 
 	AC_CHECK_HEADERS([malloc.h sys/epoll.h sys/prctl.h sys/sendfile.h \
 						  netdb.h openssl/md5.h sys/timerfd.h])
