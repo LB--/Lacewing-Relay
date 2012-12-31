@@ -59,5 +59,7 @@ typedef SOCKET lwp_socket;
 #define lwp_last_error GetLastError()
 #define lwp_last_socket_error WSAGetLastError()
 
-
+#ifdef _MSC_VER
+    #define ssize_t SSIZE_T
+#endif
 

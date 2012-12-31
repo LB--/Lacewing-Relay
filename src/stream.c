@@ -548,8 +548,7 @@ void lw_stream_data (lw_stream ctx, const char * buffer, size_t size)
     * a real array.
     */
 
-   struct lwp_stream_data_hook * data_hooks =
-      alloca (num_data_hooks * sizeof (struct lwp_stream_data_hook));
+   struct lwp_stream_data_hook data_hooks [num_data_hooks];
 
    int i = 0;
 
@@ -600,8 +599,7 @@ void lwp_stream_push (lw_stream ctx, const char * buffer, size_t size)
 
    ++ ctx->user_count;
 
-   lwp_streamgraph_link * links = alloca
-      (num_links * sizeof (lwp_streamgraph_link));
+   lwp_streamgraph_link links [num_links];
 
    /* Copy the link dest pointers into our local array.
     *
@@ -969,10 +967,9 @@ lw_bool lw_stream_close (lw_stream ctx, lw_bool immediate)
     * hooks until all filters have finished closing.
     */
 
-   lw_stream * to_close = alloca
-          (sizeof (lw_stream) * list_length (ctx->filtering)
-              + list_length (ctx->filters_upstream)
-              + list_length (ctx->filters_downstream));
+   lw_stream to_close [list_length (ctx->filtering)
+                        + list_length (ctx->filters_upstream)
+                        + list_length (ctx->filters_downstream)];
 
    int n = 0;
 

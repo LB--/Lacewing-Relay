@@ -50,6 +50,8 @@ struct _lwp_winsslclient
    CtxtHandle context;
    SecPkgContext_StreamSizes sizes;
 
+   char * header, * trailer;
+
    struct lw_stream upstream;
    struct lw_stream downstream;
 };
@@ -84,6 +86,9 @@ void lwp_winsslclient_delete (lwp_winsslclient ctx)
    if (!ctx)
       return;
 
+   free (ctx->header);
+   free (ctx->trailer);
+
    free (ctx);
 }
 
@@ -99,7 +104,7 @@ static size_t def_upstream_sink_data (lw_stream upstream,
 
    SecBuffer buffers [4];
 
-      buffers [0].pvBuffer = alloca (ctx->sizes.cbHeader);
+      buffers [0].pvBuffer = ctx->header;
       buffers [0].cbBuffer = ctx->sizes.cbHeader;
       buffers [0].BufferType = SECBUFFER_STREAM_HEADER;
 
@@ -107,7 +112,7 @@ static size_t def_upstream_sink_data (lw_stream upstream,
       buffers [1].cbBuffer = size;
       buffers [1].BufferType = SECBUFFER_DATA;
 
-      buffers [2].pvBuffer = alloca (ctx->sizes.cbTrailer);
+      buffers [2].pvBuffer = ctx->trailer;
       buffers [2].cbBuffer = ctx->sizes.cbTrailer;
       buffers [2].BufferType = SECBUFFER_STREAM_TRAILER;
 
@@ -264,7 +269,8 @@ size_t proc_handshake_data (lwp_winsslclient ctx, const char * buffer, size_t si
           */
 
          if ((ctx->status = QueryContextAttributes (&ctx->context,
-                     SECPKG_ATTR_STREAM_SIZES, &ctx->sizes)) != SEC_E_OK)
+                                                    SECPKG_ATTR_STREAM_SIZES,
+                                                    &ctx->sizes)) != SEC_E_OK)
          {
             /* Lacewing::Error Error;
 
@@ -278,6 +284,9 @@ size_t proc_handshake_data (lwp_winsslclient ctx, const char * buffer, size_t si
 
             return size;
          }
+
+         ctx->header = malloc (ctx->sizes.cbHeader);
+         ctx->trailer = malloc (ctx->sizes.cbTrailer);
 
          ctx->flags |= lwp_winsslclient_handshake_complete;
       }

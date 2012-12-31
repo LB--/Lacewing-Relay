@@ -117,7 +117,7 @@ static void watcher (lw_eventpump ctx)
       if (ctx->watcher.overlapped == sig_end_watcher_thread)
          break;
 
-      ctx->on_tick_needed ((lw_pump) ctx);
+      ctx->on_tick_needed (ctx);
 
       lw_event_wait (ctx->watcher.resume_event, -1);
       lw_event_unsignal (ctx->watcher.resume_event);

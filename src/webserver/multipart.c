@@ -420,15 +420,12 @@ lwp_ws_multipart lwp_ws_multipart_new (lw_ws ws, lw_ws_req request,
    if (!ctx)
       return 0;
 
-   char * boundary;
+   const char * _boundary = strstr (content_type, "boundary=") + 9;
 
-   {  const char * _boundary = strstr (content_type, "boundary=") + 9;
+   char boundary [strlen (_boundary) + 3];
 
-      boundary = (char *) alloca (strlen (_boundary) + 3);
-
-      strcpy (boundary, "--");
-      strcat (boundary, _boundary);
-   }
+   strcpy (boundary, "--");
+   strcat (boundary, _boundary);
 
    lwp_trace ("Creating parser with boundary: %s", boundary);
 
