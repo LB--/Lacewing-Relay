@@ -63,3 +63,5 @@ typedef SOCKET lwp_socket;
     #define ssize_t SSIZE_T
 #endif
 
+#define strcasecmp _stricmp
+

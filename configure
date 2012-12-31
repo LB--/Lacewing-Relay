@@ -4084,7 +4084,7 @@ SO_NAME=$SO_NAME
 SO_EXT=$SO_EXT
 
 
-if test "x$host" = "x"; then
+if test "x$host_alias" = "x"; then
     AR=ar
 
 else

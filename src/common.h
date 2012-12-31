@@ -66,16 +66,14 @@
 
 #endif
 
-#ifdef _lw_library
-   #ifdef _WIN32
-      #define lw_import __declspec(dllexport)
-   #else
-      #ifdef __GNUC__
-         #define lw_import __attribute__((visibility("default")))
-      #endif
-   #endif
+#ifdef _WIN32
+   #define lw_import __declspec(dllexport)
 #else
-   #define lw_import
+   #ifdef __GNUC__
+      #define lw_import __attribute__((visibility("default")))
+   #else
+      #define lw_import
+   #endif
 #endif
 
 #ifndef __cplusplus
