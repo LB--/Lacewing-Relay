@@ -98,6 +98,12 @@ SO_NAME=liblacewing.$SO_EXT.$VERSION_MAJOR
 AC_SUBST(SO_NAME, $SO_NAME)
 AC_SUBST(SO_EXT, $SO_EXT)
 
+if test "x$host_alias" = "x"; then
+    AC_SUBST(AR, ar)
+else
+    AC_SUBST(AR, $host_alias-ar)
+fi
+
 if test $SO_EXT = "so"; then
 	AC_SUBST(SONAME_FLAGS, [-Wl,-soname,$SO_NAME])
 else

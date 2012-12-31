@@ -621,6 +621,7 @@ ac_includes_default="\
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 SONAME_FLAGS
+AR
 SO_EXT
 SO_NAME
 EGREP
@@ -4082,6 +4083,14 @@ SO_NAME=$SO_NAME
 
 SO_EXT=$SO_EXT
 
+
+if test "x$host" = "x"; then
+    AR=ar
+
+else
+    AR=$host_alias-ar
+
+fi
 
 if test $SO_EXT = "so"; then
 	SONAME_FLAGS=-Wl,-soname,$SO_NAME

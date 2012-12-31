@@ -3,6 +3,7 @@ PREFIX = $(DESTDIR)@prefix@
 
 CC = @CC@
 CXX = @CXX@
+AR = @AR@
 
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
@@ -156,7 +157,7 @@ endif
 liblacewing.a: $(OBJECTS)
 	@echo Linking static library...
 	@rm -f liblacewing.a
-	@ar rcs liblacewing.a ./build/*.o
+	@$(AR) rcs liblacewing.a ./build/*.o
 
 build/global.o: src/global.c $(COMMONDEPS) 
 	$(CC) $(CFLAGS) -c -o $@ src/global.c
