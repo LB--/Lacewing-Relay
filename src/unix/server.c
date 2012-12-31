@@ -54,8 +54,6 @@ struct lw_server
 
    void * tag;
 
-   lw_server_client first_client;
-
    SSL_CTX * ssl_context;
    char ssl_passphrase [128];
 
@@ -132,6 +130,8 @@ static void lwp_server_client_delete (lw_server_client client)
    {
       if (ctx->on_disconnect)
          ctx->on_disconnect (ctx, client);
+
+      list_elem_remove (client->elem);
    }
 
    if (client->ssl)
@@ -260,6 +260,7 @@ static void listen_socket_read_ready (void * tag)
          }
 
          list_push (ctx->clients, client);
+         client->elem = list_back (ctx->clients);
       }
       else
       {
@@ -320,6 +321,8 @@ void lw_server_host_filter (lw_server ctx, lw_filter filter)
 
       if (ctx->on_error)
          ctx->on_error (ctx, error);
+
+      lw_error_delete (error);
 
       return;
    }
@@ -525,13 +528,13 @@ lw_server_client lw_server_client_first (lw_server ctx)
 
 void on_client_data (lw_stream stream, void * tag, const char * buffer, size_t size)
 {
-    lw_server_client client = tag;
-    lw_server server = client->server;
+   lw_server_client client = tag;
+   lw_server server = client->server;
 
-    assert ( (!client->ssl) || lwp_sslclient_handshook (client->ssl) );
-    assert (server->on_data);
+   assert ( (!client->ssl) || lwp_sslclient_handshook (client->ssl) );
+   assert (server->on_data);
 
-    server->on_data (server, client, buffer, size);
+   server->on_data (server, client, buffer, size);
 }
 
 void on_client_close (lw_stream stream, void * tag)

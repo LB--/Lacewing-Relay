@@ -28,6 +28,9 @@
  */
 
 #include "../common.h"
+#include "../pump.h"
+
+const static lw_pumpdef def_eventpump;
 
 #define sig_exit_event_loop      ((OVERLAPPED *) 1)
 #define sig_remove               ((OVERLAPPED *) 2)
@@ -35,114 +38,120 @@
 
 struct lw_pump_watch
 {
-    lw_pump_callback on_completion;
+   lw_pump_callback on_completion;
 
-    void * tag;
+   void * tag;
 };
 
 struct lw_eventpump
 {  
-    struct lw_pump pump;
+   struct lw_pump pump;
 
-    lw_thread watcher_thread;
+   HANDLE completion_port;
 
-    HANDLE completion_port;
+   void (lw_callback * on_tick_needed) (lw_eventpump);
 
-    void (lw_callback * on_tick_needed) (lw_eventpump);
+   struct
+   {
+      lw_thread thread;
+      OVERLAPPED * overlapped;
+      DWORD bytes_transferred;
+      lw_pump_watch event;
+      lw_event resume_event;
+      int error;
 
-    static bool Process (EventPump::Internal * ctx, OVERLAPPED * Overlapped,
-                            unsigned int BytesTransferred, Pump::Watch * Watch, int Error)
-    {
-        if (BytesTransferred == 0xFFFFFFFF)
-        {
-            /* See Post () */
-
-            ((void * (*) (void *)) Watch) (Overlapped);
-
-            return true;
-        }
-
-        if (Overlapped == SigRemove)
-        {
-            delete Watch;
-            ctx->Pump.RemoveUser ();
-
-            return true;
-        }
-
-        if (Overlapped == SigExitEventLoop)
-            return false;
-
-        if (Watch->onCompletion)
-            Watch->onCompletion (Watch->Tag, Overlapped, BytesTransferred, Error);
-
-        return true;
-    }
-    
-    OVERLAPPED * WatcherOverlapped;
-    unsigned int WatcherBytesTransferred;
-    EventPump::Pump::Watch * WatcherEvent;
-    Lacewing::Event WatcherResumeEvent;
-    int WatcherError;
-
-    static void Watcher (EventPump::Internal * ctx)
-    {
-        for (;;)
-        {
-            ctx->WatcherError = 0;
-
-            if (!GetQueuedCompletionStatus (ctx->CompletionPort, (DWORD *) &ctx->WatcherBytesTransferred,
-                     (PULONG_PTR) &ctx->WatcherEvent, &ctx->WatcherOverlapped, INFINITE))
-            {
-                if ((ctx->WatcherError = GetLastError ()) == WAIT_TIMEOUT)
-                    break;
-
-                if (!ctx->WatcherOverlapped)
-                    break;
-
-                ctx->WatcherBytesTransferred = 0;
-            }
-
-            if (ctx->WatcherOverlapped == SigEndWatcherThread)
-                break;
-
-            ctx->HandlerTickNeeded (ctx->Pump);
-
-            ctx->WatcherResumeEvent.Wait ();
-            ctx->WatcherResumeEvent.Unsignal ();
-        }
-    }
+   } watcher;
 };
+
+static lw_bool process (lw_eventpump ctx, OVERLAPPED * overlapped,
+                        unsigned int bytes_transferred, lw_pump_watch watch,
+                        int error)
+{
+   if (bytes_transferred == 0xFFFFFFFF)
+   {
+      /* See eventpump_post */
+
+      ((void * (*) (void *)) watch) (overlapped);
+
+      return lw_true;
+   }
+
+   if (overlapped == sig_remove)
+   {
+      free (watch);
+      lw_pump_remove_user ((lw_pump) ctx);
+
+      return lw_true;
+   }
+
+   if (overlapped == sig_exit_event_loop)
+      return lw_false;
+
+   if (watch->on_completion)
+      watch->on_completion (watch->tag, overlapped, bytes_transferred, error);
+
+   return lw_true;
+}
+
+static void watcher (lw_eventpump ctx)
+{
+   for (;;)
+   {
+      ctx->watcher.error = 0;
+
+      if (!GetQueuedCompletionStatus (ctx->completion_port,
+                                      &ctx->watcher.bytes_transferred,
+                                      (PULONG_PTR) &ctx->watcher.event,
+                                      &ctx->watcher.overlapped,
+                                      INFINITE))
+      {
+         if ((ctx->watcher.error = GetLastError ()) == WAIT_TIMEOUT)
+            break;
+
+         if (!ctx->watcher.overlapped)
+            break;
+
+         ctx->watcher.bytes_transferred = 0;
+      }
+
+      if (ctx->watcher.overlapped == sig_end_watcher_thread)
+         break;
+
+      ctx->on_tick_needed ((lw_pump) ctx);
+
+      lw_event_wait (ctx->watcher.resume_event, -1);
+      lw_event_unsignal (ctx->watcher.resume_event);
+   }
+}
 
 lw_eventpump lw_eventpump_new ()
 {
+   lwp_init ();
+
    lw_eventpump ctx = calloc (sizeof (*ctx), 1);
 
    if (!ctx)
       return 0;
 
-   lwp_init ();
-
-   ctx->watcher_thread = lw_thread_new ("watcher", watcher);
+   ctx->watcher.thread = lw_thread_new ("watcher", watcher);
    ctx->completion_port = CreateIoCompletionPort (INVALID_HANDLE_VALUE, 0, 4, 0);
 
-   lwp_pump_init ((lw_pump) ctx);
+   lwp_pump_init ((lw_pump) ctx, &def_eventpump);
 
    return ctx;
 }
 
-void lw_eventpump_delete (lw_eventpump ctx)
+static void def_cleanup (lw_pump _ctx)
 {
-   if (lw_thread_started (ctx->watcher_thread))
+   lw_eventpump ctx = (lw_eventpump) _ctx;
+
+   if (lw_thread_started (ctx->watcher.thread))
    {
-      PostQueuedCompletionStatus
-         (ctx->completion_port, 0, 0, sig_end_watcher_thread);
+      PostQueuedCompletionStatus (ctx->completion_port, 0, 0, sig_end_watcher_thread);
 
-      lw_event_signal (ctx->watcher_resume_event);
-      lw_thread_join (ctx->watcher_thread);
+      lw_event_signal (ctx->watcher.resume_event);
+      lw_thread_join (ctx->watcher.thread);
    }
-
-   free (ctx);
 }
 
 lw_error lw_eventpump_tick (lw_eventpump ctx)
@@ -151,13 +160,13 @@ lw_error lw_eventpump_tick (lw_eventpump ctx)
    {
       /* Process whatever the watcher thread dequeued before telling the caller to tick */
 
-      process (ctx, ctx->watcher_overlapped,
-                    ctx->watcher_bytes_transferred,
-                    ctx->watcher_event,
-                    ctx->watcher_error); 
+      process (ctx, ctx->watcher.overlapped,
+                    ctx->watcher.bytes_transferred,
+                    ctx->watcher.event,
+                    ctx->watcher.error); 
    }
 
-   OVERLAPPED overlapped;
+   OVERLAPPED * overlapped;
    DWORD bytes_transferred;
 
    lw_pump_watch watch;
@@ -167,9 +176,10 @@ lw_error lw_eventpump_tick (lw_eventpump ctx)
       int error = 0;
 
       if (!GetQueuedCompletionStatus (ctx->completion_port,
-               &bytes_transferred,
-               (PULONG_PTR) &watch,
-               &overlapped, 0))
+                                      &bytes_transferred,
+                                      (PULONG_PTR) &watch,
+                                      &overlapped,
+                                      0))
       {
          error = GetLastError ();
 
@@ -183,19 +193,18 @@ lw_error lw_eventpump_tick (lw_eventpump ctx)
       process (ctx, overlapped, bytes_transferred, watch, error);
    }
 
-   if (ctx->handler_tick_needed)
-      lw_event_signal (ctx->watcher_resume_event);
+   if (ctx->on_tick_needed)
+      lw_event_signal (ctx->watcher.resume_event);
 
    return 0;
 }
 
 lw_error lw_eventpump_start_eventloop (lw_eventpump ctx)
 {
-   OVERLAPPED * Overlapped;
-   DWORD BytesTransferred;
+   OVERLAPPED * overlapped;
+   DWORD bytes_transferred;
 
    lw_pump_watch watch;
-   lw_bool exit = lw_false;
 
    for (;;)
    {
@@ -227,67 +236,78 @@ void lw_eventpump_post_eventloop_exit (lw_eventpump ctx)
 }
 
 lw_error lw_eventpump_start_sleepy_ticking
-    (void (lw_callback * on_tick_needed) (lw_eventpump))
+    (lw_eventpump ctx, void (lw_callback * on_tick_needed) (lw_eventpump))
 {
     ctx->on_tick_needed = on_tick_needed;    
-    lw_thread_start (ctx->watcher_thread, ctx);
+    lw_thread_start (ctx->watcher.thread, ctx);
 
     return 0;
 }
 
-lw_pump_watch lw_eventpump_add (lw_eventpump ctx, HANDLE handle,
-                                void * tag, lw_pump_callback callback)
+static lw_pump_watch def_add (lw_pump _ctx, HANDLE handle,
+                              void * tag, lw_pump_callback callback)
 {
-    assert (callback != 0);
+   lw_eventpump ctx = (lw_eventpump) _ctx;
 
-    Pump::Watch * watch = new (std::nothrow) Pump::Watch;
+   assert (callback != 0);
 
-    if (!watch)
-        return 0;
+   lw_pump_watch watch = calloc (sizeof (*watch), 1);
 
-    watch->onCompletion = Callback;
-    watch->Tag = Tag;
+   if (!watch)
+      return 0;
 
-    if (CreateIoCompletionPort (Handle,
-            ctx->CompletionPort, (ULONG_PTR) watch, 0) != 0)
-    {
-        /* success */
-    }
-    else
-    {
-        assert (false);
-    }
-    
-    AddUser ();
+   watch->on_completion = callback;
+   watch->tag = tag;
 
-    return watch;
+   if (CreateIoCompletionPort (handle, ctx->completion_port,
+                               (ULONG_PTR) watch, 0) != 0)
+   {
+      /* success */
+   }
+   else
+   {
+      assert (0);
+   }
+
+   lw_pump_add_user ((lw_pump) ctx);
+
+   return watch;
 }
 
-void EventPump::Remove (Pump::Watch * Watch)
+static void def_remove (lw_pump _ctx, lw_pump_watch watch)
 {
-    Watch->onCompletion = 0;
+   lw_eventpump ctx = (lw_eventpump) _ctx;
 
-    PostQueuedCompletionStatus
-        (ctx->CompletionPort, 0, (ULONG_PTR) Watch, SigRemove);
+   watch->on_completion = 0;
+
+   PostQueuedCompletionStatus (ctx->completion_port, 0,
+                               (ULONG_PTR) watch, sig_remove);
 }
 
-bool EventPump::IsEventPump ()
+static void def_post (lw_pump _ctx, void * function, void * parameter)
 {
-    return true;
+   lw_eventpump ctx = (lw_eventpump) _ctx;
+
+   PostQueuedCompletionStatus (ctx->completion_port, 0xFFFFFFFF,
+                               (ULONG_PTR) function,
+                               (OVERLAPPED *) parameter);
 }
 
-void EventPump::Post (void * Function, void * Parameter)
+static void def_update_callbacks (lw_pump ctx, 
+                                  lw_pump_watch watch,
+                                  void * tag,
+                                  lw_pump_callback on_completion)
 {
-    PostQueuedCompletionStatus
-        (ctx->CompletionPort, 0xFFFFFFFF,
-            (ULONG_PTR) Function, (OVERLAPPED *) Parameter);
+   watch->tag = tag;
+   watch->on_completion = on_completion;
 }
 
-void EventPump::UpdateCallbacks
-    (Pump::Watch * watch, void * tag, Pump::Callback onCompletion)
+const static lw_pumpdef def_eventpump =
 {
-    watch->Tag = tag;
-    watch->onCompletion = onCompletion;
-
-}
+   .add               = def_add,
+   .remove            = def_remove,
+   .update_callbacks  = def_update_callbacks,
+   .post              = def_post,
+   .cleanup           = def_cleanup
+};
 

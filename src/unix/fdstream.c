@@ -292,14 +292,19 @@ static size_t def_sink_data (lw_stream stream, const char * buffer, size_t size)
 }
 
 static size_t def_sink_stream (lw_stream _dest,
-                           lw_stream _src,
-                           size_t size)
+                               lw_stream _src,
+                               size_t size)
 {
    if (lw_stream_get_def (_src) != &def_fdstream)
       return -1;
 
    if (size == -1)
+   {
       size = lw_stream_bytes_left (_src);
+
+      if (size == -1)
+         return -1;
+   }
 
    lw_fdstream source = (lw_fdstream) _src;
    lw_fdstream dest = (lw_fdstream) _dest;

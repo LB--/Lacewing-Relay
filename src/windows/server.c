@@ -29,7 +29,8 @@
 
 #include "../common.h"
 #include "../address.h"
-#include "winsslclient.h"
+#include "sslclient.h"
+#include "fdstream.h"
 
 static void on_client_close (lw_stream, void * tag);
 static void on_client_data (lw_stream, void * tag, const char * buffer, size_t size);
@@ -40,19 +41,41 @@ struct lw_server
 
    lw_pump pump;
 
-   lw_server_hook_connect on_onnect;
+   lw_server_hook_connect on_connect;
    lw_server_hook_disconnect on_disconnect;
-   lw_server_hook_receive on_receive;
+   lw_server_hook_data on_data;
    lw_server_hook_error on_error;
-
-   lw_server_client first_client;
 
    lw_bool cert_loaded;
    CredHandle ssl_creds;
 
    long accepts_posted;
+
+   list (lw_server_client, clients);
+
+   void * tag;
 };
     
+struct lw_server_client
+{
+   struct lw_fdstream fdstream;
+
+   lw_server server;
+
+   int user_count;
+
+   lw_bool on_connect_called;
+   lw_bool dead;
+
+   lwp_winsslclient ssl;
+
+   lw_addr addr;
+
+   HANDLE socket;
+
+   lw_server_client elem;
+};
+
 lw_server lw_server_new (lw_pump pump)
 {
    lw_server ctx = calloc (sizeof (*ctx), 1);
@@ -75,54 +98,62 @@ void lw_server_delete (lw_server ctx)
    free (ctx);
 }
 
-struct lw_server_client
+void lw_server_set_tag (lw_server ctx, void * tag)
 {
-    int user_count;
-    lw_bool dead;
+   ctx->tag = tag;
+}
 
-    lwp_winsslclient ssl;
+void * lw_server_tag (lw_server ctx)
+{
+   return ctx->tag;
+}
 
-    struct lw_addr addr;
-
-    HANDLE socket;
-};
-
-lw_server_client lwp_server_client_new (lw_server ctx)
+lw_server_client lwp_server_client_new (lw_server ctx, SOCKET socket)
 {
    lw_server_client client = calloc (sizeof (*client), 1);
+
+   if (!client)
+      return 0;
+
+   client->server = ctx;
+
+   lwp_fdstream_init ((lw_fdstream) client, ctx->pump);
 
    /* The first added close handler is always the last called.
     * This is important, because ours will destroy the client.
     */
 
-   lw_stream_add_hook_close ((lw_stream) client, client);
+   lw_stream_add_hook_close ((lw_stream) client, on_client_close, client);
 
    if (ctx->cert_loaded)
    {
-      client->ssl = lwp_winsslclient_new (ctx->ssl_creds);
-
-      lw_stream_addfilter_downstream
-         ((lw_stream) client, client->ssl->downstream, lw_false, lw_true);
-
-      lw_stream_addfilter_upstream
-         ((lw_stream) client, client->ssl->upstream, lw_false, lw_true);
+      client->ssl = lwp_winsslclient_new (ctx->ssl_creds, (lw_stream) client);
    }
+
+   lw_fdstream_set_fd ((lw_fdstream) client, (HANDLE) socket, 0, lw_true);
+
+   return client;
 }
 
 void lwp_server_client_delete (lw_server_client client)
 {
+   if (!client)
+      return;
+
+   lw_server ctx = client->server;
+
    lwp_trace ("Terminate %p", client);
 
    ++ client->user_count;
 
    client->socket = INVALID_HANDLE_VALUE;
 
-   if (client->connect_hook_called)
+   if (client->on_connect_called)
    {
       if (ctx->on_disconnect)
          ctx->on_disconnect (ctx, client);
 
-      Server.Clients.Erase (Element);
+      list_elem_remove (client->elem);
    }
 
    lwp_winsslclient_delete (client->ssl);
@@ -136,10 +167,10 @@ typedef struct
 {
    OVERLAPPED overlapped;
 
-   HANDLE socket;
+   SOCKET socket;
 
    struct lw_addr addr;
-   char addr_buffer [(sizeof (sockaddr_storage) + 16) * 2];
+   char addr_buffer [(sizeof (struct sockaddr_storage) + 16) * 2];
 
 } accept_overlapped;
 
@@ -150,28 +181,36 @@ static lw_bool issue_accept (lw_server ctx)
    if (!overlapped)
       return lw_false;
 
-   if ((overlapped->socket = (HANDLE) WSASocket
-            (lwp_socket_addr (socket).ss_family, SOCK_STREAM, IPPROTO_TCP,
-             0, 0, WSA_FLAG_OVERLAPPED)) == INVALID_HANDLE_VALUE)
+   if ((overlapped->socket = WSASocket (lwp_socket_addr (ctx->socket).ss_family,
+                                        SOCK_STREAM,
+                                        IPPROTO_TCP,
+                                        0,
+                                        0,
+                                        WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET)
    {
       free (overlapped);
       return lw_false;
    }
 
-   lwp_disable_ipv6_only ((lwp_socket) overlapped->FD);
+   lwp_disable_ipv6_only ((lwp_socket) overlapped->socket);
 
    DWORD bytes_received; 
 
    /* TODO : Use AcceptEx to receive the first data? */
 
-   if (!AcceptEx (socket, (SOCKET) overlapped->socket, overlapped->addr_buffer,
-            0, sizeof (sockaddr_storage) + 16, sizeof (sockaddr_storage) + 16,
-            &bytes_received, (OVERLAPPED *) overlapped))
+   if (!AcceptEx (ctx->socket,
+                  overlapped->socket,
+                  overlapped->addr_buffer,
+                  0,
+                  sizeof (struct sockaddr_storage) + 16,
+                  sizeof (struct sockaddr_storage) + 16,
+                  &bytes_received,
+                  (OVERLAPPED *) overlapped))
    {
       int error = WSAGetLastError ();
 
       if (error != ERROR_IO_PENDING)
-         return false;
+         return lw_false;
    }
 
    ++ ctx->accepts_posted;
@@ -180,7 +219,7 @@ static lw_bool issue_accept (lw_server ctx)
 }
 
 static void listen_socket_completion (void * tag, OVERLAPPED * _overlapped,
-                                      unsigned int bytes_transferred, int error)
+                                      unsigned long bytes_transferred, int error)
 {
    lw_server ctx = tag;
    accept_overlapped * overlapped = (accept_overlapped *) _overlapped;
@@ -197,10 +236,11 @@ static void listen_socket_completion (void * tag, OVERLAPPED * _overlapped,
       if (!issue_accept (ctx))
          break;
 
-   setsockopt ((SOCKET) overlapped->FD, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
-                  (char *) &ctx->socket, sizeof (ctx->socket));
+   setsockopt ((SOCKET) overlapped->socket, SOL_SOCKET,
+               SO_UPDATE_ACCEPT_CONTEXT,
+               (char *) &ctx->socket, sizeof (ctx->socket));
 
-   sockaddr_storage * local_addr, * remote_addr;
+   struct sockaddr_storage * local_addr, * remote_addr;
    int local_addr_len, remote_addr_len;
 
    GetAcceptExSockaddrs
@@ -211,10 +251,10 @@ static void listen_socket_completion (void * tag, OVERLAPPED * _overlapped,
       sizeof (struct sockaddr_storage) + 16,
       sizeof (struct sockaddr_storage) + 16,
 
-      (sockaddr **) &local_addr,
+      (struct sockaddr **) &local_addr,
       &local_addr_len,
 
-      (sockaddr **) &remote_addr,
+      (struct sockaddr **) &remote_addr,
       &remote_addr_len
    );
 
@@ -228,7 +268,8 @@ static void listen_socket_completion (void * tag, OVERLAPPED * _overlapped,
       return;
    }
 
-   lw_addr_set (client->addr, remote_addr);
+   client->addr = lwp_addr_new_sockaddr ((struct sockaddr *) remote_addr);
+
    free (overlapped);
 
    ++ client->user_count;
@@ -242,14 +283,17 @@ static void listen_socket_completion (void * tag, OVERLAPPED * _overlapped,
       return;
    }
 
-   client->Element = ctx->Clients.Push (client);
+   list_push (ctx->clients, client);
+   client->elem = list_back (ctx->clients);
 
    -- client->user_count;
 
-   if (ctx->on_receive)
+   if (ctx->on_data)
    {
-      client->Public.AddHandlerData (onClientData, client);
-      client->Public.Read (-1);
+      lwp_trace ("*** READING on behalf of the handler, client %p", client);
+
+      lw_stream_add_hook_data ((lw_stream) client, on_client_data, client);
+      lw_stream_read ((lw_stream) client, -1);
    }
 }
 
@@ -259,11 +303,13 @@ void lw_server_host (lw_server ctx, long port)
    lw_filter_set_local_port (filter, port);
 
    lw_server_host_filter (ctx, filter);
+
+   lw_filter_delete (filter);
 }
 
 void lw_server_host_filter (lw_server ctx, lw_filter filter)
 {
-   lw_server_unhost (server);
+   lw_server_unhost (ctx);
 
    lw_error error = lw_error_new ();
 
@@ -278,11 +324,15 @@ void lw_server_host_filter (lw_server ctx, lw_filter filter)
 
    if (listen (ctx->socket, SOMAXCONN) == -1)
    {
-      Error.Add (WSAGetLastError ());
-      Error.Add ("Error listening");
+      lw_error error = lw_error_new ();
+
+      lw_error_add (error, WSAGetLastError ());
+      lw_error_addf (error, "Error listening");
 
       if (ctx->on_error)
          ctx->on_error (ctx, error);
+
+      lw_error_delete (error);
 
       return;
    }
@@ -310,7 +360,7 @@ lw_bool lw_server_hosting (lw_server ctx)
 
 size_t lw_server_num_clients (lw_server ctx)
 {
-   return ctx->num_clients;
+   return list_length (ctx->clients);
 }
 
 long lw_server_port (lw_server ctx)
@@ -335,7 +385,7 @@ lw_bool lw_server_load_sys_cert (lw_server ctx,
 
       lw_error_delete (error);
 
-      return false;
+      return lw_false;
    }
 
    if(!location || !*location)
@@ -422,8 +472,6 @@ lw_bool lw_server_load_sys_cert (lw_server ctx,
 
    if (!cert_store)
    {
-      Lacewing::Error Error;
-
       lw_error error = lw_error_new ();
 
       lw_error_add (error, WSAGetLastError ());
@@ -453,11 +501,11 @@ lw_bool lw_server_load_sys_cert (lw_server ctx,
 
       context = CertFindCertificateInStore
       (
-         CertStore,
+         cert_store,
          PKCS_7_ASN_ENCODING,
          0,
          CERT_FIND_SUBJECT_STR_A,
-         CommonName,
+         common_name,
          0
       );
 
@@ -479,15 +527,15 @@ lw_bool lw_server_load_sys_cert (lw_server ctx,
 
    SCHANNEL_CRED creds =
    {
-      .dwVersion              = SCHANNEL_CRED_VERSION;
-      .cCreds                 = 1;
-      .paCred                 = &Context;
-      .grbitEnabledProtocols  = (0x80 | 0x40); /* SP_PROT_TLS1 */
+      .dwVersion              = SCHANNEL_CRED_VERSION,
+      .cCreds                 = 1,
+      .paCred                 = &context,
+      .grbitEnabledProtocols  = (0x80 | 0x40)  /* SP_PROT_TLS1 */
    };
 
    {  TimeStamp expiry_time;
 
-      int Result = AcquireCredentialsHandleA
+      int result = AcquireCredentialsHandleA
       (
          0,
          (SEC_CHAR *) UNISP_NAME_A,
@@ -538,7 +586,7 @@ lw_bool lw_server_load_cert_file (lw_server ctx,
       lw_error_delete (error);
 
       return lw_false;
-    }
+   }
 
    if (lw_server_hosting (ctx))
       lw_server_unhost (ctx);
@@ -549,7 +597,7 @@ lw_bool lw_server_load_cert_file (lw_server ctx,
       ctx->cert_loaded = lw_false;
    }
 
-   HCERTSTORE CertStore = CertOpenStore
+   HCERTSTORE cert_store = CertOpenStore
    (
       (LPCSTR) 7 /* CERT_STORE_PROV_FILENAME_A */,
       X509_ASN_ENCODING,
@@ -577,7 +625,7 @@ lw_bool lw_server_load_cert_file (lw_server ctx,
       {
          lw_error error = lw_error_new ();
 
-         lw_error_add (GetLastError ());
+         lw_error_add (error, GetLastError ());
          lw_error_addf (error, "Error loading certificate file: %s", filename);
 
          if (ctx->on_error)
@@ -592,7 +640,7 @@ lw_bool lw_server_load_cert_file (lw_server ctx,
    PCCERT_CONTEXT context = CertFindCertificateInStore
    (
       cert_store,
-      PKCS7 ? PKCS_7_ASN_ENCODING : X509_ASN_ENCODING,
+      pkcs7 ? PKCS_7_ASN_ENCODING : X509_ASN_ENCODING,
       0,
       CERT_FIND_SUBJECT_STR_A,
       common_name,
@@ -617,7 +665,7 @@ lw_bool lw_server_load_cert_file (lw_server ctx,
       {
          lw_error error = lw_error_new ();
 
-         lw_error_add (code);
+         lw_error_add (error, code);
          lw_error_addf (error, "Error finding certificate in store");
 
          if (ctx->on_error)
@@ -633,7 +681,7 @@ lw_bool lw_server_load_cert_file (lw_server ctx,
    {
       .dwVersion = SCHANNEL_CRED_VERSION,
       .cCreds = 1,
-      .paCred = &Context,
+      .paCred = &context,
       .grbitEnabledProtocols = 0xF0 /* SP_PROT_SSL3TLS1 */
    };
 
@@ -656,7 +704,7 @@ lw_bool lw_server_load_cert_file (lw_server ctx,
    {
       lw_error error = lw_error_new ();
 
-      lw_error_add (result);
+      lw_error_add (error, result);
       lw_error_addf (error, "Error acquiring credentials handle");
 
       if (ctx->on_error)
@@ -679,83 +727,84 @@ lw_bool lw_server_cert_loaded (lw_server ctx)
 
 lw_bool lw_server_can_npn (lw_server ctx)
 {
-    /* NPN is currently not available w/ schannel */
+   /* NPN is currently not available w/ schannel */
 
-    return lw_false;
+   return lw_false;
 }
 
-void lw_server_add_npn (lw_server ctx, const char *)
+void lw_server_add_npn (lw_server ctx, const char * protocol)
 {
 }
 
 const char * lw_server_client_npn (lw_server_client client)
 {
-    return "";
+   return "";
 }
 
-lw_addr lw_server_client_get_addr (lw_server_client client)
+lw_addr lw_server_client_addr (lw_server_client client)
 {
-    return client->addr;
+   return client->addr;
 }
 
 lw_server_client lw_server_client_next (lw_server_client client)
 {
-
+   return list_elem_next (client->elem);
 }
 
-lw_server_client lw_server_first_client (lw_server ctx) 
+lw_server_client lw_server_client_first (lw_server ctx)
 {
-
+   return list_front (ctx->clients);
 }
 
-void onClientData (Stream &stream, void * tag, const char * buffer, size_t size)
+void on_client_data (lw_stream stream, void * tag, const char * buffer, size_t size)
 {
-    Server::Client::Internal * client = (Server::Client::Internal *) tag;
-    Server::Internal &server = client->Server;
+   lw_server_client client = tag;
+   lw_server server = client->server;
 
-    server.Handlers.Receive (server.Public, client->Public, buffer, size);
+   assert (server->on_data);
+
+   server->on_data (server, client, buffer, size);
 }
 
-void onClientClose (Stream &stream, void * tag)
+void on_client_close (lw_stream stream, void * tag)
 {
-    Server::Client::Internal * client = (Server::Client::Internal *) tag;
+   lw_server_client client = tag;
 
-    if (client->UserCount > 0)
-        client->Dead = false;
-    else
-        delete client;
+   if (client->user_count > 0)
+      client->dead = lw_false;
+   else
+      lwp_server_client_delete (client);
 }
 
-void Server::onReceive (Server::HandlerReceive onReceive)
+void lw_server_on_data (lw_server ctx, lw_server_hook_data on_data)
 {
-    ctx->Handlers.Receive = onReceive;
-    
-    if (onReceive)
-    {
-        /* Setting onReceive to a handler */
+   ctx->on_data = on_data;
 
-        if (!ctx->Handlers.Receive)
-        {
-            for (List <Server::Client::Internal *>::Element * E
-                    = ctx->Clients.First; E; E = E->Next)
-            {
-                (** E)->Public.AddHandlerData (onClientData, (** E));
-            }
-        }
-        
-        return;
-    }
+   if (on_data)
+   {
+      /* Setting on_data to a handler */
 
-    /* Setting onReceive to 0 */
+      if (!ctx->on_data)
+      {
+         list_each (ctx->clients, client)
+         {
+            lw_stream_add_hook_data ((lw_stream) client, on_client_data, client);
+            lw_stream_read ((lw_stream) client, -1);
+         }
+      }
 
-    for (List <Server::Client::Internal *>::Element * E
-            = ctx->Clients.First; E; E = E->Next)
-    {
-        (** E)->Public.RemoveHandlerData (onClientData, (** E));
-    }
+      return;
+   }
+
+   /* Setting on_data to 0 */
+
+   list_each (ctx->clients, client)
+   {
+      lw_stream_remove_hook_data ((lw_stream) client, on_client_data, client);
+   }
 }
 
-AutoHandlerFunctions (Server, Connect)
-AutoHandlerFunctions (Server, Disconnect)
-AutoHandlerFunctions (Server, Error)
+lwp_def_hook (server, connect)
+lwp_def_hook (server, disconnect)
+lwp_def_hook (server, error)
 

@@ -28,67 +28,34 @@
  */
 
 #include "../common.h"
+#include "fdstream.h"
 
-enum overlapped_type
-{
-    overlapped_type_read,
-    overlapped_type_write,
-    overlapped_type_transmitfile
-};
+const static lw_streamdef def_fdstream;
 
-struct overlapped
+static void issue_read (lw_fdstream ctx);
+static lw_bool write_completed (lw_fdstream ctx);
+
+struct fdstream_overlapped
 {
     OVERLAPPED overlapped;
 
-    overlapped_type type;
+    enum
+    {
+       overlapped_type_read,
+       overlapped_type_write,
+       overlapped_type_transmitfile
+
+    } type;
 
     char data [];
-
-} * read_overlapped, * transmitfile_overlapped;
-
-const static char
-    lwp_fdstream_flag_read_pending     = 1,
-    lwp_fdstream_flag_nagle            = 2,
-    lwp_fdstream_flag_is_socket        = 4,
-    lwp_fdstream_flag_close_asap       = 8,  /* FD close pending on write? */
-    lwp_fdstream_flag_auto_close       = 16,
-    lwp_fdstream_flag_dead             = 32;
-
-struct lw_fdstream
-{
-   struct lw_stream stream;
-
-   short ref_count;
-
-   overlapped * read_overlapped;
-   overlapped * transmitfile_overlapped;
-
-   lw_fdstream transmit_file_from,
-               transmit_file_to;
-
-   char buffer [lwp_default_buffer_size];
-
-   HANDLE fd;
-
-   lw_pump_watch watch;
-
-   size_t size;
-   size_t reading_size;
-
-   LARGE_INTEGER offset;
-
-   char flags;
-
-   int pending_writes;
 };
 
 static void completion (void * tag, OVERLAPPED * _overlapped,
-      unsigned int bytes_transferred, int error)
+                        unsigned long bytes_transferred, int error)
 {
    lw_fdstream ctx = tag;
 
-   lwp_fdstream_overlapped * overlapped =
-      (lwp_fdstream_overlapped *) _overlapped;
+   fdstream_overlapped overlapped = (fdstream_overlapped) _overlapped;
 
    if (error == ERROR_OPERATION_ABORTED)
    {
@@ -116,7 +83,7 @@ static void completion (void * tag, OVERLAPPED * _overlapped,
             break;
          }
 
-         lwp_stream_data ((lw_stream) ctx, ctx->buffer, bytes_transferred);
+         lw_stream_data ((lw_stream) ctx, ctx->buffer, bytes_transferred);
 
          /* Calling lwp_stream_data may result in stream destruction */
 
@@ -137,7 +104,7 @@ static void completion (void * tag, OVERLAPPED * _overlapped,
 
       case overlapped_type_transmitfile:
       {
-         assert (overlapped == ctx->transmit_file_overlapped);
+         assert (overlapped == ctx->transmitfile_overlapped);
 
          ctx->transmit_file_from->transmit_file_to = 0;                            
          write_completed (ctx->transmit_file_from);
@@ -180,7 +147,7 @@ static void close_fd (lw_fdstream ctx)
 
    if (!CancelIo (ctx->fd))
    {
-      assert (false);
+      assert (0);
    }
 
    ctx->pending_writes = 0;
@@ -188,7 +155,7 @@ static void close_fd (lw_fdstream ctx)
    if (ctx->flags & lwp_fdstream_flag_auto_close)
    {
       if (ctx->flags & lwp_fdstream_flag_is_socket)
-         closesocket ((SOCKET) FD);
+         closesocket ((SOCKET) ctx->fd);
       else
          CloseHandle (ctx->fd);
    }
@@ -202,7 +169,7 @@ lw_bool write_completed (lw_fdstream ctx)
 
    /* If we're trying to close, was this the last write finishing? */
 
-   if ( (ctx->flags & lwp_fdstream_flag_closeASAP) && ctx->pending_writes == 0)
+   if ( (ctx->flags & lwp_fdstream_flag_close_asap) && ctx->pending_writes == 0)
    {
       close_fd (ctx);
 
@@ -212,7 +179,7 @@ lw_bool write_completed (lw_fdstream ctx)
    return lw_false;
 }
 
-static void issue_read (lw_fdstream ctx)
+void issue_read (lw_fdstream ctx)
 {
    if (ctx->fd == INVALID_HANDLE_VALUE)
       return;
@@ -227,7 +194,7 @@ static void issue_read (lw_fdstream ctx)
    ctx->read_overlapped->overlapped.Offset = ctx->offset.LowPart;
    ctx->read_overlapped->overlapped.OffsetHigh = ctx->offset.HighPart;
 
-   size_t to_read = sizeof (Buffer);
+   size_t to_read = sizeof (ctx->buffer);
 
    if (ctx->reading_size != -1 && to_read > ctx->reading_size)
       to_read = ctx->reading_size;
@@ -239,7 +206,7 @@ static void issue_read (lw_fdstream ctx)
 
       if (error != ERROR_IO_PENDING)
       {
-         lw_stream_close ((lw_stream) ctx);
+         lw_stream_close ((lw_stream) ctx, lw_true);
          return;
       }
    }
@@ -250,62 +217,28 @@ static void issue_read (lw_fdstream ctx)
    ctx->flags |= lwp_fdstream_flag_read_pending;
 }
 
-void lw_fdstream_init (lw_fdstream ctx, lw_pump pump)
+static lw_bool def_cleanup (lw_stream _ctx)
 {
-   memset (ctx, 0, sizeof (*ctx));
-
-   ctx->fd     = INVALID_HANDLE_VALUE;
-   ctx->flags  = lwp_fdstream_flag_nagle;
-   ctx->size   = -1;
-
-   ReadOverlapped = new Overlapped ();
-   TransmitFileOverlapped = new Overlapped ();
-
-   lwp_stream_init ((lw_stream) ctx, pump);
-}
-
-lw_fdstream lw_fdstream_new (lw_pump pump)
-{
-   lw_fdstream ctx = malloc (sizeof (*ctx));
-
-   if (!ctx)
-      return 0;
-
-   lwp_init ();
-
-   lw_fdstream_init (ctx, pump);
-
-   return ctx;
-}
-
-void lw_fdstream_cleanup (lw_fdstream ctx)
-{
-   lw_stream_close ((lw_stream) ctx, lw_true);
-
-    if (ctx->ref_count > 0)
-        ctx->flags |= lwp_fdstream_flag_dead;
-    else
-       free (ctx);
+   lw_fdstream ctx = (lw_fdstream) _ctx;
 
    close_fd (ctx);
 
+   if (ctx->ref_count > 0)
+   {
+      ctx->flags |= lwp_fdstream_flag_dead;
+      return lw_false;
+   }
+
    /* TODO: May leak read_overlapped if no read is pending */
+
+   return lw_true;
 }
 
-void lw_fdstream_delete (lw_fdstream ctx)
-{
-   if (!ctx)
-      return;
-
-   lw_fdstream_cleanup (ctx);
-
-   free (ctx);
-}
-
-void lw_fdstream_set_fd (HANDLE fd, lw_pump_watch watch, lw_bool auto_close)
+void lw_fdstream_set_fd (lw_fdstream ctx, HANDLE fd,
+                         lw_pump_watch watch, lw_bool auto_close)
 {
    if (ctx->watch)
-      lw_pump_remove (ctx->pump, ctx->watch);
+      lw_pump_remove (lw_stream_pump ((lw_stream) ctx), ctx->watch);
 
    ctx->fd = fd;
 
@@ -335,8 +268,8 @@ void lw_fdstream_set_fd (HANDLE fd, lw_pump_watch watch, lw_bool auto_close)
 
        int b = (ctx->flags & lwp_fdstream_flag_nagle) ? 0 : 1;
 
-       setsockopt ((SOCKET) FD, SOL_SOCKET, TCP_NODELAY,
-                     (char *) &b, sizeof (b));
+       setsockopt ((SOCKET) ctx->fd, SOL_SOCKET, TCP_NODELAY,
+                   (char *) &b, sizeof (b));
     }
     else
     {
@@ -353,11 +286,14 @@ void lw_fdstream_set_fd (HANDLE fd, lw_pump_watch watch, lw_bool auto_close)
     if (watch)
     {
         ctx->watch = watch;
-        lw_pump_update_callbacks (ctx->pump, watch, ctx, completion);
+
+        lw_pump_update_callbacks (lw_stream_pump ((lw_stream) ctx),
+                                  watch, ctx, completion);
     }
     else
     {
-       ctx->watch = lw_pump_add (ctx->pump, fd, ctx, completion);
+       ctx->watch = lw_pump_add (lw_stream_pump ((lw_stream) ctx),
+                                 fd, ctx, completion);
     }
 
     if (ctx->reading_size != 0)
@@ -375,36 +311,39 @@ lw_bool lw_fdstream_valid (lw_fdstream ctx)
  * Stream.
  */
 
-static size_t def_sink_data (const char * buffer, size_t size)
+static size_t def_sink_data (lw_stream _ctx, const char * buffer, size_t size)
 {
+   lw_fdstream ctx = (lw_fdstream) _ctx;
+
    if (!size)
       return size; /* nothing to do */
 
    /* TODO : Pre-allocate a bunch of these and reuse them? */
 
-   Internal::Overlapped * overlapped =
-      (Internal::Overlapped *) malloc (sizeof (Internal::Overlapped) + size);
+   fdstream_overlapped overlapped = malloc (sizeof (*overlapped) + size);
 
    if (!overlapped)
       return size; 
-
+   
    memset (overlapped, 0, sizeof (*overlapped));
+   overlapped->type = overlapped_type_write;
 
-   overlapped->Type = Internal::Overlapped::Type_Write;
-
-   overlapped->_Overlapped.Offset = ctx->Offset.LowPart;
-   overlapped->_Overlapped.OffsetHigh = ctx->Offset.HighPart;
+   ((OVERLAPPED *) &overlapped)->Offset = ctx->offset.LowPart;
+   ((OVERLAPPED *) &overlapped)->OffsetHigh = ctx->offset.HighPart;
 
    /* TODO : Find a way to avoid copying the data. */
 
-   memcpy (overlapped->Data, buffer, size);
+   memcpy (overlapped->data, buffer, size);
 
    /* TODO : Use WSASend if IsSocket == true?  (for better error messages.)
     * Same goes for ReadFile and WSARecv.
     */
 
-   if (::WriteFile (ctx->FD, overlapped->Data, size,
-            0, (OVERLAPPED *) overlapped) == -1)
+   if (WriteFile (ctx->fd,
+                  overlapped->data,
+                  size,
+                  0,
+                  (OVERLAPPED *) overlapped) == -1)
    {
       int error = GetLastError ();
 
@@ -416,89 +355,93 @@ static size_t def_sink_data (const char * buffer, size_t size)
       }
    }
 
-   if (ctx->Size != -1)
-      ctx->Offset.QuadPart += size;
+   if (ctx->size != -1)
+      ctx->offset.QuadPart += size;
 
-   ++ ctx->PendingWrites;
+   ++ ctx->pending_writes;
 
    return size;
 }
 
-static size_t def_sink_stream (Stream &_stream, size_t size)
+static size_t def_sink_stream (lw_stream _dest, lw_stream _src, size_t size)
 {
-   lw_fdstream ctx = (lw_fdstream) stream;
+   if (lw_stream_get_def (_src) != &def_fdstream)
+      return -1;
 
-    FDStream * stream = (FDStream *) _stream.Cast (::FDStreamType);
+   if (size == -1)
+   {
+      size = lw_stream_bytes_left (_src);
 
-    if (!stream)
-        return -1;
+      if (size == -1)
+         return -1;
+   }
 
-    if (!lw_stream_valid ((lw_stream) ctx))
-        return -1;
+   lw_fdstream source = (lw_fdstream) _src;
+   lw_fdstream dest = (lw_fdstream) _dest;
 
-    if (size == -1)
-    {
-        size = stream->BytesLeft ();
+   if (size >= (((size_t) 1024) * 1024 * 1024 * 2))
+      return -1; 
 
-        if (size == -1)
-            return -1;
-    }
+   /* TransmitFile can only send from a file to a socket */
 
-    if (size >= (((size_t) 1024) * 1024 * 1024 * 2))
-        return -1; 
+   if (source->flags & lwp_fdstream_flag_is_socket)
+      return -1;
 
-    /* TransmitFile can only send from a file to a socket */
+   if (! (dest->flags & lwp_fdstream_flag_is_socket))
+      return -1;
 
-    if (stream->ctx->flags & lwp_fdstream_flag_socket)
-        return -1;
+   if (dest->transmitfile_from || source->transmitfile_to)
+      return -1;  /* source or dest stream already performing a TransmitFile */
 
-    if (! (ctx->flags & lwp_fdstream_flag_socket))
-        return -1;
+   fdstream_overlapped overlapped = dest->transmitfile_overlapped;
 
-    if (ctx->transmitfile_from || stream->ctx->transmitfile_to)
-        return -1;  /* source or dest stream already performing a TransmitFile */
+   memset (overlapped, 0, sizeof (*overlapped));
+   overlapped->type = overlapped_type_transmitfile;
 
-    Internal::Overlapped * overlapped = ctx->transmitfile_overlapped;
-    memset (overlapped, 0, sizeof (*overlapped));
+   /* Use the current offset from the source stream */
 
-    overlapped->type = overlapped_type_transmitfile;
+   ((OVERLAPPED *) overlapped)->Offset = source->offset.LowPart;
+   ((OVERLAPPED *) overlapped)->OffsetHigh = source->offset.HighPart;
 
-    /* Use the current offset from the source stream */
+   /* TODO : Can we make use of the head buffers somehow?  Perhaps if data
+    * is queued and preventing this TransmitFile from happening immediately,
+    * the head buffers could be used to drain it.
+    */
 
-    ((OVERLAPPED *) overlapped)->Offset = stream->ctx->offset.LowPart;
-    ((OVERLAPPED *) overlapped)->OffsetHigh = stream->ctx->offset.HighPart;
+   if (!TransmitFile ((SOCKET) dest->fd,
+                      source->fd,
+                      (DWORD) size,
+                      0,
+                      (OVERLAPPED *) overlapped,
+                      0,
+                      0))
+   {
+      int error = WSAGetLastError ();
 
-    /* TODO : Can we make use of the head buffers somehow?  Perhaps if data
-     * is queued and preventing this TransmitFile from happening immediately,
-     * the head buffers could be used to drain it.
-     */
+      if (error != WSA_IO_PENDING)
+         return -1;
+   }
 
-    if (!TransmitFile
-            ((SOCKET) ctx->FD, stream->ctx->FD,
-                (DWORD) size, 0, (OVERLAPPED *) overlapped, 0, 0))
-    {
-        int error = WSAGetLastError ();
+   /* OK, looks like the TransmitFile call succeeded. */
 
-        if (error != WSA_IO_PENDING)
-            return -1;
-    }
+   dest->transmitfile_from = source;
+   source->transmitfile_to = dest;
 
-    /* OK, looks like the TransmitFile call succeeded. */
+   if (source->size != -1)
+      source->offset.QuadPart += size;
 
-    ctx->transmitfile_from = stream->ctx;
-    stream->ctx->transmitfile_to = ctx;
+   ++ dest->pending_writes;
+   ++ source->pending_writes;
 
-    if (stream->ctx->Size != -1)
-        stream->ctx->Offset.QuadPart += size;
+   /* As far as stream is concerned, we've now written everything. */
 
-    ++ ctx->pending_writes;
-    ++ stream->ctx->pending_writes;
-
-    return size;
+   return size;
 }
 
-void lw_fdstream_read (lw_fdstream ctx, size_t bytes)
+static void def_read (lw_stream _ctx, size_t bytes)
 {
+   lw_fdstream ctx = (lw_fdstream) _ctx;
+
    lw_bool was_reading = ctx->reading_size != 0;
 
    if (bytes == -1)
@@ -510,9 +453,11 @@ void lw_fdstream_read (lw_fdstream ctx, size_t bytes)
       issue_read (ctx);
 }
 
-size_t lw_fdstream_bytes_left (lw_fdstream ctx)
+static size_t def_bytes_left (lw_stream _ctx)
 {
-   if (!lw_stream_valid ((lw_stream) ctx))
+   lw_fdstream ctx = (lw_fdstream) _ctx;
+
+   if (!lw_fdstream_valid (ctx))
       return -1;
 
    if (ctx->size == -1)
@@ -522,25 +467,19 @@ size_t lw_fdstream_bytes_left (lw_fdstream ctx)
 }
 
 /* Unlike with *nix, there's the possibility that data might actually be
- * pending in the FDStream, rather than just the Stream.  To account for this,
- * we override Close() to check PendingWrites first.
+ * pending in the FDStream, rather than just the Stream.  
  */
 
-bool FDStream::Close (bool immediate)
+static lw_bool def_close (lw_stream _ctx, lw_bool immediate)
 {
-   return ctx->Close (immediate);
-}
+   lw_fdstream ctx = (lw_fdstream) ctx;
 
-static lw_bool def_close (lw_stream stream, bool immediate)
-{
-   lw_fdstream ctx = (lw_fdstream) stream;
-
-   if (immediate || PendingWrites == 0)
+   if (immediate || ctx->pending_writes == 0)
    {
       ++ ctx->ref_count;
 
       if (!lw_stream_close ((lw_stream) ctx, immediate))
-         return false;
+         return lw_false;
 
       close_fd (ctx);
 
@@ -551,19 +490,19 @@ static lw_bool def_close (lw_stream stream, bool immediate)
    }
    else
    {
-      ctx->flags |= lwp_fdstream_flag_closeASAP;
+      ctx->flags |= lwp_fdstream_flag_close_asap;
       return lw_false;
    }
 }
 
-void lw_fdstream_set_nagle (lw_fdstream ctx, lw_bool enabled)
+void lw_fdstream_nagle (lw_fdstream ctx, lw_bool enabled)
 {
    if (enabled)
       ctx->flags |= lwp_fdstream_flag_nagle;
    else
       ctx->flags &= ~ lwp_fdstream_flag_nagle;
 
-   if (lw_stream_valid ((lw_stream) ctx))
+   if (lw_fdstream_valid (ctx))
    {
       int b = enabled ? 0 : 1;
 
@@ -582,5 +521,45 @@ void lw_fdstream_uncork (lw_fdstream ctx)
 {
 }
 
+const static lw_streamdef def_fdstream =
+{
+   .sink_data    = def_sink_data,
+   .sink_stream  = def_sink_stream,
+   .close        = def_close,
+   .bytes_left   = def_bytes_left,
+   .read         = def_read,
+   .cleanup      = def_cleanup
+};
+
+void lwp_fdstream_init (lw_fdstream ctx, lw_pump pump)
+{
+   memset (ctx, 0, sizeof (*ctx));
+
+   ctx->fd     = INVALID_HANDLE_VALUE;
+   ctx->flags  = lwp_fdstream_flag_nagle;
+   ctx->size   = -1;
+
+   ctx->read_overlapped = calloc
+      (sizeof (*ctx->read_overlapped), 1);
+
+   ctx->transmitfile_overlapped = calloc
+      (sizeof (*ctx->transmitfile_overlapped), 1);
+
+   lwp_stream_init ((lw_stream) ctx, &def_fdstream, pump);
+}
+
+lw_fdstream lw_fdstream_new (lw_pump pump)
+{
+   lw_fdstream ctx = malloc (sizeof (*ctx));
+
+   if (!ctx)
+      return 0;
+
+   lwp_init ();
+
+   lwp_fdstream_init (ctx, pump);
+
+   return ctx;
+}
 
 

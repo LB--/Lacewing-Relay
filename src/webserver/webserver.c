@@ -31,11 +31,8 @@
 
 static void on_connect (lw_server server, lw_server_client client_socket)
 {
-   lw_ws ws;
-   lw_bool secure;
-
-   ws = lw_server_tag (server);
-   secure = (server == ws->socket_secure);
+   lw_ws ws = lw_server_tag (server);
+   lw_bool secure = (server == ws->socket_secure);
 
    lwp_ws_client client;
 
@@ -198,6 +195,8 @@ void lw_ws_host (lw_ws ctx, long port)
    lw_filter_set_local_port (filter, port);
 
    lw_ws_host_filter (ctx, filter);
+
+   lw_filter_delete (filter);
 }
 
 void lw_ws_host_filter (lw_ws ctx, lw_filter filter)
@@ -214,6 +213,8 @@ void lw_ws_host_secure (lw_ws ctx, long port)
    lw_filter_set_local_port (filter, port);
 
    lw_ws_host_secure_filter (ctx, filter);
+
+   lw_filter_delete (filter);
 }
 
 void lw_ws_host_secure_filter (lw_ws ctx, lw_filter filter)

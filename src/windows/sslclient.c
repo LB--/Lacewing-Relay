@@ -28,14 +28,21 @@
  */
 
 #include "../common.h"
-#include "winsslclient.h"
+#include "sslclient.h"
+#include "../stream.h"
+
+static size_t proc_handshake_data
+    (lwp_winsslclient, const char * buffer, size_t size);
+
+static size_t proc_message_data
+    (lwp_winsslclient, const char * buffer, size_t size);
 
 const char lwp_winsslclient_got_context = 1;
 const char lwp_winsslclient_handshake_complete = 2;
 
 struct _lwp_winsslclient
 {
-   char status;
+   DWORD status;
    char flags;
 
    CredHandle server_creds;
@@ -47,7 +54,10 @@ struct _lwp_winsslclient
    struct lw_stream downstream;
 };
 
-lwp_winsslclient lwp_winsslclient_new (CredHandle server_creds)
+const static lw_streamdef def_upstream;
+const static lw_streamdef def_downstream;
+
+lwp_winsslclient lwp_winsslclient_new (CredHandle server_creds, lw_stream socket)
 {
    lwp_winsslclient ctx = calloc (sizeof (*ctx), 1);
 
@@ -57,8 +67,14 @@ lwp_winsslclient lwp_winsslclient_new (CredHandle server_creds)
    ctx->flags = 0;
    ctx->status = SEC_I_CONTINUE_NEEDED;
 
-   lwp_stream_init (&ctx->upstream, def_upstream);
-   lwp_stream_init (&ctx->downstream, def_downstream);
+   lwp_stream_init (&ctx->upstream, &def_upstream, 0);
+   lwp_stream_init (&ctx->downstream, &def_downstream, 0);
+
+   lw_stream_add_filter_upstream
+      (socket, &ctx->upstream, lw_false, lw_true);
+
+   lw_stream_add_filter_downstream
+      (socket, &ctx->downstream, lw_false, lw_true);
 
    return ctx;
 }
@@ -71,10 +87,13 @@ void lwp_winsslclient_delete (lwp_winsslclient ctx)
    free (ctx);
 }
 
-static size_t def_upstream_sink_data (lw_stream stream,
-      const char * buffer,
-      size_t size)
+static size_t def_upstream_sink_data (lw_stream upstream,
+                                      const char * buffer,
+                                      size_t size)
 {
+   lwp_winsslclient ctx = container_of
+      (upstream, struct _lwp_winsslclient, upstream);
+
    if (! (ctx->flags & lwp_winsslclient_handshake_complete))
       return 0; /* can't send anything right now */
 
@@ -84,7 +103,7 @@ static size_t def_upstream_sink_data (lw_stream stream,
       buffers [0].cbBuffer = ctx->sizes.cbHeader;
       buffers [0].BufferType = SECBUFFER_STREAM_HEADER;
 
-      buffers [1].pvBuffer = buffer;
+      buffers [1].pvBuffer = (BYTE *) buffer;
       buffers [1].cbBuffer = size;
       buffers [1].BufferType = SECBUFFER_DATA;
 
@@ -100,7 +119,7 @@ static size_t def_upstream_sink_data (lw_stream stream,
       .cBuffers = 4,
       .pBuffers = buffers,
       .ulVersion = SECBUFFER_VERSION
-   }'
+   };
 
    SECURITY_STATUS status = EncryptMessage (&ctx->context, 0, &buffers_desc, 0);
 
@@ -111,23 +130,26 @@ static size_t def_upstream_sink_data (lw_stream stream,
       return size;
    }
 
-   lw_stream_data (stream, buffers [0].pvBuffer, buffers [0].cbBuffer);
-   lw_stream_data (stream, buffers [1].pvBuffer, buffers [1].cbBuffer);
-   lw_stream_data (stream, buffers [2].pvBuffer, buffers [2].cbBuffer);
-   lw_stream_data (stream, buffers [3].pvBuffer, buffers [3].cbBuffer);
+   lw_stream_data (upstream, buffers [0].pvBuffer, buffers [0].cbBuffer);
+   lw_stream_data (upstream, buffers [1].pvBuffer, buffers [1].cbBuffer);
+   lw_stream_data (upstream, buffers [2].pvBuffer, buffers [2].cbBuffer);
+   lw_stream_data (upstream, buffers [3].pvBuffer, buffers [3].cbBuffer);
 
    return size;
 }
 
-static size_t def_downstream_sink_data (lw_stream stream,
+static size_t def_downstream_sink_data (lw_stream downstream,
                                         const char * buffer,
                                         size_t size)
 {
+   lwp_winsslclient ctx =
+      container_of (downstream, struct _lwp_winsslclient, downstream);
+
    size_t processed = 0;
 
    if (! (ctx->flags & lwp_winsslclient_handshake_complete))
    {
-      processed += proc_handshake_data (buffer, size);
+      processed += proc_handshake_data (ctx, buffer, size);
 
       if (! (ctx->flags & lwp_winsslclient_handshake_complete))
          return processed;
@@ -138,7 +160,7 @@ static size_t def_downstream_sink_data (lw_stream stream,
       size -= processed;
    }
 
-   processed += proc_message_data (buffer, size);
+   processed += proc_message_data (ctx, buffer, size);
 
    return processed;
 }
@@ -148,7 +170,7 @@ size_t proc_handshake_data (lwp_winsslclient ctx, const char * buffer, size_t si
    SecBuffer in [2];
 
       in [0].BufferType = SECBUFFER_TOKEN;
-      in [0].pvBuffer = buffer;
+      in [0].pvBuffer = (BYTE *) buffer;
       in [0].cbBuffer = size;
 
       in [1].BufferType = SECBUFFER_EMPTY;
@@ -257,7 +279,7 @@ size_t proc_handshake_data (lwp_winsslclient ctx, const char * buffer, size_t si
             return size;
          }
 
-         ctx->Flags |= Flag_HandshakeComplete;
+         ctx->flags |= lwp_winsslclient_handshake_complete;
       }
    }
 
@@ -268,7 +290,7 @@ size_t proc_message_data (lwp_winsslclient ctx, const char * buffer, size_t size
 {
    SecBuffer buffers [4];
 
-      buffers [0].pvBuffer = buffer;
+      buffers [0].pvBuffer = (BYTE *) buffer;
       buffers [0].cbBuffer = size;
       buffers [0].BufferType = SECBUFFER_DATA;
 
@@ -312,7 +334,7 @@ size_t proc_message_data (lwp_winsslclient ctx, const char * buffer, size_t size
       return size;
    }
 
-   if (FAILED (ctx->Status))
+   if (FAILED (ctx->status))
    {
       /* Error decrypting the message */
 
@@ -329,11 +351,11 @@ size_t proc_message_data (lwp_winsslclient ctx, const char * buffer, size_t size
 
    for (int i = 0; i < 4; ++ i)
    {
-      SecBuffer &buffer = buffers [i];
+      SecBuffer * buffer = (buffers + i);
 
-      if (buffer.BufferType == SECBUFFER_DATA)
+      if (buffer->BufferType == SECBUFFER_DATA)
       {
-         lw_stream_data (&ctx->downstream, buffer.pvBuffer, buffer.cbBuffer);
+         lw_stream_data (&ctx->downstream, buffer->pvBuffer, buffer->cbBuffer);
          break;
       }
    }
@@ -342,17 +364,28 @@ size_t proc_message_data (lwp_winsslclient ctx, const char * buffer, size_t size
 
    for (int i = 0; i < 4; ++ i)
    {
-      SecBuffer &buffer = buffers [i];
+      SecBuffer * buffer = (buffers + i);
 
-      if (buffer.BufferType == SECBUFFER_EXTRA && buffer.cbBuffer > 0)
+      if (buffer->BufferType == SECBUFFER_EXTRA && buffer->cbBuffer > 0)
       {
-         size -= buffer.cbBuffer;
+         size -= buffer->cbBuffer;
          break;
       }
    }
 
    return size;
 }
+
+const static lw_streamdef def_upstream =
+{
+   .sink_data = def_upstream_sink_data
+};
+
+const static lw_streamdef def_downstream =
+{
+   .sink_data = def_downstream_sink_data
+};
+
 
 
 

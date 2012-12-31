@@ -145,6 +145,10 @@ void lwp_close_socket (lwp_socket socket)
    #endif
 }
 
+#ifdef __MINGW32__
+   _CRTIMP int _vscprintf (const char * format, va_list argptr);
+#endif
+
 ssize_t lwp_format (char ** output, const char * format, va_list args)
 {
    ssize_t count;

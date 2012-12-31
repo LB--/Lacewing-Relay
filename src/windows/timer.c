@@ -29,7 +29,7 @@
 
 #include "../common.h"
 
-static void timer_thread (Timer::Internal *);
+static void timer_thread (lw_timer);
 
 struct lw_timer
 {
@@ -43,6 +43,8 @@ struct lw_timer
    lw_bool started;
 
    lw_timer_hook_tick on_tick;
+
+   void * tag;
 };
 
 lw_timer lw_timer_new (lw_pump pump)
@@ -112,7 +114,7 @@ void lw_timer_start (lw_timer ctx, long interval)
 
    if (!SetWaitableTimer (ctx->timer_handle, &due_time, interval, 0, 0, 0))
    {
-      assert (false);
+      assert (0);
    }
 
    ctx->started = lw_true;
@@ -126,9 +128,9 @@ void lw_timer_stop (lw_timer ctx)
 
    CancelWaitableTimer (ctx->timer_handle);
 
-   ctx->started = false;
+   ctx->started = lw_false;
 
-   lw_pump_remove_user (lw->pump);
+   lw_pump_remove_user (ctx->pump);
 }
 
 lw_bool lw_timer_started (lw_timer ctx)
@@ -140,6 +142,16 @@ void lw_timer_force_tick (lw_timer ctx)
 {
    if (ctx->on_tick)
       ctx->on_tick (ctx);
+}
+
+void lw_timer_set_tag (lw_timer ctx, void * tag)
+{
+   ctx->tag = tag;
+}
+
+void * lw_timer_tag (lw_timer ctx)
+{
+   return ctx->tag;
 }
 
 lwp_def_hook (timer, tick)

@@ -164,7 +164,7 @@ void lwp_init ();
 
 /* TODO : find the optimal value for this?  make adjustable? */
 
-const static size_t lwp_default_buffer_size = 1024 * 64; 
+#define lwp_default_buffer_size (1024 * 64)
 
 
 void lwp_disable_ipv6_only (lwp_socket socket);

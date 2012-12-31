@@ -76,14 +76,16 @@ static int thread_proc (lw_thread ctx)
    thread_name_info.szName      = ctx->name;
    thread_name_info.dwThreadID  = -1;
 
-   __try
+   /* TODO */
+
+   /* __try
    {   RaiseException (0x406D1388, 0,
                        sizeof (thread_name_info) / sizeof (ULONG),
                        (ULONG *) &thread_name_info);
    }
    __except (EXCEPTION_CONTINUE_EXECUTION)
    {
-   }
+   } */
 
    return ((int (*) (void *)) ctx->proc) (ctx->param);
 }
@@ -104,17 +106,17 @@ lw_bool lw_thread_started (lw_thread ctx)
     return ctx->thread != INVALID_HANDLE_VALUE;
 }
 
-lw_i32 lw_thread_join (lw_thread ctx)
+void * lw_thread_join (lw_thread ctx)
 {
    if (!lw_thread_started (ctx))
-      return -1;
+      return (void *) -1;
 
    DWORD exit_code = -1;
 
    if (WaitForSingleObject (ctx->thread, INFINITE) == WAIT_OBJECT_0)
       GetExitCodeThread (ctx->thread, &exit_code);
 
-   return (lw_i32) (lw_iptr) exit_code;
+   return (void *) exit_code;
 }
 
 

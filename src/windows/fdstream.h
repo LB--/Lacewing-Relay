@@ -27,14 +27,51 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _lw_winsslclient_h
-#define _lw_winsslclient_h
+#ifndef _lw_fdstream_h
+#define _lw_fdstream_h
 
-typedef struct _lwp_winsslclient * lwp_winsslclient;
+#include "../stream.h"
 
-lwp_winsslclient lwp_winsslclient_new (CredHandle server_creds, lw_stream socket);
+typedef struct fdstream_overlapped * fdstream_overlapped;
 
-void lwp_winsslclient_delete (lwp_winsslclient);
+struct lw_fdstream
+{
+   struct lw_stream stream;
+
+   short ref_count;
+
+   fdstream_overlapped read_overlapped;
+   fdstream_overlapped transmitfile_overlapped;
+
+   lw_fdstream transmit_file_from,
+               transmit_file_to;
+
+   char buffer [lwp_default_buffer_size];
+
+   HANDLE fd;
+
+   lw_pump_watch watch;
+
+   size_t size;
+   size_t reading_size;
+
+   LARGE_INTEGER offset;
+
+   char flags;
+
+   int pending_writes;
+
+   lw_fdstream transmitfile_from, transmitfile_to;
+};
+
+#define lwp_fdstream_flag_read_pending     1
+#define lwp_fdstream_flag_nagle            2
+#define lwp_fdstream_flag_is_socket        4
+#define lwp_fdstream_flag_close_asap       8  /* FD close pending on write? */
+#define lwp_fdstream_flag_auto_close       16
+#define lwp_fdstream_flag_dead             32
+
+void lwp_fdstream_init (lw_fdstream, lw_pump);
 
 #endif
 

@@ -111,7 +111,7 @@ build/windows-timer.o \
 build/windows-udp.o \
 build/windows-fdstream.o \
 build/windows-file.o \
-build/windows-winsslclient.o \
+build/windows-sslclient.o \
 build/windows-sync.o \
 build/windows-global.o
 COMMONDEPS +=\
@@ -257,10 +257,10 @@ build/windows-file.o: src/windows/file.c $(COMMONDEPS)
 	$(CC) $(CFLAGS) -c -o $@ src/windows/file.c
 build/windows-sync.o: src/windows/sync.c $(COMMONDEPS)
 	$(CC) $(CFLAGS) -c -o $@ src/windows/sync.c
-build/windows-winsslclient.o: src/windows/winsslclient.c $(COMMONDEPS)
-	$(CC) $(CFLAGS) -c -o $@ src/windows/winsslclient.c
-build/windows-global.o: src/windows/global_win.c $(COMMONDEPS)
-	$(CC) $(CFLAGS) -c -o $@ src/windows/global_win.c
+build/windows-sslclient.o: src/windows/sslclient.c $(COMMONDEPS)
+	$(CC) $(CFLAGS) -c -o $@ src/windows/sslclient.c
+build/windows-global.o: src/windows/global.c $(COMMONDEPS)
+	$(CC) $(CFLAGS) -c -o $@ src/windows/global.c
 
 build/spdy_bytes.o: deps/spdy/src/spdy_bytes.c
 	$(CC) $(CFLAGS) -c -o $@ deps/spdy/src/spdy_bytes.c

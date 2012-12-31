@@ -46,7 +46,6 @@ struct lw_fdstream
 
    size_t size;
    size_t reading_size;
-
 };
 
 #define lwp_fdstream_flag_nagle       1

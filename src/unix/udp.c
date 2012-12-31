@@ -118,7 +118,7 @@ void lw_udp_host_filter (lw_udp ctx, lw_filter filter)
 
 lw_bool lw_udp_hosting (lw_udp ctx)
 {
-    return ctx->fd != -1;
+   return ctx->fd != -1;
 }
 
 long lw_udp_port (lw_udp ctx)

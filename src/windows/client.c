@@ -29,18 +29,21 @@
 
 #include "../common.h"
 #include "../address.h"
+#include "fdstream.h"
 
 struct lw_client
 {
+   struct lw_fdstream fdstream;
+
    lw_pump pump;
    lw_pump_watch watch;
 
-   lwp_client_hook_connect     on_connect;
-   lwp_client_hook_disconnect  on_disconnect;
-   lwp_client_hook_receive     on_receive;
-   lwp_client_hook_error       on_error;
+   lw_client_hook_connect     on_connect;
+   lw_client_hook_disconnect  on_disconnect;
+   lw_client_hook_data        on_data;
+   lw_client_hook_error       on_error;
 
-   lw_addr server_addr;
+   lw_addr address;
 
    HANDLE socket;
    lw_bool connecting;
@@ -62,229 +65,245 @@ void lw_client_delete (lw_client ctx)
    if (!ctx)
       return;
 
-   lw_addr_delete (ctx->server_addr);
+   lw_stream_close ((lw_stream) ctx, lw_true);
+
+   lw_addr_delete (ctx->address);
 
    free (ctx);
 }
 
 void lw_client_connect (lw_client ctx, const char * host, long port)
 {
-   lw_addr addr = lw_addr_new (host, port, lw_true);
-   lw_client_connect_addr (ctx, addr);
+   lw_addr address = lw_addr_new_port (host, port);
+
+   lw_client_connect_addr (ctx, address);
 }
 
 static void completion (void * tag, OVERLAPPED * overlapped,
-                            unsigned int bytes_transfered, int error)
+                            unsigned long bytes_transfered, int error)
 {
    lw_client ctx = tag;
 
    assert (ctx->connecting);
 
-   if(error)
+   if (error)
    {
       ctx->connecting = lw_false;
 
-      Lacewing::Error Error;
+      lw_error error = lw_error_new ();
+      lw_error_addf (error, "Error connecting");
 
-      Error.Add(error);
-      Error.Add("Error connecting");
+      if (ctx->on_error)
+         ctx->on_error (ctx, error);
 
-      if (ctx->Handlers.Error)
-         ctx->Handlers.Error (ctx->Public, Error);
+      lw_error_delete (error);
 
       return;
    }
 
-   ctx->Public.SetFD (ctx->Socket, ctx->Watch);
-   ctx->Connecting = false;
+   lw_fdstream_set_fd (&ctx->fdstream, ctx->socket, ctx->watch, lw_true);
 
-   if (ctx->Handlers.Connect)
-      ctx->Handlers.Connect (ctx->Public);
+   ctx->connecting = lw_false;
 
-   if (ctx->Handlers.Receive)
-      ctx->Public.Read (-1);
+   if (ctx->on_connect)
+      ctx->on_connect (ctx);
+
+   if (ctx->on_data)
+      lw_stream_read ((lw_stream) ctx, -1);
 }
 
-void Client::Connect (Address &Address)
+void lw_client_connect_addr (lw_client ctx, lw_addr address)
 {
-    if (Connected () || Connecting ())
+   if (lw_client_connected (ctx) || lw_client_connecting (ctx))
+   {
+      lw_error error = lw_error_new ();
+      lw_error_addf (error, "Already connected to a server");
+
+      if (ctx->on_error)
+         ctx->on_error (ctx, error);
+
+      lw_error_delete (error);
+
+      return;
+   }
+
+   ctx->connecting = lw_true;
+
+   /* TODO : Resolve asynchronously? */
+
+   {  lw_error error = lw_addr_resolve (address);
+
+      if (error)
+      {
+         if (ctx->on_error)
+            ctx->on_error (ctx, error);
+
+         lw_error_delete (error);
+
+         return;
+      }
+   }
+
+   lw_addr_delete (ctx->address);
+   ctx->address = lw_addr_clone (address);
+
+   if (!address->info)
+   {
+      lw_error error = lw_error_new ();
+      lw_error_addf (error, "The provided Address object is not ready for use");
+
+      if (ctx->on_error)
+         ctx->on_error (ctx, error);
+
+      lw_error_delete (error);
+
+      return;
+   }
+
+   if ((ctx->socket = (HANDLE) WSASocket
+            (lw_addr_ipv6 (ctx->address) ? AF_INET6 : AF_INET, SOCK_STREAM, IPPROTO_TCP,
+             0, 0, WSA_FLAG_OVERLAPPED)) == INVALID_HANDLE_VALUE)
+   {
+      lw_error error = lw_error_new ();
+
+      lw_error_add (error, WSAGetLastError ());
+      lw_error_addf (error, "Error creating socket");
+
+      if (ctx->on_error)
+         ctx->on_error (ctx, error);
+
+      lw_error_delete (error);
+
+      return;
+   }
+
+   lwp_disable_ipv6_only ((lwp_socket) ctx->socket);
+
+   ctx->watch = lw_pump_add (ctx->pump, ctx->socket, ctx, completion);
+
+   /* LPFN_CONNECTEX and WSAID_CONNECTEX aren't defined w/ MinGW */
+
+   static BOOL (PASCAL FAR * lw_ConnectEx)
+      (   
+       SOCKET s,
+       const struct sockaddr FAR *name,
+       int namelen,
+       PVOID lpSendBuffer,
+       DWORD dwSendDataLength,
+       LPDWORD lpdwBytesSent,
+       LPOVERLAPPED lpOverlapped
+      );
+
+   GUID ID = {0x25a207b9,0xddf3,0x4660,
+      {0x8e,0xe9,0x76,0xe5,0x8c,0x74,0x06,0x3e}};
+
+   DWORD bytes = 0;
+
+   WSAIoctl ((SOCKET) ctx->socket, SIO_GET_EXTENSION_FUNCTION_POINTER,
+         &ID, sizeof (ID), &lw_ConnectEx, sizeof (lw_ConnectEx),
+         &bytes, 0, 0);
+
+   assert (lw_ConnectEx);
+
+   struct sockaddr_storage local_address = {};
+
+   if (lw_addr_ipv6 (address))
+   {
+      ((struct sockaddr_in6 *) &local_address)->sin6_family = AF_INET6;
+      ((struct sockaddr_in6 *) &local_address)->sin6_addr = in6addr_any;       
+   }
+   else
+   {
+      ((struct sockaddr_in *) &local_address)->sin_family = AF_INET;
+      ((struct sockaddr_in *) &local_address)->sin_addr.S_un.S_addr = INADDR_ANY;
+   }
+
+   if (bind ((SOCKET) ctx->socket,
+            (struct sockaddr *) &local_address, sizeof (local_address)) == -1)
+   {
+      lw_error error = lw_error_new ();
+
+      lw_error_add (error, WSAGetLastError ());
+      lw_error_addf (error, "Error binding socket");
+
+      if (ctx->on_error)
+         ctx->on_error (ctx, error);
+
+      lw_error_delete (error);
+
+      return;
+   }
+
+   lw_addr_delete (ctx->address);
+   ctx->address = lw_addr_clone (address);
+
+   OVERLAPPED * overlapped = calloc (sizeof (*overlapped), 1);
+
+   if (!lw_ConnectEx ((SOCKET) ctx->socket, address->info->ai_addr,
+            address->info->ai_addrlen, 0, 0, 0, overlapped))
+   {
+      int code = WSAGetLastError ();
+
+      assert (code == WSA_IO_PENDING);
+   }
+}
+
+lw_bool lw_client_connected (lw_client ctx)
+{
+   return lw_fdstream_valid ((lw_fdstream) ctx);
+}
+
+lw_bool lw_client_connecting (lw_client ctx)
+{
+   return ctx->connecting;
+}
+
+lw_addr lw_client_server_addr (lw_client ctx)
+{
+   return ctx->address;
+}
+
+static void on_stream_data (lw_stream stream, void * tag,
+                            const char * buffer, size_t length)
+{
+   lw_client ctx = tag;
+
+   ctx->on_data (ctx, buffer, length);
+}
+
+void lw_client_on_data (lw_client ctx, lw_client_hook_data on_data)
+{
+    ctx->on_data = on_data;
+
+    if (on_data)
     {
-        Lacewing::Error Error;
-        Error.Add("Already connected to a server");
-        
-        if (ctx->Handlers.Error)
-            ctx->Handlers.Error (*this, Error);
-
-        return;
-    }
-
-    ctx->Connecting = true;
-
-    /* TODO : Resolve asynchronously? */
-
-    {   Error * Error = Address.Resolve ();
-
-        if (Error)
-        {
-            if (ctx->Handlers.Error)
-                ctx->Handlers.Error (*this, *Error);
-                
-            return;
-        }
-    }
-
-    if (!Address.ctx->Info)
-    {
-        Lacewing::Error Error;
-        Error.Add ("Invalid address");
-        
-        if (ctx->Handlers.Error)
-            ctx->Handlers.Error (*this, Error);
-
-        return;
-    }
-
-    if ((ctx->Socket = (HANDLE) WSASocket
-            (Address.IPv6 () ? AF_INET6 : AF_INET, SOCK_STREAM, IPPROTO_TCP,
-                    0, 0, WSA_FLAG_OVERLAPPED)) == INVALID_HANDLE_VALUE)
-    {
-        Lacewing::Error Error;
-       
-        Error.Add(WSAGetLastError ());        
-        Error.Add("Error creating socket");
-        
-        if (ctx->Handlers.Error)
-            ctx->Handlers.Error (*this, Error);
-
-        return;
-    }
-
-    lwp_disable_ipv6_only ((lwp_socket) ctx->Socket);
-
-    ctx->Watch = ctx->Pump.Add
-        (ctx->Socket, ctx, ::Completion);
-
-    /* LPFN_CONNECTEX and WSAID_CONNECTEX aren't defined w/ MinGW */
-
-    static BOOL (PASCAL FAR * lw_ConnectEx)
-    (   
-        SOCKET s,
-        const struct sockaddr FAR *name,
-        int namelen,
-        PVOID lpSendBuffer,
-        DWORD dwSendDataLength,
-        LPDWORD lpdwBytesSent,
-        LPOVERLAPPED lpOverlapped
-    );
-
-    GUID ID = {0x25a207b9,0xddf3,0x4660,
-                        {0x8e,0xe9,0x76,0xe5,0x8c,0x74,0x06,0x3e}};
-
-    DWORD bytes = 0;
-
-    WSAIoctl ((SOCKET) ctx->Socket, SIO_GET_EXTENSION_FUNCTION_POINTER,
-                    &ID, sizeof (ID), &lw_ConnectEx, sizeof (lw_ConnectEx),
-                        &bytes, 0, 0);
-
-    assert (lw_ConnectEx);
-
-    sockaddr_storage LocalAddress;
-        memset (&LocalAddress, 0, sizeof (LocalAddress));
-
-    if (Address.IPv6 ())
-    {
-        ((sockaddr_in6 *) &LocalAddress)->sin6_family = AF_INET6;
-        ((sockaddr_in6 *) &LocalAddress)->sin6_addr = in6addr_any;       
+        lw_stream_add_hook_data ((lw_stream) ctx, on_stream_data, ctx);
+        lw_stream_read ((lw_stream) ctx, -1);
     }
     else
     {
-        ((sockaddr_in *) &LocalAddress)->sin_family = AF_INET;
-        ((sockaddr_in *) &LocalAddress)->sin_addr.S_un.S_addr = INADDR_ANY;
-    }
-
-    if (bind ((SOCKET) ctx->Socket,
-            (sockaddr *) &LocalAddress, sizeof (LocalAddress)) == -1)
-    {
-        Lacewing::Error Error;
-       
-        Error.Add (WSAGetLastError ());        
-        Error.Add ("Error binding socket");
-        
-        if (ctx->Handlers.Error)
-            ctx->Handlers.Error (*this, Error);
-
-        return;
-    }
-
-    delete ctx->Address;
-    ctx->Address = new Lacewing::Address (Address);
-
-    OVERLAPPED * overlapped = new OVERLAPPED;
-    memset (overlapped, 0, sizeof (OVERLAPPED));
-
-    if (!lw_ConnectEx ((SOCKET) ctx->Socket, Address.ctx->Info->ai_addr,
-                        Address.ctx->Info->ai_addrlen, 0, 0, 0, overlapped))
-    {
-        int Code = WSAGetLastError ();
-
-        assert(Code == WSA_IO_PENDING);
+        lw_stream_remove_hook_data ((lw_stream) ctx, on_stream_data, ctx);
     }
 }
 
-bool Client::Connected ()
+static void on_close (lw_stream stream, void * tag)
 {
-    return Valid ();
+   lw_client ctx = tag;
+
+   ctx->on_disconnect (ctx);
 }
 
-bool Client::Connecting ()
+void lw_client_on_disconnect (lw_client ctx,
+                              lw_client_hook_disconnect on_disconnect)
 {
-    return ctx->Connecting;
+   ctx->on_disconnect = on_disconnect;
+
+   if (on_disconnect)
+      lw_stream_add_hook_close ((lw_stream) ctx, on_close, ctx);
+   else
+      lw_stream_remove_hook_close ((lw_stream) ctx, on_close, ctx);
 }
 
-Address &Client::ServerAddress ()
-{
-    return *ctx->Address;
-}
-
-static void onData (Stream &, void * tag, const char * buffer, size_t size)
-{
-    Client::Internal * ctx = (Client::Internal *) tag;
-
-    ctx->Handlers.Receive (ctx->Public, buffer, size);
-}
-
-void Client::onReceive (Client::HandlerReceive onReceive)
-{
-    ctx->Handlers.Receive = onReceive;
-
-    if (onReceive)
-    {
-        AddHandlerData (::onData, ctx);
-        Read (-1);
-    }
-    else
-    {
-        RemoveHandlerData (::onData, ctx);
-    }
-}
-
-static void onClose (Stream &, void * tag)
-{
-    Client::Internal * ctx = (Client::Internal *) tag;
-
-    ctx->Handlers.Disconnect (ctx->Public);
-}
-
-void Client::onDisconnect (Client::HandlerDisconnect onDisconnect)
-{
-    ctx->Handlers.Disconnect = onDisconnect;
-
-    if (onDisconnect)
-        AddHandlerClose (::onClose, ctx);
-    else
-        RemoveHandlerClose (::onClose, ctx);
-}
-
-AutoHandlerFunctions (Client, Connect)
-AutoHandlerFunctions (Client, Error)
+lwp_def_hook (client, connect)
+lwp_def_hook (client, error)
 
