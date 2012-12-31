@@ -117,7 +117,7 @@ void _stream::add_filter_downstream (stream filter, bool delete_with_stream,
 
 bool _stream::close (bool immediate)
 {
-   lw_stream_close ((lw_stream) this, immediate);
+   return lw_stream_close ((lw_stream) this, immediate);
 }
 
 lacewing::pump _stream::pump ()

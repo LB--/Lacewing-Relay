@@ -36,19 +36,19 @@ eventpump eventpump_new ()
 
 error _eventpump::start_eventloop ()
 {
-   lw_eventpump_start_eventloop ((lw_eventpump) this);
+   return (error) lw_eventpump_start_eventloop ((lw_eventpump) this);
 }
 
 error _eventpump::tick ()
 {
-   lw_eventpump_tick ((lw_eventpump) this);
+   return (error) lw_eventpump_tick ((lw_eventpump) this);
 }
 
 error _eventpump::start_sleepy_ticking
       (void (lw_callback * on_tick_needed) (eventpump))
 {
-   lw_eventpump_start_sleepy_ticking
-        ((lw_eventpump) this, (void (*) (lw_eventpump)) on_tick_needed);
+   return (error) lw_eventpump_start_sleepy_ticking
+      ((lw_eventpump) this, (void (*) (lw_eventpump)) on_tick_needed);
 }
 
 void _eventpump::post_eventloop_exit ()

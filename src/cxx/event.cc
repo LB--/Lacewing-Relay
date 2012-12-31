@@ -51,7 +51,7 @@ void _event::unsignal ()
 
 bool _event::signalled ()
 {
-   lw_event_signalled ((lw_event) this);
+   return lw_event_signalled ((lw_event) this);
 }
 
 bool _event::wait (long timeout)
