@@ -27,10 +27,10 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _lw_pump
-#define _lw_pump
+#ifndef _lw_pump_h
+#define _lw_pump_h
 
-struct lw_pump
+struct _lw_pump
 {
    const lw_pumpdef * def;
 

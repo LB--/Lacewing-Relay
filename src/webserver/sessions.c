@@ -57,7 +57,7 @@ void lw_ws_req_session_write (lw_ws_req request, const char * key,
       for (int i = 0; i < sizeof (session_id); ++ i)
          sprintf (session_id_hex + i * 2, "%02x", session_id [i]);
 
-      session = malloc (sizeof (*session));
+      session = (lw_ws_session) malloc (sizeof (*session));
 
       HASH_ADD_KEYPTR (hh, request->ws->sessions, session_id_hex,
                            sizeof (session_id_hex), session);
@@ -122,7 +122,7 @@ lw_ws_sessionitem lw_ws_req_session_first (lw_ws_req request)
 
 lw_ws_sessionitem lw_ws_sessionitem_next (lw_ws_sessionitem item)
 {
-   return ((lwp_nvhash) item)->hh.next;
+   return (lw_ws_sessionitem) ((lwp_nvhash) item)->hh.next;
 }
 
 const char * lw_ws_sessionitem_name (lw_ws_sessionitem item)

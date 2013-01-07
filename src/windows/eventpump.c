@@ -30,22 +30,22 @@
 #include "../common.h"
 #include "../pump.h"
 
-const static lw_pumpdef def_eventpump;
+extern const lw_pumpdef def_eventpump;
 
 #define sig_exit_event_loop      ((OVERLAPPED *) 1)
 #define sig_remove               ((OVERLAPPED *) 2)
 #define sig_end_watcher_thread   ((OVERLAPPED *) 3)
 
-struct lw_pump_watch
+struct _lw_pump_watch
 {
    lw_pump_callback on_completion;
 
    void * tag;
 };
 
-struct lw_eventpump
+struct _lw_eventpump
 {  
-   struct lw_pump pump;
+   struct _lw_pump pump;
 
    HANDLE completion_port;
 
@@ -128,12 +128,12 @@ lw_eventpump lw_eventpump_new ()
 {
    lwp_init ();
 
-   lw_eventpump ctx = calloc (sizeof (*ctx), 1);
+   lw_eventpump ctx = (lw_eventpump) calloc (sizeof (*ctx), 1);
 
    if (!ctx)
       return 0;
 
-   ctx->watcher.thread = lw_thread_new ("watcher", watcher);
+   ctx->watcher.thread = lw_thread_new ("watcher", (void *) watcher);
    ctx->completion_port = CreateIoCompletionPort (INVALID_HANDLE_VALUE, 0, 4, 0);
 
    lwp_pump_init ((lw_pump) ctx, &def_eventpump);
@@ -251,7 +251,7 @@ static lw_pump_watch def_add (lw_pump _ctx, HANDLE handle,
 
    assert (callback != 0);
 
-   lw_pump_watch watch = calloc (sizeof (*watch), 1);
+   lw_pump_watch watch = (lw_pump_watch) calloc (sizeof (*watch), 1);
 
    if (!watch)
       return 0;
@@ -302,12 +302,12 @@ static void def_update_callbacks (lw_pump ctx,
    watch->on_completion = on_completion;
 }
 
-const static lw_pumpdef def_eventpump =
+const lw_pumpdef def_eventpump =
 {
-   .add               = def_add,
-   .remove            = def_remove,
-   .update_callbacks  = def_update_callbacks,
-   .post              = def_post,
-   .cleanup           = def_cleanup
+    def_add,
+    def_update_callbacks,
+    def_remove,
+    def_post,
+    def_cleanup
 };
 

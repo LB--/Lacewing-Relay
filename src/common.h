@@ -76,8 +76,6 @@
    #endif
 #endif
 
-#ifndef __cplusplus
-
 /* For convenience, some types (such as lw_client and lw_ws_req) are typedef-d
  * to lw_stream in lacewing.h instead of to their extended structure.  The
  * typedefs here are the internal ones mapping everything to their _real_ type,
@@ -85,37 +83,46 @@
  * library.
  */
 
- typedef struct lw_thread            * lw_thread;
- typedef struct lw_addr              * lw_addr;
- typedef struct lw_filter            * lw_filter;
- typedef struct lw_pump              * lw_pump;
- typedef struct lw_pump_watch        * lw_pump_watch;
- typedef struct lw_eventpump         * lw_eventpump;
- typedef struct lw_stream            * lw_stream;
- typedef struct lw_fdstream          * lw_fdstream;
- typedef struct lw_file              * lw_file;
- typedef struct lw_timer             * lw_timer;
- typedef struct lw_sync              * lw_sync;
- typedef struct lw_event             * lw_event;
- typedef struct lw_error             * lw_error;
- typedef struct lw_client            * lw_client;
- typedef struct lw_server            * lw_server;
- typedef struct lw_server_client     * lw_server_client;
- typedef struct lw_udp               * lw_udp;
- typedef struct lw_flashpolicy       * lw_flashpolicy;
- typedef struct lw_ws                * lw_ws;
- typedef struct lw_ws_req            * lw_ws_req;
- typedef struct lw_ws_req_hdr        * lw_ws_req_hdr;
- typedef struct lw_ws_req_param      * lw_ws_req_param;
- typedef struct lw_ws_req_cookie     * lw_ws_req_cookie;
- typedef struct lw_ws_upload         * lw_ws_upload;
- typedef struct lw_ws_upload_hdr     * lw_ws_upload_hdr;
- typedef struct lw_ws_session        * lw_ws_session;
- typedef struct lw_ws_sessionitem    * lw_ws_sessionitem;
-
-#endif
+ typedef struct _lw_thread            * lw_thread;
+ typedef struct _lw_addr              * lw_addr;
+ typedef struct _lw_filter            * lw_filter;
+ typedef struct _lw_pump              * lw_pump;
+ typedef struct _lw_pump_watch        * lw_pump_watch;
+ typedef struct _lw_eventpump         * lw_eventpump;
+ typedef struct _lw_stream            * lw_stream;
+ typedef struct _lw_fdstream          * lw_fdstream;
+ typedef struct _lw_file              * lw_file;
+ typedef struct _lw_timer             * lw_timer;
+ typedef struct _lw_sync              * lw_sync;
+ typedef struct _lw_event             * lw_event;
+ typedef struct _lw_error             * lw_error;
+ typedef struct _lw_client            * lw_client;
+ typedef struct _lw_server            * lw_server;
+ typedef struct _lw_server_client     * lw_server_client;
+ typedef struct _lw_udp               * lw_udp;
+ typedef struct _lw_flashpolicy       * lw_flashpolicy;
+ typedef struct _lw_ws                * lw_ws;
+ typedef struct _lw_ws_req            * lw_ws_req;
+ typedef struct _lw_ws_req_hdr        * lw_ws_req_hdr;
+ typedef struct _lw_ws_req_param      * lw_ws_req_param;
+ typedef struct _lw_ws_req_cookie     * lw_ws_req_cookie;
+ typedef struct _lw_ws_upload         * lw_ws_upload;
+ typedef struct _lw_ws_upload_hdr     * lw_ws_upload_hdr;
+ typedef struct _lw_ws_session        * lw_ws_session;
+ typedef struct _lw_ws_sessionitem    * lw_ws_sessionitem;
 
 #include "../include/lacewing.h"
+
+#ifdef _MSC_VER
+    #ifndef __cplusplus
+        #error "Can only compile as C++ with MSVC"
+    #endif
+    #pragma warning(disable: 4200) /* zero-sized array in struct/union */
+    #pragma warning(disable: 4800) /* forcing value to bool 'true' or 'false' */
+    #include "windows/typeof.h"
+#endif
+
+#include "list.h"
 
 #ifdef __cplusplus
    extern "C" {
@@ -136,7 +143,6 @@ void lwp_init ();
         
 #endif
 
-#include "list.h"
 #include "heapbuffer.h"
 
 #include "../deps/uthash/uthash.h"
@@ -155,7 +161,7 @@ void lwp_init ();
 #endif
 
 #if defined(_lacewing_debug) || defined(_lacewing_debug_output)
-   void lwp_trace (const char * format, ...);
+   void lwp_trace (coconst char * format, ...);
 #else
    #define lwp_trace(x, ...)
 #endif
@@ -194,13 +200,11 @@ time_t lwp_parse_time (const char *);
 int lwp_create_server_socket (lw_filter, int type, int protocol, lw_error);
 
 #ifdef __cplusplus
-    } /* extern "C" */
+
+   } /* extern "C" */
 
    using namespace lacewing;
-
    #include <new> 
-
-   #include "list-cxx.h"
 
 #endif
 

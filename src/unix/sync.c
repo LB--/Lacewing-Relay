@@ -29,7 +29,7 @@
 
 #include "../common.h"
 
-struct lw_sync
+struct _lw_sync
 {
     pthread_mutex_t mutex;
     pthread_mutexattr_t attr;

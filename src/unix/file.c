@@ -30,9 +30,9 @@
 #include "../common.h"
 #include "fdstream.h"
 
-struct lw_file
+struct _lw_file
 {
-    struct lw_fdstream fdstream;
+    struct _lw_fdstream fdstream;
 
     char name [lwp_max_path];
 };

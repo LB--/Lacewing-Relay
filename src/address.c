@@ -39,7 +39,7 @@ void lwp_addr_init (lw_addr ctx, const char * hostname,
 
    memset (ctx, 0, sizeof (*ctx));
 
-   ctx->resolver_thread = lw_thread_new ("resolver", resolver);
+   ctx->resolver_thread = lw_thread_new ("resolver", (void *) resolver);
    ctx->hints = hints;
 
    ctx->hostname_to_free = ctx->hostname = strdup (hostname);
@@ -77,7 +77,7 @@ void lwp_addr_init (lw_addr ctx, const char * hostname,
 
 lw_addr lw_addr_new (const char * hostname, const char * service)
 {
-   lw_addr ctx = malloc (sizeof (*ctx));
+   lw_addr ctx = (lw_addr) malloc (sizeof (*ctx));
    lwp_addr_init (ctx, hostname, service, 0);
 
    return ctx;
@@ -94,11 +94,10 @@ void lw_addr_delete (lw_addr ctx)
 lw_addr lw_addr_new_port (const char * hostname, long port)
 {
    char service [64];
-   lw_addr ctx;
 
    lwp_snprintf (service, sizeof (service), "%d", port);
 
-   ctx = malloc (sizeof (*ctx));
+   lw_addr ctx = (lw_addr) malloc (sizeof (*ctx));
    lwp_addr_init (ctx, hostname, service, 0);
 
    return ctx;
@@ -106,7 +105,7 @@ lw_addr lw_addr_new_port (const char * hostname, long port)
 
 lw_addr lw_addr_new_hint (const char * hostname, const char * service, long hints)
 {
-   lw_addr ctx = malloc (sizeof (*ctx));
+   lw_addr ctx = (lw_addr) malloc (sizeof (*ctx));
    lwp_addr_init (ctx, hostname, service, hints);
 
    return ctx;
@@ -115,11 +114,10 @@ lw_addr lw_addr_new_hint (const char * hostname, const char * service, long hint
 lw_addr lw_addr_new_port_hint (const char * hostname, long port, long hints)
 {
    char service [64];
-   lw_addr ctx;
 
    lwp_snprintf (service, sizeof (service), "%d", port);
 
-   ctx = malloc (sizeof (*ctx));
+   lw_addr ctx = (lw_addr) malloc (sizeof (*ctx));
    lwp_addr_init (ctx, hostname, service, hints);
 
    return ctx;
@@ -139,9 +137,7 @@ void lwp_addr_set_sockaddr (lw_addr ctx, struct sockaddr * sockaddr)
 
 lw_addr lw_addr_clone (lw_addr ctx)
 {
-   lw_addr addr;
-   
-   addr = calloc (sizeof (*addr), 1);
+   lw_addr addr = (lw_addr) calloc (sizeof (*addr), 1);
 
    if (lw_addr_resolve (addr))
       return 0;
@@ -149,11 +145,11 @@ lw_addr lw_addr_clone (lw_addr ctx)
    if (!addr->info)
       return 0;
 
-   addr->info = malloc (sizeof (*addr->info));
+   addr->info = (struct addrinfo *) malloc (sizeof (*addr->info));
    memcpy (addr->info, ctx->info, sizeof (*addr->info));
 
    addr->info->ai_next = 0;
-   addr->info->ai_addr = malloc (addr->info->ai_addrlen);
+   addr->info->ai_addr = (struct sockaddr *) malloc (addr->info->ai_addrlen);
 
    memcpy (addr->info->ai_addr, ctx->info->ai_addr, addr->info->ai_addrlen);
 

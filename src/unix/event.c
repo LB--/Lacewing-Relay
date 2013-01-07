@@ -29,9 +29,9 @@
 
 #include "../common.h"
 
-struct lw_event
+struct _lw_event
 {
-    int pipe_r, pipe_w;
+   int pipe_r, pipe_w;
 };
 
 lw_event lw_event_new ()

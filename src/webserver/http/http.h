@@ -29,11 +29,11 @@
 
 #include "../../../deps/http-parser/http_parser.h"
 
-typedef struct lwp_ws_httpclient
+typedef struct _lwp_ws_httpclient
 {
-   struct lwp_ws_client client;
+   struct _lwp_ws_client client;
 
-   struct lw_ws_req request; /* HTTP is one request at a time, so this is just reused */
+   struct _lw_ws_req request; /* HTTP is one request at a time, so this is just reused */
 
    time_t last_activity;
 
@@ -53,6 +53,6 @@ void lwp_ws_httpclient_delete (lw_ws, lwp_ws_httpclient);
 
 extern const http_parser_settings parser_settings;
 
-const lw_streamdef def_httpclient;
-const lw_streamdef def_httprequest;
+extern const lw_streamdef def_httpclient;
+extern const lw_streamdef def_httprequest;
 

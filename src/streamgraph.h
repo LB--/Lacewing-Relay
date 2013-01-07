@@ -30,7 +30,7 @@
 #ifndef _lw_streamgraph_h
 #define _lw_streamgraph_h
 
-typedef struct lwp_streamgraph_link
+typedef struct _lwp_streamgraph_link
 {
     lw_stream to, to_exp;
     lw_stream from, from_exp;

@@ -36,7 +36,7 @@ static void client_cleanup (lwp_ws_client);
 lwp_ws_client lwp_ws_httpclient_new (lw_ws ws, lw_server_client socket,
                                      lw_bool secure)
 {
-   lwp_ws_httpclient ctx = calloc (sizeof (*ctx), 1);
+   lwp_ws_httpclient ctx = (lwp_ws_httpclient) calloc (sizeof (*ctx), 1);
 
    if (!ctx)
       return 0;
@@ -234,7 +234,14 @@ static size_t def_sink_data (lw_stream stream, const char * buffer, size_t size)
 
 const lw_streamdef def_httpclient =
 {
-   .sink_data = def_sink_data,
+   def_sink_data,
+   0, /* sink_stream */
+   0, /* retry */
+   0, /* is_transparent */
+   0, /* close */
+   0, /* bytes_left */
+   0, /* read */
+   0  /* cleanup */
 };
 
 static lw_bool def_is_transparent (lw_stream stream)
@@ -244,7 +251,14 @@ static lw_bool def_is_transparent (lw_stream stream)
 
 const lw_streamdef def_httprequest =
 {
-   .is_transparent = def_is_transparent
+   0, /* sink_data */
+   0, /* sink_stream */
+   0, /* retry */
+   def_is_transparent,
+   0, /* close */
+   0, /* bytes_left */
+   0, /* read */
+   0  /* cleanup */
 };
 
 void client_respond (lwp_ws_client client, lw_ws_req request)
@@ -275,7 +289,7 @@ void client_respond (lwp_ws_client client, lw_ws_req request)
    }
 
    for (lw_ws_req_cookie cookie = request->cookies; cookie;
-         cookie = cookie->hh.next)
+         cookie = (lw_ws_req_cookie) cookie->hh.next)
    {
       if (!cookie->changed)
          continue;

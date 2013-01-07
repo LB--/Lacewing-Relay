@@ -79,7 +79,7 @@ lw_i64 lw_last_modified (const char * filename)
    time.LowPart = info.ftLastWriteTime.dwLowDateTime;
    time.HighPart = info.ftLastWriteTime.dwHighDateTime;
 
-   return (time_t) ((time.QuadPart - 116444736000000000) / 10000000);
+   return (time_t) ((time.QuadPart - 116444736000000000ULL) / 10000000);
 }
 
 void lw_temp_path (char * buffer)

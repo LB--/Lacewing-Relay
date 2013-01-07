@@ -29,7 +29,7 @@
 
 #include "../common.h"
 
-struct lw_thread
+struct _lw_thread
 {
    void * proc, * param;
    char * name;

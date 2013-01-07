@@ -31,7 +31,7 @@
 
 lw_ws_upload lwp_ws_upload_new (lw_ws_req request)
 {
-   lw_ws_upload ctx = calloc (sizeof (*ctx), 1);
+   lw_ws_upload ctx = (lw_ws_upload) calloc (sizeof (*ctx), 1);
 
    if (!ctx)
       return 0;
@@ -113,7 +113,7 @@ lw_ws_upload_hdr lw_ws_upload_header_next (lw_ws_upload_hdr header)
 
 static void on_autosave_close (lw_stream stream, void * tag)
 {
-   lw_ws_upload upload = tag;
+   lw_ws_upload upload = (lw_ws_upload) tag;
 
    lw_stream_delete ((lw_stream) upload->autosave_file);
    upload->autosave_file = 0;

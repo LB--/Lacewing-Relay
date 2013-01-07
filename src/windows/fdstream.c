@@ -30,22 +30,20 @@
 #include "../common.h"
 #include "fdstream.h"
 
-const static lw_streamdef def_fdstream;
+extern const lw_streamdef def_fdstream;
 
 static void issue_read (lw_fdstream ctx);
 static lw_bool write_completed (lw_fdstream ctx);
 
-struct fdstream_overlapped
+#define overlapped_type_read          1
+#define overlapped_type_write         2
+#define overlapped_type_transmitfile  3
+
+struct _fdstream_overlapped
 {
     OVERLAPPED overlapped;
 
-    enum
-    {
-       overlapped_type_read,
-       overlapped_type_write,
-       overlapped_type_transmitfile
-
-    } type;
+    char type;
 
     char data [];
 };
@@ -53,7 +51,7 @@ struct fdstream_overlapped
 static void completion (void * tag, OVERLAPPED * _overlapped,
                         unsigned long bytes_transferred, int error)
 {
-   lw_fdstream ctx = tag;
+   lw_fdstream ctx = (lw_fdstream) tag;
 
    fdstream_overlapped overlapped = (fdstream_overlapped) _overlapped;
 
@@ -320,7 +318,8 @@ static size_t def_sink_data (lw_stream _ctx, const char * buffer, size_t size)
 
    /* TODO : Pre-allocate a bunch of these and reuse them? */
 
-   fdstream_overlapped overlapped = malloc (sizeof (*overlapped) + size);
+   fdstream_overlapped overlapped =
+      (fdstream_overlapped) malloc (sizeof (*overlapped) + size);
 
    if (!overlapped)
       return size; 
@@ -521,14 +520,16 @@ void lw_fdstream_uncork (lw_fdstream ctx)
 {
 }
 
-const static lw_streamdef def_fdstream =
+const lw_streamdef def_pipe =
 {
-   .sink_data    = def_sink_data,
-   .sink_stream  = def_sink_stream,
-   .close        = def_close,
-   .bytes_left   = def_bytes_left,
-   .read         = def_read,
-   .cleanup      = def_cleanup
+   def_sink_data,
+   def_sink_stream,
+   0, /* retry */
+   0, /* is_transparent */
+   def_close,
+   def_bytes_left,
+   def_read,
+   def_cleanup
 };
 
 void lwp_fdstream_init (lw_fdstream ctx, lw_pump pump)
@@ -539,18 +540,18 @@ void lwp_fdstream_init (lw_fdstream ctx, lw_pump pump)
    ctx->flags  = lwp_fdstream_flag_nagle;
    ctx->size   = -1;
 
-   ctx->read_overlapped = calloc
-      (sizeof (*ctx->read_overlapped), 1);
+   ctx->read_overlapped = (fdstream_overlapped)
+      calloc (sizeof (*ctx->read_overlapped), 1);
 
-   ctx->transmitfile_overlapped = calloc
-      (sizeof (*ctx->transmitfile_overlapped), 1);
+   ctx->transmitfile_overlapped = (fdstream_overlapped)
+      calloc (sizeof (*ctx->transmitfile_overlapped), 1);
 
    lwp_stream_init ((lw_stream) ctx, &def_fdstream, pump);
 }
 
 lw_fdstream lw_fdstream_new (lw_pump pump)
 {
-   lw_fdstream ctx = malloc (sizeof (*ctx));
+   lw_fdstream ctx = (lw_fdstream) malloc (sizeof (*ctx));
 
    if (!ctx)
       return 0;

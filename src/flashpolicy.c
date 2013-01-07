@@ -29,7 +29,7 @@
 
 #include "common.h"
 
-struct lw_flashpolicy
+struct _lw_flashpolicy
 {
    lw_server server;
 
@@ -42,7 +42,7 @@ struct lw_flashpolicy
 static void on_data (lw_server server, lw_server_client client,
                      const char * buffer, size_t size)
 {
-   lw_flashpolicy ctx = lw_server_tag (server);
+   lw_flashpolicy ctx = (lw_flashpolicy) lw_server_tag (server);
 
    for (size_t i = 0; i < size; ++ i)
    {
@@ -58,7 +58,7 @@ static void on_data (lw_server server, lw_server_client client,
 
 static void on_error (lw_server server, lw_error error)
 {
-   lw_flashpolicy ctx = lw_server_tag (server);
+   lw_flashpolicy ctx = (lw_flashpolicy) lw_server_tag (server);
 
    lw_error_addf (error, "Socket error");
 
@@ -68,7 +68,7 @@ static void on_error (lw_server server, lw_error error)
 
 lw_flashpolicy lw_flashpolicy_new (lw_pump pump)
 {
-   lw_flashpolicy ctx = calloc (sizeof (*ctx), 1);
+   lw_flashpolicy ctx = (lw_flashpolicy) calloc (sizeof (*ctx), 1);
 
    ctx->server = lw_server_new (pump);
 
@@ -118,7 +118,7 @@ void lw_flashpolicy_host_filter (lw_flashpolicy ctx, const char * filename,
    fseek (file, 0, SEEK_END);
 
    ctx->size = ftell (file);
-   ctx->buffer = malloc (ctx->size);
+   ctx->buffer = (char *) malloc (ctx->size);
 
    fseek (file, 0, SEEK_SET);
 

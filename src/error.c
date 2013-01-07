@@ -29,7 +29,7 @@
 
 #include "common.h"
 
-struct lw_error
+struct _lw_error
 {
    char buffer [4096];
    char * begin;
@@ -55,7 +55,7 @@ void lw_error_addv (lw_error ctx, const char * format, va_list args)
    if (*ctx->begin)
       lwp_error_add (ctx, " - ");
 
-   char * buffer = malloc (sizeof (ctx->buffer));
+   char * buffer = (char *) malloc (sizeof (ctx->buffer));
 
    vsnprintf (buffer, sizeof (ctx->buffer), format, args);
    lwp_error_add (ctx, buffer);
@@ -65,7 +65,7 @@ void lw_error_addv (lw_error ctx, const char * format, va_list args)
 
 lw_error lw_error_new ()
 {
-   lw_error ctx = malloc (sizeof (*ctx));
+   lw_error ctx = (lw_error) malloc (sizeof (*ctx));
 
    if (!ctx)
       return 0;
@@ -89,12 +89,12 @@ const char * lw_error_tostring (lw_error ctx)
 
 lw_error lw_error_clone (lw_error ctx)
 {
-   lw_error error = malloc (sizeof (*error));
+   lw_error error = (lw_error) malloc (sizeof (*error));
 
    if (!error)
       return 0;
 
-   memcpy (error, ctx, sizeof (struct lw_error));
+   memcpy (error, ctx, sizeof (*error));
 
    return error;
 }

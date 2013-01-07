@@ -52,7 +52,7 @@ lw_bool lwp_heapbuffer_add (lwp_heapbuffer * ctx, const char * buffer, size_t le
    {
       size_t init_alloc = (length * 3);
 
-      if (! (*ctx = malloc (sizeof (**ctx) + init_alloc)))
+      if (! (*ctx = (lwp_heapbuffer) malloc (sizeof (**ctx) + init_alloc)))
          return lw_false;
 
       memset (*ctx, 0, sizeof (**ctx));
@@ -68,8 +68,11 @@ lw_bool lwp_heapbuffer_add (lwp_heapbuffer * ctx, const char * buffer, size_t le
          while (new_length > (*ctx)->allocated)
             (*ctx)->allocated *= 3;
 
-         if (! (*ctx = realloc (*ctx, sizeof (**ctx) + (*ctx)->allocated)))
+         if (! (*ctx = (lwp_heapbuffer) realloc
+                    (*ctx, sizeof (**ctx) + (*ctx)->allocated)))
+         {
             return lw_false;
+         }
       }
    }
 

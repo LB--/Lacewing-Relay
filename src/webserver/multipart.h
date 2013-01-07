@@ -27,12 +27,12 @@
  * SUCH DAMAGE.
  */
 
-typedef struct lwp_ws_multipart
+typedef struct _lwp_ws_multipart
 {
    lw_ws ws;
    lw_ws_req request;
 
-   struct lwp_ws_multipart * parent, * child;
+   struct _lwp_ws_multipart * parent, * child;
 
    multipart_parser * parser;
 
@@ -45,7 +45,7 @@ typedef struct lwp_ws_multipart
    const char * cur_header_name;
    size_t cur_header_name_length;
 
-   list (struct lw_ws_upload_hdr, headers);
+   list (struct _lw_ws_upload_hdr, headers);
 
    lw_ws_upload cur_upload;
 

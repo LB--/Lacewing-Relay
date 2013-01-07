@@ -31,7 +31,7 @@
 
 static void timer_thread (lw_timer);
 
-struct lw_timer
+struct _lw_timer
 {
    lw_pump pump;
 
@@ -49,7 +49,7 @@ struct lw_timer
 
 lw_timer lw_timer_new (lw_pump pump)
 {
-   lw_timer ctx = calloc (sizeof (*ctx), 1);
+   lw_timer ctx = (lw_timer) calloc (sizeof (*ctx), 1);
 
    if (!ctx)
       return 0;
@@ -59,7 +59,7 @@ lw_timer lw_timer_new (lw_pump pump)
    ctx->shutdown_event = CreateEvent (0, TRUE, FALSE, 0);
    ctx->timer_handle = CreateWaitableTimer (0, FALSE, 0);
 
-   ctx->timer_thread = lw_thread_new ("timer", timer_thread);
+   ctx->timer_thread = lw_thread_new ("timer", (void *) timer_thread);
    lw_thread_start (ctx->timer_thread, ctx);
 
    return ctx;
@@ -81,7 +81,7 @@ void lw_timer_delete (lw_timer ctx)
 
 static void timer_completion (void * ptr)
 {
-   lw_timer ctx = ptr;
+   lw_timer ctx = (lw_timer) ptr;
 
    if (ctx->on_tick)
       ctx->on_tick (ctx);
@@ -101,7 +101,7 @@ void timer_thread (lw_timer ctx)
          break;
       }
 
-      lw_pump_post (ctx->pump, timer_completion, ctx);
+      lw_pump_post (ctx->pump, (void *) timer_completion, ctx);
    }
 }
 

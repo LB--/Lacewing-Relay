@@ -32,7 +32,7 @@
 
 lw_pump lw_pump_new (const lw_pumpdef * def)
 {
-   lw_pump ctx = malloc (sizeof (*ctx));
+   lw_pump ctx = (lw_pump) malloc (sizeof (*ctx));
    
    if (!ctx)
       return 0;

@@ -31,7 +31,7 @@
 
 static int on_message_begin (http_parser * parser)
 {
-   lwp_ws_httpclient ctx = parser->data;
+   lwp_ws_httpclient ctx = (lwp_ws_httpclient) parser->data;
 
    lwp_ws_req_clean (&ctx->request);
 
@@ -40,7 +40,7 @@ static int on_message_begin (http_parser * parser)
 
 static int on_url (http_parser * parser, const char * url, size_t length)
 {
-   lwp_ws_httpclient ctx = parser->data;
+   lwp_ws_httpclient ctx = (lwp_ws_httpclient) parser->data;
 
    if (!lwp_ws_req_in_url (&ctx->request, length, url))
    {
@@ -54,7 +54,7 @@ static int on_url (http_parser * parser, const char * url, size_t length)
 static int on_header_field (http_parser * parser, const char * buffer,
                             size_t length)
 {
-   lwp_ws_httpclient ctx = parser->data;
+   lwp_ws_httpclient ctx = (lwp_ws_httpclient) parser->data;
 
    if (!ctx->request.version_major)
    {
@@ -83,7 +83,7 @@ static int on_header_field (http_parser * parser, const char * buffer,
 
 static int on_header_value (http_parser * parser, const char * value, size_t length)
 {
-   lwp_ws_httpclient ctx = parser->data;
+   lwp_ws_httpclient ctx = (lwp_ws_httpclient) parser->data;
 
    if (!lwp_ws_req_in_header (&ctx->request,
                               ctx->cur_header_name_length,
@@ -99,11 +99,11 @@ static int on_header_value (http_parser * parser, const char * value, size_t len
 
 static int on_headers_complete (http_parser * parser)
 {
-   lwp_ws_httpclient ctx = parser->data;
+   lwp_ws_httpclient ctx = (lwp_ws_httpclient) parser->data;
 
    ctx->parsing_headers = lw_false;
 
-   const char * method = http_method_str (parser->method);
+   const char * method = http_method_str ((http_method) parser->method);
     
    if (!lwp_ws_req_in_method (&ctx->request, strlen (method), method))
    {
@@ -131,7 +131,7 @@ static int on_headers_complete (http_parser * parser)
 
 static int on_body (http_parser * parser, const char * buffer, size_t size)
 {
-   lwp_ws_httpclient ctx = parser->data;
+   lwp_ws_httpclient ctx = (lwp_ws_httpclient) parser->data;
 
    if (!ctx->client.multipart)
    {
@@ -161,7 +161,7 @@ static int on_body (http_parser * parser, const char * buffer, size_t size)
 
 static int on_message_complete (http_parser * parser)
 {
-   lwp_ws_httpclient ctx = parser->data;
+   lwp_ws_httpclient ctx = (lwp_ws_httpclient) parser->data;
 
    if (!ctx->client.multipart)
       lwp_ws_req_call_hook (&ctx->request);

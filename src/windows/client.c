@@ -31,9 +31,9 @@
 #include "../address.h"
 #include "fdstream.h"
 
-struct lw_client
+struct _lw_client
 {
-   struct lw_fdstream fdstream;
+   struct _lw_fdstream fdstream;
 
    lw_pump pump;
    lw_pump_watch watch;
@@ -53,7 +53,7 @@ lw_client lw_client_new (lw_pump pump)
 {
    lwp_init ();
 
-   lw_client ctx = calloc (sizeof (*ctx), 1);
+   lw_client ctx = (lw_client) calloc (sizeof (*ctx), 1);
 
    ctx->socket = INVALID_HANDLE_VALUE;
    
@@ -82,7 +82,7 @@ void lw_client_connect (lw_client ctx, const char * host, long port)
 static void completion (void * tag, OVERLAPPED * overlapped,
                             unsigned long bytes_transfered, int error)
 {
-   lw_client ctx = tag;
+   lw_client ctx = (lw_client) tag;
 
    assert (ctx->connecting);
 
@@ -237,7 +237,7 @@ void lw_client_connect_addr (lw_client ctx, lw_addr address)
    lw_addr_delete (ctx->address);
    ctx->address = lw_addr_clone (address);
 
-   OVERLAPPED * overlapped = calloc (sizeof (*overlapped), 1);
+   OVERLAPPED * overlapped = (OVERLAPPED *) calloc (sizeof (*overlapped), 1);
 
    if (!lw_ConnectEx ((SOCKET) ctx->socket, address->info->ai_addr,
             address->info->ai_addrlen, 0, 0, 0, overlapped))
@@ -266,7 +266,7 @@ lw_addr lw_client_server_addr (lw_client ctx)
 static void on_stream_data (lw_stream stream, void * tag,
                             const char * buffer, size_t length)
 {
-   lw_client ctx = tag;
+   lw_client ctx = (lw_client) tag;
 
    ctx->on_data (ctx, buffer, length);
 }
@@ -288,7 +288,7 @@ void lw_client_on_data (lw_client ctx, lw_client_hook_data on_data)
 
 static void on_close (lw_stream stream, void * tag)
 {
-   lw_client ctx = tag;
+   lw_client ctx = (lw_client) tag;
 
    ctx->on_disconnect (ctx);
 }

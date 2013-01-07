@@ -32,9 +32,9 @@
 
 #include "../stream.h"
 
-struct lw_fdstream
+struct _lw_fdstream
 {
-   struct lw_stream stream;
+   struct _lw_stream stream;
 
    int ref_count;
 

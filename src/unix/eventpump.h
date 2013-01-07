@@ -29,7 +29,7 @@
 
 #include "../pump.h"
 
-struct lw_pump_watch
+struct _lw_pump_watch
 {
    lw_pump_callback on_read_ready, on_write_ready;
    lw_bool edge_triggered;
@@ -38,9 +38,9 @@ struct lw_pump_watch
    void * tag;
 };
 
-struct lw_eventpump
+struct _lw_eventpump
 {  
-   struct lw_pump pump;
+   struct _lw_pump pump;
 
    int queue;
 

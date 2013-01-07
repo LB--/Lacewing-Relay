@@ -37,7 +37,14 @@ static lw_bool def_is_transparent (lw_stream ctx)
 
 const static lw_streamdef def_pipe =
 {
-   .is_transparent = def_is_transparent
+   0, /* sink_data */
+   0, /* sink_stream */
+   0, /* retry */
+   def_is_transparent,
+   0, /* close */
+   0, /* bytes_left */
+   0, /* read */
+   0  /* cleanup */
 };
 
 void lwp_pipe_init (lw_stream ctx, lw_pump pump)
@@ -47,7 +54,7 @@ void lwp_pipe_init (lw_stream ctx, lw_pump pump)
 
 lw_stream lw_pipe_new (lw_pump pump)
 {
-   lw_stream pipe = malloc (sizeof (*pipe));
+   lw_stream pipe = (lw_stream) malloc (sizeof (*pipe));
    lwp_pipe_init (pipe, pump);
 
    return pipe;

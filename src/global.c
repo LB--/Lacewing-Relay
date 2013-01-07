@@ -50,6 +50,10 @@ const char * lw_version ()
          platform = name.sysname;
       #endif
 
+      #ifndef PACKAGE_VERSION
+         #define PACKAGE_VERSION "0.5.0"
+      #endif
+
       sprintf (version, "liblacewing " PACKAGE_VERSION " (%s, %d-bit)",
                      platform, ((int) sizeof(void *)) * 8);
    }

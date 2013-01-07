@@ -291,7 +291,7 @@ static lw_bool parse_cookie_header (lw_ws_req ctx, size_t header_len,
 lw_bool lwp_ws_req_in_header (lw_ws_req ctx, size_t name_len, const char * name,
                               size_t value_len, const char * value)
 {
-   struct lw_ws_req_hdr header;
+   struct _lw_ws_req_hdr header;
 
    /* TODO : limit name_len/value_len */
 
@@ -548,7 +548,7 @@ void lw_ws_req_add_header (lw_ws_req ctx, const char * name, const char * value)
 {
    size_t name_len = strlen (name);
 
-   struct lw_ws_req_hdr header;
+   struct _lw_ws_req_hdr header;
 
    header.name = (char *) malloc (name_len + 1);
    header.name [name_len] = 0;
@@ -589,19 +589,19 @@ void lwp_ws_req_set_cookie (lw_ws_req ctx,
 
    if (!cookie)
    {
-      cookie = calloc (sizeof (*cookie), 1);
+      cookie = (lw_ws_req_cookie) calloc (sizeof (*cookie), 1);
 
       cookie->changed = changed;
 
-      cookie->name = malloc (name_len + 1);
+      cookie->name = (char *) malloc (name_len + 1);
       memcpy (cookie->name, name, name_len);
       cookie->name [name_len] = 0;
 
-      cookie->value = malloc (value_len + 1);
+      cookie->value = (char *) malloc (value_len + 1);
       memcpy (cookie->value, value, value_len);
       cookie->value [value_len] = 0;
 
-      cookie->attr = malloc (attr_len + 1);
+      cookie->attr = (char *) malloc (attr_len + 1);
       memcpy (cookie->attr, attr, attr_len);
       cookie->attr [attr_len] = 0;
 
@@ -612,11 +612,11 @@ void lwp_ws_req_set_cookie (lw_ws_req ctx,
 
    cookie->changed = changed;
 
-   cookie->value = realloc (cookie->value, value_len + 1);
+   cookie->value = (char *) realloc (cookie->value, value_len + 1);
    memcpy (cookie->value, value, value_len);
    cookie->value [value_len] = 0;
 
-   cookie->attr = realloc (cookie->attr, attr_len + 1);
+   cookie->attr = (char *) realloc (cookie->attr, attr_len + 1);
    memcpy (cookie->attr, attr, attr_len);
    cookie->attr [attr_len] = 0;
 }
@@ -714,7 +714,7 @@ lw_ws_req_cookie lw_ws_req_cookie_first (lw_ws_req ctx)
 
 lw_ws_req_cookie lw_ws_req_cookie_next (lw_ws_req_cookie cookie)
 {
-   return cookie->hh.next;
+   return (lw_ws_req_cookie) cookie->hh.next;
 }
 
 const char * lw_ws_req_cookie_name (lw_ws_req_cookie cookie)

@@ -53,8 +53,8 @@ struct _lwp_sslclient
       unsigned char npn [32];
    #endif
 
-   struct lw_stream upstream;
-   struct lw_stream downstream;
+   struct _lw_stream upstream;
+   struct _lw_stream downstream;
 };
 
 const static lw_streamdef def_upstream;

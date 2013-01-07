@@ -31,7 +31,7 @@
 
 static void on_connect (lw_server server, lw_server_client client_socket)
 {
-   lw_ws ws = lw_server_tag (server);
+   lw_ws ws = (lw_ws) lw_server_tag (server);
    lw_bool secure = (server == ws->socket_secure);
 
    lwp_ws_client client;
@@ -72,11 +72,11 @@ static void on_connect (lw_server server, lw_server_client client_socket)
 
 static void on_disconnect (lw_server server, lw_server_client client_socket)
 {
-   lwp_ws_client client = lw_stream_tag ((lw_stream) client_socket);
+   lwp_ws_client client = (lwp_ws_client) lw_stream_tag ((lw_stream) client_socket);
 
    assert (client);
 
-   client->cleanup ();
+   client->cleanup (client);
    free (client);
 
    lw_stream_set_tag ((lw_stream) client_socket, 0);
@@ -86,7 +86,7 @@ static void on_error (lw_server server, lw_error error)
 {
     lw_error_addf (error, "Socket error");
 
-    lw_ws ws = lw_server_tag (server);
+    lw_ws ws = (lw_ws) lw_server_tag (server);
 
     if (ws->on_error)
         ws->on_error (ws, error);
@@ -108,13 +108,13 @@ static void on_timer_tick (lw_timer timer)
 {
    lw_server_client client_socket;
    lwp_ws_client client;
-   lw_ws ws = lw_timer_tag (timer);
+   lw_ws ws = (lw_ws) lw_timer_tag (timer);
 
    for (client_socket = lw_server_client_first (ws->socket);
          client_socket;
          client_socket = lw_server_client_next (client_socket))
    {
-      client = lw_stream_tag ((lw_stream) client_socket);
+      client = (lwp_ws_client) lw_stream_tag ((lw_stream) client_socket);
 
       client->tick (client);
    }
@@ -123,7 +123,7 @@ static void on_timer_tick (lw_timer timer)
          client_socket;
          client_socket = lw_server_client_next (client_socket))
    {
-      client = lw_stream_tag ((lw_stream) client_socket);
+      client = (lwp_ws_client) lw_stream_tag ((lw_stream) client_socket);
 
       client->tick (client);
    }
@@ -131,7 +131,7 @@ static void on_timer_tick (lw_timer timer)
 
 lw_ws lw_ws_new (lw_pump pump)
 {
-   lw_ws ctx = calloc (sizeof (struct lw_ws), 1);
+   lw_ws ctx = (lw_ws) calloc (sizeof (*ctx), 1);
 
    if (!ctx)
       return 0;

@@ -34,9 +34,9 @@
 #define lw_client_flag_connecting  1
 #define lw_client_flag_connected   2
 
-struct lw_client
+struct _lw_client
 {
-   struct lw_fdstream fdstream;
+   struct _lw_fdstream fdstream;
 
    lw_client_hook_connect     on_connect;
    lw_client_hook_disconnect  on_disconnect;

@@ -33,7 +33,7 @@
 
 lwp_streamgraph lwp_streamgraph_new ()
 {
-   lwp_streamgraph graph = calloc (sizeof (*graph), 1);
+   lwp_streamgraph graph = (lwp_streamgraph) calloc (sizeof (*graph), 1);
 
    return graph;
 }
@@ -135,7 +135,8 @@ static void expand_stream (lwp_streamgraph graph, lw_stream stream,
 
    if (*last)
    {
-      lwp_streamgraph_link link = calloc (sizeof (*link), 1);
+      lwp_streamgraph_link link =
+         (lwp_streamgraph_link) calloc (sizeof (*link), 1);
 
       link->from_exp = *last;
       link->to_exp = stream;

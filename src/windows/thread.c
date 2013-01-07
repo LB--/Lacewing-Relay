@@ -29,7 +29,7 @@
 
 #include "../common.h"
 
-struct lw_thread
+struct _lw_thread
 {
    void * proc, * param;
    char * name;
@@ -39,7 +39,7 @@ struct lw_thread
 
 lw_thread lw_thread_new (const char * name, void * proc)
 {
-   lw_thread ctx = calloc (sizeof (*ctx), 1);
+   lw_thread ctx = (lw_thread) calloc (sizeof (*ctx), 1);
 
    if (!ctx)
       return 0;

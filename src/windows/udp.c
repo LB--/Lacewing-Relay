@@ -32,34 +32,32 @@
 
 const int ideal_pending_receive_count = 16;
 
-typedef struct udp_overlapped
+#define overlapped_type_send     1
+#define overlapped_type_receive  2
+
+typedef struct _udp_overlapped
 {
    OVERLAPPED overlapped;
 
-   enum
-   {
-      overlapped_type_send,
-      overlapped_type_receive
-
-   } type;
+   char type;
 
    void * tag;
 
 } * udp_overlapped;
 
-typedef struct udp_receive_info
+typedef struct _udp_receive_info
 {
    char buffer [lwp_default_buffer_size];
    WSABUF winsock_buffer;
 
    struct sockaddr_storage from;
-   size_t from_length;
+   int from_length;
 
 } * udp_receive_info;
 
 udp_receive_info udp_receive_info_new ()
 {
-   udp_receive_info info = malloc (sizeof (*info));
+   udp_receive_info info = (udp_receive_info) malloc (sizeof (*info));
 
    info->winsock_buffer.buf = info->buffer;
    info->winsock_buffer.len = sizeof (info->buffer);
@@ -69,7 +67,7 @@ udp_receive_info udp_receive_info_new ()
    return info;
 }
 
-struct lw_udp
+struct _lw_udp
 {
    lw_pump pump;
 
@@ -94,7 +92,8 @@ static void post_receives (lw_udp ctx)
       if (!receive_info)
          break;
 
-      udp_overlapped overlapped = calloc (sizeof (*overlapped), 1);
+      udp_overlapped overlapped =
+         (udp_overlapped) calloc (sizeof (*overlapped), 1);
 
       if (!overlapped)
          break;
@@ -127,7 +126,7 @@ static void post_receives (lw_udp ctx)
 static void udp_socket_completion (void * tag, OVERLAPPED * _overlapped,
                                    unsigned long bytes_transferred, int error)
 {
-   lw_udp ctx = tag;
+   lw_udp ctx = (lw_udp) tag;
 
    udp_overlapped overlapped = (udp_overlapped) _overlapped;
 
@@ -140,11 +139,11 @@ static void udp_socket_completion (void * tag, OVERLAPPED * _overlapped,
 
       case overlapped_type_receive:
       {
-         udp_receive_info info = overlapped->tag;
+         udp_receive_info info = (udp_receive_info) overlapped->tag;
 
          info->buffer [bytes_transferred] = 0;
 
-         struct lw_addr addr = {};
+         struct _lw_addr addr = {};
          lwp_addr_set_sockaddr (&addr, (struct sockaddr *) &info->from);
 
          lw_addr filter_addr = lw_filter_remote (ctx->filter);
@@ -191,7 +190,7 @@ void lw_udp_host_filter (lw_udp ctx, lw_filter filter)
 {
    lw_udp_unhost (ctx);
 
-   lw_error error;
+   lw_error error = lw_error_new ();
 
    if ((ctx->socket = lwp_create_server_socket
             (filter, SOCK_DGRAM, IPPROTO_UDP, error)) == -1)
@@ -230,7 +229,7 @@ long lw_udp_port (lw_udp ctx)
 
 lw_udp lw_udp_new (lw_pump pump)
 {
-   lw_udp ctx = calloc (sizeof (*ctx), 1);
+   lw_udp ctx = (lw_udp) calloc (sizeof (*ctx), 1);
 
    if (!ctx)
       return 0;
@@ -275,7 +274,7 @@ void lw_udp_send (lw_udp ctx, lw_addr addr, const char * buffer, size_t size)
 
    WSABUF winsock_buf = { size, (CHAR *) buffer };
 
-   udp_overlapped overlapped = calloc (sizeof (*overlapped), 1);
+   udp_overlapped overlapped = (udp_overlapped) calloc (sizeof (*overlapped), 1);
 
    if (!overlapped)
    {

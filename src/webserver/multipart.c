@@ -147,7 +147,7 @@ static int on_header_field (multipart_parser * parser,
                             const char * at,
                             size_t length)
 {
-   lwp_ws_multipart ctx = multipart_parser_get_data (parser);
+   lwp_ws_multipart ctx = (lwp_ws_multipart) multipart_parser_get_data (parser);
 
    ctx->cur_header_name = at;
    ctx->cur_header_name_length = length;
@@ -159,9 +159,9 @@ static int on_header_value (multipart_parser * parser,
                             const char * at,
                             size_t length)
 {
-   lwp_ws_multipart ctx = multipart_parser_get_data (parser);
+   lwp_ws_multipart ctx = (lwp_ws_multipart) multipart_parser_get_data (parser);
 
-   struct lw_ws_upload_hdr header;
+   struct _lw_ws_upload_hdr header;
 
    if (! (header.name = (char *) malloc (ctx->cur_header_name_length + 1)))
       return -1;
@@ -211,7 +211,7 @@ static int on_header_value (multipart_parser * parser,
 
 static int on_headers_complete (multipart_parser * parser)
 {
-   lwp_ws_multipart ctx = multipart_parser_get_data (parser);
+   lwp_ws_multipart ctx = (lwp_ws_multipart) multipart_parser_get_data (parser);
 
    lwp_trace ("Multipart %p: on_headers_complete", ctx);
 
@@ -247,7 +247,7 @@ static int on_part_data (multipart_parser * parser,
                          const char * at,
                          size_t length)
 {
-   lwp_ws_multipart ctx = multipart_parser_get_data (parser);
+   lwp_ws_multipart ctx = (lwp_ws_multipart) multipart_parser_get_data (parser);
 
    if (ctx->child)
    {
@@ -299,7 +299,7 @@ static int on_part_data (multipart_parser * parser,
 
 static int on_part_data_begin (multipart_parser * parser)
 {
-   lwp_ws_multipart ctx = multipart_parser_get_data (parser);
+   lwp_ws_multipart ctx = (lwp_ws_multipart) multipart_parser_get_data (parser);
 
    lwp_trace ("Multipart %p: onPartDataBegin", ctx);
 
@@ -308,7 +308,7 @@ static int on_part_data_begin (multipart_parser * parser)
 
 static void add_upload (lwp_ws_multipart ctx, lw_ws_upload upload)
 {
-   ctx->uploads = realloc
+   ctx->uploads = (lw_ws_upload *) realloc
       (ctx->uploads, sizeof (lw_ws_upload) * (++ ctx->num_uploads));
 
    ctx->uploads [ctx->num_uploads - 1] = upload;
@@ -316,7 +316,7 @@ static void add_upload (lwp_ws_multipart ctx, lw_ws_upload upload)
 
 static int on_part_data_end (multipart_parser * parser)
 {
-   lwp_ws_multipart ctx = multipart_parser_get_data (parser);
+   lwp_ws_multipart ctx = (lwp_ws_multipart) multipart_parser_get_data (parser);
 
    lwp_trace ("Multipart %p: on_part_data_end", ctx);
 
@@ -368,7 +368,7 @@ static int on_part_data_end (multipart_parser * parser)
 
 static int on_body_end (multipart_parser * parser)
 {
-   lwp_ws_multipart ctx = multipart_parser_get_data (parser);
+   lwp_ws_multipart ctx = (lwp_ws_multipart) multipart_parser_get_data (parser);
 
    lwp_trace ("Multipart %p: onBodyEnd", ctx);
 
@@ -403,26 +403,26 @@ void lwp_ws_multipart_call_hook (lwp_ws_multipart ctx)
     
 const multipart_parser_settings settings =
 {
-   .on_header_field      = on_header_field,
-   .on_header_value      = on_header_value,
-   .on_part_data         = on_part_data,
-   .on_part_data_begin   = on_part_data_begin,
-   .on_headers_complete  = on_headers_complete,
-   .on_part_data_end     = on_part_data_end,
-   .on_body_end          = on_body_end
+   on_header_field,
+   on_header_value,
+   on_part_data,
+   on_part_data_begin,
+   on_headers_complete,
+   on_part_data_end,
+   on_body_end
 };
 
 lwp_ws_multipart lwp_ws_multipart_new (lw_ws ws, lw_ws_req request,
                                        const char * content_type)
 {
-   lwp_ws_multipart ctx = calloc (sizeof (*ctx), 1);
+   lwp_ws_multipart ctx = (lwp_ws_multipart) calloc (sizeof (*ctx), 1);
 
    if (!ctx)
       return 0;
 
    const char * _boundary = strstr (content_type, "boundary=") + 9;
 
-   char boundary [strlen (_boundary) + 3];
+   char * boundary = (char *) alloca (strlen (_boundary) + 3);
 
    strcpy (boundary, "--");
    strcat (boundary, _boundary);

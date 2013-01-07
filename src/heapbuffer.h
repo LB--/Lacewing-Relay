@@ -27,8 +27,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _lw_heap_buffer
-#define _lw_heap_buffer
+#ifndef _lw_heap_buffer_h
+#define _lw_heap_buffer_h
 
 typedef struct _lwp_heapbuffer
 {

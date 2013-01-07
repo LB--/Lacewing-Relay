@@ -61,15 +61,13 @@ struct lwp_stream_close_hook
    void * tag;
 };
 
+#define lwp_stream_queued_data           1
+#define lwp_stream_queued_stream         2
+#define lwp_stream_queued_begin_marker   3
+
 struct lwp_stream_queued
 {
-   enum
-   {
-      lwp_stream_queued_data,
-      lwp_stream_queued_stream,
-      lwp_stream_queued_begin_marker
-
-   } type;
+   char type;
 
    lwp_heapbuffer buffer;
 
@@ -90,10 +88,10 @@ struct lwp_stream_filterspec
     * allocate one for each filter each time the graph is expanded.
     */
 
-   struct lwp_streamgraph_link link;
+   struct _lwp_streamgraph_link link;
 };
 
-struct lw_stream
+struct _lw_stream
 {
     const lw_streamdef * def;
 

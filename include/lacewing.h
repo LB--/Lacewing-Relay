@@ -104,72 +104,42 @@ typedef lw_i8 lw_bool;
    typedef int lw_fd;
 #endif
 
-#if (!defined(_lacewing_internal)) || defined(__cplusplus)
-  #ifndef __cplusplus
+#if (!defined(_lacewing_internal))
 
-    typedef struct lw_thread            * lw_thread;
-    typedef struct lw_addr              * lw_addr;
-    typedef struct lw_filter            * lw_filter;
-    typedef struct lw_pump              * lw_pump;
-    typedef struct lw_pump_watch        * lw_pump_watch;
-    typedef struct lw_pump              * lw_eventpump;
-    typedef struct lw_stream            * lw_stream;
-    typedef struct lw_stream            * lw_fdstream;
-    typedef struct lw_stream            * lw_file;
-    typedef struct lw_timer             * lw_timer;
-    typedef struct lw_sync              * lw_sync;
-    typedef struct lw_event             * lw_event;
-    typedef struct lw_error             * lw_error;
-    typedef struct lw_stream            * lw_client;
-    typedef struct lw_server            * lw_server;
-    typedef struct lw_stream            * lw_server_client;
-    typedef struct lw_udp               * lw_udp;
-    typedef struct lw_flashpolicy       * lw_flashpolicy;
-    typedef struct lw_ws                * lw_ws;
-    typedef struct lw_stream            * lw_ws_req;
-    typedef struct lw_ws_req_hdr        * lw_ws_req_hdr;
-    typedef struct lw_ws_req_param      * lw_ws_req_param;
-    typedef struct lw_ws_req_cookie     * lw_ws_req_cookie;
-    typedef struct lw_ws_upload         * lw_ws_upload;
-    typedef struct lw_ws_upload_hdr     * lw_ws_upload_hdr;
-    typedef struct lw_ws_session        * lw_ws_session;
-    typedef struct lw_ws_sessionitem    * lw_ws_sessionitem;
-  
-  #else
-
-    /* Nasty hack to get around C++ typedef issues.  (Fortunately, those using
-     * a C++ compiler probably won't be interested in the C API anyway.)
+    /* The ugly underscore prefixes are only necessary because we have to
+     * compile the library as C++ for MSVC compatibility.  Maybe one day MSVC
+     * will support C99 (or everyone will stop using Windows - I'm happy either
+     * way.)
      */
-  
-    #define lw_thread           struct lw_thread *
-    #define lw_addr             struct lw_addr *
-    #define lw_filter           struct lw_filter *
-    #define lw_pump             struct lw_pump *
-    #define lw_pump_watch       struct lw_pump_watch *
-    #define lw_eventpump        struct lw_eventpump *
-    #define lw_stream           struct lw_stream *
-    #define lw_fdstream         struct lw_fdstream *
-    #define lw_file             struct lw_file *
-    #define lw_timer            struct lw_timer *
-    #define lw_sync             struct lw_sync *
-    #define lw_event            struct lw_event *
-    #define lw_error            struct lw_error *
-    #define lw_client           struct lw_client *
-    #define lw_server           struct lw_server *
-    #define lw_server_client    struct lw_server_client *
-    #define lw_udp              struct lw_udp *
-    #define lw_flashpolicy      struct lw_flashpolicy *
-    #define lw_ws               struct lw_ws *
-    #define lw_ws_req           struct lw_ws_req *
-    #define lw_ws_req_hdr       struct lw_ws_req_hdr *
-    #define lw_ws_req_param     struct lw_ws_req_param *
-    #define lw_ws_req_cookie    struct lw_ws_req_cookie *
-    #define lw_ws_upload        struct lw_ws_upload *
-    #define lw_ws_upload_hdr    struct lw_ws_upload_hdr *
-    #define lw_ws_session       struct lw_ws_session *
-    #define lw_ws_sessionitem   struct lw_ws_sessionitem *
 
-  #endif
+    typedef struct _lw_thread            * lw_thread;
+    typedef struct _lw_addr              * lw_addr;
+    typedef struct _lw_filter            * lw_filter;
+    typedef struct _lw_pump              * lw_pump;
+    typedef struct _lw_pump_watch        * lw_pump_watch;
+    typedef struct _lw_pump              * lw_eventpump;
+    typedef struct _lw_stream            * lw_stream;
+    typedef struct _lw_stream            * lw_fdstream;
+    typedef struct _lw_stream            * lw_file;
+    typedef struct _lw_timer             * lw_timer;
+    typedef struct _lw_sync              * lw_sync;
+    typedef struct _lw_event             * lw_event;
+    typedef struct _lw_error             * lw_error;
+    typedef struct _lw_stream            * lw_client;
+    typedef struct _lw_server            * lw_server;
+    typedef struct _lw_stream            * lw_server_client;
+    typedef struct _lw_udp               * lw_udp;
+    typedef struct _lw_flashpolicy       * lw_flashpolicy;
+    typedef struct _lw_ws                * lw_ws;
+    typedef struct _lw_stream            * lw_ws_req;
+    typedef struct _lw_ws_req_hdr        * lw_ws_req_hdr;
+    typedef struct _lw_ws_req_param      * lw_ws_req_param;
+    typedef struct _lw_ws_req_cookie     * lw_ws_req_cookie;
+    typedef struct _lw_ws_upload         * lw_ws_upload;
+    typedef struct _lw_ws_upload_hdr     * lw_ws_upload_hdr;
+    typedef struct _lw_ws_session        * lw_ws_session;
+    typedef struct _lw_ws_sessionitem    * lw_ws_sessionitem;
+
 #endif
 
 #ifdef __cplusplus
@@ -650,10 +620,11 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
   lw_import void lw_ws_on_upload_post (lw_ws, lw_ws_hook_upload_post);
 
 #ifdef __cplusplus
-}
+
+} /* extern "C" */
 
 #ifdef _lacewing_wrap_cxx
-    #define lw_class_wraps(c) struct lw_##c _inst
+    #define lw_class_wraps(c) struct _lw_##c _inst
 #else
     #define lw_class_wraps(c)
 #endif
@@ -1356,6 +1327,6 @@ struct _flashpolicy
 
 }
 
-#endif /* __cplusplus */
+#endif /* defined (__cplusplus) && !defined (_MSC_VER) */
 #endif /* _lacewing_h */
 

@@ -41,7 +41,7 @@ static void on_client_data (lw_stream, void * tag, const char * buffer,
 
 static void on_ssl_handshook (lwp_sslclient ssl, void * tag);
 
-struct lw_server
+struct _lw_server
 {
    int socket; 
 
@@ -64,9 +64,9 @@ struct lw_server
    list (lw_server_client, clients);
 };
     
-struct lw_server_client
+struct _lw_server_client
 {
-   struct lw_fdstream fdstream;
+   struct _lw_fdstream fdstream;
 
    lw_server server;
 

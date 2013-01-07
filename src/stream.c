@@ -56,7 +56,7 @@ void lwp_stream_cleanup (lw_stream ctx)
 
 lw_stream lw_stream_new (const lw_streamdef * def, lw_pump pump)
 {
-   lw_stream ctx = calloc (sizeof (*ctx) + def->outer_size, 1);
+   lw_stream ctx = (lw_stream) calloc (sizeof (*ctx) + def->outer_size, 1);
    lwp_stream_init (ctx, def, pump);
 
    return ctx;
@@ -204,10 +204,9 @@ static void queue_back (lw_stream ctx, const char * buffer, size_t size)
    if ( (!list_length (ctx->back_queue)) ||
          list_back (ctx->back_queue).type != lwp_stream_queued_data)
    {
-      struct lwp_stream_queued queued =
-      {  
-         .type = lwp_stream_queued_data
-      };
+      struct lwp_stream_queued queued = {};
+
+      queued.type = lwp_stream_queued_data;
 
       list_push (ctx->back_queue, queued);
    }
@@ -220,10 +219,9 @@ static void queue_front (lw_stream ctx, const char * buffer, size_t size)
    if ( (!list_length (ctx->front_queue)) ||
          list_back (ctx->front_queue).type != lwp_stream_queued_data)
    {
-      struct lwp_stream_queued queued =
-      {  
-         .type = lwp_stream_queued_data
-      };
+      struct lwp_stream_queued queued = {};
+
+      queued.type = lwp_stream_queued_data;
 
       list_push (ctx->front_queue, queued);
    }
@@ -369,9 +367,9 @@ size_t lwp_stream_write (lw_stream ctx, const char * buffer, size_t size, int fl
          {
             /* TODO : rewind offset where possible instead of creating a new Queued? */
 
-            struct lwp_stream_queued queued =
-            {  .type = lwp_stream_queued_data
-            };
+            struct lwp_stream_queued queued = {};
+
+            queued.type = lwp_stream_queued_data;
 
             lwp_heapbuffer_add (&queued.buffer, buffer + written, size - written);
 
@@ -426,13 +424,12 @@ void lwp_stream_write_stream (lw_stream ctx, lw_stream source,
 
    if (should_queue)
    {
-      struct lwp_stream_queued queued =
-      {
-         .type = lwp_stream_queued_stream,
-         .stream = source,
-         .stream_bytes_left = size,
-         .delete_stream = (flags & lwp_stream_write_delete_stream)
-      };
+      struct lwp_stream_queued queued = {};
+
+      queued.type = lwp_stream_queued_stream;
+      queued.stream = source;
+      queued.stream_bytes_left = size;
+      queued.delete_stream = (flags & lwp_stream_write_delete_stream);
 
       list_push (ctx->back_queue, queued);
 
@@ -446,7 +443,7 @@ void lwp_stream_write_stream (lw_stream ctx, lw_stream source,
 
    assert (ctx->graph == source->graph);
 
-   lwp_streamgraph_link link = calloc (sizeof (*link), 1);
+   lwp_streamgraph_link link = (lwp_streamgraph_link) calloc (sizeof (*link), 1);
    
    link->from = source;
    link->to = ctx;
@@ -483,7 +480,8 @@ void lw_stream_add_filter_upstream (lw_stream ctx, lw_stream filter,
                                     lw_bool delete_with_stream,
                                     lw_bool close_together)
 {
-   struct lwp_stream_filterspec * spec = malloc (sizeof (*spec));
+   struct lwp_stream_filterspec * spec =
+      (struct lwp_stream_filterspec *) malloc (sizeof (*spec));
 
    spec->stream = ctx;
    spec->filter = filter;
@@ -506,7 +504,8 @@ void lw_stream_add_filter_downstream (lw_stream ctx, lw_stream filter,
                                       lw_bool delete_with_stream,
                                       lw_bool close_together)
 {
-   struct lwp_stream_filterspec * spec = malloc (sizeof (*spec));
+   struct lwp_stream_filterspec * spec =
+      (struct lwp_stream_filterspec *) malloc (sizeof (*spec));
 
    spec->stream = ctx;
    spec->filter = filter;
@@ -1059,9 +1058,9 @@ void lw_stream_begin_queue (lw_stream stream)
        * and set the queueing flag.
        */
 
-      struct lwp_stream_queued queued =
-      {  .type = lwp_stream_queued_begin_marker
-      };
+      struct lwp_stream_queued queued = {};
+
+      queued.type = lwp_stream_queued_begin_marker;
 
       list_push (stream->back_queue, queued);
    }
@@ -1156,7 +1155,8 @@ void lw_stream_add_hook_data (lw_stream stream,
 {   
    /* TODO : Prevent the same hook being registered twice? */
 
-   struct lwp_stream_data_hook * hook = calloc (sizeof (*hook), 1);
+   struct lwp_stream_data_hook * hook =
+      (struct lwp_stream_data_hook *) calloc (sizeof (*hook), 1);
 
    hook->proc = proc;
    hook->stream = stream;

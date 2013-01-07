@@ -30,7 +30,7 @@
 #include "../common.h"
 #include "../address.h"
 
-struct lw_udp
+struct _lw_udp
 {
    lw_pump pump;
     
@@ -53,7 +53,7 @@ static void read_ready (void * ptr)
 
    lw_addr filter_addr = lw_filter_remote (ctx->filter);
 
-   struct lw_addr addr = {};
+   struct _lw_addr addr = {};
 
    for (;;)
    {

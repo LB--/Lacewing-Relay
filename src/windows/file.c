@@ -30,16 +30,16 @@
 #include "../common.h"
 #include "fdstream.h"
 
-struct lw_file
+struct _lw_file
 {
-   struct lw_fdstream ctx;
+   struct _lw_fdstream ctx;
 
    char name [lwp_max_path];
 };
 
 lw_file lw_file_new (lw_pump pump)
 {
-   lw_file ctx = malloc (sizeof (*ctx));
+   lw_file ctx = (lw_file) malloc (sizeof (*ctx));
 
    if (!ctx)
       return 0;

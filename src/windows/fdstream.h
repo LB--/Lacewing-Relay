@@ -32,11 +32,11 @@
 
 #include "../stream.h"
 
-typedef struct fdstream_overlapped * fdstream_overlapped;
+typedef struct _fdstream_overlapped * fdstream_overlapped;
 
-struct lw_fdstream
+struct _lw_fdstream
 {
-   struct lw_stream stream;
+   struct _lw_stream stream;
 
    short ref_count;
 

@@ -31,21 +31,21 @@
 #include "../../deps/multipart-parser/multipart_parser.h"
 #include "../stream.h"
 
-typedef struct lwp_ws_client * lwp_ws_client;
+typedef struct _lwp_ws_client * lwp_ws_client;
 
-struct lw_ws_req_hdr
+struct _lw_ws_req_hdr
 {
    char * name, * value;
    lw_ws_req_hdr * next;
 };
 
-struct lw_ws_upload_hdr
+struct _lw_ws_upload_hdr
 {
    char * name, * value;
    lw_ws_upload_hdr * next;
 };
 
-struct lw_ws_upload
+struct _lw_ws_upload
 {
    lw_ws_req request;
 
@@ -54,7 +54,7 @@ struct lw_ws_upload
    lw_file autosave_file;
    char * autosave_filename;
 
-   list (struct lw_ws_upload_hdr, headers);
+   list (struct _lw_ws_upload_hdr, headers);
 };
 
 lw_ws_upload lwp_ws_upload_new (lw_ws_req request);
@@ -62,13 +62,13 @@ void lwp_ws_upload_delete (lw_ws_upload);
 
 #include "multipart.h"
 
-struct lw_ws_session
+struct _lw_ws_session
 {
    lwp_nvhash data;
    UT_hash_handle hh;
 };
 
-struct lw_ws
+struct _lw_ws
 {
    lw_pump pump;
 
@@ -95,7 +95,7 @@ struct lw_ws
    void * tag;
 };
 
-struct lw_ws_req_cookie
+struct _lw_ws_req_cookie
 {
    char * name, * value, * attr;
    lw_bool changed;
@@ -103,16 +103,16 @@ struct lw_ws_req_cookie
    UT_hash_handle hh;
 };
 
-struct lw_ws_req
+struct _lw_ws_req
 {
-   struct lw_stream stream;
+   struct _lw_stream stream;
 
    void * tag;
 
    lw_ws ws;
    lwp_ws_client client;
 
-   struct lw_ws_req_cookie * cookies;
+   struct _lw_ws_req_cookie * cookies;
 
 
    /* Input */
@@ -123,7 +123,7 @@ struct lw_ws_req
    char url        [4096];
    char hostname   [128];
 
-   list (struct lw_ws_req_hdr, headers_in);
+   list (struct _lw_ws_req_hdr, headers_in);
    lwp_nvhash get_items, post_items;
 
 
@@ -141,7 +141,7 @@ struct lw_ws_req
 
    char status [64];
 
-   list (struct lw_ws_req_hdr, headers_out);
+   list (struct _lw_ws_req_hdr, headers_out);
 
    lw_bool responded;
 };
@@ -177,13 +177,13 @@ void lwp_ws_req_call_hook (lw_ws_req);
 void lwp_ws_req_respond (lw_ws_req);
 
 
-struct lwp_ws_client
+struct _lwp_ws_client
 {
-   struct lw_stream stream;
+   struct _lw_stream stream;
 
    void (* respond) (lwp_ws_client, lw_ws_req request);
    void (* tick) (lwp_ws_client);
-   void (* cleanup) ();
+   void (* cleanup) (lwp_ws_client);
 
    lw_bool secure;
 

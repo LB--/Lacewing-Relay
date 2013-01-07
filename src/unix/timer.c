@@ -30,7 +30,7 @@
 #include "../common.h"
 #include "eventpump.h"
 
-struct lw_timer
+struct _lw_timer
 {
    lw_pump pump;
 

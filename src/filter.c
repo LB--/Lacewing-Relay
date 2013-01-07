@@ -30,7 +30,7 @@
 #include "common.h"
 #include "address.h"
 
-struct lw_filter
+struct _lw_filter
 {
    lw_bool reuse, ipv6;
 
@@ -40,7 +40,7 @@ struct lw_filter
 
 lw_filter lw_filter_new ()
 {
-   lw_filter ctx = malloc (sizeof (*ctx));
+   lw_filter ctx = (lw_filter) malloc (sizeof (*ctx));
 
    ctx->local_port = 0;
    ctx->remote_port = 0;

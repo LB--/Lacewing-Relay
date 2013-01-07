@@ -27,7 +27,7 @@
  * SUCH DAMAGE.
  */
 
-struct lw_addr
+struct _lw_addr
 {
    lw_thread resolver_thread;
 

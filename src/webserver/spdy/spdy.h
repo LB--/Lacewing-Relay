@@ -31,7 +31,7 @@
 
 typedef struct lwp_ws_spdyclient
 {
-    struct lwp_ws_client client;
+    struct _lwp_ws_client client;
 
     spdy_ctx * spdy;
 

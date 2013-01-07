@@ -29,14 +29,14 @@
 
 #include "../common.h"
 
-struct lw_sync
+struct _lw_sync
 {
    CRITICAL_SECTION critical_section;
 };
 
 lw_sync lw_sync_new ()
 {
-   lw_sync ctx = malloc (sizeof (*ctx));
+   lw_sync ctx = (lw_sync) malloc (sizeof (*ctx));
 
    if (!ctx)
       return 0;

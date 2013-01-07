@@ -35,7 +35,7 @@
 static void on_client_close (lw_stream, void * tag);
 static void on_client_data (lw_stream, void * tag, const char * buffer, size_t size);
 
-struct lw_server
+struct _lw_server
 {
    SOCKET socket;
 
@@ -56,9 +56,9 @@ struct lw_server
    void * tag;
 };
     
-struct lw_server_client
+struct _lw_server_client
 {
-   struct lw_fdstream fdstream;
+   struct _lw_fdstream fdstream;
 
    lw_server server;
 
@@ -78,7 +78,7 @@ struct lw_server_client
 
 lw_server lw_server_new (lw_pump pump)
 {
-   lw_server ctx = calloc (sizeof (*ctx), 1);
+   lw_server ctx = (lw_server) calloc (sizeof (*ctx), 1);
 
    if (!ctx)
       return 0;
@@ -110,7 +110,7 @@ void * lw_server_tag (lw_server ctx)
 
 lw_server_client lwp_server_client_new (lw_server ctx, SOCKET socket)
 {
-   lw_server_client client = calloc (sizeof (*client), 1);
+   lw_server_client client = (lw_server_client) calloc (sizeof (*client), 1);
 
    if (!client)
       return 0;
@@ -169,14 +169,15 @@ typedef struct
 
    SOCKET socket;
 
-   struct lw_addr addr;
+   struct _lw_addr addr;
    char addr_buffer [(sizeof (struct sockaddr_storage) + 16) * 2];
 
 } accept_overlapped;
 
 static lw_bool issue_accept (lw_server ctx)
 {
-   accept_overlapped * overlapped = calloc (sizeof (*overlapped), 1);
+   accept_overlapped * overlapped =
+      (accept_overlapped *) calloc (sizeof (*overlapped), 1);
 
    if (!overlapped)
       return lw_false;
@@ -221,7 +222,7 @@ static lw_bool issue_accept (lw_server ctx)
 static void listen_socket_completion (void * tag, OVERLAPPED * _overlapped,
                                       unsigned long bytes_transferred, int error)
 {
-   lw_server ctx = tag;
+   lw_server ctx = (lw_server) tag;
    accept_overlapped * overlapped = (accept_overlapped *) _overlapped;
 
    -- ctx->accepts_posted;
@@ -525,13 +526,12 @@ lw_bool lw_server_load_sys_cert (lw_server ctx,
       }
    }
 
-   SCHANNEL_CRED creds =
-   {
-      .dwVersion              = SCHANNEL_CRED_VERSION,
-      .cCreds                 = 1,
-      .paCred                 = &context,
-      .grbitEnabledProtocols  = (0x80 | 0x40)  /* SP_PROT_TLS1 */
-   };
+   SCHANNEL_CRED creds = {};
+
+   creds.dwVersion              = SCHANNEL_CRED_VERSION;
+   creds.cCreds                 = 1;
+   creds.paCred                 = &context;
+   creds.grbitEnabledProtocols  = (0x80 | 0x40); /* SP_PROT_TLS1 */
 
    {  TimeStamp expiry_time;
 
@@ -677,13 +677,12 @@ lw_bool lw_server_load_cert_file (lw_server ctx,
       }
    }
 
-   SCHANNEL_CRED creds =
-   {
-      .dwVersion = SCHANNEL_CRED_VERSION,
-      .cCreds = 1,
-      .paCred = &context,
-      .grbitEnabledProtocols = 0xF0 /* SP_PROT_SSL3TLS1 */
-   };
+   SCHANNEL_CRED creds = {};
+
+   creds.dwVersion = SCHANNEL_CRED_VERSION;
+   creds.cCreds = 1;
+   creds.paCred = &context;
+   creds.grbitEnabledProtocols = 0xF0; /* SP_PROT_SSL3TLS1 */
 
    TimeStamp expiry_time; 
 
@@ -758,7 +757,7 @@ lw_server_client lw_server_client_first (lw_server ctx)
 
 void on_client_data (lw_stream stream, void * tag, const char * buffer, size_t size)
 {
-   lw_server_client client = tag;
+   lw_server_client client = (lw_server_client) tag;
    lw_server server = client->server;
 
    assert (server->on_data);
@@ -768,7 +767,7 @@ void on_client_data (lw_stream stream, void * tag, const char * buffer, size_t s
 
 void on_client_close (lw_stream stream, void * tag)
 {
-   lw_server_client client = tag;
+   lw_server_client client = (lw_server_client) tag;
 
    if (client->user_count > 0)
       client->dead = lw_false;
