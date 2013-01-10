@@ -1,7 +1,7 @@
 
 /* vim: set et ts=3 sw=3 ft=c:
  *
- * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012, 2013 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,7 +29,10 @@
 
 #include "../common.h"
 
-#include "../openssl/sslclient.h"
+#ifndef _lacewing_no_ssl
+   #include "../openssl/sslclient.h"
+#endif
+
 #include "../address.h"
 
 #include "fdstream.h"
@@ -39,7 +42,9 @@ static void on_client_close (lw_stream, void * tag);
 static void on_client_data (lw_stream, void * tag, const char * buffer,
                             size_t size);
 
-static void on_ssl_handshook (lwp_sslclient ssl, void * tag);
+#ifndef _lacewing_no_ssl
+   static void on_ssl_handshook (lwp_sslclient ssl, void * tag);
+#endif
 
 struct _lw_server
 {
@@ -54,11 +59,13 @@ struct _lw_server
 
    void * tag;
 
-   SSL_CTX * ssl_context;
-   char ssl_passphrase [128];
+   #ifndef _lacewing_no_ssl
+      SSL_CTX * ssl_context;
+      char ssl_passphrase [128];
 
-   #ifdef _lacewing_npn
-      unsigned char npn [128];
+      #ifdef _lacewing_npn
+         unsigned char npn [128];
+      #endif
    #endif
 
    list (lw_server_client, clients);
@@ -75,7 +82,9 @@ struct _lw_server_client
    lw_bool on_connect_called;
    lw_bool dead;
 
-   lwp_sslclient ssl;
+   #ifndef _lacewing_no_ssl
+      lwp_sslclient ssl;
+   #endif
 
    lw_addr address;
 
@@ -102,11 +111,15 @@ static lw_server_client lwp_server_client_new (lw_server ctx, lw_pump pump, int 
 
    lw_stream_add_hook_close ((lw_stream) client, on_client_close, client);
 
-   if (ctx->ssl_context)
-   {
-      client->ssl = lwp_sslclient_new (ctx->ssl_context, (lw_stream) client,
-                                       on_ssl_handshook, client);
-   }
+   #ifndef _lacewing_no_ssl
+
+      if (ctx->ssl_context)
+      {
+         client->ssl = lwp_sslclient_new (ctx->ssl_context, (lw_stream) client,
+                                          on_ssl_handshook, client);
+      }
+
+    #endif
 
    lw_fdstream_set_fd (&client->fdstream, fd, 0, lw_true);
 
@@ -134,39 +147,45 @@ static void lwp_server_client_delete (lw_server_client client)
       list_elem_remove (client->elem);
    }
 
-   if (client->ssl)
-      lwp_sslclient_delete (client->ssl);
+   #ifndef _lacewing_no_ssl
+      if (client->ssl)
+         lwp_sslclient_delete (client->ssl);
+   #endif
 
    free (client);
 }
 
-void on_ssl_handshook (lwp_sslclient ssl, void * tag)
-{
-   lw_server_client client = tag;
-   lw_server server = client->server;
+#ifndef _lacewing_no_ssl
 
-   #ifdef _lacewing_npn
-      lwp_trace ("on_ssl_handshook for %p, NPN is %s",
-            client, lwp_sslclient_npn (ssl));
-   #endif
+ void on_ssl_handshook (lwp_sslclient ssl, void * tag)
+ {
+    lw_server_client client = tag;
+    lw_server server = client->server;
 
-   ++ client->user_count;
+    #ifdef _lacewing_npn
+       lwp_trace ("on_ssl_handshook for %p, NPN is %s",
+             client, lwp_sslclient_npn (ssl));
+    #endif
 
-   client->on_connect_called = lw_true;
+    ++ client->user_count;
 
-   if (server->on_connect)
-      server->on_connect (server, client);
+    client->on_connect_called = lw_true;
 
-   if (client->dead)
-   {
-      lwp_server_client_delete (client);
-      return;
-   }
+    if (server->on_connect)
+       server->on_connect (server, client);
 
-   -- client->user_count;
+    if (client->dead)
+    {
+       lwp_server_client_delete (client);
+       return;
+    }
 
-   list_push (server->clients, client);
-}
+    -- client->user_count;
+
+    list_push (server->clients, client);
+ }
+
+#endif
 
 lw_server lw_server_new (lw_pump pump)
 {
@@ -244,8 +263,11 @@ static void listen_socket_read_ready (void * tag)
 
       ++ client->user_count;
 
+      #ifndef _lacewing_no_ssl
       if (!client->ssl)
       {
+      #endif
+
          client->on_connect_called = lw_true;
 
          if (ctx->on_connect)
@@ -261,6 +283,8 @@ static void listen_socket_read_ready (void * tag)
 
          list_push (ctx->clients, client);
          client->elem = list_back (ctx->clients);
+
+      #ifndef _lacewing_no_ssl
       }
       else
       {
@@ -274,6 +298,7 @@ static void listen_socket_read_ready (void * tag)
             continue;
          }
       }
+      #endif
 
       -- client->user_count;
 
@@ -356,17 +381,27 @@ long lw_server_port (lw_server ctx)
 
 lw_bool lw_server_cert_loaded (lw_server ctx)
 {
-    return ctx->ssl_context != 0;
+   #ifndef _lacewing_no_ssl
+      return ctx->ssl_context != 0;
+   #else
+      return lw_false;
+   #endif
 }
 
 static int ssl_password_callback (char * buffer, int size, int rwflag, void * tag)
 {
-   lw_server ctx = tag;
+   #ifndef _lacewing_no_ssl
 
-   /* TODO : check length */
+      lw_server ctx = tag;
 
-   strcpy (buffer, ctx->ssl_passphrase);
-   return strlen (ctx->ssl_passphrase);
+      /* TODO : check length */
+
+      strcpy (buffer, ctx->ssl_passphrase);
+      return strlen (ctx->ssl_passphrase);
+
+   #else
+      return lw_false;
+   #endif
 }
 
 #ifdef _lacewing_npn
@@ -393,10 +428,13 @@ static int ssl_password_callback (char * buffer, int size, int rwflag, void * ta
 
 #endif
 
-
 lw_bool lw_server_load_cert_file (lw_server ctx, const char * filename,
                                   const char * passphrase)
 {
+   #ifdef _lacewing_no_ssl
+      return lw_false;
+   #else
+
     SSL_load_error_strings ();
 
     ctx->ssl_context = SSL_CTX_new (SSLv23_server_method ());
@@ -443,6 +481,8 @@ lw_bool lw_server_load_cert_file (lw_server ctx, const char * filename,
     }
 
     return lw_true;
+
+   #endif
 }
 
 lw_bool lw_server_load_sys_cert (lw_server ctx,
@@ -465,7 +505,7 @@ lw_bool lw_server_can_npn (lw_server ctx)
       return lw_true;
    #endif
 
-  return lw_false;
+   return lw_false;
 }
 
 void lw_server_add_npn (lw_server ctx, const char * protocol)
@@ -531,7 +571,10 @@ void on_client_data (lw_stream stream, void * tag, const char * buffer, size_t s
    lw_server_client client = tag;
    lw_server server = client->server;
 
-   assert ( (!client->ssl) || lwp_sslclient_handshook (client->ssl) );
+   #ifndef _lacewing_no_ssl
+      assert ( (!client->ssl) || lwp_sslclient_handshook (client->ssl) );
+   #endif
+
    assert (server->on_data);
 
    server->on_data (server, client, buffer, size);

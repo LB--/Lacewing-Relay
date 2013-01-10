@@ -46,26 +46,28 @@
 /* Deleted when user count was > 0 - waiting to be freed */
  #define lwp_stream_flag_dead  8
 
-struct lwp_stream_data_hook
+typedef struct _lwp_stream_data_hook
 {
    lw_stream_hook_data proc;
 
    lw_stream stream;
    void * tag;
-};
 
-struct lwp_stream_close_hook
+} * lwp_stream_data_hook;
+
+typedef struct _lwp_stream_close_hook
 {
    lw_stream_hook_close proc;
 
    void * tag;
-};
+
+} * lwp_stream_close_hook;
 
 #define lwp_stream_queued_data           1
 #define lwp_stream_queued_stream         2
 #define lwp_stream_queued_begin_marker   3
 
-struct lwp_stream_queued
+typedef struct _lwp_stream_queued
 {
    char type;
 
@@ -74,9 +76,10 @@ struct lwp_stream_queued
    lw_stream stream;
    size_t stream_bytes_left;
    lw_bool delete_stream;
-};
 
-struct lwp_stream_filterspec
+} * lwp_stream_queued;
+
+typedef struct _lwp_stream_filterspec
 {
    lw_stream stream;
    lw_stream filter;
@@ -89,7 +92,8 @@ struct lwp_stream_filterspec
     */
 
    struct _lwp_streamgraph_link link;
-};
+
+} * lwp_stream_filterspec;
 
 struct _lw_stream
 {
@@ -101,21 +105,21 @@ struct _lw_stream
 
     void * tag;
 
-    list (struct lwp_stream_data_hook *, data_hooks);
-    list (struct lwp_stream_close_hook, close_hooks);
+    list (lwp_stream_data_hook, data_hooks);
+    list (struct _lwp_stream_close_hook, close_hooks);
 
 
     /* Filters affecting this stream (stream == this).  The filter should be
      * freed when removed from these lists.
      */
 
-    list (struct lwp_stream_filterspec *, filters_upstream);
-    list (struct lwp_stream_filterspec *, filters_downstream);
+    list (lwp_stream_filterspec, filters_upstream);
+    list (lwp_stream_filterspec, filters_downstream);
 
 
     /* Streams we are a filter for (filter == this) */
 
-    list (struct lwp_stream_filterspec *, filtering);
+    list (lwp_stream_filterspec, filtering);
 
 
     /* StreamGraph::Expand sets head_upstream to the head of the expanded
@@ -125,7 +129,7 @@ struct _lw_stream
 
     lw_stream head_upstream;
 
-    list (struct lwp_stream_data_hook *, exp_data_hooks);
+    list (lwp_stream_data_hook, exp_data_hooks);
 
 
     /* The front queue is to be written before any more data from the current
@@ -133,8 +137,8 @@ struct _lw_stream
      * the current source stream has finished.
      */
 
-    list (struct lwp_stream_queued, front_queue);
-    list (struct lwp_stream_queued, back_queue);
+    list (struct _lwp_stream_queued, front_queue);
+    list (struct _lwp_stream_queued, back_queue);
 
 
     int retry;

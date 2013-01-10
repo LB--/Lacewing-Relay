@@ -403,6 +403,98 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath="..\src\list.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\nvhash.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\src\nvhash.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\pipe.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\src\pump.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\src\pump.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\stream.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\src\stream.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\streamgraph.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\src\streamgraph.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\util.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
 			<Filter
 				Name="cxx"
 				>
@@ -1150,6 +1242,7 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\win\"
 							CompileAs="2"
 						/>
 					</FileConfiguration>
@@ -1347,6 +1440,54 @@
 					</File>
 					<File
 						RelativePath="..\src\webserver\http\http.h"
+						>
+					</File>
+				</Filter>
+			</Filter>
+			<Filter
+				Name="deps"
+				>
+				<Filter
+					Name="multipart-parser"
+					>
+					<File
+						RelativePath="..\deps\multipart-parser\multipart_parser.c"
+						>
+					</File>
+					<File
+						RelativePath="..\deps\multipart-parser\multipart_parser.h"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="http-parser"
+					>
+					<File
+						RelativePath="..\deps\http-parser\http_parser.c"
+						>
+					</File>
+					<File
+						RelativePath="..\deps\http-parser\http_parser.h"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="uthash"
+					>
+					<File
+						RelativePath="..\deps\uthash\utarray.h"
+						>
+					</File>
+					<File
+						RelativePath="..\deps\uthash\uthash.h"
+						>
+					</File>
+					<File
+						RelativePath="..\deps\uthash\utlist.h"
+						>
+					</File>
+					<File
+						RelativePath="..\deps\uthash\utstring.h"
 						>
 					</File>
 				</Filter>

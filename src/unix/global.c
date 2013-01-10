@@ -1,7 +1,7 @@
 
 /* vim: set et ts=3 sw=3 ft=c:
  *
- * Copyright (C) 2012 James McLaughlin et al.  All rights reserved.
+ * Copyright (C) 2012, 2013 James McLaughlin et al.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,20 +33,24 @@ static lw_bool init_called = lw_false;
 
 void lwp_init ()
 {
-    STACK_OF (SSL_COMP) * comp_methods;
+   if (init_called)
+      return;
 
-    if (init_called)
-        return;
-    
-    init_called = lw_true;
+   init_called = lw_true;
 
-    SSL_library_init ();
+   #ifndef _lacewing_no_ssl
 
-    SSL_load_error_strings ();
-    ERR_load_crypto_strings ();
+      STACK_OF (SSL_COMP) * comp_methods;
 
-    comp_methods = SSL_COMP_get_compression_methods ();
-    sk_SSL_COMP_zero (comp_methods);
+      SSL_library_init ();
+ 
+      SSL_load_error_strings ();
+      ERR_load_crypto_strings ();
+
+      comp_methods = SSL_COMP_get_compression_methods ();
+      sk_SSL_COMP_zero (comp_methods);
+
+   #endif
 }
 
 lw_bool lw_file_exists (const char * filename)
@@ -122,21 +126,25 @@ lw_bool lw_random (char * buffer, size_t size)
    return lw_true;
 }
 
-void lw_md5 (char * output, const char * input, size_t length)
-{
-   MD5_CTX context;
+#ifndef _lacewing_no_ssl
 
-   MD5_Init (&context);
-   MD5_Update (&context, input, length);
-   MD5_Final ((unsigned char *) output, &context);
-}
+ void lw_md5 (char * output, const char * input, size_t length)
+ {
+    MD5_CTX context;
 
-void lw_sha1 (char * output, const char * input, size_t length)
-{
-   SHA_CTX context;
+    MD5_Init (&context);
+    MD5_Update (&context, input, length);
+    MD5_Final ((unsigned char *) output, &context);
+ }
 
-   SHA1_Init (&context);
-   SHA1_Update (&context, input, length);
-   SHA1_Final ((unsigned char *) output, &context);
-}
+ void lw_sha1 (char * output, const char * input, size_t length)
+ {
+    SHA_CTX context;
+  
+    SHA1_Init (&context);
+    SHA1_Update (&context, input, length);
+    SHA1_Final ((unsigned char *) output, &context);
+ }
+
+#endif
 

@@ -1,7 +1,7 @@
 
 /* vim: set et ts=3 sw=3 ft=c:
  *
- * Copyright (C) 2012 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2012, 2013 James McLaughlin et al.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,6 +40,9 @@ lwp_streamgraph lwp_streamgraph_new ()
 
 void lwp_streamgraph_delete (lwp_streamgraph graph)
 {
+   if (!graph)
+      return;
+
    lwp_streamgraph_clear_expanded (graph);
 
    if (graph->user_count == 0)

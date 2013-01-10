@@ -1,7 +1,7 @@
 
 /* vim: set et ts=3 sw=3 ft=c:
  *
- * Copyright (C) 2011, 2012 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2011, 2012, 2013 James McLaughlin.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -71,7 +71,10 @@ lw_filter lw_filter_clone (lw_filter filter)
 }
 
 void lw_filter_delete (lw_filter ctx)
-{
+{ 
+   if (!ctx)
+      return;
+
    lw_addr_delete (ctx->local);
    lw_addr_delete (ctx->remote);
 

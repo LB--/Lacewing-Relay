@@ -629,6 +629,7 @@ GREP
 CPP
 PLATFORM
 ENABLE_SPDY
+ENABLE_SSL
 ENABLE_CXX
 ac_ct_CXX
 CXXFLAGS
@@ -684,6 +685,7 @@ enable_option_checking
 enable_debug
 enable_spdy
 enable_cxx
+enable_ssl
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1310,6 +1312,7 @@ Optional Features:
                           [default=disabled]
   --enable-spdy           Enable SPDY support [default=enabled]
   --enable-cxx            Build the C++ wrappers [default=enabled]
+  --enable-ssl            Build with SSL support [default=enabled]
 
 Some influential environment variables:
   CC          C compiler command
@@ -3007,6 +3010,15 @@ else
 fi
 
 
+# Check whether --enable-ssl was given.
+if test "${enable_ssl+set}" = set; then :
+  enableval=$enable_ssl; enable_ssl="$enableval"
+else
+  enable_ssl=yes
+
+fi
+
+
 CFLAGS="$CFLAGS -DHAVE_CONFIG_H -Wno-deprecated-declarations"
 
 if test "x$enable_debug" = xyes; then
@@ -3277,6 +3289,13 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 fi
 
+if test "x$enable_ssl" = xyes; then
+    ENABLE_SSL=1
+
+else
+    CFLAGS="$CFLAGS -D_lacewing_no_ssl"
+fi
+
 SO_EXT="so"
 
 if test "x$enable_spdy" = xyes; then
@@ -3344,6 +3363,110 @@ else
 
     PLATFORM=unix
 
+
+    if test "x$enable_ssl" = xyes; then
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SSL_library_init in -lssl" >&5
+$as_echo_n "checking for SSL_library_init in -lssl... " >&6; }
+if ${ac_cv_lib_ssl_SSL_library_init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lssl  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char SSL_library_init ();
+int
+main ()
+{
+return SSL_library_init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_ssl_SSL_library_init=yes
+else
+  ac_cv_lib_ssl_SSL_library_init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ssl_SSL_library_init" >&5
+$as_echo "$ac_cv_lib_ssl_SSL_library_init" >&6; }
+if test "x$ac_cv_lib_ssl_SSL_library_init" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSSL 1
+_ACEOF
+
+  LIBS="-lssl $LIBS"
+
+fi
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing MD5_Init" >&5
+$as_echo_n "checking for library containing MD5_Init... " >&6; }
+if ${ac_cv_search_MD5_Init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char MD5_Init ();
+int
+main ()
+{
+return MD5_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' ssl crypto; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_MD5_Init=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_MD5_Init+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_MD5_Init+:} false; then :
+
+else
+  ac_cv_search_MD5_Init=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_MD5_Init" >&5
+$as_echo "$ac_cv_search_MD5_Init" >&6; }
+ac_res=$ac_cv_search_MD5_Init
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+fi
+
+    fi
 
 	CFLAGS="$CFLAGS -fPIC -fvisibility=hidden"
 
@@ -3745,7 +3868,7 @@ done
 
 
 for ac_header in malloc.h sys/epoll.h sys/prctl.h sys/sendfile.h \
-						  netdb.h openssl/md5.h sys/timerfd.h
+						 netdb.h sys/timerfd.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -3785,51 +3908,6 @@ _ACEOF
 fi
 done
 
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SSL_library_init in -lssl" >&5
-$as_echo_n "checking for SSL_library_init in -lssl... " >&6; }
-if ${ac_cv_lib_ssl_SSL_library_init+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lssl  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char SSL_library_init ();
-int
-main ()
-{
-return SSL_library_init ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_ssl_SSL_library_init=yes
-else
-  ac_cv_lib_ssl_SSL_library_init=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ssl_SSL_library_init" >&5
-$as_echo "$ac_cv_lib_ssl_SSL_library_init" >&6; }
-if test "x$ac_cv_lib_ssl_SSL_library_init" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBSSL 1
-_ACEOF
-
-  LIBS="-lssl $LIBS"
-
-fi
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_create in -lpthread" >&5
 $as_echo_n "checking for pthread_create in -lpthread... " >&6; }
@@ -3918,63 +3996,6 @@ if test "x$ac_cv_lib_rt_clock_gettime" = xyes; then :
 _ACEOF
 
   LIBS="-lrt $LIBS"
-
-fi
-
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing MD5_Init" >&5
-$as_echo_n "checking for library containing MD5_Init... " >&6; }
-if ${ac_cv_search_MD5_Init+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char MD5_Init ();
-int
-main ()
-{
-return MD5_Init ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' ssl crypto; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_MD5_Init=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_MD5_Init+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_MD5_Init+:} false; then :
-
-else
-  ac_cv_search_MD5_Init=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_MD5_Init" >&5
-$as_echo "$ac_cv_search_MD5_Init" >&6; }
-ac_res=$ac_cv_search_MD5_Init
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 fi
 

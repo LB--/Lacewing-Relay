@@ -1,7 +1,7 @@
 
 /* vim: set et ts=3 sw=3 ft=c:
  *
- * Copyright (C) 2012 James McLaughlin et al.  All rights reserved.
+ * Copyright (C) 2012, 2013 James McLaughlin et al.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -124,76 +124,80 @@ void lw_dump (const char * buffer, size_t size)
    fprintf (stderr, "\n===\n");
 }
 
-void lw_md5_hex (char * output, const char * input, size_t length)
-{
-    char hex [48];
-    int i = 0;
+#ifndef _lacewing_no_ssl
 
-    lw_md5 (output, input, length);
-    
-    while (i < 16)
-    {
-        sprintf (hex + (i * 2), "%02x", ((unsigned char *) output) [i]);
-        ++ i;
-    }
+ void lw_md5_hex (char * output, const char * input, size_t length)
+ {
+     char hex [48];
+     int i = 0;
 
-    strcpy (output, hex);
-}
+     lw_md5 (output, input, length);
+     
+     while (i < 16)
+     {
+         sprintf (hex + (i * 2), "%02x", ((unsigned char *) output) [i]);
+         ++ i;
+     }
+ 
+     strcpy (output, hex);
+ }
 
-void lw_sha1_hex (char * output, const char * input, size_t length)
-{
-    char hex [48];
-    int i = 0;
+ void lw_sha1_hex (char * output, const char * input, size_t length)
+ {
+     char hex [48];
+     int i = 0;
+ 
+     lw_sha1 (output, input, length);
+     
+     while (i < 20)
+     {
+         sprintf (hex + (i * 2), "%02x", ((unsigned char *) output) [i]);
+         ++ i;
+     }
+ 
+     strcpy (output, hex);
+ }
 
-    lw_sha1 (output, input, length);
-    
-    while (i < 20)
-    {
-        sprintf (hex + (i * 2), "%02x", ((unsigned char *) output) [i]);
-        ++ i;
-    }
-
-    strcpy (output, hex);
-}
+#endif
 
 #ifndef lwp_trace
 
-void lwp_trace (const char * format, ...)
-{
-   va_list args;
-   char * data;
-   size_t size;
-   static lw_sync sync = 0;
+ void lwp_trace (const char * format, ...)
+ {
+    va_list args;
+    char * data;
+    size_t size;
+    static lw_sync sync = 0;
+ 
+    va_start (args, format);
+    
+    size = lwp_format (&data, format, args);
+    
+    if(size > 0)
+    {
+       if (!sync)
+          sync = lw_sync_new ();
+ 
+       lw_sync_lock (sync);
+ 
+       #ifdef LacewingAndroid
+          __android_log_write (ANDROID_LOG_INFO, "liblacewing", data);
+       #else
+          #ifdef COXSDK
+             OutputDebugStringA (data);
+             OutputDebugStringA ("\n");
+          #else
+             fprintf (stderr, "[liblacewing] %s\n", data);
+          #endif
+       #endif
+ 
+       free (data);
+ 
+       lw_sync_release (sync);
+    }
 
-   va_start (args, format);
-   
-   size = lwp_format (&data, format, args);
-   
-   if(size > 0)
-   {
-      if (!sync)
-         sync = lw_sync_new ();
-
-      lw_sync_lock (sync);
-
-      #ifdef LacewingAndroid
-         __android_log_write (ANDROID_LOG_INFO, "liblacewing", data);
-      #else
-         #ifdef COXSDK
-            OutputDebugStringA (data);
-            OutputDebugStringA ("\n");
-         #else
-            fprintf (stderr, "[liblacewing] %s\n", data);
-         #endif
-      #endif
-
-      free (data);
-
-      lw_sync_release (sync);
-   }
-
-   va_end (args);
-}
+    va_end (args);
+ }
 
 #endif
 

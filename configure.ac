@@ -28,6 +28,13 @@ AC_ARG_ENABLE([cxx],
 	[enable_cxx=yes]
 )
 
+AC_ARG_ENABLE([ssl],
+	[AS_HELP_STRING([--enable-ssl],
+		 [Build with SSL support @<:@default=enabled@:>@])],
+	[enable_ssl="$enableval"],
+	[enable_ssl=yes]
+)
+
 CFLAGS="$CFLAGS -DHAVE_CONFIG_H -Wno-deprecated-declarations"
 
 if test "x$enable_debug" = xyes; then
@@ -39,6 +46,12 @@ fi
 if test "x$enable_cxx" = xyes; then
     AC_PROG_CXX
     AC_SUBST(ENABLE_CXX, 1)
+fi
+
+if test "x$enable_ssl" = xyes; then
+    AC_SUBST(ENABLE_SSL, 1)
+else
+    CFLAGS="$CFLAGS -D_lacewing_no_ssl"
 fi
 
 SO_EXT="so"
@@ -61,21 +74,23 @@ else
 
     AC_SUBST(PLATFORM, unix)
 
+    if test "x$enable_ssl" = xyes; then
+	    AC_CHECK_LIB([ssl], [SSL_library_init])
+        AC_SEARCH_LIBS([MD5_Init], [ssl crypto])
+    fi
+
 	CFLAGS="$CFLAGS -fPIC -fvisibility=hidden"
 
 	AC_CHECK_HEADERS([malloc.h sys/epoll.h sys/prctl.h sys/sendfile.h \
-						  netdb.h openssl/md5.h sys/timerfd.h])
+						 netdb.h sys/timerfd.h])
 
 	AC_CHECK_HEADERS([CoreServices/CoreServices.h], [[LIBS="$LIBS -framework CoreServices"]
 		[SO_EXT="dylib"]])
 
 	AC_CHECK_FUNCS([timegm kqueue vasprintf])
 
-	AC_CHECK_LIB([ssl], [SSL_library_init])
 	AC_CHECK_LIB([pthread], [pthread_create])
 	AC_CHECK_LIB([rt], [clock_gettime])
-
-	AC_SEARCH_LIBS([MD5_Init], [ssl crypto])
 
 	AC_CHECK_FUNCS([clock_gettime])
 

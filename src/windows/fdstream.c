@@ -1,7 +1,7 @@
 
 /* vim: set et ts=3 sw=3 ft=c:
  *
- * Copyright (C) 2012 James McLaughlin et al.  All rights reserved.
+ * Copyright (C) 2012, 2013 James McLaughlin et al.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -471,7 +471,7 @@ static size_t def_bytes_left (lw_stream _ctx)
 
 static lw_bool def_close (lw_stream _ctx, lw_bool immediate)
 {
-   lw_fdstream ctx = (lw_fdstream) ctx;
+   lw_fdstream ctx = (lw_fdstream) _ctx;
 
    if (immediate || ctx->pending_writes == 0)
    {
@@ -520,7 +520,7 @@ void lw_fdstream_uncork (lw_fdstream ctx)
 {
 }
 
-const lw_streamdef def_pipe =
+const lw_streamdef def_fdstream =
 {
    def_sink_data,
    def_sink_stream,

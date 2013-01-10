@@ -92,13 +92,16 @@ build/unix-timer.o \
 build/unix-udp.o \
 build/unix-fdstream.o \
 build/unix-file.o \
-build/openssl-sslclient.o \
 build/unix-sync.o \
 build/unix-global.o
+ifeq ($(ENABLE_SSL), 1)
+OBJECTS += build/openssl-sslclient.o
+endif
 COMMONDEPS +=\
 src/unix/eventpump.h \
 src/unix/common.h
 endif
+
 
 ifeq ($(PLATFORM), windows)
 OBJECTS +=\
