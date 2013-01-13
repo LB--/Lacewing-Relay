@@ -57,10 +57,12 @@ void lw_ws_req_session_write (lw_ws_req request, const char * key,
       for (int i = 0; i < sizeof (session_id); ++ i)
          sprintf (session_id_hex + i * 2, "%02x", session_id [i]);
 
-      session = (lw_ws_session) malloc (sizeof (*session));
+      session = (lw_ws_session) calloc (sizeof (*session), 1);
 
       HASH_ADD_KEYPTR (hh, request->ws->sessions, session_id_hex,
                            sizeof (session_id_hex), session);
+
+      lw_ws_req_set_cookie (request, session_cookie, session_id_hex);
    }
 
    lwp_nvhash_set (&session->data, key, value, lw_true);
