@@ -29,9 +29,9 @@ AC_ARG_ENABLE([spdy],
 CFLAGS="$CFLAGS -DLacewingLibrary -DHAVE_CONFIG_H -fvisibility=hidden"
 
 if test "x$enable_debug" = xyes; then
-	CFLAGS="$CFLAGS -DDEBUG -DLacewingDebug -g -O0"
+	CFLAGS="$CFLAGS -DDEBUG -DLacewingDebug -DHTTP_PARSER_STRICT=1 -DHTTP_PARSER_DEBUG=1 -g -O0"
 else
-	CFLAGS="$CFLAGS -O2"
+	CFLAGS="$CFLAGS -DHTTP_PARSER_STRICT=0 -DHTTP_PARSER_DEBUG=0 -O2"
 fi
 
 if test "x$enable_i486" = xyes; then

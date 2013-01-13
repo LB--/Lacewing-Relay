@@ -227,7 +227,6 @@ LacewingFunction       lw_bool  lw_random                   (char * buffer, size
   LacewingFunction      void  lw_stream_begin_queue           (lw_stream *);
   LacewingFunction    size_t  lw_stream_queued                (lw_stream *);
   LacewingFunction      void  lw_stream_end_queue             (lw_stream *, int head_buffers, const char ** buffers, size_t * lengths);
-  LacewingFunction      void  lw_stream_clear_queue           (lw_stream *);
   LacewingFunction      void  lw_stream_write                 (lw_stream *, const char * buffer, size_t length);
   LacewingFunction    size_t  lw_stream_write_partial         (lw_stream *, const char * buffer, size_t length);
   LacewingFunction      void  lw_stream_write_text            (lw_stream *, const char * buffer);
@@ -735,8 +734,6 @@ struct Stream
 
     LacewingFunction void EndQueue
         (int head_buffers, const char ** buffers, size_t * lengths);
-
-    LacewingFunction void ClearQueue ();
 
     LacewingFunction void Write
         (const char * buffer, size_t size = -1);

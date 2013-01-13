@@ -56,11 +56,6 @@ void lw_stream_end_queue
     ((Stream *) stream)->EndQueue (head_buffers, buffers, lengths);
 }
 
-void lw_stream_clear_queue (lw_stream * stream)
-{
-    ((Stream *) stream)->ClearQueue ();
-}
-
 void lw_stream_write (lw_stream * stream, const char * buffer, size_t length)
 {
     ((Stream *) stream)->Write (buffer, length);

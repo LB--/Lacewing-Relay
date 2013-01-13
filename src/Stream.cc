@@ -292,11 +292,14 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
 
     if (written < size)
     {
+        if ( (!BackQueue.Size) || (** BackQueue.Last).Type != Queued::Type_Data)
+            (** BackQueue.Push ()).Type = Queued::Type_Data;
+
         if (flags & Write_IgnoreQueue)
         {
             Queued &first = (** BackQueue.First);
 
-            if (first.Type == Queued::Type_Data && !first.Buffer.Size)
+            if (!first.Buffer.Size)
                 first.Buffer.Add (buffer + written, size - written);
             else
             {
@@ -309,12 +312,7 @@ size_t Stream::Internal::Write (const char * buffer, size_t size, int flags)
             }
         }
         else
-        {
-            if ( (!BackQueue.Size) || (** BackQueue.Last).Type != Queued::Type_Data)
-                (** BackQueue.Push ()).Type = Queued::Type_Data;
-
             (** BackQueue.Last).Buffer.Add (buffer + written, size - written);
-        }
     }
 
     return size;
@@ -1008,30 +1006,6 @@ void Stream::EndQueue ()
     internal->Flags &= ~ Internal::Flag_Queueing;
 
     internal->WriteQueued ();
-}
-
-void Stream::ClearQueue ()
-{
-    while (internal->BackQueue.Size > 0)
-    {
-        Internal::Queued &queued = (** internal->BackQueue.First);
-
-        if (queued.Type == Internal::Queued::Type_Stream &&
-                queued.Flags & Internal::Queued::Flag_DeleteStream)
-        {
-            ++ internal->UserCount;
-
-            delete queued.StreamPtr;
-
-            if ((-- internal->UserCount) == 0 && !internal->Public)
-            {
-                delete this;
-                return;
-            }
-        }
-
-        internal->BackQueue.PopFront ();
-    }
 }
 
 bool Stream::Internal::IsTransparent ()

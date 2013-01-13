@@ -24,13 +24,12 @@
 extern "C" {
 #endif
 
-#define HTTP_PARSER_VERSION_MAJOR 2
+#define HTTP_PARSER_VERSION_MAJOR 1
 #define HTTP_PARSER_VERSION_MINOR 0
 
 #include <sys/types.h>
 #if defined(_WIN32) && !defined(__MINGW32__) && (!defined(_MSC_VER) || _MSC_VER<1600)
 #include <BaseTsd.h>
-#include <stddef.h>
 typedef __int8 int8_t;
 typedef unsigned __int8 uint8_t;
 typedef __int16 int16_t;
@@ -39,6 +38,10 @@ typedef __int32 int32_t;
 typedef unsigned __int32 uint32_t;
 typedef __int64 int64_t;
 typedef unsigned __int64 uint64_t;
+#ifndef _SIZE_T_DEFINED
+typedef SIZE_T size_t;
+#endif
+typedef SSIZE_T ssize_t;
 #else
 #include <stdint.h>
 #endif
@@ -49,6 +52,14 @@ typedef unsigned __int64 uint64_t;
 #ifndef HTTP_PARSER_STRICT
 # define HTTP_PARSER_STRICT 1
 #endif
+
+/* Compile with -DHTTP_PARSER_DEBUG=1 to add extra debugging information to
+ * the error reporting facility.
+ */
+#ifndef HTTP_PARSER_DEBUG
+# define HTTP_PARSER_DEBUG 0
+#endif
+
 
 /* Maximium header size allowed */
 #define HTTP_MAX_HEADER_SIZE (80*1024)
@@ -68,7 +79,7 @@ typedef struct http_parser_settings http_parser_settings;
  * chunked' headers that indicate the presence of a body.
  *
  * http_data_cb does not return data chunks. It will be call arbitrarally
- * many times for each string. E.G. you might get 10 callbacks for "on_url"
+ * many times for each string. E.G. you might get 10 callbacks for "on_path"
  * each providing just a few characters more data.
  */
 typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
@@ -187,6 +198,13 @@ enum http_errno {
 /* Get an http_errno value from an http_parser */
 #define HTTP_PARSER_ERRNO(p)            ((enum http_errno) (p)->http_errno)
 
+/* Get the line number that generated the current error */
+#if HTTP_PARSER_DEBUG
+#define HTTP_PARSER_ERRNO_LINE(p)       ((p)->error_lineno)
+#else
+#define HTTP_PARSER_ERRNO_LINE(p)       0
+#endif
+
 
 struct http_parser {
   /** PRIVATE **/
@@ -213,6 +231,10 @@ struct http_parser {
    */
   unsigned char upgrade : 1;
 
+#if HTTP_PARSER_DEBUG
+  uint32_t error_lineno;
+#endif
+
   /** PUBLIC **/
   void *data; /* A pointer to get hook to the "connection" or "socket" object */
 };
@@ -236,8 +258,7 @@ enum http_parser_url_fields
   , UF_PATH             = 3
   , UF_QUERY            = 4
   , UF_FRAGMENT         = 5
-  , UF_USERINFO         = 6
-  , UF_MAX              = 7
+  , UF_MAX              = 6
   };
 
 
@@ -269,12 +290,12 @@ size_t http_parser_execute(http_parser *parser,
 
 
 /* If http_should_keep_alive() in the on_headers_complete or
- * on_message_complete callback returns 0, then this should be
+ * on_message_complete callback returns true, then this will be should be
  * the last message on the connection.
  * If you are the server, respond with the "Connection: close" header.
  * If you are the client, close the connection.
  */
-int http_should_keep_alive(const http_parser *parser);
+int http_should_keep_alive(http_parser *parser);
 
 /* Returns a string version of the HTTP method. */
 const char *http_method_str(enum http_method m);
@@ -292,9 +313,6 @@ int http_parser_parse_url(const char *buf, size_t buflen,
 
 /* Pause or un-pause the parser; a nonzero value pauses */
 void http_parser_pause(http_parser *parser, int paused);
-
-/* Checks if this is the final chunk of the body. */
-int http_body_is_final(const http_parser *parser);
 
 #ifdef __cplusplus
 }

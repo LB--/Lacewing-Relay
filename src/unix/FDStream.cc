@@ -362,10 +362,7 @@ bool FDStream::Internal::Close (bool immediate)
     ++ RefCount;
 
     if (!Public->Stream::Close (immediate))
-    {
-        -- RefCount;
         return false;
-    }
 
     /* NOTE: Public may be deleted at this point */
 
