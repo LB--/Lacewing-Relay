@@ -4,25 +4,30 @@ http://lacewing-project.org/
 
 http://github.com/udp/lacewing/
 
-[![Build Status](https://secure.travis-ci.org/udp/lacewing.png)](http://travis-ci.org/udp/lacewing)
+[![Build Status](https://secure.travis-ci.org/udp/lacewing.png?branch=master)](http://travis-ci.org/udp/lacewing)
 
 
 Installing
 ==========
 
-Linux/BSD/OS X:
+Linux, OS X:
 
     ./configure
     make
     make install
 
-Windows/MinGW:
+FreeBSD (GNU make required):
+
+    ./configure
+    gmake
+    gmake install
+
+Windows (MinGW/MSYS only):
 
     ./configure --disable-spdy
     make
-    make install
 
-For other platforms (such as the Android NDK) see the documentation.
+An MSVC project file is available in the `msvc` directory.
 
 
 Documentation
