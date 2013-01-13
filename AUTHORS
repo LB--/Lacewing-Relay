@@ -23,8 +23,3 @@ deps/uthash
   uthash Copyright (c) 2005-2010, Troy D. Hanson http://uthash.sourceforge.net
   All rights reserved.
 
-deps/queue.h
-
-  Copyright (c) 1991, 1993
-   The Regents of the University of California.  All rights reserved.
-

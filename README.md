@@ -10,21 +10,24 @@ http://github.com/udp/lacewing/
 Installing
 ==========
 
-Linux/BSD/OS X:
+Linux, OS X:
 
     ./configure
     make
     make install
 
-Windows/MSVC: Use the solution in the `msvc` directory to build a DLL/LIB.
+FreeBSD (GNU make required):
 
-Windows/MinGW:
+    ./configure
+    gmake
+    gmake install
+
+Windows (MinGW/MSYS only):
 
     ./configure --disable-spdy
     make
-    make install
 
-For other platforms (such as the Android NDK) see the documentation.
+An MSVC project file is available in the `msvc` directory.
 
 
 Documentation

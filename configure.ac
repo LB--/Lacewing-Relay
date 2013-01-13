@@ -1,22 +1,17 @@
 AC_PREREQ([2.49])
-AC_INIT([liblacewing], [0.4.3], [])
 
-AC_PROG_CXX
+AC_INIT([liblacewing], [0.5.0], [])
+VERSION_MAJOR="0.5"
 
 AC_CONFIG_MACRO_DIR([m4])
+
+AC_PROG_CC
 
 AC_ARG_ENABLE([debug],
 	[AS_HELP_STRING([--enable-debug],
 		 [Build a debug version of the library @<:@default=disabled@:>@])],
 	[enable_debug="$enableval"],
 	[enable_debug=no]
-)
-
-AC_ARG_ENABLE([i486],
-	[AS_HELP_STRING([--enable-i486],
-		 [Tell the compiler to build for i486 @<:@default=disabled@:>@])],
-	[enable_i486="$enableval"],
-	[enable_i486=no]
 )
 
 AC_ARG_ENABLE([spdy],
@@ -26,74 +21,76 @@ AC_ARG_ENABLE([spdy],
 	[enable_spdy=yes]
 )
 
-CFLAGS="$CFLAGS -DLacewingLibrary -DHAVE_CONFIG_H -fvisibility=hidden"
+AC_ARG_ENABLE([cxx],
+	[AS_HELP_STRING([--enable-cxx],
+		 [Build the C++ wrappers @<:@default=enabled@:>@])],
+	[enable_cxx="$enableval"],
+	[enable_cxx=yes]
+)
+
+AC_ARG_ENABLE([ssl],
+	[AS_HELP_STRING([--enable-ssl],
+		 [Build with SSL support @<:@default=enabled@:>@])],
+	[enable_ssl="$enableval"],
+	[enable_ssl=yes]
+)
+
+CFLAGS="$CFLAGS -DHAVE_CONFIG_H -Wno-deprecated-declarations"
 
 if test "x$enable_debug" = xyes; then
-	CFLAGS="$CFLAGS -DDEBUG -DLacewingDebug -DHTTP_PARSER_STRICT=1 -DHTTP_PARSER_DEBUG=1 -g -O0"
+	CFLAGS="$CFLAGS -DDEBUG -D_lacewing_debug -g -O0"
 else
-	CFLAGS="$CFLAGS -DHTTP_PARSER_STRICT=0 -DHTTP_PARSER_DEBUG=0 -O2"
+	CFLAGS="$CFLAGS -O2"
 fi
 
-if test "x$enable_i486" = xyes; then
-	CFLAGS="$CFLAGS -march=i486"
+if test "x$enable_cxx" = xyes; then
+    AC_PROG_CXX
+    AC_SUBST(ENABLE_CXX, 1)
+fi
+
+if test "x$enable_ssl" = xyes; then
+    AC_SUBST(ENABLE_SSL, 1)
+else
+    CFLAGS="$CFLAGS -D_lacewing_no_ssl"
 fi
 
 SO_EXT="so"
 
 if test "x$enable_spdy" = xyes; then
-
-    OBJECTS="$OBJECTS build/spdy_bytes.o build/spdy_control.o \
-             build/spdy_credential.o build/spdy_ctx.o build/spdy_goaway.o \
-             build/spdy_headers.o build/spdy_nv_block.o build/spdy_ping.o \
-             build/spdy_rst_stream.o build/spdy_settings.o build/spdy_stream.o \
-             build/spdy_strings.o build/spdy_syn_reply.o build/spdy_syn_stream.o \
-             build/spdy_zlib.o build/spdy_window_update.o build/SPDY.o"
-
+    AC_SUBST(ENABLE_SPDY, 1)
 	AC_CHECK_LIB([z], [inflate])
-
 else
-    CFLAGS="$CFLAGS -DLacewingNoSPDY"
+    CFLAGS="$CFLAGS -D_lacewing_no_spdy"
 fi
 
 if test "x$EXEEXT" = "x.exe"; then
 
-    OBJECTS="$OBJECTS build/windows-Client.o build/windows-lw_compat.o \
-             build/windows-Event.o build/windows-EventPump.o \
-             build/windows-Server.o build/windows-Thread.o \
-             build/windows-Timer.o build/windows-UDP.o \
-             build/windows-FDStream.o build/windows-File.o \
-             build/windows-WinSSLClient.o build/windows-Sync.o \
-             build/windows-lw_global.o"
-
-    COMMONDEPS="$COMMONDEPS src/windows/lw_compat.h src/windows/lw_common.h"
+    AC_SUBST(PLATFORM, windows)
 
     SO_EXT="dll"
     LIBS="$LIBS -lmswsock -lws2_32 -lcrypt32 -lsecur32"
 
 else
 
-	CFLAGS="$CFLAGS -fPIC"
+    AC_SUBST(PLATFORM, unix)
 
-	OBJECTS="$OBJECTS build/unix-Client.o build/unix-Event.o build/unix-EventPump.o \
-        build/unix-Server.o build/unix-Thread.o build/unix-Timer.o build/unix-UDP.o \
-        build/unix-FDStream.o build/unix-File.o build/openssl-SSLClient.o \
-        build/unix-Sync.o build/unix-lw_global.o"
+    if test "x$enable_ssl" = xyes; then
+	    AC_CHECK_LIB([ssl], [SSL_library_init])
+        AC_SEARCH_LIBS([MD5_Init], [ssl crypto])
+    fi
 
-	COMMONDEPS="$COMMONDEPS src/unix/EventPump.h src/unix/lw_common.h"
+	CFLAGS="$CFLAGS -fPIC -fvisibility=hidden"
 
 	AC_CHECK_HEADERS([malloc.h sys/epoll.h sys/prctl.h sys/sendfile.h \
-						  netdb.h openssl/md5.h sys/timerfd.h])
+						 netdb.h sys/timerfd.h])
 
-	AC_CHECK_HEADERS([CoreServices/CoreServices.h], [[LIBS="$LIBS -framework CoreServices "]
+	AC_CHECK_HEADERS([CoreServices/CoreServices.h], [[LIBS="$LIBS -framework CoreServices"]
 		[SO_EXT="dylib"]])
 
 	AC_CHECK_FUNCS([timegm kqueue vasprintf])
 
-	AC_CHECK_LIB([ssl], [SSL_library_init])
 	AC_CHECK_LIB([pthread], [pthread_create])
 	AC_CHECK_LIB([rt], [clock_gettime])
-
-	AC_SEARCH_LIBS([MD5_Init], [ssl crypto])
 
 	AC_CHECK_FUNCS([clock_gettime])
 
@@ -109,15 +106,18 @@ else
 fi
 
 CXXFLAGS="$CFLAGS -fno-exceptions -fno-rtti"
-CFLAGS="-ansi -Wall -Wno-format $CFLAGS"
+CFLAGS="-std=gnu99 -Wall -Wno-format $CFLAGS"
 
-AC_SUBST(OBJECTS, $OBJECTS)
-AC_SUBST(COMMONDEPS, $COMMONDEPS)
-
-SO_NAME=liblacewing.$SO_EXT.0.4
+SO_NAME=liblacewing.$SO_EXT.$VERSION_MAJOR
 
 AC_SUBST(SO_NAME, $SO_NAME)
 AC_SUBST(SO_EXT, $SO_EXT)
+
+if test "x$host_alias" = "x"; then
+    AC_SUBST(AR, ar)
+else
+    AC_SUBST(AR, $host_alias-ar)
+fi
 
 if test $SO_EXT = "so"; then
 	AC_SUBST(SONAME_FLAGS, [-Wl,-soname,$SO_NAME])

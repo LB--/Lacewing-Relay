@@ -80,9 +80,12 @@ enum state {
 multipart_parser* multipart_parser_init
     (const char *boundary, const multipart_parser_settings* settings) {
 
-  multipart_parser* p = malloc(sizeof(multipart_parser) +
-                               strlen(boundary) +
-                               strlen(boundary) + 9);
+  multipart_parser* p = (multipart_parser*) malloc(sizeof(multipart_parser) +
+                                                       strlen(boundary) +
+                                                       strlen(boundary) + 9);
+
+  if (!p)
+      return 0;
 
   strcpy(p->multipart_boundary, boundary);
   p->boundary_length = strlen(boundary);
