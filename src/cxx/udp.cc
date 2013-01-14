@@ -29,14 +29,14 @@
 
 #include "../common.h"
 
-udp udp_new (lacewing::pump pump)
+udp lacewing::udp_new (lacewing::pump pump)
 {
    return (udp) lw_udp_new ((lw_pump) pump);
 }
 
-void udp_delete (lacewing::udp udp)
+void lacewing::udp_delete (lacewing::udp udp)
 {
-    lw_udp_delete ((lw_udp) udp);
+   lw_udp_delete ((lw_udp) udp);
 }
 
 void _udp::host (long port)

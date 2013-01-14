@@ -1,7 +1,7 @@
 
 /* vim: set et ts=3 sw=3 ft=cpp:
  *
- * Copyright (C) 2012 James McLaughlin et al.  All rights reserved.
+ * Copyright (C) 2012, 2013 James McLaughlin et al.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,7 +29,7 @@
 
 #include "../common.h"
 
-eventpump eventpump_new ()
+eventpump lacewing::eventpump_new ()
 {
    return (eventpump) lw_eventpump_new ();
 }

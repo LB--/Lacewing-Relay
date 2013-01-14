@@ -29,7 +29,7 @@
 
 #include "../common.h"
 
-void pump_delete (lacewing::pump pump)
+void lacewing::pump_delete (lacewing::pump pump)
 {
    lw_pump_delete ((lw_pump) pump);
 }

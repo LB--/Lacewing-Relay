@@ -1,7 +1,7 @@
 
 /* vim: set et ts=3 sw=3 ft=cpp:
  *
- * Copyright (C) 2012 James McLaughlin et al.  All rights reserved.
+ * Copyright (C) 2012, 2013 James McLaughlin et al.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,32 +29,32 @@
 
 #include "../common.h"
 
-address address_new (lacewing::address address)
+address lacewing::address_new (lacewing::address address)
 {
    return (lacewing::address) lw_addr_clone ((lw_addr) address);
 }
 
-address address_new (const char * hostname, const char * service)
+address lacewing::address_new (const char * hostname, const char * service)
 {
    return (address) lw_addr_new (hostname, service);
 }
 
-address address_new (const char * hostname, long port)
+address lacewing::address_new (const char * hostname, long port)
 {
    return (address) lw_addr_new_port (hostname, port);
 }
 
-address address_new (const char * hostname, const char * service, long hints)
+address lacewing::address_new (const char * hostname, const char * service, long hints)
 {
    return (address) lw_addr_new_hint (hostname, service, hints);
 }
 
-address address_new (const char * hostname, long port, long hints)
+address lacewing::address_new (const char * hostname, long port, long hints)
 {
    return (address) lw_addr_new_port_hint (hostname, port, hints);
 }
 
-void address_delete (lacewing::address address)
+void lacewing::address_delete (lacewing::address address)
 {
    lw_addr_delete ((lw_addr) address);
 }

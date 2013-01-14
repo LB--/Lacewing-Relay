@@ -1,7 +1,7 @@
 
 /* vim: set et ts=3 sw=3 ft=cpp:
  *
- * Copyright (C) 2012 James McLaughlin et al.  All rights reserved.
+ * Copyright (C) 2012, 2013 James McLaughlin et al.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,12 +29,12 @@
 
 #include "../common.h"
 
-error error_new ()
+error lacewing::error_new ()
 {
    return (error) lw_error_new ();
 }
 
-void error_delete (lacewing::error error)
+void lacewing::error_delete (lacewing::error error)
 {
    lw_error_delete ((lw_error) error);
 }

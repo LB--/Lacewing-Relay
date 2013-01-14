@@ -29,12 +29,12 @@
 
 #include "../common.h"
 
-thread thread_new (const char * name, void * proc)
+thread lacewing::thread_new (const char * name, void * proc)
 {
    return (thread) lw_thread_new (name, proc);
 }
 
-void thread_delete (lacewing::thread thread)
+void lacewing::thread_delete (lacewing::thread thread)
 {
    lw_thread_delete ((lw_thread) thread);
 }

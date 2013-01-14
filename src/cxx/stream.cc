@@ -29,7 +29,7 @@
 
 #include "../common.h"
 
-void stream_delete (lacewing::stream stream)
+void lacewing::stream_delete (lacewing::stream stream)
 {
    lw_stream_delete ((lw_stream) stream);
 }

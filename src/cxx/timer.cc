@@ -29,12 +29,12 @@
 
 #include "../common.h"
 
-timer timer_new (lacewing::pump pump)
+timer lacewing::timer_new (lacewing::pump pump)
 {
    return (timer) lw_timer_new ((lw_pump) pump);
 }
 
-void timer_delete (lacewing::timer timer)
+void lacewing::timer_delete (lacewing::timer timer)
 {
    lw_timer_delete ((lw_timer) timer);
 }

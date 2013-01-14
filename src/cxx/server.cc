@@ -29,12 +29,12 @@
 
 #include "../common.h"
 
-server server_new (lacewing::pump pump)
+server lacewing::server_new (lacewing::pump pump)
 {
    return (server) lw_server_new ((lw_pump) pump);
 }
 
-void lw_server_delete (lacewing::server server)
+void lacewing::server_delete (lacewing::server server)
 {
    lw_server_delete ((lw_server) server);
 }
