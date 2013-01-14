@@ -285,7 +285,7 @@ static void listen_socket_completion (void * tag, OVERLAPPED * _overlapped,
    }
 
    list_push (ctx->clients, client);
-   client->elem = list_back (ctx->clients);
+   client->elem = list_elem_back (ctx->clients);
 
    -- client->user_count;
 

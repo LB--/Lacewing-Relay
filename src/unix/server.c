@@ -184,7 +184,7 @@ static void lwp_server_client_delete (lw_server_client client)
     -- client->user_count;
 
     list_push (server->clients, client);
-    client->elem = list_back (server->clients);
+    client->elem = list_elem_back (server->clients);
  }
 
 #endif
@@ -284,7 +284,7 @@ static void listen_socket_read_ready (void * tag)
          }
 
          list_push (ctx->clients, client);
-         client->elem = list_back (ctx->clients);
+         client->elem = list_elem_back (ctx->clients);
 
       #ifndef _lacewing_no_ssl
       }
