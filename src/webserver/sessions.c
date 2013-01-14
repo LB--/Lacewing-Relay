@@ -31,6 +31,8 @@
 
 const char * const session_cookie = "lw_session";
 
+const char hex [] = "0123456789ABCDEF";
+
 void lw_ws_req_session_write (lw_ws_req request, const char * key,
                               const char * value)
 {
@@ -54,12 +56,20 @@ void lw_ws_req_session_write (lw_ws_req request, const char * key,
    if (!session)
    {
       char session_id [32];
-      char session_id_hex [sizeof (session_id) * 2 + 1];
+      
+      if (!lw_random (session_id, sizeof (session_id)))
+      {
+         assert (0);
+      }
 
-      lw_random (session_id, sizeof (session_id));
+      char session_id_hex [sizeof (session_id) * 2 + 1];
+      session_id_hex [sizeof (session_id) * 2] = 0;
 
       for (int i = 0; i < sizeof (session_id); ++ i)
-         sprintf (session_id_hex + i * 2, "%02x", session_id [i]);
+      {
+         session_id_hex [i * 2] = hex [session_id [i] & 0x0F];
+         session_id_hex [i * 2 + 1] = hex [(session_id [i] & 0xF0) >> 4];
+      }
 
       session = (lw_ws_session) calloc (sizeof (*session), 1);
 
@@ -83,8 +93,7 @@ const char * lw_ws_req_session_read (lw_ws_req request, const char * key)
    if (!*cookie)
       return "";
 
-   lw_ws_session session = 0;
-
+   lw_ws_session session;
    HASH_FIND (hh, request->ws->sessions, cookie, strlen (cookie), session);
 
    if (!session)
@@ -95,8 +104,7 @@ const char * lw_ws_req_session_read (lw_ws_req request, const char * key)
 
 void lw_ws_session_close (lw_ws ws, const char * id)
 {
-   lw_ws_session session = 0;
-
+   lw_ws_session session;
    HASH_FIND (hh, ws->sessions, id, strlen (id), session);
 
    if (!session)
