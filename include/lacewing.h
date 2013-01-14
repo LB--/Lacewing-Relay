@@ -587,7 +587,7 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
   lw_import         const char* lw_ws_upload_header          (lw_ws_upload, const char * name);
   lw_import               void  lw_ws_upload_set_autosave    (lw_ws_upload);
   lw_import         const char* lw_ws_upload_autosave_fname  (lw_ws_upload);
-  lw_import   lw_ws_upload_hdr  lw_ws_upload_header_first    (lw_ws_upload);
+  lw_import   lw_ws_upload_hdr  lw_ws_upload_hdr_first       (lw_ws_upload);
   lw_import         const char* lw_ws_upload_hdr_name        (lw_ws_upload_hdr);
   lw_import         const char* lw_ws_upload_hdr_value       (lw_ws_upload_hdr);
   lw_import   lw_ws_upload_hdr  lw_ws_upload_hdr_next        (lw_ws_upload_hdr);

@@ -266,6 +266,16 @@ webserver_request_header _webserver_request_header::next ()
    return (webserver_request_header) lw_ws_req_hdr_next ((lw_ws_req_hdr) this);
 }
 
+const char * _webserver_request_header::name ()
+{
+   return lw_ws_req_hdr_name ((lw_ws_req_hdr) this);
+}
+
+const char * _webserver_request_header::value ()
+{
+   return lw_ws_req_hdr_value ((lw_ws_req_hdr) this);
+}
+
 const char * _webserver_request::header (const char * name)
 {
    return lw_ws_req_header ((lw_ws_req) this, name);
@@ -291,6 +301,16 @@ webserver_request_cookie _webserver_request_cookie::next ()
    return (webserver_request_cookie) lw_ws_req_cookie_next ((lw_ws_req_cookie) this);
 }
 
+const char * _webserver_request_cookie::name ()
+{
+   return lw_ws_req_cookie_name ((lw_ws_req_cookie) this);
+}
+
+const char * _webserver_request_cookie::value ()
+{
+   return lw_ws_req_cookie_value ((lw_ws_req_cookie) this);
+}
+
 const char * _webserver_request::cookie (const char * name)
 {
    return lw_ws_req_get_cookie ((lw_ws_req) this, name);
@@ -309,6 +329,16 @@ webserver_sessionitem _webserver_request::session_first ()
 webserver_sessionitem _webserver_sessionitem::next ()
 {
    return (webserver_sessionitem) lw_ws_sessionitem_next ((lw_ws_sessionitem) this);
+}
+
+const char * _webserver_sessionitem::name ()
+{
+   return lw_ws_sessionitem_name ((lw_ws_sessionitem) this);
+}
+
+const char * _webserver_sessionitem::value ()
+{
+   return lw_ws_sessionitem_value ((lw_ws_sessionitem) this);
 }
 
 const char * _webserver_request::session (const char * name)
@@ -336,6 +366,21 @@ webserver_request_param _webserver_request::POST ()
    return (webserver_request_param) lw_ws_req_POST_first ((lw_ws_req) this);
 }
 
+webserver_request_param _webserver_request_param::next ()
+{
+   return (webserver_request_param) lw_ws_req_param_next ((lw_ws_req_param) this);
+}
+
+const char * _webserver_request_param::name ()
+{
+   return lw_ws_req_param_name ((lw_ws_req_param) this);
+}
+
+const char * _webserver_request_param::value ()
+{
+   return lw_ws_req_param_value ((lw_ws_req_param) this);
+}
+
 const char * _webserver_request::GET (const char * name)
 {
    return lw_ws_req_GET ((lw_ws_req) this, name);
@@ -351,68 +396,49 @@ const char * _webserver_request::body ()
    return lw_ws_req_body ((lw_ws_req) this);
 }
 
-/*struct _webserver_request_header
+const char * _webserver_upload::form_element_name ()
 {
-   lw_class_wraps (ws_req_hdr);
+   return lw_ws_upload_form_el_name ((lw_ws_upload) this);
+}
 
-const char * name ();
-const char * value ();
-
-webserver_request_header next ();
-};
-
-struct _webserver_request_cookie
+const char * _webserver_upload::filename ()
 {
-   lw_class_wraps (ws_req_cookie);
+   return lw_ws_upload_filename ((lw_ws_upload) this);
+}
 
-const char * name ();
-const char * value ();
-
-webserver_request_cookie next ();
-};
-
-struct _webserver_sessionitem
+void _webserver_upload::set_autosave ()
 {
-   lw_class_wraps (ws_sessionitem);
+   lw_ws_upload_set_autosave ((lw_ws_upload) this);
+}
 
-const char * name ();
-const char * value ();
-
-webserver_sessionitem next ();
-};
-
-struct _webserver_request_param
+const char * _webserver_upload::autosave_filename ()
 {
-   lw_class_wraps (ws_req_param);
+   return lw_ws_upload_autosave_fname ((lw_ws_upload) this);
+}
 
-const char * name ();
-const char * value ();
-const char * content_type ();
-
-webserver_request_param next ();
-};
-
-struct _webserver_upload
+const char * _webserver_upload::header (const char * name)
 {
-   lw_class_wraps (ws_upload);
+   return lw_ws_upload_header ((lw_ws_upload) this, name);
+}
 
-const char * form_element_name ();
-const char * filename ();
-void         set_autosave ();
-const char * autosave_filename ();
-
-const char * header (const char * name);
-
-webserver_upload_header first_header ();
-};
-
-struct _webserver_upload_header
+webserver_upload_header _webserver_upload::header_first ()
 {
-   lw_class_wraps (ws_upload_hdr);
+   return (webserver_upload_header) lw_ws_upload_hdr_first ((lw_ws_upload) this);
+}
 
-const char * name ();
-const char * value ();
+webserver_upload_header _webserver_upload_header::next ()
+{
+   return (webserver_upload_header) lw_ws_upload_hdr_next ((lw_ws_upload_hdr) this);
+}
 
-webserver_upload_header next ();
-};
-*/
+const char * _webserver_upload_header::name ()
+{
+   return lw_ws_upload_hdr_name ((lw_ws_upload_hdr) this);
+}
+
+const char * _webserver_upload_header::value ()
+{
+   return lw_ws_upload_hdr_value ((lw_ws_upload_hdr) this);
+}
+
+
