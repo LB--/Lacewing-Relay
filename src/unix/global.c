@@ -115,13 +115,19 @@ lw_bool lw_random (char * buffer, size_t size)
    static int dev_random = -1;
 
    if (dev_random == -1)
-      dev_random = open ("/dev/random", O_RDONLY);
+      dev_random = open ("/dev/urandom", O_RDONLY);
 
    if (dev_random == -1)
+   {
+      lwp_trace ("Error opening random: %s", strerror (errno));
       return lw_false;
+   }
 
    if (read (dev_random, buffer, size) != size)
+   {
+      lwp_trace ("Error reading from random: %s", strerror (errno));
       return lw_false;
+   }
 
    return lw_true;
 }
