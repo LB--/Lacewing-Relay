@@ -1769,6 +1769,7 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\win-global.obj"
 							CompileAs="2"
 						/>
 					</FileConfiguration>
