@@ -184,7 +184,7 @@ static void lwp_server_client_delete (lw_server_client client)
     -- client->user_count;
 
     list_push (server->clients, client);
-    client->elem = list_back (ctx->clients);
+    client->elem = list_back (server->clients);
  }
 
 #endif
