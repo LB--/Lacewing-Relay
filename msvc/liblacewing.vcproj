@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_lacewing_no_spdy"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_lacewing_no_spdy;_lacewing_debug"
 				MinimalRebuild="true"
 				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
@@ -192,7 +192,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_lacewing_no_spdy"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_lacewing_no_spdy;_lacewing_debug"
 				MinimalRebuild="true"
 				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
@@ -1752,7 +1752,7 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\win\"
+							ObjectFile="$(IntDir)\win-global.obj"
 							CompileAs="2"
 						/>
 					</FileConfiguration>
@@ -1761,6 +1761,7 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\win-global.obj"
 							CompileAs="2"
 						/>
 					</FileConfiguration>
@@ -1778,6 +1779,7 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\win-global.obj"
 							CompileAs="2"
 						/>
 					</FileConfiguration>
