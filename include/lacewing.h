@@ -831,6 +831,8 @@ struct _stream
 
    lw_import void write (const char * buffer, size_t size = -1);
 
+   lw_import void writef (const char * format, ...);
+
    lw_import void write
        (stream, size_t size = -1, bool delete_when_finished = false);
 

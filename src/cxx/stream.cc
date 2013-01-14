@@ -90,6 +90,16 @@ void _stream::write (const char * buffer, size_t size)
    lw_stream_write ((lw_stream) this, buffer, size);
 }
 
+void _stream::writef (const char * format, ...)
+{
+   va_list args;
+   va_start (args, format);
+
+   lw_stream_writev ((lw_stream) this, format, args);
+
+   va_end (args);
+}
+
 void _stream::write (stream s, size_t size, bool delete_when_finished)
 {
    lw_stream_write_stream ((lw_stream) this, (lw_stream) s,
