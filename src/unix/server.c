@@ -91,7 +91,7 @@ struct _lw_server_client
    int fd;
    lw_pump_watch watch;
 
-   lw_server_client elem;
+   lw_server_client * elem;
 };
 
 static lw_server_client lwp_server_client_new (lw_server ctx, lw_pump pump, int fd)
@@ -560,7 +560,7 @@ lw_addr lw_server_client_addr (lw_server_client client)
 
 lw_server_client lw_server_client_next (lw_server_client client)
 {
-   return list_elem_next (client->elem);
+   return *list_elem_next (client->elem);
 }
 
 lw_server_client lw_server_client_first (lw_server ctx)

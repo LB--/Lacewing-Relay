@@ -73,7 +73,7 @@ struct _lw_server_client
 
    HANDLE socket;
 
-   lw_server_client elem;
+   lw_server_client * elem;
 };
 
 lw_server lw_server_new (lw_pump pump)
@@ -747,7 +747,7 @@ lw_addr lw_server_client_addr (lw_server_client client)
 
 lw_server_client lw_server_client_next (lw_server_client client)
 {
-   return list_elem_next (client->elem);
+   return *list_elem_next (client->elem);
 }
 
 lw_server_client lw_server_client_first (lw_server ctx)
