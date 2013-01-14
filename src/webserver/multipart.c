@@ -420,6 +420,9 @@ lwp_ws_multipart lwp_ws_multipart_new (lw_ws ws, lw_ws_req request,
    if (!ctx)
       return 0;
 
+   ctx->ws = ws;
+   ctx->request = request;
+
    const char * _boundary = strstr (content_type, "boundary=") + 9;
 
    char * boundary = (char *) alloca (strlen (_boundary) + 3);
