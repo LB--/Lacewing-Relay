@@ -36,11 +36,15 @@ void lw_ws_req_session_write (lw_ws_req request, const char * key,
 {
    const char * cookie = lw_ws_req_get_cookie (request, session_cookie);
 
+   lwp_trace ("Session cookie retrieved for session_write: %s", cookie);
+
+   lw_dump (cookie, strlen (cookie));
+
    lw_ws_session session;
 
    if (*cookie)
    {   
-      HASH_FIND_STR (request->ws->sessions, cookie, session);
+      HASH_FIND (hh, request->ws->sessions, cookie, strlen (cookie), session);
    }
    else
    {
@@ -60,9 +64,13 @@ void lw_ws_req_session_write (lw_ws_req request, const char * key,
       session = (lw_ws_session) calloc (sizeof (*session), 1);
 
       HASH_ADD_KEYPTR (hh, request->ws->sessions, session_id_hex,
-                           sizeof (session_id_hex), session);
+                           strlen (session_id_hex), session);
 
       lw_ws_req_set_cookie (request, session_cookie, session_id_hex);
+
+      lwp_trace ("Session cookie set for session_write: %s", session_id_hex);
+
+      lw_dump (session_id_hex, strlen (session_id_hex));
    }
 
    lwp_nvhash_set (&session->data, key, value, lw_true);
@@ -75,8 +83,9 @@ const char * lw_ws_req_session_read (lw_ws_req request, const char * key)
    if (!*cookie)
       return "";
 
-   lw_ws_session session;
-   HASH_FIND_STR (request->ws->sessions, cookie, session);
+   lw_ws_session session = 0;
+
+   HASH_FIND (hh, request->ws->sessions, cookie, strlen (cookie), session);
 
    if (!session)
       return "";
@@ -86,8 +95,9 @@ const char * lw_ws_req_session_read (lw_ws_req request, const char * key)
 
 void lw_ws_session_close (lw_ws ws, const char * id)
 {
-   lw_ws_session session;
-   HASH_FIND_STR (ws->sessions, id, session);
+   lw_ws_session session = 0;
+
+   HASH_FIND (hh, ws->sessions, id, strlen (id), session);
 
    if (!session)
       return;
@@ -114,7 +124,7 @@ lw_ws_sessionitem lw_ws_req_session_first (lw_ws_req request)
       return 0;
 
    lw_ws_session session;
-   HASH_FIND_STR (request->ws->sessions, cookie, session);
+   HASH_FIND (hh, request->ws->sessions, cookie, strlen (cookie), session);
 
    if (!session)
       return 0;
