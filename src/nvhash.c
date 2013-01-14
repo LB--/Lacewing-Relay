@@ -60,7 +60,7 @@ void lwp_nvhash_set_ex (lwp_nvhash * hash, size_t key_len, const char * key,
       return;
    }
 
-   item = (lwp_nvhash) calloc (sizeof (lwp_nvhash), 1);
+   item = (lwp_nvhash) calloc (sizeof (*item), 1);
 
    if (copy)
    {
