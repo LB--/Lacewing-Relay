@@ -143,9 +143,10 @@ static void lwp_server_client_delete (lw_server_client client)
    {
       if (ctx->on_disconnect)
          ctx->on_disconnect (ctx, client);
-
-      list_elem_remove (client->elem);
    }
+
+   if (client->elem)
+      list_elem_remove (client->elem);
 
    #ifndef _lacewing_no_ssl
       if (client->ssl)
@@ -183,6 +184,7 @@ static void lwp_server_client_delete (lw_server_client client)
     -- client->user_count;
 
     list_push (server->clients, client);
+    client->elem = list_back (ctx->clients);
  }
 
 #endif
