@@ -468,7 +468,7 @@ void lw_stream_write_file (lw_stream ctx, const char * filename)
 
    lw_file file = lw_file_new_open (ctx->pump, filename, "rb");
 
-   if (!lw_fdstream_valid ((lw_fdstream) file))
+   if ( (!file) || !lw_fdstream_valid ((lw_fdstream) file))
       return;
 
    lw_stream_write_stream (ctx, (lw_stream) file,
