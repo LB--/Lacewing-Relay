@@ -1,7 +1,7 @@
 
 /* vim: set et ts=3 sw=3 ft=c:
  *
- * Copyright (C) 2011, 2012 James McLaughlin et al.  All rights reserved.
+ * Copyright (C) 2011, 2012, 2013 James McLaughlin et al.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,7 +41,7 @@ void lwp_ws_req_init (lw_ws_req ctx, lw_ws ws, lwp_ws_client client,
 
    lwp_ws_req_clean (ctx);
 
-   lwp_stream_init ((lw_stream) ctx, def, 0);
+   lwp_stream_init ((lw_stream) ctx, def, ws->pump);
 }
 
 void lwp_ws_req_cleanup (lw_ws_req ctx)
