@@ -3,38 +3,40 @@
 
 #include <lacewing.h>
 
-Lacewing::EventPump EventPump;
-
-void onGet (Lacewing::Webserver &, Lacewing::Webserver::Request &Request)
+void on_get (lacewing::webserver, lacewing::webserver_request request)
 {
     /* The MIME type defaults to "text/html" */
 
-    Request.SetMimeType ("text/plain");
+    request->set_mimetype ("text/plain");
  
 
-    /* Nothing will actually be sent until after the handler returns - all the
-     * methods in the Request class are non-blocking.
+    /* Nothing will actually be sent until after the handler returns - every
+     * function in liblacewing is non-blocking.
      *
-     * The handler will complete instantly, and then liblacewing will continue
+     * This hook will complete instantly, and then liblacewing will continue
      * sending the actual data afterwards.  This is important for large files!
      *
      * Data can be sent between files, and multiple files can be sent in a
-     * row, etc etc - liblacewing will keep everything in order.
+     * row, and so on - liblacewing will keep everything in the correct order.
      */
        
-    Request << "Here's my source:\r\n\r\n";
-    Request.WriteFile ("send_file.cc");
+    request->writef ("Here's my source:\r\n\r\n");
+    request->write_file ("send_file.cc");
 }
 
 int main (int argc, char * argv [])
 {
-    Lacewing::Webserver Webserver (EventPump);
+    lacewing::eventpump eventpump = lacewing::eventpump_new ();
+    lacewing::webserver webserver = lacewing::webserver_new (eventpump);
 
-    Webserver.onGet (onGet);
+    webserver->on_get (on_get);
 
-    Webserver.Host (8080);
+    webserver->host (8080);
     
-    EventPump.StartEventLoop();
+    eventpump->start_eventloop();
+
+    lacewing::webserver_delete (webserver);
+    lacewing::pump_delete (eventpump);
     
     return 0;
 }

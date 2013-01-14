@@ -12,5 +12,6 @@
 - Try to get SWIG working
 - writev style Put overload?
 - Check all functions are in the docs (at least a few are definitely missing)
+- Add C versions of all examples
 
 

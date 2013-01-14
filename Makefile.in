@@ -369,5 +369,20 @@ test:
 	cc $(CFLAGS) -o list test/list.c
 	./list
 
-.PHONY: all clean install test
+EXAMPLE_FLAGS = -Iinclude liblacewing.a $(LIBS) 
+
+examples: liblacewing.a
+	$(CC) examples/hello_world/hello_world.c -o examples/hello_world/hello_world $(EXAMPLE_FLAGS)
+	$(CC) examples/send_file/send_file.c -o examples/send_file/send_file $(EXAMPLE_FLAGS)
+
+examples-cxx: liblacewing.a
+	$(CXX) examples/ajax/ajax.cc -o examples/ajax/ajax_cxx $(EXAMPLE_FLAGS)
+	$(CXX) examples/get/get.cc -o examples/get/get_cxx $(EXAMPLE_FLAGS)
+	$(CXX) examples/hello_world/hello_world.cc -o examples/hello_world/hello_world_cxx $(EXAMPLE_FLAGS)
+	$(CXX) examples/post/post.cc -o examples/post/post_cxx $(EXAMPLE_FLAGS)
+	$(CXX) examples/send_file/send_file.cc -o examples/send_file/send_file_cxx $(EXAMPLE_FLAGS)
+	$(CXX) examples/sessions/sessions.cc -o examples/sessions/sessions_cxx $(EXAMPLE_FLAGS)
+	$(CXX) examples/upload_file/upload_file.cc -o examples/upload_file/upload_file_cxx $(EXAMPLE_FLAGS)
+
+.PHONY: all clean install test examples-cxx examples
 

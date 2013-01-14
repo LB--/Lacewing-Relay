@@ -18,6 +18,9 @@ int main (int argc, char * argv[])
     
    lw_eventpump_start_eventloop (pump);
     
+   lw_ws_delete (webserver);
+   lw_pump_delete (pump);
+
    return 0;
 }
 

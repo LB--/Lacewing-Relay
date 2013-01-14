@@ -2,35 +2,40 @@
 #include <lacewing.h>
 #include <string.h>
 
-void onGet (Lacewing::Webserver &, Lacewing::Webserver::Request &request)
+void on_get (lacewing::webserver, lacewing::webserver_request request)
 {
-    if (!strcmp (request.URL (), ""))
+    if (!strcmp (request->url (), ""))
     {
-        request.WriteFile ("get.html");
+        request->write_file ("get.html");
         return;
     }
 
-    if (!strcmp (request.URL (), "get"))
+    if (!strcmp (request->url (), "get"))
     {
-        request << "Hello " << request.GET ("name") << "!  GET parameters:<br /><br />";
+        request->writef ("Hello %s!  GET parameters:<br /><br />", request->GET ("name"));
 
-        for (Lacewing::Webserver::Request::Parameter * p
-                = request.GET (); p; p = p->Next ())
+        for (lacewing::webserver_request_param p
+                = request->GET (); p; p = p->next ())
         {
-            request << p->Name () << " = " << p->Value () << "<br />";
+            request->writef ("%s = %s<br />", p->name (), p->value ());
         }
     }
 }
 
 int main (int argc, char * argv [])
 {
-    Lacewing::EventPump event_pump;
-    Lacewing::Webserver webserver (event_pump);
+    lacewing::eventpump eventpump = lacewing::eventpump_new ();
+    lacewing::webserver webserver = lacewing::webserver_new (eventpump);
 
-    webserver.onGet (onGet);
+    webserver->on_get (on_get);
 
-    webserver.Host (8080);
+    webserver->host (8080);
 
-    event_pump.StartEventLoop ();
+    eventpump->start_eventloop ();
+
+    lacewing::webserver_delete (webserver);
+    lacewing::pump_delete (eventpump);
+
+    return 0;
 }
 

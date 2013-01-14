@@ -1,44 +1,49 @@
 
 #include <lacewing.h>
 
-void onGet (Lacewing::Webserver &, Lacewing::Webserver::Request &request)
+void on_get (lacewing::webserver, lacewing::webserver_request request)
 {
-    request.WriteFile ("upload_file.html");
+    request->write_file ("upload_file.html");
 }
 
-void onUploadStart (Lacewing::Webserver &,
-                    Lacewing::Webserver::Request &request,
-                    Lacewing::Webserver::Upload &upload)
+void on_upload_start (lacewing::webserver,
+                      lacewing::webserver_request request,
+                      lacewing::webserver_upload upload)
 {
-    upload.SetAutoSave ();
+    upload->set_autosave ();
 }
 
-void onUploadPost (Lacewing::Webserver &,
-                   Lacewing::Webserver::Request &request,
-                   Lacewing::Webserver::Upload * uploads [],
-                   int upload_count)
+void on_upload_post (lacewing::webserver,
+                     lacewing::webserver_request request,
+                     lacewing::webserver_upload uploads [],
+                     size_t num_uploads)
 {
-    request << "Hello " << request.POST ("name") << "!<br /><br />";
+    request->writef ("Hello %s!<br /><br />", request->POST ("name"));
 
-    for (int i = 0; i < upload_count; ++ i)
+    for (size_t i = 0; i < num_uploads; ++ i)
     {
-        request << "You uploaded: <b>" << uploads [i]->Filename () << "</b><br /><pre>";
-        request.WriteFile (uploads [i]->GetAutoSaveFilename ());
-        request << "</pre><br /><br />";
+        request->writef ("You uploaded: <b>%s</b><br /><pre>", uploads [i]->filename ());
+        request->write_file (uploads [i]->autosave_filename ());
+        request->writef ("</pre><br /><br />");
     }
 }
 
 int main (int argc, char * argv [])
 {
-    Lacewing::EventPump event_pump;
-    Lacewing::Webserver webserver (event_pump);
+    lacewing::eventpump eventpump = lacewing::eventpump_new ();
+    lacewing::webserver webserver = lacewing::webserver_new (eventpump);
 
-    webserver.onGet (onGet);
-    webserver.onUploadStart (onUploadStart);
-    webserver.onUploadPost (onUploadPost);
+    webserver->on_get (on_get);
+    webserver->on_upload_start (on_upload_start);
+    webserver->on_upload_post (on_upload_post);
 
-    webserver.Host (8080);
+    webserver->host (8080);
 
-    event_pump.StartEventLoop ();
+    eventpump->start_eventloop ();
+
+    lacewing::webserver_delete (webserver);
+    lacewing::pump_delete (eventpump);
+
+    return 0;
 }
 

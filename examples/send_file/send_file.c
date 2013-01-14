@@ -3,36 +3,39 @@
 
 #include <lacewing.h>
 
-void onGet(lw_ws * webserver, lw_stream * request)
+void on_get (lw_ws webserver, lw_ws_req request)
 {
     /* The MIME type defaults to "text/html" */
 
-    lw_ws_req_set_mime_type(request, "text/plain");
+    lw_ws_req_set_mimetype (request, "text/plain");
 
     
-    /* Nothing will actually be sent until after the handler returns - all the
-     * methods in the Request class are non-blocking.
+    /* Nothing will actually be sent until after the handler returns - every
+     * function in liblacewing is non-blocking.
      *
-     * The handler will complete instantly, and then liblacewing will continue
+     * This hook will complete instantly, and then liblacewing will continue
      * sending the actual data afterwards.  This is important for large files!
      *
      * Data can be sent between files, and multiple files can be sent in a
-     * row, etc etc - liblacewing will keep everything in order.
+     * row, and so on - liblacewing will keep everything in the correct order.
      */
        
-    lw_stream_writef(request, "Here's my source:\r\n\r\n");
-    lw_stream_write_file(request, "send_file.c");
+    lw_stream_writef (request, "Here's my source:\r\n\r\n");
+    lw_stream_write_file (request, "send_file.c");
 }
 
 int main(int argc, char * argv[])
 {
-    lw_pump * eventpump = lw_eventpump_new();
-    lw_ws * webserver = lw_ws_new(eventpump);
+    lw_pump eventpump = lw_eventpump_new ();
+    lw_ws webserver = lw_ws_new (eventpump);
 
-    lw_ws_onget(webserver, onGet);
-    lw_ws_host(webserver, 8080);
+    lw_ws_on_get (webserver, on_get);
+    lw_ws_host (webserver, 8080);
     
-    lw_eventpump_start_event_loop(eventpump);
+    lw_eventpump_start_eventloop (eventpump);
+    
+    lw_ws_delete (webserver);
+    lw_pump_delete (eventpump);
     
     return 0;
 }

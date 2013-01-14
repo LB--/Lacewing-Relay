@@ -7,79 +7,84 @@
 
 using namespace std;
 
-list <Lacewing::Webserver::Request *> waiting;
+list <lacewing::webserver_request> waiting;
 
-void onGet(Lacewing::Webserver &, Lacewing::Webserver::Request &Request)
+void on_get (lacewing::webserver, lacewing::webserver_request request)
 {
-    Request.WriteFile("ajax.html");
-    Request.Finish();        
+    request->write_file ("ajax.html");
+    request->finish ();        
 }
 
-void onPost(Lacewing::Webserver &, Lacewing::Webserver::Request &request)
+void on_post (lacewing::webserver, lacewing::webserver_request request)
 {
-    if(!strcmp(request.URL(), "poll"))
+    if (!strcmp (request->url (), "poll"))
     {
-        waiting.push_back(&request);
+        waiting.push_back (request);
         return;
     }
     
-    if(!strcmp(request.URL(), "message"))
+    if (!strcmp (request->url (), "message"))
     {
-        const char * message = request.POST("message");
+        const char * message = request->POST ("message");
         
-        cout << "Message from " << request.GetAddress() << ": " << message << endl;
+        request->writef ("Message from %s: %s\n",
+                         request->address ()->tostring (),
+                         message);
 
         /* Complete all waiting requests with the message */
         
-        for(list<Lacewing::Webserver::Request *>::iterator it
-                = waiting.begin(); it != waiting.end(); ++ it)
+        for(list <lacewing::webserver_request>::iterator it
+                = waiting.begin (); it != waiting.end (); ++ it)
         {
-            Lacewing::Webserver::Request &waiting_req = **it;
+            lacewing::webserver_request waiting_req = *it;
             
-            waiting_req << message;
-            waiting_req.Finish();
+            waiting_req->write (message);
+            waiting_req->finish ();
         }
 
-        waiting.clear();        
-        request.Finish();
+        waiting.clear ();
+        request->finish ();
         
         return;
     }
 }
 
-void onDisconnect(Lacewing::Webserver &, Lacewing::Webserver::Request &Request)
+void on_disconnect (lacewing::webserver, lacewing::webserver_request request)
 {
-    for(list<Lacewing::Webserver::Request *>::iterator it
-            = waiting.begin(); it != waiting.end(); ++ it)
+    for (list <lacewing::webserver_request>::iterator it
+            = waiting.begin(); it != waiting.end (); ++ it)
     {
-        if(*it == &Request)
+        if(*it == request)
         {
-            waiting.erase(it);
+            waiting.erase (it);
             break;
         }
     }
 }
 
-int main(int argc, char * argv[])
+int main (int argc, char * argv[])
 {
-    Lacewing::EventPump EventPump;
-    Lacewing::Webserver Webserver(EventPump);
+    lacewing::eventpump eventpump = lacewing::eventpump_new ();
+    lacewing::webserver webserver = lacewing::webserver_new (eventpump);
 
-    /* Enabling this means we will have to call Request.Finish() to complete
-     * a request.  Until Request.Finish() is called, requests will just hang,
+    /* Enabling this means we will have to call request->finish() to complete
+     * a request.  Until request->finish() is called, requests will just hang,
      * which is exactly what we want for long-poll AJAX.
      */
        
-    Webserver.EnableManualRequestFinish();
+    webserver->enable_manual_finish ();
     
-    Webserver.onGet(onGet);
-    Webserver.onPost(onPost);
-    Webserver.onDisconnect(onDisconnect);
+    webserver->on_get (on_get);
+    webserver->on_post (on_post);
+    webserver->on_disconnect (on_disconnect);
    
-    Webserver.Host(8080);    
+    webserver->host (8080);    
     
-    EventPump.StartEventLoop();
+    eventpump->start_eventloop();
     
+    lacewing::webserver_delete (webserver);
+    lacewing::pump_delete (eventpump);
+
     return 0;
 }
 

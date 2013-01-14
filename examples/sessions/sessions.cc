@@ -30,6 +30,9 @@ int main (int argc, char * argv [])
 
     eventpump->start_eventloop ();
 
+    lacewing::webserver_delete (webserver);
+    lacewing::pump_delete (eventpump);
+
     return 0;
 }
 

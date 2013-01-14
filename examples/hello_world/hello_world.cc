@@ -3,21 +3,24 @@
 
 #include <lacewing.h>
 
-void onGet(Lacewing::Webserver &Webserver, Lacewing::Webserver::Request &Request)
+void on_get (lacewing::webserver webserver, lacewing::webserver_request request)
 {
-    Request << "Hello world from " << lw_version ();
+    request->writef ("Hello world from %s", lw_version ());
 }
 
-int main(int argc, char * argv[])
+int main (int argc, char * argv[])
 {
-    Lacewing::EventPump EventPump;
-    Lacewing::Webserver Webserver(EventPump);
+    lacewing::eventpump eventpump = lacewing::eventpump_new ();
+    lacewing::webserver webserver = lacewing::webserver_new (eventpump);
 
-    Webserver.onGet(onGet);
+    webserver->on_get (on_get);
 
-    Webserver.Host(8080);    
+    webserver->host (8080);    
     
-    EventPump.StartEventLoop();
+    eventpump->start_eventloop();
+
+    lacewing::webserver_delete (webserver);
+    lacewing::pump_delete (eventpump);
     
     return 0;
 }
