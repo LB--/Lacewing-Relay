@@ -19,6 +19,9 @@ ENABLE_CXX = @ENABLE_CXX@
 # 1 to enable SPDY support
 ENABLE_SPDY = @ENABLE_SPDY@
 
+# 1 to enable SSL support
+ENABLE_SSL = @ENABLE_SSL@
+
 SO_EXT = @SO_EXT@
 SO_NAME = @SO_NAME@
 SONAME_FLAGS = @SONAME_FLAGS@
