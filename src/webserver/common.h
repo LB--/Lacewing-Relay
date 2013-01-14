@@ -62,8 +62,12 @@ void lwp_ws_upload_delete (lw_ws_upload);
 
 #include "multipart.h"
 
+#define lwp_session_id_length 32
+
 struct _lw_ws_session
 {
+   char id [lwp_session_id_length * 2 + 1];
+
    lwp_nvhash data;
    UT_hash_handle hh;
 };

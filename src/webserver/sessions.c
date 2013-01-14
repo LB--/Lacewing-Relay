@@ -31,16 +31,12 @@
 
 const char * const session_cookie = "lw_session";
 
-const char hex [] = "0123456789ABCDEF";
+const char hex [] = "0123456789abcdef";
 
 void lw_ws_req_session_write (lw_ws_req request, const char * key,
                               const char * value)
 {
    const char * cookie = lw_ws_req_get_cookie (request, session_cookie);
-
-   lwp_trace ("Session cookie retrieved for session_write: %s", cookie);
-
-   lw_dump (cookie, strlen (cookie));
 
    lw_ws_session session;
 
@@ -55,32 +51,25 @@ void lw_ws_req_session_write (lw_ws_req request, const char * key,
 
    if (!session)
    {
-      char session_id [32];
-      
+      char session_id [lwp_session_id_length];
+
       if (!lw_random (session_id, sizeof (session_id)))
       {
          assert (0);
       }
 
-      char session_id_hex [sizeof (session_id) * 2 + 1];
-      session_id_hex [sizeof (session_id) * 2] = 0;
-
-      for (int i = 0; i < sizeof (session_id); ++ i)
-      {
-         session_id_hex [i * 2] = hex [session_id [i] & 0x0F];
-         session_id_hex [i * 2 + 1] = hex [(session_id [i] & 0xF0) >> 4];
-      }
-
       session = (lw_ws_session) calloc (sizeof (*session), 1);
 
-      HASH_ADD_KEYPTR (hh, request->ws->sessions, session_id_hex,
-                           strlen (session_id_hex), session);
+      for (int i = 0; i < lwp_session_id_length; ++ i)
+      {
+         session->id [i * 2] = hex [session_id [i] & 0x0F];
+         session->id [i * 2 + 1] = hex [(session_id [i] & 0xF0) >> 4];
+      }
+      
+      HASH_ADD_KEYPTR (hh, request->ws->sessions, session->id,
+                           strlen (session->id), session);
 
-      lw_ws_req_set_cookie (request, session_cookie, session_id_hex);
-
-      lwp_trace ("Session cookie set for session_write: %s", session_id_hex);
-
-      lw_dump (session_id_hex, strlen (session_id_hex));
+      lw_ws_req_set_cookie (request, session_cookie, session->id);
    }
 
    lwp_nvhash_set (&session->data, key, value, lw_true);
