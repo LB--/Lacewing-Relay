@@ -477,9 +477,6 @@ static lw_bool def_close (lw_stream _ctx, lw_bool immediate)
    {
       ++ ctx->ref_count;
 
-      if (!lw_stream_close ((lw_stream) ctx, immediate))
-         return lw_false;
-
       close_fd (ctx);
 
       if ((-- ctx->ref_count) == 0 && (ctx->flags & lwp_fdstream_flag_dead))
