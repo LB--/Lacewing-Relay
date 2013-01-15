@@ -327,8 +327,8 @@ static size_t def_sink_data (lw_stream _ctx, const char * buffer, size_t size)
    memset (overlapped, 0, sizeof (*overlapped));
    overlapped->type = overlapped_type_write;
 
-   ((OVERLAPPED *) &overlapped)->Offset = ctx->offset.LowPart;
-   ((OVERLAPPED *) &overlapped)->OffsetHigh = ctx->offset.HighPart;
+   ((OVERLAPPED *) overlapped)->Offset = ctx->offset.LowPart;
+   ((OVERLAPPED *) overlapped)->OffsetHigh = ctx->offset.HighPart;
 
    /* TODO : Find a way to avoid copying the data. */
 
