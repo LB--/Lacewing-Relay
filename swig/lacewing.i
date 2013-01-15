@@ -27,7 +27,7 @@
 %rename(webserver_upload_header) _webserver_upload_header;
 %rename(flashpolicy) _flashpolicy;
 
-%module liblacewing
+%module lacewing
 %{
 #include "../include/lacewing.h"
 %}
