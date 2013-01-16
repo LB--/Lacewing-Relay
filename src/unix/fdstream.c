@@ -283,6 +283,8 @@ static size_t def_sink_data (lw_stream stream, const char * buffer, size_t size)
    #else
       if (ctx->flags & lwp_fdstream_flag_is_socket)
          written = send (ctx->fd, buffer, size, MSG_NOSIGNAL);
+      else
+         written = write (ctx->fd, buffer, size);
    #endif
 
    if (written == -1)
