@@ -36,8 +36,6 @@ struct _lw_fdstream
 {
    struct _lw_stream stream;
 
-   int ref_count;
-
    lw_pump_watch watch;
 
    int fd;
@@ -52,7 +50,6 @@ struct _lw_fdstream
 #define lwp_fdstream_flag_is_socket   2
 #define lwp_fdstream_flag_autoclose   4
 #define lwp_fdstream_flag_reading     8
-#define lwp_fdstream_flag_dead        16
 
 void lwp_fdstream_init (lw_fdstream, lw_pump);
 

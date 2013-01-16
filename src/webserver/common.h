@@ -150,8 +150,8 @@ struct _lw_ws_req
    lw_bool responded;
 };
 
-void lwp_ws_req_init (lw_ws_req, lw_ws, lwp_ws_client, const lw_streamdef *);
-void lwp_ws_req_cleanup (lw_ws_req ctx);
+lw_ws_req lwp_ws_req_new (lw_ws, lwp_ws_client, const lw_streamdef *);
+void lwp_ws_req_delete (lw_ws_req);
 
 void lwp_ws_req_clean (lw_ws_req);
 

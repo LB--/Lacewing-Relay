@@ -36,6 +36,9 @@ void lwp_stream_init (lw_stream ctx, const lw_streamdef * def, lw_pump pump)
 
    memset (ctx, 0, sizeof (*ctx));
 
+   /* This means that the refcount can never become 0 until lw_stream_delete */
+   lwp_retain (ctx); 
+
    ctx->def = def;
    ctx->pump = pump;
 
@@ -47,11 +50,6 @@ void lwp_stream_init (lw_stream ctx, const lw_streamdef * def, lw_pump pump)
    ctx->last_expand = ctx->graph->last_expand;
 
    lwp_streamgraph_expand (ctx->graph);
-}
-
-void lwp_stream_cleanup (lw_stream ctx)
-{
-
 }
 
 lw_stream lw_stream_new (const lw_streamdef * def, lw_pump pump)
@@ -78,11 +76,9 @@ void lw_stream_delete (lw_stream ctx)
       return;
 
    if (ctx->flags & lwp_stream_flag_dead)
-      goto cleanup;
+      return;
 
    ctx->flags |= lwp_stream_flag_dead;
-
-   ++ ctx->user_count;
 
    list_clear (ctx->data_hooks);
 
@@ -154,17 +150,18 @@ void lw_stream_delete (lw_stream ctx)
    else
       lwp_streamgraph_expand (ctx->graph);
 
+   ctx->graph = 0;
+
+   if (ctx->def->cleanup)
+      ctx->def->cleanup (ctx);
+
    /* TODO : clear queues */
 
-   -- ctx->user_count;
 
-cleanup:
-
-   if (ctx->user_count == 0)
-   {
-      if ( (!ctx->def->cleanup) || ctx->def->cleanup (ctx))
-         free (ctx);
-   }
+   /* This matches the lwp_retain in lw_stream_new, allowing the refcount to
+    * become 0 and the stream to be destroyed.
+    */
+   lwp_release (ctx);
 }
 
 /* The public lw_stream_write just calls lwp_stream_write with flags = 0 */
@@ -538,7 +535,7 @@ void lw_stream_data (lw_stream ctx, const char * buffer, size_t size)
 {
    int num_data_hooks = list_length (ctx->exp_data_hooks);
 
-   ++ ctx->user_count;
+   lwp_retain (ctx);
 
    /* TODO: The data hook list would be faster to make a copy of if it was     
     * a real array.
@@ -553,7 +550,7 @@ void lw_stream_data (lw_stream ctx, const char * buffer, size_t size)
    {
       data_hooks [i ++] = *hook;
 
-      ++ hook->stream->user_count;
+      lwp_retain (hook->stream);
    }
 
    for (i = 0; i < num_data_hooks; ++ i)
@@ -563,8 +560,7 @@ void lw_stream_data (lw_stream ctx, const char * buffer, size_t size)
       if (! (hook->stream->flags & lwp_stream_flag_dead))
          hook->proc (hook->stream, hook->tag, buffer, size);
 
-      if ((-- hook->stream->user_count) == 0)
-         lw_stream_delete (hook->stream);
+      lwp_release (hook->stream);
    }
 
    /* Write the data to any streams next in the (expanded) graph, if this
@@ -575,13 +571,7 @@ void lw_stream_data (lw_stream ctx, const char * buffer, size_t size)
    {
       lwp_stream_push (ctx, buffer, size);
 
-      /* Pushing data may result in stream destruction */
-
-      if ((-- ctx->user_count) == 0
-            && (ctx->flags & lwp_stream_flag_dead))
-      {
-         lw_stream_delete (ctx);
-      }
+      lwp_release (ctx);
    }
 }
 
@@ -592,7 +582,7 @@ void lwp_stream_push (lw_stream ctx, const char * buffer, size_t size)
    if (!num_links)
       return;  /* nothing to do */
 
-   ++ ctx->user_count;
+   lwp_retain (ctx);
 
    lwp_streamgraph_link * links = (lwp_streamgraph_link *) alloca
        (sizeof (lwp_streamgraph_link) * num_links);
@@ -736,11 +726,7 @@ void lwp_stream_push (lw_stream ctx, const char * buffer, size_t size)
             links [x] = 0;
    }
 
-   if ((-- ctx->user_count) == 0 &&
-        (ctx->flags & lwp_stream_flag_dead))
-   {
-      lw_stream_delete (ctx);
-   }
+   lwp_release (ctx);
 
    if (ctx->flags & lwp_stream_flag_closeASAP
          && lwp_stream_may_close (ctx))
@@ -917,7 +903,7 @@ lw_bool lw_stream_close (lw_stream ctx, lw_bool immediate)
 
    ctx->flags |= lwp_stream_flag_closing;
 
-   ++ ctx->user_count;
+   lwp_retain (ctx);
 
    /* If roots_expanded is already empty, something else has already cleared
     * the expanded graph (e.g. another stream closing) and should re-expand
@@ -974,7 +960,7 @@ lw_bool lw_stream_close (lw_stream ctx, lw_bool immediate)
    {
       if (spec->close_together)
       {
-         ++ spec->stream->user_count;
+         lwp_retain (spec->stream);
          to_close [n ++] = spec->stream;
       }
    }
@@ -983,7 +969,7 @@ lw_bool lw_stream_close (lw_stream ctx, lw_bool immediate)
    {
       if (spec->close_together)
       {
-         ++ spec->filter->user_count;
+         lwp_retain (spec->filter);
          to_close [n ++] = spec->filter;
       }
    }
@@ -992,7 +978,7 @@ lw_bool lw_stream_close (lw_stream ctx, lw_bool immediate)
    {
       if (spec->close_together)
       {
-         ++ spec->filter->user_count;
+         lwp_retain (spec->filter);
          to_close [n ++] = spec->filter;
       }
    }
@@ -1001,19 +987,10 @@ lw_bool lw_stream_close (lw_stream ctx, lw_bool immediate)
    {
       lw_stream stream = to_close [i];
 
-      -- stream->user_count;
+      /* TODO: see above wrt immediate = true */
+      lw_stream_close (stream, lw_true);
 
-      if (stream->flags & lwp_stream_flag_dead)
-      {
-         if (stream->user_count == 0)
-            lw_stream_delete (stream);
-      }
-      else
-      { 
-         /* TODO: see above wrt immediate = true */
-
-         lw_stream_close (stream, lw_true);
-      }
+      lwp_release (stream);
    }
 
    if (!already_cleared)
@@ -1035,12 +1012,7 @@ lw_bool lw_stream_close (lw_stream ctx, lw_bool immediate)
 
    ctx->flags &= ~ lwp_stream_flag_closing;
 
-   if ((-- ctx->user_count) == 0
-         && ctx->flags & lwp_stream_flag_dead) /* see Stream destructor */
-   {
-      lw_stream_delete (ctx);
-      return lw_true;
-   }
+   lwp_release (ctx);
 
    return lw_true;
 }

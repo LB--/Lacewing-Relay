@@ -77,10 +77,7 @@ struct _lw_server_client
 
    lw_server server;
 
-   int user_count;
-
    lw_bool on_connect_called;
-   lw_bool dead;
 
    #ifndef _lacewing_no_ssl
       lwp_sslclient ssl;
@@ -126,36 +123,6 @@ static lw_server_client lwp_server_client_new (lw_server ctx, lw_pump pump, int 
    return client;
 }
 
-static void lwp_server_client_delete (lw_server_client client)
-{
-   if (!client)
-      return;
-
-   lw_server ctx = client->server;
-
-   lwp_trace ("Terminate %d", client);
-
-   ++ client->user_count;
-
-   client->fd = -1;
-
-   if (client->on_connect_called)
-   {
-      if (ctx->on_disconnect)
-         ctx->on_disconnect (ctx, client);
-   }
-
-   if (client->elem)
-      list_elem_remove (client->elem);
-
-   #ifndef _lacewing_no_ssl
-      if (client->ssl)
-         lwp_sslclient_delete (client->ssl);
-   #endif
-
-   free (client);
-}
-
 #ifndef _lacewing_no_ssl
 
  void on_ssl_handshook (lwp_sslclient ssl, void * tag)
@@ -167,21 +134,18 @@ static void lwp_server_client_delete (lw_server_client client)
        lwp_trace ("on_ssl_handshook for %p, NPN is %s",
              client, lwp_sslclient_npn (ssl));
     #endif
-
-    ++ client->user_count;
+   
+    lwp_retain (client);
 
     client->on_connect_called = lw_true;
 
     if (server->on_connect)
        server->on_connect (server, client);
 
-    if (client->dead)
-    {
-       lwp_server_client_delete (client);
-       return;
-    }
+    if (!lwp_release (client))
+       return;  /* client was deleted by connect hook */
 
-    -- client->user_count;
+    lwp_release (client);
 
     list_push (server->clients, client);
     client->elem = list_elem_back (server->clients);
@@ -263,7 +227,7 @@ static void listen_socket_read_ready (void * tag)
 
       client->address = lwp_addr_new_sockaddr ((struct sockaddr *) &address);
 
-      ++ client->user_count;
+      lwp_retain (client);
 
       #ifndef _lacewing_no_ssl
       if (!client->ssl)
@@ -275,13 +239,8 @@ static void listen_socket_read_ready (void * tag)
          if (ctx->on_connect)
             ctx->on_connect (ctx, client);
 
-         /* Did the client get disconnected by the connect handler? */
-
-         if (client->dead)
-         {
-            lwp_server_client_delete (client);
-            continue;
-         }
+         if (!lwp_release (client))
+            return;  /* client was deleted by connect hook */
 
          list_push (ctx->clients, client);
          client->elem = list_elem_back (ctx->clients);
@@ -292,17 +251,10 @@ static void listen_socket_read_ready (void * tag)
       {
          lw_stream_read ((lw_stream) client, -1);
 
-         /* Did the client get disconnected when attempting to read? */
-
-         if (client->dead)
-         {
-            lwp_server_client_delete (client);
-            continue;
-         }
+         if (!lwp_release (client))
+            return;  /* client was deleted when attempting to read */
       }
       #endif
-
-      -- client->user_count;
 
       if (ctx->on_data)
       {
@@ -586,10 +538,29 @@ void on_client_close (lw_stream stream, void * tag)
 {
    lw_server_client client = tag;
 
-   if (client->user_count > 0)
-      client->dead = lw_false;
-   else
-      lwp_server_client_delete (client);
+   lw_server ctx = client->server;
+
+   lwp_trace ("Close %d", client);
+
+   lwp_retain (client);
+
+   client->fd = -1;
+
+   if (client->on_connect_called)
+   {
+      if (ctx->on_disconnect)
+         ctx->on_disconnect (ctx, client);
+   }
+
+   if (client->elem)
+      list_elem_remove (client->elem);
+
+   #ifndef _lacewing_no_ssl
+      if (client->ssl)
+         lwp_sslclient_delete (client->ssl);
+   #endif
+
+   lw_stream_delete ((lw_stream) client);
 }
 
 void lw_server_on_data (lw_server ctx, lw_server_hook_data on_data)

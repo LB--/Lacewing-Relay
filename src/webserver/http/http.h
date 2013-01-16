@@ -33,7 +33,7 @@ typedef struct _lwp_ws_httpclient
 {
    struct _lwp_ws_client client;
 
-   struct _lw_ws_req request; /* HTTP is one request at a time, so this is just reused */
+   lw_ws_req request; /* HTTP is one request at a time, so this is just reused */
 
    time_t last_activity;
 

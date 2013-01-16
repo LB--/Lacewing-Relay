@@ -137,6 +137,8 @@ void lwp_init ();
 #include <ctype.h>
 #include <time.h>
 
+#include "refcount.h"
+
 #ifndef container_of
    #define container_of(p, type, v) \
         ((type *)  (((char *) p) - offsetof(type, v)) )

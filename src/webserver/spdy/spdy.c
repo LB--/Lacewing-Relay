@@ -148,16 +148,14 @@ static void on_stream_create (spdy_ctx * spdy, spdy_stream * stream,
 {
    lwp_ws_spdyclient ctx = spdy_ctx_get_tag (spdy);
 
-   lw_ws_req request = malloc (sizeof (*request));
+   lw_ws_req request = lwp_ws_req_new
+      (ctx->client.ws, (lwp_ws_client) ctx, &def_spdyrequest);
 
    if (!request)
    {
       spdy_stream_close (stream, SPDY_STATUS_INTERNAL_ERROR);
       return;
    }
-
-   lwp_ws_req_init (request, ctx->client.ws, (lwp_ws_client) ctx,
-                    &def_spdyrequest);
 
    request->tag = stream;
    spdy_stream_set_tag (stream, request);
@@ -194,8 +192,7 @@ static void on_stream_close (spdy_ctx * spdy, spdy_stream * stream, int status_c
    if (!request)
       return;
 
-   lwp_ws_req_cleanup (request);
-   free (request);
+   lwp_ws_req_delete (request);
 }
 
 const spdy_config lwp_ws_spdy_config =

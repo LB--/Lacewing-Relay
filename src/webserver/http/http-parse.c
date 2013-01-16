@@ -33,7 +33,7 @@ static int on_message_begin (http_parser * parser)
 {
    lwp_ws_httpclient ctx = (lwp_ws_httpclient) parser->data;
 
-   lwp_ws_req_clean (&ctx->request);
+   lwp_ws_req_clean (ctx->request);
 
    return 0;
 }
@@ -42,7 +42,7 @@ static int on_url (http_parser * parser, const char * url, size_t length)
 {
    lwp_ws_httpclient ctx = (lwp_ws_httpclient) parser->data;
 
-   if (!lwp_ws_req_in_url (&ctx->request, length, url))
+   if (!lwp_ws_req_in_url (ctx->request, length, url))
    {
       lwp_trace ("HTTP: Bad URL");
       return -1;
@@ -56,14 +56,14 @@ static int on_header_field (http_parser * parser, const char * buffer,
 {
    lwp_ws_httpclient ctx = (lwp_ws_httpclient) parser->data;
 
-   if (!ctx->request.version_major)
+   if (!ctx->request->version_major)
    {
       char version [16];
 
       lwp_snprintf (version, sizeof (version), "HTTP/%d.%d",
             (int) parser->http_major, (int) parser->http_minor);
 
-      if (!lwp_ws_req_in_version (&ctx->request, strlen (version), version))
+      if (!lwp_ws_req_in_version (ctx->request, strlen (version), version))
       {
          lwp_trace ("HTTP: Bad version");
          return -1;
@@ -85,7 +85,7 @@ static int on_header_value (http_parser * parser, const char * value, size_t len
 {
    lwp_ws_httpclient ctx = (lwp_ws_httpclient) parser->data;
 
-   if (!lwp_ws_req_in_header (&ctx->request,
+   if (!lwp_ws_req_in_header (ctx->request,
                               ctx->cur_header_name_length,
                               ctx->cur_header_name,
                               length, value))
@@ -105,13 +105,13 @@ static int on_headers_complete (http_parser * parser)
 
    const char * method = http_method_str ((enum http_method) parser->method);
     
-   if (!lwp_ws_req_in_method (&ctx->request, strlen (method), method))
+   if (!lwp_ws_req_in_method (ctx->request, strlen (method), method))
    {
       lwp_trace ("HTTP: Bad method");
       return -1;
    }
 
-   const char * content_type = lw_ws_req_header (&ctx->request, "content-type");
+   const char * content_type = lw_ws_req_header (ctx->request, "content-type");
 
    lwp_trace ("Content-Type is %s", content_type);
 
@@ -120,7 +120,7 @@ static int on_headers_complete (http_parser * parser)
       lwp_trace ("Creating Multipart...");
 
       if (! (ctx->client.multipart = lwp_ws_multipart_new
-               (ctx->client.ws, &ctx->request, content_type)))
+               (ctx->client.ws, ctx->request, content_type)))
       {
          return -1;
       }
@@ -137,7 +137,7 @@ static int on_body (http_parser * parser, const char * buffer, size_t size)
    {
       /* Normal request body - just buffer it */
 
-      lwp_heapbuffer_add (&ctx->request.buffer, buffer, size);
+      lwp_heapbuffer_add (&ctx->request->buffer, buffer, size);
       return 0;
    }
 
@@ -164,7 +164,7 @@ static int on_message_complete (http_parser * parser)
    lwp_ws_httpclient ctx = (lwp_ws_httpclient) parser->data;
 
    if (!ctx->client.multipart)
-      lwp_ws_req_call_hook (&ctx->request);
+      lwp_ws_req_call_hook (ctx->request);
 
    ctx->parsing_headers = lw_true;
 

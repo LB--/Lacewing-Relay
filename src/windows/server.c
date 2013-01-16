@@ -62,10 +62,7 @@ struct _lw_server_client
 
    lw_server server;
 
-   int user_count;
-
    lw_bool on_connect_called;
-   lw_bool dead;
 
    lwp_winsslclient ssl;
 
@@ -133,32 +130,6 @@ lw_server_client lwp_server_client_new (lw_server ctx, SOCKET socket)
    lw_fdstream_set_fd ((lw_fdstream) client, (HANDLE) socket, 0, lw_true);
 
    return client;
-}
-
-void lwp_server_client_delete (lw_server_client client)
-{
-   if (!client)
-      return;
-
-   lw_server ctx = client->server;
-
-   lwp_trace ("Terminate %p", client);
-
-   ++ client->user_count;
-
-   client->socket = INVALID_HANDLE_VALUE;
-
-   if (client->on_connect_called)
-   {
-      if (ctx->on_disconnect)
-         ctx->on_disconnect (ctx, client);
-
-      list_elem_remove (client->elem);
-   }
-
-   lwp_winsslclient_delete (client->ssl);
-
-   free (client);
 }
 
 const int ideal_pending_accept_count = 16;
@@ -273,21 +244,16 @@ static void listen_socket_completion (void * tag, OVERLAPPED * _overlapped,
 
    free (overlapped);
 
-   ++ client->user_count;
+   lwp_retain (client);
 
    if (ctx->on_connect)
       ctx->on_connect (ctx, client);
 
-   if (client->dead)
-   {
-      lwp_server_client_delete (client);
-      return;
-   }
+   if (lwp_release (client))
+      return;  /* client was deleted by connect hook */
 
    list_push (ctx->clients, client);
    client->elem = list_elem_back (ctx->clients);
-
-   -- client->user_count;
 
    if (ctx->on_data)
    {
@@ -769,10 +735,30 @@ void on_client_close (lw_stream stream, void * tag)
 {
    lw_server_client client = (lw_server_client) tag;
 
-   if (client->user_count > 0)
-      client->dead = lw_false;
-   else
-      lwp_server_client_delete (client);
+   lw_server ctx = client->server;
+
+   lwp_trace ("Server: on_client_close for client %p", client);
+
+   lwp_retain (client);
+
+   client->socket = INVALID_HANDLE_VALUE;
+
+   if (client->on_connect_called)
+   {
+      if (ctx->on_disconnect)
+         ctx->on_disconnect (ctx, client);
+   }
+
+   if (client->elem)
+   {
+      list_elem_remove (client->elem);
+      client->elem = 0;
+   }
+
+   lwp_winsslclient_delete (client->ssl);
+   client->ssl = 0;
+
+   lwp_release (client);
 }
 
 void lw_server_on_data (lw_server ctx, lw_server_hook_data on_data)

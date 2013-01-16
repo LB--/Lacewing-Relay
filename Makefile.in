@@ -57,6 +57,7 @@ include/lacewing.h \
 src/common.h \
 src/heapbuffer.h \
 src/list.h \
+src/refcount.h \
 src/webserver/common.h \
 src/webserver/http/http.h \
 src/address.h \

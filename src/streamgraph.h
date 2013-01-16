@@ -32,28 +32,28 @@
 
 typedef struct _lwp_streamgraph_link
 {
-    lw_stream to, to_exp;
-    lw_stream from, from_exp;
+   lw_stream to, to_exp;
+   lw_stream from, from_exp;
 
-    size_t bytes_left; /* ctor: = -1 */
+   size_t bytes_left; /* ctor: = -1 */
 
-    lw_bool delete_stream;
+   lw_bool delete_stream;
 
 } * lwp_streamgraph_link;
 
 typedef struct _lwp_streamgraph
 {
-    /* Each StreamGraph actually stores two graphs - one public without the
-     * filters, and an internally expanded version with the filters included.
-     */
+   lwp_refcounted;
+   lw_bool dead;
 
-    list (lw_stream, roots);
-    list (lw_stream, roots_expanded);
+   /* Each StreamGraph actually stores two graphs - one public without the
+    * filters, and an internally expanded version with the filters included.
+    */
 
-    int last_expand;
-    int user_count;
+   list (lw_stream, roots);
+   list (lw_stream, roots_expanded);
 
-    lw_bool dead;
+   int last_expand;
 
 } * lwp_streamgraph;
 

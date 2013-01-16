@@ -77,7 +77,7 @@ static void on_disconnect (lw_server server, lw_server_client client_socket)
    assert (client);
 
    client->cleanup (client);
-   free (client);
+   lw_stream_delete ((lw_stream) client);
 
    lw_stream_set_tag ((lw_stream) client_socket, 0);
 }

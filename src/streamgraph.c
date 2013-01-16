@@ -31,9 +31,21 @@
 #include "streamgraph.h"
 #include "stream.h"
 
+static void graph_dealloc (lwp_streamgraph graph)
+{
+   lwp_streamgraph_clear_expanded (graph);
+   free (graph);
+}
+
 lwp_streamgraph lwp_streamgraph_new ()
 {
    lwp_streamgraph graph = (lwp_streamgraph) calloc (sizeof (*graph), 1);
+
+   if (!graph)
+      return 0;
+
+   lwp_set_dealloc_proc (graph, graph_dealloc);
+   lwp_retain (graph);
 
    return graph;
 }
@@ -43,12 +55,8 @@ void lwp_streamgraph_delete (lwp_streamgraph graph)
    if (!graph)
       return;
 
-   lwp_streamgraph_clear_expanded (graph);
-
-   if (graph->user_count == 0)
-      free (graph);
-   else
-      graph->dead = lw_true;
+   graph->dead = lw_true;
+   lwp_release (graph);
 }
 
 static void swallow (lwp_streamgraph graph, lw_stream stream)
@@ -383,7 +391,7 @@ static void graph_read (lwp_streamgraph graph, int this_expand,
 
 void lwp_streamgraph_read (lwp_streamgraph graph)
 {
-   ++ graph->user_count;
+   lwp_retain (graph);
 
    int this_expand = graph->last_expand;
 
@@ -397,8 +405,7 @@ void lwp_streamgraph_read (lwp_streamgraph graph)
       {
          lwp_trace ("Abort streamgraph_read with last_expand %d", this_expand);
 
-         if ((-- graph->user_count) == 0 && graph->dead)
-            lwp_streamgraph_delete (graph);
+         lwp_release (graph);
 
          return;
       }

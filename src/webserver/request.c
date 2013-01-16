@@ -29,10 +29,14 @@
 
 #include "common.h"
 
-void lwp_ws_req_init (lw_ws_req ctx, lw_ws ws, lwp_ws_client client,
-                      const lw_streamdef * def)
+lw_ws_req lwp_ws_req_new (lw_ws ws,
+                          lwp_ws_client client,
+                          const lw_streamdef * def)
 {
-   memset (ctx, 0, sizeof (*ctx));
+   lw_ws_req ctx = calloc (sizeof (*ctx), 1);
+
+   if (!ctx)
+      return 0;
 
    ctx->ws = ws;
    ctx->client = client;
@@ -42,12 +46,14 @@ void lwp_ws_req_init (lw_ws_req ctx, lw_ws ws, lwp_ws_client client,
    lwp_ws_req_clean (ctx);
 
    lwp_stream_init ((lw_stream) ctx, def, ws->pump);
+
+   return ctx;
 }
 
-void lwp_ws_req_cleanup (lw_ws_req ctx)
+void lwp_ws_req_delete (lw_ws_req ctx)
 {
    lwp_ws_req_clean (ctx);
-   lwp_stream_cleanup ((lw_stream) ctx);
+   lw_stream_delete ((lw_stream) ctx);
 }
 
 void lwp_ws_req_clean (lw_ws_req ctx)

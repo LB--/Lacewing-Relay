@@ -65,7 +65,7 @@ static void completion (void * tag, OVERLAPPED * _overlapped,
       return;
    }
 
-   ++ ctx->ref_count;
+   lwp_retain (ctx);
 
    switch (overlapped->type)
    {
@@ -82,8 +82,6 @@ static void completion (void * tag, OVERLAPPED * _overlapped,
          }
 
          lw_stream_data ((lw_stream) ctx, ctx->buffer, bytes_transferred);
-
-         /* Calling lwp_stream_data may result in stream destruction */
 
          if (ctx->flags & lwp_fdstream_flag_dead)
             break;
@@ -115,8 +113,7 @@ static void completion (void * tag, OVERLAPPED * _overlapped,
       }
    };
 
-   if ((-- ctx->ref_count) == 0 && (ctx->flags & lwp_fdstream_flag_dead))
-      free (ctx);
+   lwp_release (ctx);
 }
 
 static void close_fd (lw_fdstream ctx)
@@ -163,15 +160,22 @@ static void close_fd (lw_fdstream ctx)
 
 lw_bool write_completed (lw_fdstream ctx)
 {
-   -- ctx->pending_writes;
-
-   /* If we're trying to close, was this the last write finishing? */
-
-   if ( (ctx->flags & lwp_fdstream_flag_close_asap) && ctx->pending_writes == 0)
+   if ((-- ctx->pending_writes) == 0)
    {
-      close_fd (ctx);
+      /* If any writes are pending, the stream must be retained.  Since the
+       * last write finished, we can release it now.
+       */
 
-      lw_stream_close ((lw_stream) ctx, lw_true);
+      lwp_release (ctx);
+
+      /* Were we trying to close? */
+
+      if ( (ctx->flags & lwp_fdstream_flag_close_asap) && ctx->pending_writes == 0)
+      {
+         close_fd (ctx);
+
+         lw_stream_close ((lw_stream) ctx, lw_true);
+      }
    }
 
    return lw_false;
@@ -215,21 +219,11 @@ void issue_read (lw_fdstream ctx)
    ctx->flags |= lwp_fdstream_flag_read_pending;
 }
 
-static lw_bool def_cleanup (lw_stream _ctx)
+static void def_cleanup (lw_stream _ctx)
 {
    lw_fdstream ctx = (lw_fdstream) _ctx;
 
    close_fd (ctx);
-
-   if (ctx->ref_count > 0)
-   {
-      ctx->flags |= lwp_fdstream_flag_dead;
-      return lw_false;
-   }
-
-   /* TODO: May leak read_overlapped if no read is pending */
-
-   return lw_true;
 }
 
 void lw_fdstream_set_fd (lw_fdstream ctx, HANDLE fd,
@@ -475,12 +469,11 @@ static lw_bool def_close (lw_stream _ctx, lw_bool immediate)
 
    if (immediate || ctx->pending_writes == 0)
    {
-      ++ ctx->ref_count;
+      lwp_retain (ctx);
 
       close_fd (ctx);
 
-      if ((-- ctx->ref_count) == 0 && (ctx->flags & lwp_fdstream_flag_dead))
-         free (ctx);
+      lwp_release (ctx);
 
       return lw_true;
    }

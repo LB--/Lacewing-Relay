@@ -100,7 +100,7 @@ static void read_ready (void * tag)
 
    ctx->flags |= lwp_fdstream_flag_reading;
 
-   ++ ctx->ref_count;
+   lwp_retain (ctx);
 
    /* TODO : Use a buffer on the heap instead? */
 
@@ -150,11 +150,7 @@ static void read_ready (void * tag)
 
    ctx->flags &= ~ lwp_fdstream_flag_reading;
 
-   if ((-- ctx->ref_count) == 0 &&
-         (ctx->flags & lwp_fdstream_flag_dead))
-   {
-      free (ctx);
-   }
+   lwp_release (ctx);
 }
 
 void lw_fdstream_set_fd (lw_fdstream ctx, lw_fd fd, lw_pump_watch watch,
@@ -319,17 +315,11 @@ static size_t def_sink_stream (lw_stream _dest,
    return sent;
 }
 
-static lw_bool def_cleanup (lw_stream _ctx)
+static void def_cleanup (lw_stream _ctx)
 {
-   lw_fdstream ctx = (lw_fdstream) _ctx;
-
-   if (ctx->ref_count > 0)
-   {
-      ctx->flags |= lwp_fdstream_flag_dead;
-      return lw_false;
-   }
-
-   return lw_true;
+   /* All of our cleanup work will already have been done by close, so there's
+    * nothing to do here.
+    */
 }
 
 static void def_read (lw_stream _ctx, size_t bytes)
@@ -372,7 +362,7 @@ static lw_bool def_close (lw_stream stream_ctx, lw_bool immediate)
 
    lwp_trace ("FDStream::Close for FD %d", ctx->fd);
 
-   ++ ctx->ref_count;
+   lwp_retain (ctx);
 
    /* Remove the watch to make sure we don't get any more
     * callbacks from the pump.
@@ -397,8 +387,7 @@ static lw_bool def_close (lw_stream stream_ctx, lw_bool immediate)
       }
    }
 
-   if ((-- ctx->ref_count) == 0 && (ctx->flags & lwp_fdstream_flag_dead))
-      free (ctx);
+   lwp_release (ctx);
 
    return lw_true;
 }

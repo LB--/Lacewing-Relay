@@ -72,15 +72,12 @@ void client_cleanup (lwp_ws_client client)
       if (ctx->client.ws->on_disconnect)
          ctx->client.ws->on_disconnect (ctx->client.ws, request);
 
-      lwp_ws_req_cleanup (request);
-      free (request);
+      lwp_ws_req_delete (request);
    }
 
    list_clear (ctx->requests);
 
    spdy_ctx_delete (ctx->spdy);
-
-   lwp_stream_cleanup ((lw_stream) ctx);
 }
 
 static size_t def_spdyclient_sink_data (lw_stream stream,
@@ -210,8 +207,7 @@ void client_respond (lwp_ws_client client, lw_ws_req request)
 
    lw_fdstream_uncork ((lw_fdstream) socket);
 
-   lwp_ws_req_cleanup (request);
-   free (request);
+   lwp_ws_req_delete (request);
 }
 
 void client_tick (lwp_ws_client client)

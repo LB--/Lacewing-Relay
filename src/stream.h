@@ -44,7 +44,7 @@
  #define lwp_stream_flag_closing  4
 
 /* Deleted when user count was > 0 - waiting to be freed */
- #define lwp_stream_flag_dead  8
+ #define lwp_stream_flag_dead 8
 
 typedef struct _lwp_stream_data_hook
 {
@@ -97,6 +97,8 @@ typedef struct _lwp_stream_filterspec
 
 struct _lw_stream
 {
+    lwp_refcounted;
+
     const lw_streamdef * def;
 
     lw_pump pump;
@@ -155,18 +157,9 @@ struct _lw_stream
 
     lw_stream prev_direct;
     size_t direct_bytes_left;
-
-
-    /* If user_count is > 0 and the stream is deleted, the stream will not be
-     * freed.  Anything decrementing user_count should be prepared to delete
-     * the stream if necessary.
-     */
-
-    unsigned short user_count;
 };
 
 void lwp_stream_init (lw_stream, const lw_streamdef *, lw_pump);
-void lwp_stream_cleanup (lw_stream);
 
 
 /* Returns true if this stream should be considered transparent, based on

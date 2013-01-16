@@ -49,7 +49,7 @@ lwp_ws_client lwp_ws_httpclient_new (lw_ws ws, lw_server_client socket,
 
    lwp_stream_init ((lw_stream) ctx, &def_httpclient, 0);
 
-   lwp_ws_req_init (&ctx->request, ws, (lwp_ws_client) ctx, &def_httprequest);
+   ctx->request = lwp_ws_req_new (ws, (lwp_ws_client) ctx, &def_httprequest);
 
    http_parser_init (&ctx->parser, HTTP_REQUEST);
    ctx->parser.data = ctx;
@@ -60,9 +60,9 @@ lwp_ws_client lwp_ws_httpclient_new (lw_ws ws, lw_server_client socket,
    lwp_stream_init ((lw_stream) ctx, &def_httpclient, 0);
 
    lw_stream_write_stream
-      ((lw_stream) socket, (lw_stream) &ctx->request, -1, lw_false);
+      ((lw_stream) socket, (lw_stream) ctx->request, -1, lw_false);
 
-   lw_stream_begin_queue ((lw_stream) &ctx->request);
+   lw_stream_begin_queue ((lw_stream) ctx->request);
 
    /* When the retry mode is more_data and we can't sink everything, our sink
     * method will be called again as soon as more data arrives.
@@ -81,15 +81,13 @@ void client_cleanup (lwp_ws_client client)
     * completed (responded == false)
     */
 
-   if (!ctx->request.responded)
+   if (!ctx->request->responded)
    {
       if (ctx->client.ws->on_disconnect)
-         ctx->client.ws->on_disconnect (ctx->client.ws, &ctx->request);
+         ctx->client.ws->on_disconnect (ctx->client.ws, ctx->request);
    }
 
-   lwp_ws_req_cleanup (&ctx->request);
-
-   lwp_stream_cleanup ((lw_stream) ctx);
+   lwp_ws_req_delete (ctx->request);
 }
 
 
@@ -114,7 +112,7 @@ static size_t def_sink_data (lw_stream stream, const char * buffer, size_t size)
 
    for (;;)
    {
-      if (!ctx->request.responded)
+      if (!ctx->request->responded)
       {
          /* The application hasn't yet called Finish() for the last request,
           * so no more data can be processed.
@@ -269,7 +267,7 @@ void client_respond (lwp_ws_client client, lw_ws_req request)
     * request object per client (unlike SPDY).  Sanity check...
     */
 
-   assert (request == &ctx->request);
+   assert (request == ctx->request);
 
    ctx->last_activity = time (0);
 
@@ -302,17 +300,17 @@ void client_respond (lwp_ws_client client, lw_ws_req request)
    }
 
    lwp_heapbuffer_addf (&request->buffer, "\r\ncontent-length: " lwp_fmt_size "\r\n\r\n",
-                           lw_stream_queued ((lw_stream) &ctx->request));
+                           lw_stream_queued ((lw_stream) ctx->request));
 
    lw_fdstream_cork ((lw_fdstream) ctx->client.socket);
 
    char * head_buffer = lwp_heapbuffer_buffer (&request->buffer);
    size_t head_length = lwp_heapbuffer_length (&request->buffer);
 
-   lw_stream_end_queue_hb ((lw_stream) &ctx->request, 1,
+   lw_stream_end_queue_hb ((lw_stream) ctx->request, 1,
                            (const char **) &head_buffer, &head_length);
 
-   lw_stream_begin_queue ((lw_stream) &ctx->request);
+   lw_stream_begin_queue ((lw_stream) ctx->request);
 
    lwp_heapbuffer_reset (&request->buffer);
 
@@ -334,7 +332,7 @@ void client_tick (lwp_ws_client client)
 {
    lwp_ws_httpclient ctx = (lwp_ws_httpclient) client;
 
-   if (ctx->request.responded
+   if (ctx->request->responded
          && (time(0) - ctx->last_activity) > ctx->client.ws->timeout)
    {
       lwp_trace ("Dropping HTTP connection due to inactivity (%s)",

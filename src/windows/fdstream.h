@@ -38,8 +38,6 @@ struct _lw_fdstream
 {
    struct _lw_stream stream;
 
-   short ref_count;
-
    fdstream_overlapped read_overlapped;
    fdstream_overlapped transmitfile_overlapped;
 

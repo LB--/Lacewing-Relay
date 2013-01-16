@@ -339,7 +339,7 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
       size_t (* bytes_left) (lw_stream);
       void (* read) (lw_stream, size_t bytes);
 
-      lw_bool (* cleanup) (lw_stream);
+      void (* cleanup) (lw_stream);
 
       size_t outer_size;
 
