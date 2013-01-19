@@ -5,7 +5,7 @@
 bool OnConnect(Lacewing::Relay::Server &Server, Lacewing::Relay::Server::Client &Client);
 void OnError(Lacewing::Relay::Server &Server, Lacewing::Error &Error);
 
-int main(unsigned nargs, char const*const*args)
+int main(unsigned nargs, const char const * const * args)
 {
 	Lacewing::EventPump Pump;
 	Lacewing::Relay::Server Server (Pump);

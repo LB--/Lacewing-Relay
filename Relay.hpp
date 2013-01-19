@@ -7,9 +7,9 @@
 
 namespace lacewing
 {
-	namespace Relay
+	namespace relay
 	{
-		struct Server
+		struct server
 		{
 		private:
 			List<size_t> usedIDs;
@@ -17,225 +17,223 @@ namespace lacewing
 			size_t GetFreeID();
 			void SetFreeID(size_t ID);
 		protected:
-			lacewing::Pump * const MsgPump;
-			char * WelcomeMessage;
-			bool EnableChannelListing;
+			lacewing::pump * const msgPump;
+			char * welcomeMessage;
+			bool enableChannelListing;
 
-			struct Channel
+			struct channel
 			{
-				List<Client *> listOfPeers;
-				Client * master;
-				Server * server;
-				unsigned short ID;
-				char * Name;
+				List<client *> listOfPeers;
+				client * master;
+				server * server;
+				unsigned short id;
+				char * name;
 				bool closeWhenMasterLeaves, listInPublicChannelList;
 
-				void Join(Server & server, Server::Client & client);
-				void Leave(Server & server, Server::Client & client);
+				void Join(server & Server, server::client & Client);
+				void Leave(server & Server, server::client & Client);
 				
-				Channel(Server & server, const char * Name);
-				~Channel();
+				channel(server & Server, const char * const Name);
+				~channel();
 			};
 
-			struct Client
+			struct client
 			{
-				unsigned short ID; /* See spec 2.1.2 */
-				List<Channel *> listOfChannels;
-				const char * Name;
+				unsigned short id; /* See spec 2.1.2 */
+				List<channel *> listOfChannels;
+				const char * name;
 
-				Relay::Server * server;
+				relay::server * server;
 				lacewing::_lw_server_client * container;
-				void Write(lacewing::Stream &Str, unsigned char Type, unsigned char Variant);
+				void Write(lacewing::stream & Str, unsigned char Type, unsigned char Variant);
 
-				Client(Relay::Server & server, lacewing::_lw_server_client & client);
-				~Client();
+				client(relay::server & Server, lacewing::_lw_server_client & Client);
+				~client();
 			};
 			
-			void CloseChannel(Relay::Server::Channel * Channel);
+			void CloseChannel(relay::server::channel * Channel);
 
-			typedef bool (lacewingHandler * HandlerConnectRelay)
-				(Relay::Server &Server, Relay::Server::Client &Client);
+			typedef bool (lacewingHandler * handlerConnectRelay)
+				(relay::server & Server, relay::server::client & Client);
 
-			typedef void (lacewingHandler * HandlerDisconnectRelay)
-				(Relay::Server &Server, Relay::Server::Client &Client);
+			typedef void (lacewingHandler * handlerDisconnectRelay)
+				(relay::server & Server, relay::server::client & Client);
 
-			typedef void (lacewingHandler * HandlerServerMessageRelay)
-				(Relay::Server &Server, Relay::Server::Client &Client, unsigned char Variant,
+			typedef void (lacewingHandler * handlerServerMessageRelay)
+				(relay::server & Server, relay::server::client & Client, unsigned char Variant,
 				 unsigned char Subchannel, const char * Data, size_t Size);
 
-			typedef void (lacewingHandler * HandlerErrorRelay)
-				(Relay::Server &Server, Error &Error);
+			typedef void (lacewingHandler * handlerErrorRelay)
+				(relay::server &Server, error &Error);
 			
-			typedef bool (lacewingHandler * HandlerJoinChannelRelay)
-				(Relay::Server &Server, Relay::Server::Client &Client, bool Blasted, Relay::Server::Channel &Channel,
+			typedef bool (lacewingHandler * handlerJoinChannelRelay)
+				(relay::server & Server, relay::server::client & Client, bool Blasted, relay::server::channel & Channel,
 				 bool &CloseWhenMasterLeaves, bool &ShowInChannelList, char * &DenyReason, bool &FreeDenyReason);
 			
-			typedef bool (lacewingHandler * HandlerChannelMessageRelay)
-				(Relay::Server &Server, Relay::Server::Client &Client, bool Blasted, Relay::Server::Channel &Channel,
+			typedef bool (lacewingHandler * handlerChannelMessageRelay)
+				(relay::server & Server, relay::server::client & Client, bool Blasted, relay::server::channel & Channel,
 				 unsigned char Variant, unsigned char Subchannel, const char * Data, size_t Size);
 
-			typedef bool (lacewingHandler * HandlerPeerMessageRelay)
-				(Relay::Server &Server, Relay::Server::Client &Client_Send, bool Blasted, Relay::Server::Channel &Channel,
-				 Relay::Server::Client &Client_Recv, unsigned char Variant, unsigned char Subchannel,
+			typedef bool (lacewingHandler * handlerPeerMessageRelay)
+				(relay::server & Server, relay::server::client & Client_Send, bool Blasted, relay::server::channel & Channel,
+				 relay::server::client & Client_Recv, unsigned char Variant, unsigned char Subchannel,
 				 const char * Data, size_t Size);
 
-			typedef bool (lacewingHandler * HandlerLeaveChannelRelay)
-				(Relay::Server &Server, Relay::Server::Client &Client, Relay::Server::Channel &Channel,
-				 char * &DenyReason, bool &FreeDenyReason);
+			typedef bool (lacewingHandler * handlerLeaveChannelRelay)
+				(relay::server & Server, relay::server::client & Client, relay::server::channel & Channel,
+				 char * & DenyReason, bool & FreeDenyReason);
 
 			/*	In this handler, you can call Client.Name() for the current name before approving the name change.
 				If you deny the change, "Custom server deny reason." will be given by default. If you wish to specify
 				the reason, modify DenyReason to point to a string literal or malloc()-style memory. In the case
 				of using malloc(), set FreeDenyReason to true, else it will default to false. */
 
-			typedef bool (lacewingHandler * HandlerNameSetRelay)
-				(Relay::Server &Server, Relay::Server::Client &Client, const char * Name, char * &DenyReason,
+			typedef bool (lacewingHandler * handlerNameSetRelay)
+				(relay::server & Server, relay::server::client & Client, const char * Name, char * & DenyReason,
 				 bool FreeDenyReason);
 
 			struct
 			{
-				HandlerConnectRelay onConnect;
-				HandlerDisconnectRelay onDisconnect;
-				HandlerNameSetRelay onNameSet;
-				HandlerErrorRelay onError;
-				HandlerJoinChannelRelay onJoinChannel;
-				HandlerLeaveChannelRelay onLeaveChannel;
-				HandlerServerMessageRelay onServerMessage;
-				HandlerChannelMessageRelay onChannelMessage;
-				HandlerPeerMessageRelay onPeerMessage;
-			} Handlers;
+				handlerConnectRelay onConnect;
+				handlerDisconnectRelay onDisconnect;
+				handlerNameSetRelay onNameSet;
+				handlerErrorRelay onError;
+				handlerJoinChannelRelay onJoinChannel;
+				handlerLeaveChannelRelay onLeaveChannel;
+				handlerServerMessageRelay onServerMessage;
+				handlerChannelMessageRelay onChannelMessage;
+				handlerPeerMessageRelay onPeerMessage;
+			} handlers;
 
 
-			void onConnect(HandlerConnectRelay);
-			void onDisconnect(HandlerDisconnectRelay);
-			void onNameSet(HandlerNameSetRelay);
-			void onError(HandlerErrorRelay);
-			void onJoinChannel(HandlerJoinChannelRelay);
-			void onLeaveChannel(HandlerLeaveChannelRelay);
-			void onServerMessage(HandlerServerMessageRelay);
-			void onChannelMessage(HandlerChannelMessageRelay);
-			void onPeerMessage(HandlerPeerMessageRelay);
+			void onConnect(handlerConnectRelay);
+			void onDisconnect(handlerDisconnectRelay);
+			void onNameSet(handlerNameSetRelay);
+			void onError(handlerErrorRelay);
+			void onJoinChannel(handlerJoinChannelRelay);
+			void onLeaveChannel(handlerLeaveChannelRelay);
+			void onServerMessage(handlerServerMessageRelay);
+			void onChannelMessage(handlerChannelMessageRelay);
+			void onPeerMessage(handlerPeerMessageRelay);
 
-			List<Channel *> listOfChannels;
+			List<channel *> listOfChannels;
 			
-			Server(Pump &);
-			~Server();
+			server(pump &);
+			~server();
 		};
 
 
-		Relay::Server::Client *    ToRelay(lacewing::_lw_server_client *);
-		Relay::Server *            ToRelay(lacewing::_lw_server *);
+		relay::server::client *    ToRelay(lacewing::_lw_server_client *);
+		relay::server *            ToRelay(lacewing::_lw_server *);
 
 		/////////////////////////////////////////////////////////////////////////////////
 
-		struct Client
+		struct client
 		{
-			lacewing::Pump * const MsgPump;
-			char * WelcomeMessage;
-			bool EnableChannelListing;
+			lacewing::pump * const msgPump;
 
-			struct Peer;
-			struct Channel {
-				List<Peer *> listOfPeers;
-				Peer * master;
-				Client * client;
+			struct peer;
+			struct channel {
+				List<peer *> listOfPeers;
+				peer * master;
+				client * Client;
 				unsigned short ID;
 				char * Name;
 				bool closeWhenMasterLeaves, listInPublicChannelList;
 
-				void PeerJoin(Client & client, Client::Peer & peer);
-				void PeerLeave(Client & client, Client::Peer & peer);
+				void PeerJoin(client & Client, client::peer & Peer);
+				void PeerLeave(client & Client, client::peer & Peer);
 				
-				Channel(Client & client, const char * Name);
-				~Channel();
+				channel(client & Client, const char * Name);
+				~channel();
 			};
 
-			struct Peer
+			struct peer
 			{
-				unsigned short ID; /* See spec 2.1.2 */
-				List<Channel *> listOfChannels;
-				const char * Name;
+				unsigned short id; /* See spec 2.1.2 */
+				List<channel *> listOfChannels;
+				const char * name;
 
-				Relay::Client * client;
+				relay::client * client;
 				//lacewing::Client * container; // any original lacewing struct?
-				void Write(lacewing::Stream &Str, unsigned char Type, unsigned char Variant);
+				void Write(lacewing::stream & Str, unsigned char Type, unsigned char Variant);
 
-				Peer(Relay::Client & client, lacewing::Client::Peer & peer);
-				~Peer();
+				peer(relay::client & Client, lacewing::client::peer & Peer);
+				~peer();
 			};
 			
-			void CloseChannel(Relay::Client::Channel * Channel);
+			void CloseChannel(relay::client::channel * Channel);
 
-			typedef void (lacewingHandler * HandlerConnectRelay)
-				(Relay::Client &client);
+			typedef void (lacewingHandler * handlerConnectRelay)
+				(relay::client & Client);
 
-			typedef void (lacewingHandler * HandlerDisconnectRelay)
-				(Relay::Client &client);
+			typedef void (lacewingHandler * handlerDisconnectRelay)
+				(relay::client & Client);
 
-			typedef void (lacewingHandler * HandlerServerMessageRelay)
-				(Relay::Client &client, bool Blasted, unsigned char Variant,
+			typedef void (lacewingHandler * handlerServerMessageRelay)
+				(relay::client & Client, bool Blasted, unsigned char Variant,
 				 unsigned char Subchannel, const char * Data, size_t Size);
 
-			typedef void (lacewingHandler * HandlerErrorRelay)
-				(Relay::Client &client, Error &Error);
+			typedef void (lacewingHandler * handlerErrorRelay)
+				(relay::client & Client, error & Error);
 			
-			typedef bool (lacewingHandler * HandlerJoinChannelRelay)
-				(Relay::Client &client, bool Blasted, Relay::Client::Channel &Channel,
-				 bool &CloseWhenMasterLeaves, bool &ShowInChannelList, char * &DenyReason, bool &FreeDenyReason);
+			typedef bool (lacewingHandler * handlerJoinChannelRelay)
+				(relay::client & Client, bool Blasted, relay::client::channel & Channel,
+				 bool & CloseWhenMasterLeaves, bool & ShowInChannelList, char * & DenyReason, bool & FreeDenyReason);
 			
-			typedef void (lacewingHandler * HandlerChannelMessageRelay)
-				(Relay::Client &client, Relay::Client::Peer &peer, bool Blasted, Relay::Client::Channel &Channel,
+			typedef void (lacewingHandler * handlerChannelMessageRelay)
+				(relay::client & Client, relay::client::peer & Peer, bool Blasted, relay::client::channel & Channel,
 				 unsigned char Variant, unsigned char Subchannel, const char * Data, size_t Size);
 
-			typedef void (lacewingHandler * HandlerPeerMessageRelay)
-				(Relay::Client &client, Relay::Client::Peer &peer, bool Blasted, Relay::Client::Channel &Channel,
+			typedef void (lacewingHandler * handlerPeerMessageRelay)
+				(relay::client & Client, relay::client::peer & Peer, bool Blasted, relay::client::channel & Channel,
 				 unsigned char Variant, unsigned char Subchannel, const char * Data, size_t Size);
 
-			typedef void (lacewingHandler * HandlerLeaveChannelRelay)
-				(Relay::Client &client, Relay::Client::Peer &peer, Relay::Client::Channel &Channel,
-				 char * &DenyReason, bool &FreeDenyReason);
+			typedef void (lacewingHandler * handlerLeaveChannelRelay)
+				(relay::client & Client, relay::client::peer & Peer, relay::client::channel & Channel,
+				 char * & DenyReason, bool & FreeDenyReason);
 
 			/*	In this handler, you can call Client.Name() for the current name before approving the name change.
 				If you deny the change, "Custom server deny reason." will be given by default. If you wish to specify
 				the reason, modify DenyReason to point to a string literal or malloc()-style memory. In the case
 				of using malloc(), set FreeDenyReason to true, else it will default to false. */
 
-			typedef void (lacewingHandler * HandlerNameSetRelay)
-				(Relay::Client &client, const char * Name, char * &DenyReason, bool FreeDenyReason);
+			typedef void (lacewingHandler * handlerNameSetRelay)
+				(relay::client & Client, const char * Name, char * & DenyReason, bool FreeDenyReason);
 
 			struct
 			{
-				HandlerConnectRelay onConnect;
-				HandlerDisconnectRelay onDisconnect;
-				HandlerNameSetRelay onNameSet;
-				HandlerErrorRelay onError;
-				HandlerJoinChannelRelay onJoinChannel;
-				HandlerLeaveChannelRelay onLeaveChannel;
-				HandlerServerMessageRelay onServerMessage;
-				HandlerChannelMessageRelay onChannelMessage;
-				HandlerPeerMessageRelay onPeerMessage;
-			} Handlers;
+				handlerConnectRelay onConnect;
+				handlerDisconnectRelay onDisconnect;
+				handlerNameSetRelay onNameSet;
+				handlerErrorRelay onError;
+				handlerJoinChannelRelay onJoinChannel;
+				handlerLeaveChannelRelay onLeaveChannel;
+				handlerServerMessageRelay onServerMessage;
+				handlerChannelMessageRelay onChannelMessage;
+				handlerPeerMessageRelay onPeerMessage;
+			} handlers;
 
 
-			void onConnect(HandlerConnectRelay);
-			void onDisconnect(HandlerDisconnectRelay);
-			void onNameSet(HandlerNameSetRelay);
-			void onError(HandlerErrorRelay);
-			void onJoinChannel(HandlerJoinChannelRelay);
-			void onLeaveChannel(HandlerLeaveChannelRelay);
-			void onServerMessage(HandlerServerMessageRelay);
-			void onChannelMessage(HandlerChannelMessageRelay);
-			void onPeerMessage(HandlerPeerMessageRelay);
+			void onConnect(handlerConnectRelay);
+			void onDisconnect(handlerDisconnectRelay);
+			void onNameSet(handlerNameSetRelay);
+			void onError(handlerErrorRelay);
+			void onJoinChannel(handlerJoinChannelRelay);
+			void onLeaveChannel(handlerLeaveChannelRelay);
+			void onServerMessage(handlerServerMessageRelay);
+			void onChannelMessage(handlerChannelMessageRelay);
+			void onPeerMessage(handlerPeerMessageRelay);
 
-			List<Channel *> listOfChannels;
+			List<channel *> listOfChannels;
 			
-			Client(Pump &);
-			~Client();
+			client(pump &);
+			~client();
 		};
 
 
-		Relay::Server::Client *    ToRelay(lacewing::_lw_server_client *);
-		Relay::Server *            ToRelay(lacewing::_lw_server *);
+		relay::server::client *    ToRelay(lacewing::_lw_server_client *);
+		relay::server *            ToRelay(lacewing::_lw_server *);
 
 	}
 }
