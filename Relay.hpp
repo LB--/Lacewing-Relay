@@ -9,26 +9,20 @@ namespace lacewing
 {
 	namespace Relay
 	{
-		/* You should never call these functions manually; they are proxies from raw liblacewing -> Relay */
-		void onConnect_Relay     (lacewing::_lw_server &server, lacewing::_lw_server_client &client);
-		void onDisconnect_Relay  (lacewing::_lw_server &server, lacewing::_lw_server_client &client);
-		void onReceive_Relay     (lacewing::_lw_server &server, lacewing::_lw_server_client &client, const char * data, size_t size);
-		void onError_Relay       (lacewing::_lw_server &server, Error &error);
-
-		struct Server: public lacewing::_lw_server
+		struct Server
 		{
-		protected:
+		private:
 			List<size_t> usedIDs;
 			size_t lowestCleanID;
 			size_t GetFreeID();
 			void SetFreeID(size_t ID);
-		public:
+		protected:
 			lacewing::Pump * const MsgPump;
 			char * WelcomeMessage;
 			bool EnableChannelListing;
 
-			struct Client;
-			struct Channel {
+			struct Channel
+			{
 				List<Client *> listOfPeers;
 				Client * master;
 				Server * server;
@@ -134,15 +128,8 @@ namespace lacewing
 
 		/////////////////////////////////////////////////////////////////////////////////
 
-		/* You should never call these functions manually; they are proxies from raw liblacewing -> Relay */
-		void onConnect_Relay     (lacewing::Client &client);
-		void onDisconnect_Relay  (lacewing::Client &client);
-		void onReceive_Relay     (lacewing::Client &client, const char * data, size_t size);
-		void onError_Relay       (lacewing::Client &client, Error &error);
-
-		struct Client : public lacewing::Client {
-			
-		public:
+		struct Client
+		{
 			lacewing::Pump * const MsgPump;
 			char * WelcomeMessage;
 			bool EnableChannelListing;
