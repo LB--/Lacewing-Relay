@@ -7,14 +7,16 @@ void OnError(Lacewing::Relay::Server &Server, Lacewing::Error &Error);
 
 int main(unsigned nargs, const char const * const * args)
 {
-	Lacewing::EventPump Pump;
-	Lacewing::Relay::Server Server (Pump);
-	Server.onConnect(OnConnect);
-	Server.onError(OnError);
-	Server.Host(6121);
+	lacewing::_eventpump Pump;
+	lacewing::relay::_server server (Pump);
+	server.onConnect(OnConnect);
+	server.onError(OnError);
+	server.Host(6121);
+	lw_server lwsz;
+	lwsz->
 
-	std::cout << "Server hosting on port: " << Server.Port() << "..." << std::endl;
-	Pump.StartEventLoop();
+	std::cout << "Server hosting on port: " << server.port() << "..." << std::endl;
+	Pump.start_eventloop();
 
 	return 0;
 }

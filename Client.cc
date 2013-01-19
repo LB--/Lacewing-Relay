@@ -1,27 +1,27 @@
 #include "Relay.hpp"
 
-namespace Lacewing {
-namespace Relay {
+namespace lacewing {
+namespace relay {
 // Raw handlers for liblacewing pass-thru to Relay functions
-void onConnect_Relay(Lacewing::Client &client)
+void onConnect_RelayC(lacewing::_client & Client)
 {
-	if (ToRelay(&client)->Handlers.onConnect)
-		ToRelay(&client)->Handlers.onConnect(*ToRelay(&client));
+	if (ToRelay(&Client)->handlers.onConnect)
+		ToRelay(&Client)->handlers.onConnect(*ToRelay(&Client));
 }
-void onDisconnect_Relay(Lacewing::Client &client)
+void onDisconnect_RelayC(lacewing::_client & Client)
 {
-	if (ToRelay(&client)->Handlers.onDisconnect)
-		ToRelay(&client)->Handlers.onDisconnect(*ToRelay(&client), *ToRelay(&client));
-	delete ToRelay(&client);
+	if (ToRelay(&Client)->handlers.onDisconnect)
+		ToRelay(&Client)->handlers.onDisconnect(*ToRelay(&Client), *ToRelay(&Client));
+	delete ToRelay(&Client);
 	client.Tag = NULL;
 }
-void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
+void onReceive_RelayC(lacewing::_client & Client, const char * Msg, size_t MsgSize)
 {
 	// Read and post schematics (i.e. if channel message, call channel handler)
 	unsigned char Type, Variant;
 	const char * Data;
 	size_t Size;
-	Lacewing::FDStream Response(*ToRelay(&server)->MsgPump);
+	lacewing::fdstream Response;
 	ReadHeader(Msg, MsgSize, Type, Variant, Data, Size);
 	
 	/*	0 - Request
@@ -39,7 +39,7 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 		}
 		else // Message header is good for request
 		{
-			Response << char(0) << Data[1];
+			Response->writef("%c%c", char(0), Data[1]);
 
 			/*	0 - Connect request
 				[string version] */
@@ -48,20 +48,20 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 				/* Version is compatible */
 				if (!strcmp("revision 3", &Data[2]))
 				{
-					/* [... short peerID, string welcomeMessage] */
-					Response << char(true) << ToRelay(&client)->ID;
-					if (ToRelay(&server)->WelcomeMessage)
-						Response << ToRelay(&server)->WelcomeMessage;
+					/* [... bool success, short peerID, string welcomeMessage] */
+					Response->writef("%c%hu", char(true), ToRelay(&Client)->id);
+					if (ToRelay(&Client)->welcomeMessage)
+						Response->writef("%s", ToRelay(&Client)->welcomeMessage);
 					
-					ToRelay(&client)->Write(Response, Type, Variant);
+					ToRelay(&Client)->Write(Response, Type, Variant);
 				}
 				else
 				{
-					/*	[...]
+					/*	[... bool success]
 						Client should be d/c'd after message */
-					Response << char(false);
+					Response->writef("%c", char(false));
 					
-					ToRelay(&client)->Write(Response, Type, Variant);
+					ToRelay(&Client)->Write(Response, Type, Variant);
 					client.Close();
 				}
 			}
@@ -69,41 +69,41 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 				[string name] */
 			else if (Data[1] == 1)
 			{
-				/*	Response: [... byte nameLength, string Name, string DenyReason]
+				/*	Response: [... bool success, byte nameLength, string Name,
+							   string DenyReason]
 					DenyReason is blank, but nameLength and Name are always
 					the same as at the request*/
+				
 				/* Name is blank */
 				if (Data[2] == '\0')
 				{
 					/*	Client is attempting to set an empty name.
 						Probably not a hack attempt, just the user being dumb */
-					Response << char(false) << char(0) << char(0) << 
-								"Channel name is blank. Sort your life out.";
+					Response->writef("%c%c%c%s", char(false), char(0), char(0),
+								"Channel name is blank. Sort your life out.");
 				}
 				/* Name is too long(max 255 due to use in nameLength */
 				else if (Size > 2+255)
 				{
-					Response << char(false) << char(255);
-					Response.Write(&Data[2], 255);
-					Response << "Name is too long: maximum of 255 characters permitted.";
+					Response->writef("%c%c%s.255%s", char(false), char(255), &Data[2],
+						"Name is too long: maximum of 255 characters permitted.");
 				}
 				/* Name contains embedded nulls */
 				else if (memchr(&Data[2], '\0', Size-2))
 				{
-						/*	Client is attempting to set a name with embedded nulls.
+					/*	Client is attempting to set a name with embedded nulls.
 						Fail it. More secure servers should d/c the client. */
-					Response << char(false) << char(Size-2);
-					Response.Write(&Data[2], Size-2);
-					Response << "Name contains invalid symbols (embedded nulls).";
+					Response->writef("%c%c%s.*%s", char(false), char(Size-2), &Data[2], Size-2,
+						"Name contains invalid symbols (embedded nulls).");
 				}
 				/* Request is correctly formatted, so now we check if the server is okay with it */
 				else
 				{
 					/*	Is name already in use? */
-					Lacewing::Server::Client * C = server.FirstClient();
+					lw_server_client C = server->FirstClient();
 					while (C)
 					{
-						if (!memicmp(ToRelay(C)->Name, &Data[2], strlen(ToRelay(C)->Name)+1))
+						if (!memicmp(ToRelay(*C)->name, &Data[2], strlen(ToRelay(*C)->name)+1))
 							break;
 						C = C->Next();
 					}
@@ -120,23 +120,23 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 						memcpy(NameDup, &Data[2], Size-2);
 						NameDup[Size-2] = '\0';
 
-						AllowedByUser = ToRelay(&server)->Handlers.onNameSet(*ToRelay(&server),
-								*ToRelay(&client),
+						AllowedByUser = ToRelay(server)->Handlers.onNameSet(*ToRelay(&server),
+								*ToRelay(&Client),
 								(const char *)NameDup,
 								DenyReason, FreeDenyReason);
 					}
-					Response << char(!C && AllowedByUser) << char(Size-2);
-					Response.Write(&Data[2], Size-2);
+					Response->writef("%c%c%s.*", char(!C && AllowedByUser), char(Size-2),
+						&Data[2], Size-2);
 
 					/* Write deny reason, if appropriate, then optionally free() it */
 					if (C)
-						Response << "Name is already in use.";
+						Response->write("Name is already in use.");
 					if (!AllowedByUser)
-						Response << (DenyReason ? DenyReason : "Custom server deny reason.");
+						Response->write(DenyReason ? DenyReason : "Custom server deny reason.");
 					if (FreeDenyReason)
 						free(DenyReason);
 				}
-				ToRelay(&client)->Write(Response, Type, Variant);
+				ToRelay(&Client)->Write(Response, Type, Variant);
 			}
 			/*	2 - Join channel request
 				[byte flags, string name] */
@@ -159,24 +159,22 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 				{
 					/*	Client is attempting to join a channel with an empty name.
 						Probably not a hack attempt, just the user being dumb */
-					Response << char(false) << char(0) << char(0) << 
-								"Channel name is blank. Sort your life out.";
+					Response->writef("%c%c%c%s", char(false), char(0), char(0),
+								"Channel name is blank. Sort your life out.");
 				}
 				/* Name is too long (max 255 due to use in nameLength */
 				else if (Size > 3+255)
 				{
-					Response << char(false) << char(255);
-					Response.Write(&Data[3], 255);
-					Response << "Channel name is too long: maximum of 255 characters permitted.";
+					Response->writef("%c%c%s.255%s", char(false), char(255), &Data[3],
+						"Channel name is too long: maximum of 255 characters permitted.");
 				}
 				/* Name contains embedded nulls */
 				else if (memchr(&Data[3], '\0', Size-3))
 				{
 					/*	Client is attempting to set a name with embedded nulls.
 						Fail it. More secure servers should d/c the client. */
-					Response << char(false) << char(Size-3);
-					Response.Write(&Data[3], Size-3);
-					Response << "Name contains invalid symbols (embedded nulls).";
+					Response->writef("%c%c%s.*%s", char(false), char(255), &Data[3], Size-3,
+						"Name contains invalid symbols (embedded nulls).");
 				}
 				/* Request is correctly formatted, so now we check if the server is okay with it */
 				else
@@ -185,8 +183,8 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 					bool AllowedByUser = true, FreeDenyReason = false, ChannelExists = false;
 					char * DenyReason = NULL;
 
-					Server::Channel * C = NULL;
-					for (List<Server::Channel *>::Element * E = ToRelay(&server)->listOfChannels.First; E; E = E->Next)
+					_server::_channel * C = NULL;
+					for (List<_server::_channel *>::Element * E = ToRelay(&server)->listOfChannels.First; E; E = E->Next)
 					{
 						if (!memicmp((**E)->Name, &Data[3], strlen((**E)->Name)+1))
 						{
@@ -199,37 +197,38 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 					/* If channel isn't made, make it temporarily */
 					if (!ChannelExists)
 					{
-						char * NameDup = (char *)malloc(Size-3+1);
-						assert(!NameDup);
-						memcpy(NameDup, &Data[3], Size-3);
-						NameDup[Size-3] = '\0';
-						C = new Server::Channel(*ToRelay(&server), NameDup);
-						free(NameDup);
+						char * nameDup = (char *)malloc(Size-3+1);
+						assert(!nameDup);
+						memcpy(nameDup, &Data[3], Size-3);
+						nameDup[Size-3] = '\0';
+						C = new _server::_channel(*ToRelay(&server), nameDup);
+						free(nameDup);
 					}
 					
-					if (ToRelay(&server)->Handlers.onJoinChannel)
-						AllowedByUser = ToRelay(&server)->Handlers.onJoinChannel(*ToRelay(&server),
-											*ToRelay(&client), false, *C, CloseWhenMasterLeaves, ShowInChannelList,
+					if (ToRelay(&server)->handlers.onJoinChannel)
+						AllowedByUser = ToRelay(&server)->handlers.onJoinChannel(*ToRelay(&server),
+											*ToRelay(&Client), false, *C, CloseWhenMasterLeaves, ShowInChannelList,
 											DenyReason, FreeDenyReason);
 						
 					if (AllowedByUser)
 					{
 						C->listInPublicChannelList = ShowInChannelList;
 						C->closeWhenMasterLeaves = CloseWhenMasterLeaves;
-						C->Join(*ToRelay(&server), *ToRelay(&client));
+						C->Join(*ToRelay(&server), *ToRelay(&Client));
 
-						Response << char(true) << char(int(ShowInChannelList) | (int(CloseWhenMasterLeaves) << 1))
-								 << char(Size-3) << C->Name << C->ID;
+						Response->writef("%c%c%c%s%hu", char(true), char(int(ShowInChannelList) | (int(CloseWhenMasterLeaves) << 1)),
+								 char(Size-3), C->name, C->id);
 
 						if (!ChannelExists)
 							ToRelay(&server)->listOfChannels.Push(C);
 						else
 						{
-							for (List<Server::Client *>::Element * E = C->listOfPeers.First; E; E = E->Next)
+							for (List<_server::_client *>::Element * E = C->listOfPeers.First; E; E = E->Next)
 							{
-								if (long(**E) == long(&client))
+								if (long(**E) == long(&Client))
 									continue;
-								Response << (**E)->ID << char(C->master == **E ? 1 : 0) << strlen((**E)->Name) << (**E)->Name;
+
+								Response->writef("%hu%c%u%s", (**E)->ID, char(C->master == **E ? 1 : 0), strlen((**E)->Name), (**E)->Name);
 							}
 						}
 					}
@@ -237,13 +236,16 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 					else
 					{
 						/* Write deny reason, then optionally free() it */
-						Response << char(Size-3) << C->Name << (DenyReason ? DenyReason : "Custom server deny reason.");
+						Response->writef("%c%s%c", char(Size-3), C->name, 
+							(DenyReason ? DenyReason : "Custom server deny reason."));
+
 						if (FreeDenyReason)
 							free(DenyReason);
+
 						delete C;
 					}
 				}
-				ToRelay(&client)->Write(Response, Type, Variant);
+				ToRelay(&Client)->Write(Response, Type, Variant);
 			}
 			/*	3 - Leave channel request
 				[short ID] */
@@ -252,14 +254,14 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 				if (Size != 4)
 				{
 					/* Malformed message; hack attempt? */
-					Response << char(false) << (Size < 4 ? unsigned short(-1) : *(unsigned short *)(&Data[2]))
-							 << "Invalid channel leave message.";
+					Response->writef("%c%hu%s", char(false), (Size < 4 ? unsigned short(-1) : *(unsigned short *)(&Data[2])),
+							 "Invalid channel leave message.");
 				}
 				/* Message format okay; check server is okay with the request */
 				else
 				{
-					Server::Channel * C = NULL;
-					for (List<Server::Channel *>::Element * E = ToRelay(&server)->listOfChannels.First; E; E = E->Next)
+					_server::_channel * C = NULL;
+					for (List<_server::_channel *>::Element * E = ToRelay(&server)->listOfChannels.First; E; E = E->Next)
 					{
 						if ((**E)->ID == *(unsigned short *)(&Data[2]))
 						{
@@ -271,8 +273,8 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 					/* Not connected to the given channel ID */
 					if (!C)
 					{
-						Response << char(false) << *(unsigned short *)(&Data[2])
-								 << "You're not connected to that channel, foo!";
+						Response->writef("%c%hu%s", char(false), *(unsigned short *)(&Data[2]),
+								 "You're not connected to that channel, foo!");
 					}
 					/* Connected to the given channel ID; ask user if it's okay */
 					else
@@ -281,18 +283,19 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 						char * DenyReason = NULL;
 
 						if (ToRelay(&server)->Handlers.onLeaveChannel)
-							AllowedByUser = ToRelay(&server)->Handlers.onLeaveChannel(*ToRelay(&server),
-												*ToRelay(&client), *C, DenyReason, FreeDenyReason);
+							AllowedByUser = ToRelay(&server)->handlers.onLeaveChannel(*ToRelay(&server),
+												*ToRelay(&Client), *C, DenyReason, FreeDenyReason);
 
 						/* Write deny reason, if appropriate, then optionally free() it */
-						Response << char(AllowedByUser) << C->ID;
+						Response->writef("%c%hu", char(AllowedByUser), C->id);
 						if (!AllowedByUser)
-							Response << (DenyReason ? DenyReason : "Custom server deny reason.");
+							Response->write(DenyReason ? DenyReason : "Custom server deny reason.");
 						if (FreeDenyReason)
 							free(DenyReason);
 					}
 				}
-				ToRelay(&client)->Write(Response, Type, Variant);
+
+				ToRelay(&Client)->Write(Response, Type, Variant);
 			}
 			/*	4 - ChannelList
 				[no data] */
@@ -309,33 +312,35 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 				if (Size > 2)
 				{
 					/* Malformed message; hack attempt? */
-					Response << char(false) << "Malformed channel listing request.";
+					Response->writef("%c%s", char(false), "Malformed channel listing request.");
 				}
 				/* Server denied channel listing */
-				else if (!ToRelay(&server)->EnableChannelListing)
+				else if (!ToRelay(&server)->enableChannelListing)
 				{
-					Response << char(false) << "Channel listing is not enabled on this server.";
+					Response->writef("%c%s", char(false), "Channel listing is not enabled on this server.");
 				}
 				/* Allow channel listing */
 				else
 				{
-					Response << char(true);
-					for (List<Server::Channel *>::Element * E = ToRelay(&server)->listOfChannels.First; E; E = E->Next)
+					Response->writef("%c", char(true));
+					for (List<_server::_channel *>::Element * E = ToRelay(&server)->listOfChannels.First; E; E = E->Next)
 					{
 						if (!(**E)->listInPublicChannelList)
 							continue;
+
 						Response << unsigned short((**E)->listOfPeers.Size) << strlen((**E)->Name) << (**E)->Name;
 					}
 				}
-				ToRelay(&client)->Write(Response, Type, Variant);
+
+				ToRelay(&Client)->Write(Response, Type, Variant);
 			}
 			/* Unrecognised request type */
 			else
 			{
 				/*	Unrecognised message; suggests invalid version string.
 					More secure servers should d/c the client. */
-				Response << char(false) << "Unrecognised request type.";
-				ToRelay(&client)->Write(Response, Type, Variant);
+				Response->writef("%c%s", char(false), "Unrecognised request type.");
+				ToRelay(&Client)->Write(Response, Type, Variant);
 			}
 		}
 	}
@@ -344,8 +349,8 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 	else if (Type == 1)
 	{
 		unsigned char Subchannel = *(unsigned char *)(&Data[1]);
-		if (ToRelay(&server)->Handlers.onServerMessage)
-			ToRelay(&server)->Handlers.onServerMessage(*ToRelay(&server), *ToRelay(&client), Variant,
+		if (ToRelay(&server)->handlers.onServerMessage)
+			ToRelay(&server)->handlers.onServerMessage(*ToRelay(&server), *ToRelay(&Client), Variant,
 										*(unsigned char *)(&Data[1]), (const char *)&Data[2], Size-2);
 	}
 	/*	2 - BinaryChannelMessage
@@ -356,6 +361,7 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 			[byte Subchannel, short ChannelID, short Peer, binary Message]
 
 			No failure message accounted for in revision 6. */
+		
 		/* Size is invalid */
 		if (Size < 3)
 		{
@@ -367,8 +373,8 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 			unsigned char Subchannel = *(unsigned char *)(&Data[1]);
 			unsigned short ChannelID = *(unsigned short *)(&Data[2]);
 
-			Server::Channel * C = NULL;
-			for (List<Server::Channel *>::Element * E = ToRelay(&server)->listOfChannels.First; E; E = E->Next)
+			_server::_channel * C = NULL;
+			for (List<_server::_channel *>::Element * E = ToRelay(&server)->listOfChannels.First; E; E = E->Next)
 			{
 				if ((**E)->ID == ChannelID)
 				{
@@ -383,7 +389,7 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 				/* No way to report an error with sending channel messages */
 			}
 			/* Channel ID exists; sender not on channel */
-			else if (!C->listOfPeers.Find(ToRelay(&client)))
+			else if (!C->listOfPeers.Find(ToRelay(&Client)))
 			{
 				/* No way to report an error with sending channel messages */
 			}
@@ -392,7 +398,7 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 			{
 				bool AllowedByUser = true;
 				if (ToRelay(&server)->Handlers.onChannelMessage)
-					AllowedByUser = ToRelay(&server)->Handlers.onChannelMessage(*ToRelay(&server), *ToRelay(&client), false, *C, Variant,
+					AllowedByUser = ToRelay(&server)->Handlers.onChannelMessage(*ToRelay(&server), *ToRelay(&Client), false, *C, Variant,
 													*(unsigned char *)(&Data[1]), (const char *)(&Data[4]), Size-5);
 				if (!AllowedByUser)
 				{
@@ -401,14 +407,13 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 				else
 				{
 					/*	We need to insert [short peer] before [binary message] */
-					Response.Write(&Data[1], 3);
-					Response << ToRelay(&client)->ID;
-					Response.Write(&Data[4], Size-5);
+					Response->writef("%s.3%hu%s.*", &Data[1], ToRelay(&Client)->id, &Data[4], Size-5);
 
-					for (List<Server::Client *>::Element * E = C->listOfPeers.First; E; E = E->Next)
+					for (List<_server::_client *>::Element * E = C->listOfPeers.First; E; E = E->Next)
 					{
-						if ((**E)->container == &client)
+						if ((**E)->container == & Client)
 							continue;
+
 						(**E)->Write(Response, Type, Variant);
 					}
 				}
@@ -428,8 +433,8 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 		unsigned short ChannelID = *(unsigned short *)(&Data[2]),
 						  PeerID = *(unsigned short *)(&Data[4]);
 
-		Server::Channel * C = NULL;
-		for (List<Server::Channel *>::Element * E = ToRelay(&server)->listOfChannels.First; E; E = E->Next)
+		_server::_channel * C = NULL;
+		for (List<_server::_channel *>::Element * E = ToRelay(&server)->listOfChannels.First; E; E = E->Next)
 		{
 			if ((**E)->ID == ChannelID)
 			{
@@ -444,15 +449,15 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 			/* No way to report an error with sending peer messages */
 		}
 		/* Channel ID exists; sender not on channel */
-		else if (!C->listOfPeers.Find(ToRelay(&client)))
+		else if (!C->listOfPeers.Find(ToRelay(&Client)))
 		{
 			/* No way to report an error with sending peer messages */
 		}
 		/* Sender is on channel; is the receiver? */
 		else
 		{
-			Server::Client * Recv = NULL;
-			for (List<Server::Client *>::Element * E = C->listOfPeers.First; E; E = E->Next)
+			_server::_client * Recv = NULL;
+			for (List<_server::_client *>::Element * E = C->listOfPeers.First; E; E = E->Next)
 			{
 				if ((**E)->ID == PeerID)
 				{
@@ -469,8 +474,8 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 			else
 			{
 				bool AllowedByUser = true;
-				if (ToRelay(&server)->Handlers.onPeerMessage)
-					AllowedByUser = ToRelay(&server)->Handlers.onPeerMessage(*ToRelay(&server), *ToRelay(&client), false, *C,
+				if (ToRelay(&server)->handlers.onPeerMessage)
+					AllowedByUser = ToRelay(&server)->handlers.onPeerMessage(*ToRelay(&server), *ToRelay(&Client), false, *C,
 													*Recv, Variant, *(unsigned char *)(&Data[1]), (const char *)&Data[6], Size-7);
 				
 				if (!AllowedByUser)
@@ -480,9 +485,8 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 				else
 				{
 					/*	We need to insert [short peer] before [binary message] */
-					Response.Write(&Data[1], 5);
-					Response << ToRelay(&client)->ID;
-					Response.Write(&Data[6], Size-7);
+					Response->writef("%s.5%hu%s.*", &Data[1], ToRelay(&Client)->id,
+							&Data[6], Size-7);
 
 					Recv->Write(Response, Type, Variant);
 				}
@@ -519,7 +523,7 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 	{
 		/*	Reply with UDPWelcome
 			[No format given in specs!] */
-		ToRelay(&client)->Write(Response, Type, Variant);
+		ToRelay(&Client)->Write(Response, Type, Variant);
 	}
 	/* 8 - ChannelMaster */
 	else if (Type == 8)
@@ -545,8 +549,8 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 	else if (Type == 9)
 	{
 		/* Reply with Pong */
-		Response << char(10);
-		ToRelay(&client)->Write(Response, Type, Variant);
+		Response->writef("%c", char(10));
+		ToRelay(&Client)->Write(Response, Type, Variant);
 	}
 	/* Unrecognised message type */
 	else
@@ -556,40 +560,34 @@ void onReceive_Relay(Lacewing::Client &client, const char * Msg, size_t MsgSize)
 
 	/* TODO: Test all messages. Implement UDP. */
 }
-
-
-void onError_Relay(Lacewing::Client &client, Error &error)
+void onError_RelayC(lacewing::_client & Client, error &error)
 {
-	if (ToRelay(&client)->Handlers.onError)
-		ToRelay(&client)->Handlers.onError(*ToRelay(&client), error);
+	if (ToRelay(&Client)->handlers.onError)
+		ToRelay(&Client)->handlers.onError(*ToRelay(&Client), error);
 }
-
-
-
 
 // Raw liblacewing -> relay management
-Client * ToRelay(Lacewing::Client * client)
+_client * ToRelay(lacewing::_client * Client)
 {
-	return (Client *)client->Tag;
+	return (_client *)Client->Tag;
 }
-
 
 // Channel functions
-void Client::Channel::PeerJoin(Server &server, Server::Client &client)
+void _client::_channel::PeerJoin(_server & Server, _server::_client & Client)
 {
 	if (!listOfPeers.Size)
-		master = &client;
+		master = &Client;
 	
-	listOfPeers.Push(&client);
+	listOfPeers.Push(&Client);
 }
-void Client::Channel::PeerLeave(Server &server, Server::Client &client)
+void _client::_channel::PeerLeave(_server & Server, _server::_client & Client)
 {
-	if (master == &client)
+	if (master == &Client)
 	{
 		master = NULL;
 		if (closeWhenMasterLeaves)
 		{
-			server.CloseChannel(this);
+			Client.CloseChannel(this);
 			// Don't send message here; closeChannel --> ~Channel --> Leave() for this user
 			return;
 		}
@@ -597,31 +595,31 @@ void Client::Channel::PeerLeave(Server &server, Server::Client &client)
 
 	// No peers left; run deconstructor via Server struct
 	if (listOfPeers.Size == 1)
-		server.CloseChannel(this);
+		Client.CloseChannel(this);
 	else
 	{
-		listOfPeers.Remove(&client);
+		listOfPeers.Remove(&Client);
 
 		// Tell client leaving channel was successful, or that it was closed anyway.
-		client.container->Write("Disconnection message; refer to autoclose?");
+		client.container->write("Disconnection message; refer to autoclose?");
 	}
 }
-Client::Channel::Channel(Client &client, const char * Name)
+_client::_channel::_channel(_client & Client, const char * Name)
 {
-	this->client = &client;
-	this->Name = strdup(Name);
+	this->client = &Client;
+	this->name = strdup(Name);
 	master = NULL;
-	ID = client.listOfChannels.Size;
+	id = client.listOfChannels.Size;
 	closeWhenMasterLeaves = false;
 	listInPublicChannelList = false;
 }
-Client::Channel::~Channel()
+_client::_channel::~_channel()
 {
-	for (List<Client::Peer *>::Element * E = listOfPeers.First; E; E->Next)
-		Leave(*client, ***E);
+	for (List<_client::_peer *>::Element * E = listOfPeers.First; E; E->Next)
+		Leave(*Client, ***E);
 
-	free((void *)Name);
-	Name = NULL;
+	free((void *)name);
+	name = NULL;
 	
 	listOfPeers.Clear();
 }
@@ -629,24 +627,24 @@ Client::Channel::~Channel()
 
 
 /* Peer functions */
-void Client::Peer::Write(Lacewing::Stream &Str, unsigned char Type, unsigned char Variant)
+void _client::_peer::Write(lacewing::_stream & Str, unsigned char Type, unsigned char Variant)
 {
-	Lacewing::FDStream WithHeader(*this->server->MsgPump);
-	WriteHeader(WithHeader, Str.Queued(), Type, Variant);
+	lacewing::_fdstream WithHeader(*this->server->MsgPump);
+	WriteHeader(WithHeader, Str.queued(), Type, Variant);
 }
-Client::Peer::Peer(Server &server, Lacewing::Server::Client &client)
+_client::_peer::_peer(_server & Server, lacewing::_server_client & Client)
 {
-	this->server = &server;
-	Name = NULL;
-	container = &client;
-	ID = server.GetFreeID();
+	this->server = &Server;
+	name = NULL;
+	container = &Client;
+	id = Server.GetFreeID();
 }
 
 
-Client::Peer::~Peer()
+_client::_peer::~_peer()
 {
 	/* Send channel-left messages for all clients */
-	for (List<Channel *>::Element * E = listOfChannels.First; E; E->Next)
+	for (List<_channel *>::Element * E = listOfChannels.First; E; E->Next)
 		(**E)->Leave(*server, *this);
 	
 	listOfChannels.Clear();
@@ -657,30 +655,30 @@ Client::Peer::~Peer()
 }
 
 // Client public functions
-void Client::CloseChannel(Channel * channel)
+void _client::CloseChannel(_channel * Channel)
 {
-	delete channel;
-	listOfChannels.Remove(channel);
+	delete Channel;
+	listOfChannels.remove(Channel);
 }
 
 #define SetFuncPoint(name,pointtype)			\
-void Server::name(pointtype functionPointer)	\
+void server::name(pointtype functionPointer)	\
 {												\
-	Handlers.name = functionPointer;			\
+	handlers.name = functionPointer;			\
 }
-SetFuncPoint(onConnect, HandlerConnectRelay)
-SetFuncPoint(onDisconnect, HandlerDisconnectRelay)
-SetFuncPoint(onNameSet, HandlerNameSetRelay)
-SetFuncPoint(onError, HandlerErrorRelay)
-SetFuncPoint(onJoinChannel, HandlerJoinChannelRelay)
-SetFuncPoint(onLeaveChannel, HandlerLeaveChannelRelay)
-SetFuncPoint(onServerMessage, HandlerServerMessageRelay)
-SetFuncPoint(onChannelMessage, HandlerChannelMessageRelay)
-SetFuncPoint(onPeerMessage, HandlerPeerMessageRelay)
+SetFuncPoint(onConnect, handlerConnectRelay)
+SetFuncPoint(onDisconnect, handlerDisconnectRelay)
+SetFuncPoint(onNameSet, handlerNameSetRelay)
+SetFuncPoint(onError, handlerErrorRelay)
+SetFuncPoint(onJoinChannel, handlerJoinChannelRelay)
+SetFuncPoint(onLeaveChannel, handlerLeaveChannelRelay)
+SetFuncPoint(onServerMessage, handlerServerMessageRelay)
+SetFuncPoint(onChannelMessage, handlerChannelMessageRelay)
+SetFuncPoint(onPeerMessage, handlerPeerMessageRelay)
 
-Client::Client(Lacewing::Pump &Pump) : Lacewing::Server(Pump), MsgPump(&Pump)
+relay::client::client(lacewing::_pump & Pump) : lacewing::server(Pump), msgPump(&Pump)
 {
-	/*  For simplicity, all of Lacewing::Server's handler setting functions
+	/*  For simplicity, all of lacewing::Server's handler setting functions
 		names are overriden in Server, so Relay variables can be used as
 		handler parameters. So we need to utilise dynamic_cast to access Server's
 		original set-handler parameters briefly, so we can set them to the proxy
@@ -691,41 +689,31 @@ Client::Client(Lacewing::Pump &Pump) : Lacewing::Server(Pump), MsgPump(&Pump)
 	*/
 	
 	// Set raw handlers to relay pass-thrus
-	Lacewing::Server * This = dynamic_cast<Lacewing::Server *>(this);
+	_lw_client This = dynamic_cast<_lw_client>(this);
 	assert(This); 
 
-	This->onConnect(onConnect_Relay);
-	This->onDisconnect(onDisconnect_Relay);
-	This->onReceive(onReceive_Relay);
-	This->onError(onError_Relay);
+	This->onConnect(onConnect_RelayC);
+	This->onDisconnect(onDisconnect_RelayC);
+	This->onReceive(onReceive_RelayC);
+	This->onError(onError_RelayC);
 
 	// Set relay handlers to disabled
-	Handlers.onConnect = NULL;
-	Handlers.onDisconnect = NULL;
-	Handlers.onError = NULL;
-	Handlers.onJoinChannel = NULL;
-	Handlers.onLeaveChannel = NULL;
-	Handlers.onServerMessage = NULL;
-	Handlers.onChannelMessage = NULL;
-	Handlers.onPeerMessage = NULL;
-	
-	// First available peer ID is 0
-	lowestCleanID = 0;
+	handlers.onConnect = NULL;
+	handlers.onDisconnect = NULL;
+	handlers.onError = NULL;
+	handlers.onJoinChannel = NULL;
+	handlers.onLeaveChannel = NULL;
+	handlers.onServerMessage = NULL;
+	handlers.onChannelMessage = NULL;
+	handlers.onPeerMessage = NULL;
 	
 	// No welcome message
-	WelcomeMessage = NULL;
+	welcomeMessage = NULL;
 }
-Client::~Client()
+relay::_client::~_client()
 {
-	Lacewing::Server::Client * A = FirstClient(), * B;
-	while (A)
-	{
-		B = A->Next();
-		delete ToRelay(A);
-		A = B;
-	}
-	
-	free(WelcomeMessage);
-	usedIDs.Clear();
 }
+
+} // namespace relay
+} // namespace lacewing
 
