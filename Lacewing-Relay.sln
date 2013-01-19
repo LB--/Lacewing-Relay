@@ -1,0 +1,60 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lacewing-Relay", "Lacewing-Relay.vcproj", "{A4CBAC8A-DAA8-4A94-8A5B-8FE04DB555B1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Relay Server", "Examples\Relay Server\Relay Server.vcproj", "{34E9AD74-9CAF-4535-9FE9-266FF70C0815}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Relay Client", "Examples\Relay Client\Relay Client.vcproj", "{013DEAC4-40B3-4E02-9DA7-2A7F57155A7F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		DLL - Debug|Win32 = DLL - Debug|Win32
+		DLL - Release|Win32 = DLL - Release|Win32
+		Release|Win32 = Release|Win32
+		Static Library - Debug|Win32 = Static Library - Debug|Win32
+		Static Library - Release|Win32 = Static Library - Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A4CBAC8A-DAA8-4A94-8A5B-8FE04DB555B1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A4CBAC8A-DAA8-4A94-8A5B-8FE04DB555B1}.Debug|Win32.Build.0 = Debug|Win32
+		{A4CBAC8A-DAA8-4A94-8A5B-8FE04DB555B1}.DLL - Debug|Win32.ActiveCfg = Debug|Win32
+		{A4CBAC8A-DAA8-4A94-8A5B-8FE04DB555B1}.DLL - Debug|Win32.Build.0 = Debug|Win32
+		{A4CBAC8A-DAA8-4A94-8A5B-8FE04DB555B1}.DLL - Release|Win32.ActiveCfg = Release|Win32
+		{A4CBAC8A-DAA8-4A94-8A5B-8FE04DB555B1}.DLL - Release|Win32.Build.0 = Release|Win32
+		{A4CBAC8A-DAA8-4A94-8A5B-8FE04DB555B1}.Release|Win32.ActiveCfg = Release|Win32
+		{A4CBAC8A-DAA8-4A94-8A5B-8FE04DB555B1}.Release|Win32.Build.0 = Release|Win32
+		{A4CBAC8A-DAA8-4A94-8A5B-8FE04DB555B1}.Static Library - Debug|Win32.ActiveCfg = Debug|Win32
+		{A4CBAC8A-DAA8-4A94-8A5B-8FE04DB555B1}.Static Library - Debug|Win32.Build.0 = Debug|Win32
+		{A4CBAC8A-DAA8-4A94-8A5B-8FE04DB555B1}.Static Library - Release|Win32.ActiveCfg = Release|Win32
+		{A4CBAC8A-DAA8-4A94-8A5B-8FE04DB555B1}.Static Library - Release|Win32.Build.0 = Release|Win32
+		{34E9AD74-9CAF-4535-9FE9-266FF70C0815}.Debug|Win32.ActiveCfg = Debug|Win32
+		{34E9AD74-9CAF-4535-9FE9-266FF70C0815}.Debug|Win32.Build.0 = Debug|Win32
+		{34E9AD74-9CAF-4535-9FE9-266FF70C0815}.DLL - Debug|Win32.ActiveCfg = Debug|Win32
+		{34E9AD74-9CAF-4535-9FE9-266FF70C0815}.DLL - Debug|Win32.Build.0 = Debug|Win32
+		{34E9AD74-9CAF-4535-9FE9-266FF70C0815}.DLL - Release|Win32.ActiveCfg = Release|Win32
+		{34E9AD74-9CAF-4535-9FE9-266FF70C0815}.DLL - Release|Win32.Build.0 = Release|Win32
+		{34E9AD74-9CAF-4535-9FE9-266FF70C0815}.Release|Win32.ActiveCfg = Release|Win32
+		{34E9AD74-9CAF-4535-9FE9-266FF70C0815}.Release|Win32.Build.0 = Release|Win32
+		{34E9AD74-9CAF-4535-9FE9-266FF70C0815}.Static Library - Debug|Win32.ActiveCfg = Debug|Win32
+		{34E9AD74-9CAF-4535-9FE9-266FF70C0815}.Static Library - Debug|Win32.Build.0 = Debug|Win32
+		{34E9AD74-9CAF-4535-9FE9-266FF70C0815}.Static Library - Release|Win32.ActiveCfg = Release|Win32
+		{34E9AD74-9CAF-4535-9FE9-266FF70C0815}.Static Library - Release|Win32.Build.0 = Release|Win32
+		{013DEAC4-40B3-4E02-9DA7-2A7F57155A7F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{013DEAC4-40B3-4E02-9DA7-2A7F57155A7F}.Debug|Win32.Build.0 = Debug|Win32
+		{013DEAC4-40B3-4E02-9DA7-2A7F57155A7F}.DLL - Debug|Win32.ActiveCfg = Debug|Win32
+		{013DEAC4-40B3-4E02-9DA7-2A7F57155A7F}.DLL - Debug|Win32.Build.0 = Debug|Win32
+		{013DEAC4-40B3-4E02-9DA7-2A7F57155A7F}.DLL - Release|Win32.ActiveCfg = Release|Win32
+		{013DEAC4-40B3-4E02-9DA7-2A7F57155A7F}.DLL - Release|Win32.Build.0 = Release|Win32
+		{013DEAC4-40B3-4E02-9DA7-2A7F57155A7F}.Release|Win32.ActiveCfg = Release|Win32
+		{013DEAC4-40B3-4E02-9DA7-2A7F57155A7F}.Release|Win32.Build.0 = Release|Win32
+		{013DEAC4-40B3-4E02-9DA7-2A7F57155A7F}.Static Library - Debug|Win32.ActiveCfg = Debug|Win32
+		{013DEAC4-40B3-4E02-9DA7-2A7F57155A7F}.Static Library - Debug|Win32.Build.0 = Debug|Win32
+		{013DEAC4-40B3-4E02-9DA7-2A7F57155A7F}.Static Library - Release|Win32.ActiveCfg = Release|Win32
+		{013DEAC4-40B3-4E02-9DA7-2A7F57155A7F}.Static Library - Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
