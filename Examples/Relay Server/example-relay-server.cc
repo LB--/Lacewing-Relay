@@ -1,22 +1,20 @@
 #include <iostream>
-#include <lacewing.h>
-#include "relay\Server.h"
-Lacewing::EventPump AppEventPump;
+
+#include "Relay.hpp"
 
 bool OnConnect(Lacewing::Relay::Server &Server, Lacewing::Relay::Server::Client &Client);
 void OnError(Lacewing::Relay::Server &Server, Lacewing::Error &Error);
 
-
-int main()
+int main(unsigned nargs, char const*const*args)
 {
-	//
-	Lacewing::Relay::Server RelayServer(AppEventPump);
-	RelayServer.Host(6121);
-	RelayServer.onConnect(OnConnect);
-	RelayServer.onError(OnError);
+	Lacewing::EventPump Pump;
+	Lacewing::Relay::Server Server (Pump);
+	Server.onConnect(OnConnect);
+	Server.onError(OnError);
+	Server.Host(6121);
 
-	std::cout << "Server hosting on port: " << RelayServer.Port() << "..." << std::endl;
-	AppEventPump.StartEventLoop();
+	std::cout << "Server hosting on port: " << Server.Port() << "..." << std::endl;
+	Pump.StartEventLoop();
 
 	return 0;
 }
@@ -29,5 +27,5 @@ bool OnConnect(Lacewing::Relay::Server &Server, Lacewing::Relay::Server::Client 
 
 void OnError(Lacewing::Relay::Server &Server, Lacewing::Error &Error)
 {
-	std::cout << "Error: [" << Error.ToString() << std::endl;
+	std::cout << "Error: \"" << Error.ToString() << '"' << std::endl;
 }

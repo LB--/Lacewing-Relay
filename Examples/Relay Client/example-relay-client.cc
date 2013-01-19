@@ -1,15 +1,13 @@
 #include <iostream>
-#include <lacewing.h>
-#include <relay\Client.h>
-Lacewing::EventPump AppEventPump;
+
+#include "Relay.hpp"
 
 bool OnConnect(Lacewing::Relay::Client &Client);
 void OnError(Lacewing::Relay::Client &Client, Lacewing::Error &Error);
 
-
 int main()
 {
-	//
+	Lacewing::EventPump AppEventPump;
 	Lacewing::Relay::Server RelayServer(AppEventPump);
 	RelayServer.Host(6121);
 	RelayServer.onConnect(OnConnect);

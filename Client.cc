@@ -1,4 +1,4 @@
-#include "relay/Client.h"
+#include "Relay.hpp"
 
 namespace Lacewing {
 namespace Relay {

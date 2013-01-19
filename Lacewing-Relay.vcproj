@@ -163,15 +163,11 @@
 			>
 		</File>
 		<File
-			RelativePath=".\Client.h"
+			RelativePath=".\Relay.hpp"
 			>
 		</File>
 		<File
 			RelativePath=".\Server.cc"
-			>
-		</File>
-		<File
-			RelativePath=".\Server.h"
 			>
 		</File>
 	</Files>
