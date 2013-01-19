@@ -4,6 +4,12 @@
 lacewing.h
 
 #################
+## Visual Studio 2008 only - no 2010
+#################
+*.vcxproj
+Lacewing-Relay 10.sln
+
+#################
 ## Eclipse
 #################
 
