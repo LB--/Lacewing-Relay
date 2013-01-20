@@ -33,7 +33,7 @@
 extern const lw_streamdef def_fdstream;
 
 static void issue_read (lw_fdstream ctx);
-static lw_bool write_completed (lw_fdstream ctx);
+static void write_completed (lw_fdstream ctx);
 
 static void add_pending_write (lw_fdstream ctx)
 {
@@ -124,6 +124,8 @@ static void completion (void * tag, OVERLAPPED * _overlapped,
          write_completed (ctx->transmit_file_from);
          ctx->transmit_file_from = 0;
 
+         write_completed (ctx);
+
          break;
       }
    };
@@ -173,7 +175,7 @@ static void close_fd (lw_fdstream ctx)
    ctx->fd = INVALID_HANDLE_VALUE;
 }
 
-lw_bool write_completed (lw_fdstream ctx)
+void write_completed (lw_fdstream ctx)
 {
    remove_pending_write (ctx);
 
@@ -187,11 +189,9 @@ lw_bool write_completed (lw_fdstream ctx)
 
          lw_stream_close ((lw_stream) ctx, lw_true);
 
-         return lw_true;
+         return;
       }
    }
-
-   return lw_false;
 }
 
 void issue_read (lw_fdstream ctx)
