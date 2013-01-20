@@ -67,7 +67,6 @@ struct _lw_fdstream
 #define lwp_fdstream_flag_is_socket        4
 #define lwp_fdstream_flag_close_asap       8  /* FD close pending on write? */
 #define lwp_fdstream_flag_auto_close       16
-#define lwp_fdstream_flag_dead             32
 
 void lwp_fdstream_init (lw_fdstream, lw_pump);
 

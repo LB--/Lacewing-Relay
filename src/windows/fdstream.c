@@ -35,6 +35,28 @@ extern const lw_streamdef def_fdstream;
 static void issue_read (lw_fdstream ctx);
 static lw_bool write_completed (lw_fdstream ctx);
 
+static void add_pending_write (lw_fdstream ctx)
+{
+   if ((++ ctx->pending_writes) == 1)
+   {
+      /* Since writes are now pending, the stream must be retained. */
+
+      lwp_retain (ctx);
+   }
+}
+
+static void remove_pending_write (lw_fdstream ctx)
+{
+   if ((-- ctx->pending_writes) == 0)
+   {
+      /* If any writes were pending, the stream was being retained.  Since the
+       * last write has finished, we can release it now.
+       */
+
+      lwp_release (ctx);
+   }
+}
+
 #define overlapped_type_read          1
 #define overlapped_type_write         2
 #define overlapped_type_transmitfile  3
@@ -83,9 +105,6 @@ static void completion (void * tag, OVERLAPPED * _overlapped,
 
          lw_stream_data ((lw_stream) ctx, ctx->buffer, bytes_transferred);
 
-         if (ctx->flags & lwp_fdstream_flag_dead)
-            break;
-
          issue_read (ctx);
          break;
 
@@ -93,8 +112,7 @@ static void completion (void * tag, OVERLAPPED * _overlapped,
 
          free (overlapped);
 
-         if (write_completed (ctx))
-            ctx->flags |= lwp_fdstream_flag_dead;
+         write_completed (ctx);
 
          break;
 
@@ -105,9 +123,6 @@ static void completion (void * tag, OVERLAPPED * _overlapped,
          ctx->transmit_file_from->transmit_file_to = 0;                            
          write_completed (ctx->transmit_file_from);
          ctx->transmit_file_from = 0;
-
-         if (write_completed (ctx))
-            ctx->flags |= lwp_fdstream_flag_dead;
 
          break;
       }
@@ -160,14 +175,10 @@ static void close_fd (lw_fdstream ctx)
 
 lw_bool write_completed (lw_fdstream ctx)
 {
-   if ((-- ctx->pending_writes) == 0)
+   remove_pending_write (ctx);
+
+   if (ctx->pending_writes == 0)
    {
-      /* If any writes are pending, the stream must be retained.  Since the
-       * last write finished, we can release it now.
-       */
-
-      lwp_release (ctx);
-
       /* Were we trying to close? */
 
       if ( (ctx->flags & lwp_fdstream_flag_close_asap) && ctx->pending_writes == 0)
@@ -175,6 +186,8 @@ lw_bool write_completed (lw_fdstream ctx)
          close_fd (ctx);
 
          lw_stream_close ((lw_stream) ctx, lw_true);
+
+         return lw_true;
       }
    }
 
@@ -351,7 +364,7 @@ static size_t def_sink_data (lw_stream _ctx, const char * buffer, size_t size)
    if (ctx->size != -1)
       ctx->offset.QuadPart += size;
 
-   ++ ctx->pending_writes;
+   add_pending_write (ctx);
 
    return size;
 }
@@ -423,8 +436,8 @@ static size_t def_sink_stream (lw_stream _dest, lw_stream _src, size_t size)
    if (source->size != -1)
       source->offset.QuadPart += size;
 
-   ++ dest->pending_writes;
-   ++ source->pending_writes;
+   add_pending_write (dest);
+   add_pending_write (source);
 
    /* As far as stream is concerned, we've now written everything. */
 
