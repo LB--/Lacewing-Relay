@@ -198,9 +198,11 @@ static size_t def_sink_data (lw_stream stream, const char * buffer, size_t size)
        * so that control is returned here.
        */
 
+      size_t to_parse = size - processed;
+
       size_t parsed = http_parser_execute (&ctx->parser, &parser_settings,
                                            buffer + processed,
-                                           size - processed);
+                                           to_parse);
 
       processed += parsed;
 
@@ -213,7 +215,7 @@ static size_t def_sink_data (lw_stream stream, const char * buffer, size_t size)
 
          http_parser_pause (&ctx->parser, 0);
       }
-      else if (parsed != size || ctx->parser.upgrade)
+      else if (parsed != to_parse || ctx->parser.upgrade)
       {
          lwp_trace ("HTTP error (body), closing socket...");
 
