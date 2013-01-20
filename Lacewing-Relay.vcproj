@@ -158,6 +158,18 @@
 	<References>
 	</References>
 	<Files>
+		<Filter
+			Name="Dependencies"
+			>
+			<File
+				RelativePath=".\lacewing.h"
+				>
+			</File>
+			<File
+				RelativePath=".\liblacewing.lib"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath=".\Client.cc"
 			>

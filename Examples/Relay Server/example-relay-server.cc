@@ -1,33 +1,48 @@
+#define NOMINMAX /*for Windows.h*/
+
 #include <iostream>
+#include <limits>
+
+//Keep console window open at end of application until user presses enter key
+struct KR{~KR()
+{
+	std::cin.sync();
+	std::cout << std::endl << "End of application, press Enter...";
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+}}kr;
 
 #include "Relay.hpp"
 
-bool OnConnect(Lacewing::Relay::Server &Server, Lacewing::Relay::Server::Client &Client);
-void OnError(Lacewing::Relay::Server &Server, Lacewing::Error &Error);
+bool OnConnect(LwRelay::Server &Server, LwRelay::Server::Client &Client);
+void OnError(LwRelay::Server &Server, lacewing::error Error);
 
-int main(unsigned nargs, const char const * const * args)
+int main(unsigned nargs, char const *const *args)
 {
-	lacewing::_eventpump Pump;
-	lacewing::relay::_server server (Pump);
+	lacewing::eventpump Pump (lacewing::eventpump_new());
+	LwRelay::Server Server (Pump);
 	server.onConnect(OnConnect);
 	server.onError(OnError);
+
 	server.Host(6121);
-	lw_server lwsz;
-	lwsz->
+	std::clog << "Server hosting on port: " << Server.Port() << "..." << std::endl;
 
-	std::cout << "Server hosting on port: " << server.port() << "..." << std::endl;
-	Pump.start_eventloop();
-
-	return 0;
+	lacewing::error e = Pump->start_eventloop();
+	lacewing::pump_delete(Pump);
+	if(e)
+	{
+		std::cerr << e->tostring() << std::endl;
+		lacewing::error_delete(e);
+		return -1;
+	}
 }
 
-bool OnConnect(Lacewing::Relay::Server &Server, Lacewing::Relay::Server::Client &Client)
+bool OnConnect(LwRelay::Server &Server, LwRelay::Server::Client &Client)
 {
-	std::cout << "Ready!" << std::endl;
+	std::clog << "Client connected" << std::endl;
 	return true;
 }
 
-void OnError(Lacewing::Relay::Server &Server, Lacewing::Error &Error)
+void OnError(LwRelay::Server &Server, lacewing::error Error)
 {
-	std::cout << "Error: \"" << Error.ToString() << '"' << std::endl;
+	std::cerr << "Error: \"" << Error->tostring() << '"' << std::endl;
 }
