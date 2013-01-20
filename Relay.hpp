@@ -4,20 +4,46 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <bitset>
 
 #include "lacewing.h"
 
 namespace LwRelay
 {
-	typedef unsigned long long int size_t;
-
 	struct Server
 	{
+		/**
+		 * Construct a new server from a pump, such as an event pump.
+		 */
 		Server(lacewinng::pump pump);
+
+		struct Client
+		{
+			typedef unsigned short ID_t; //See spec 2.1.2
+			typedef std::string Name_t;
+
+			struct ChannelIterator
+			{
+			};
+
+			void Send(unsigned char subchannel, unsigned char variant, void *data, size_t size);
+			void Send(unsigned char subchannel, unsigned char variant, char *null_terminated_string);
+		private:
+			Server &server;
+			lacewing::server_client const client;
+			ID_t const id;
+			Name_t name;
+			typedef std::vector<Channel *> Channels_t;
+			Channels_t channels;
+
+			Client(Server &server, lacewing::server_client client);
+
+			friend struct Server;
+		};
 
 		struct Channel
 		{
-			std::list<relay::_client *> listOfPeers;
+			std::vector<Client *> clients;
 			lacewing::client master;
 			lacewing::server server;
 			unsigned short id;
@@ -29,20 +55,6 @@ namespace LwRelay
 			
 			_channel(_server & Server, const char * const Name);
 			~_channel();
-		};
-
-		struct Client
-		{
-			unsigned short id; /* See spec 2.1.2 */
-			std::vector<Channel *> listOfChannels;
-			const char * name;
-
-			relay::_server * server;
-			lacewing::_server_client * container;
-			void Write(lacewing::stream & Str, unsigned char Type, unsigned char Variant);
-
-			_client(relay::_server & Server, lacewing::_server_client & Client);
-			~_client();
 		};
 
 		typedef bool (lw_import * handlerConnectRelay)
@@ -96,11 +108,11 @@ namespace LwRelay
 		void onPeerMessage(handlerPeerMessageRelay);
 
 	private:
+		lw_pump const msgPump;
+		lw_server const lws;
 		std::map<size_t, Client> clients;
 		size_t lowestCleanID;
 		size_t GetFreeID();
-		lw_server const lws;
-		lw_pump const msgPump;
 		char * welcomeMessage;
 		bool enableChannelListing;
 		
