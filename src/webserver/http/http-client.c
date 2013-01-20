@@ -42,7 +42,8 @@ lwp_ws_client lwp_ws_httpclient_new (lw_ws ws, lw_server_client socket,
       return 0;
 
    ctx->client.ws = ws;
-
+   ctx->client.socket = socket;
+   
    ctx->client.respond  = client_respond;
    ctx->client.tick     = client_tick;
    ctx->client.cleanup  = client_cleanup;
