@@ -38,6 +38,8 @@ struct lwp_refcount
 
 static lw_bool _lwp_release (struct lwp_refcount * refcount)
 {
+   assert (refcount->refcount >= 1);
+
    if ((-- refcount->refcount) == 0)
    {
       if (refcount->dealloc)
@@ -60,9 +62,6 @@ static lw_bool _lwp_release (struct lwp_refcount * refcount)
       
 #define lwp_release(x)                                                        \
    _lwp_release ((struct lwp_refcount *) (x))                                 \
-
-#define lwp_destroy(x)                                                        \
-   _lwp_destroy ((struct lwp_refcount *) (x));                                \
 
 #define lwp_set_dealloc_proc(x, proc) do {                                    \
   *(void **) &(((struct lwp_refcount *) (x))->dealloc) = (void *) (proc);     \
