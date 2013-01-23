@@ -26,8 +26,8 @@ namespace LwRelay
 			{
 			};
 
-			void Send(unsigned char subchannel, unsigned char variant, void *data, size_t size);
-			void Send(unsigned char subchannel, unsigned char variant, char *null_terminated_string);
+			void Send(unsigned char subchannel, unsigned char variant, char const*data, size_t size);
+			void Send(unsigned char subchannel, unsigned char variant, char const*null_terminated_string);
 		private:
 			Server &server;
 			lacewing::server_client const client;
@@ -39,7 +39,7 @@ namespace LwRelay
 			Client(Server &server, lacewing::server_client client);
 
 			friend struct Server;
-		};
+		};	friend struct Client;
 
 		struct Channel
 		{
@@ -57,57 +57,72 @@ namespace LwRelay
 			~_channel();
 		};
 
-		typedef bool (lw_import * handlerConnectRelay)
-			(relay::_server & Server, relay::_server::_client & Client);
+		size_t ClientCount() const;
+		Client *FirstClient();
+		size_t ChannelCount() const;
+		Channel *FirstChannel();
+		void SetChannelListing(bool enabled);
+		void SetWelcomeMessage(char const*message);
+		void Host(unsigned short port);
+		void Host(lacewing::filter filter);
+		void Unhost();
+		bool Hosting() const;
+		unsigned short Port() const;
 
-		typedef void (lw_import * handlerDisconnectRelay)
-			(relay::_server & Server, relay::_server::_client & Client);
+		/**
+		 * Some handlers let you return this to indicate whether the
+		 * action should be allowed or denied. If constructed from a
+		 * bool, true means allow and false means deny. If constructed
+		 * from a c-string, it is implicitly meant to deny, using the
+		 * given string as the reason given to the client.
+		 */
+		struct Deny
+		{
+			Deny(bool do_not_deny);
+			Deny(char const*reason);
+			Deny(Deny const&other);
+			Deny operator=(Deny const&other);
+			~Deny();
+		private:
+			struct Impl;
+			Impl *impl;
+		};
 
-		typedef void (lw_import * handlerServerMessageRelay)
-			(relay::_server & Server, relay::_server::_client & Client, unsigned char Variant,
-			 unsigned char Subchannel, const char * Data, size_t Size);
+		//fully-qualified names are used to be copy-paste friendly (except for "Deny")
+		typedef void (lw_import          ErrorHandler)(::LwRelay::Server &server, ::lacewing::error error);
+		typedef Deny (lw_import        ConnectHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client);
+		typedef void (lw_import     DisconnectHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client);
+		typedef Deny (lw_import        NameSetHandler)(::LwRelay::Server &Server, ::LwRelay::Server::Client &client, char const*name);
+		typedef Deny (lw_import    JoinChannelHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel, bool closeformaster, bool visible);
+		typedef Deny (lw_import   LeaveChannelHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel);
+		typedef void (lw_import  ServerMessageHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client,                                                    unsigned char subchannel, unsigned char variant, char const*data, size_t size);
+		typedef Deny (lw_import ChannelMessageHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel, bool blasted, unsigned char subchannel, unsigned char variant, char const*data, size_t size);
+		typedef Deny (lw_import    PeerMessageHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &from  , ::LwRelay::Server::Channel &channel, bool blasted, unsigned char subchannel, unsigned char variant, char const*data, size_t size, ::LwRelay::Server::Client &to);
 
-		typedef void (lw_import * handlerErrorRelay)
-			(relay::_server &Server, _error &Error);
-		
-		typedef bool (lw_import * handlerJoinChannelRelay)
-			(relay::_server & Server, relay::_server::_client & Client, bool Blasted, relay::_server::_channel & Channel,
-			 bool &CloseWhenMasterLeaves, bool &ShowInChannelList, char * &DenyReason, bool & FreeDenyReason);
-		
-		typedef bool (lw_import * handlerChannelMessageRelay)
-			(relay::_server & Server, relay::_server::_client & Client, bool Blasted, relay::_server::_channel & Channel,
-			 unsigned char Variant, unsigned char Subchannel, const char * Data, size_t Size);
-
-		typedef bool (lw_import * handlerPeerMessageRelay)
-			(relay::_server & Server, relay::_server::_client & Client_Send, bool Blasted, relay::_server::_channel & Channel,
-			 relay::_server::_client & Client_Recv, unsigned char Variant, unsigned char Subchannel,
-			 const char * Data, size_t Size);
-
-		typedef bool (lw_import * handlerLeaveChannelRelay)
-			(relay::_server & Server, relay::_server::_client & Client, relay::_server::_channel & Channel,
-			 char * & DenyReason, bool & FreeDenyReason);
-
-		/*	In this handler, you can call Client.Name() for the current name before approving the name change.
-			If you deny the change, "Custom server deny reason." will be given by default. If you wish to specify
-			the reason, modify DenyReason to point to a string literal or malloc()-style memory. In the case
-			of using malloc(), set FreeDenyReason to true, else it will default to false. */
-
-		typedef bool (lw_import * handlerNameSetRelay)
-			(relay::_server & Server, relay::_server::_client & Client, const char * Name, char * & DenyReason,
-			 bool FreeDenyReason);
-
-
-		void onConnect(handlerConnectRelay);
-		void onDisconnect(handlerDisconnectRelay);
-		void onNameSet(handlerNameSetRelay);
-		void onError(handlerErrorRelay);
-		void onJoinChannel(handlerJoinChannelRelay);
-		void onLeaveChannel(handlerLeaveChannelRelay);
-		void onServerMessage(handlerServerMessageRelay);
-		void onChannelMessage(handlerChannelMessageRelay);
-		void onPeerMessage(handlerPeerMessageRelay);
+		void onError         (         ErrorHandler &handler);
+		void onConnect       (       ConnectHandler &handler);
+		void onDisconnect    (    DisconnectHandler &handler);
+		void onNameSet       (       NameSetHandler &handler);
+		void onJoinChannel   (   JoinChannelHandler &handler);
+		void onLeaveChannel  (  LeaveChannelHandler &handler);
+		void onServerMessage ( ServerMessageHandler &handler);
+		void onChannelMessage(ChannelMessageHandler &handler);
+		void onPeerMessage   (   PeerMessageHandler &handler);
 
 	private:
+		struct
+		{
+			         ErrorHandler *Error;
+			       ConnectHandler *Connect;
+			    DisconnectHandler *Disconnect;
+			       NameSetHandler *NameSet;
+			   JoinChannelHandler *JoinChannel;
+			  LeaveChannelHandler *LeaveChannel;
+			 ServerMessageHandler *ServerMessage;
+			ChannelMessageHandler *ChannelMessage;
+			   PeerMessageHandler *PeerMessage;
+		} handlers;
+
 		lw_pump const msgPump;
 		lw_server const lws;
 		std::map<size_t, Client> clients;
@@ -116,23 +131,12 @@ namespace LwRelay
 		char * welcomeMessage;
 		bool enableChannelListing;
 		
-		void CloseChannel(relay::_server::_channel * Channel);
-
-		struct
-		{
-			handlerConnectRelay onConnect;
-			handlerDisconnectRelay onDisconnect;
-			handlerNameSetRelay onNameSet;
-			handlerErrorRelay onError;
-			handlerJoinChannelRelay onJoinChannel;
-			handlerLeaveChannelRelay onLeaveChannel;
-			handlerServerMessageRelay onServerMessage;
-			handlerChannelMessageRelay onChannelMessage;
-			handlerPeerMessageRelay onPeerMessage;
-		} handlers;
+		void CloseChannel(Channel *channel);
 
 		std::list<_channel *> listOfChannels;
-	};
+
+		friend struct Server;
+	};	friend struct Channel;
 
 
 	relay::_server::_client *   ToRelay(lacewing::server_client);

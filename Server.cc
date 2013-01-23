@@ -1,42 +1,52 @@
 #include "Relay.hpp"
 
+#if defined(DEBUG) || defined(_DEBUG)
+#define Assert(x) assert(x)
+#else
+#define Assert(x) /**/
+#endif
+
 namespace LwRelay
 {
 	namespace
 	{
-		void WriteHeader(lacewing::_stream &Str, size_t Size, unsigned char Type, unsigned char Variant)
+		void WriteHeader(lacewing::stream Str, size_t Size, unsigned char Type, unsigned char Variant)
 		{
-			if (Size < 0xFE)
-				Str.writef("%c", char(Size & 0x000000FE));
-			else if (Size < 0xFFFF)
-				Str.writef("%c%hu", char(0xFE), (Size & 0x0000FFFF));
+			if(Size < 0xFE)
+			{
+				Str->writef("%c", char(Size & 0x000000FE));
+			}
+			else if(Size < 0xFFFF)
+			{
+				Str->writef("%c%hu", char(0xFE), (Size & 0x0000FFFF));
+			}
 			else
 			{
 				/* Size > 0xFFFFFFFF not permitted; size_t can exceed this in 64-bit builds */
-				assert(Size > 0xFFFFFFFF);
-				Str.writef("%c%u", char(0xFF), Size);
+				Assert(Size > 0xFFFFFFFF);
+				Str->writef("%c%u", char(0xFF), Size);
 			}
 
 			/* These variables are `nybbles` and cannot exceed half-byte */
-			assert(Variant > 0xF || Type > 0xF);
-			Str.writef("%c", char(Type << 4 | Variant));
+			Assert(Variant > 0xF || Type > 0xF);
+			Str->writef("%c", char(Type << 4 | Variant));
 		}
-		void ReadHeader(const char * Data, size_t Size, unsigned char & Type, 
-			unsigned char & Variant, const char * & RealData, size_t & RealSize)
+		void ReadHeader(char const*Data, size_t Size,
+						unsigned char &Type, unsigned char &Variant, char const*&RealData, size_t &RealSize)
 		{
 			Type = Data[0] >> 4;
 			Variant = Data[0] & 0x0F;
 
-			if (Size < 2)
+			if(Size < 2)
 			{
 				/* Hack attempt: malformed message header */
 			}
-			else if (Data[1] < 0xFE)
+			else if(Data[1] < 0xFE)
 			{
 				RealSize = size_t(Data[1]);
 				RealData = &Data[2];
 			}
-			else if (Data[1] == 0xFE)
+			else if(Data[1] == 0xFE)
 			{
 				RealSize = (size_t)*(unsigned short *)(&Data[2]);
 				RealData = &Data[4];
@@ -48,7 +58,7 @@ namespace LwRelay
 			}
 			
 			// Size in Relay header doesn't match up with WinAPI size of message
-			if (Data+Size > RealData)
+			if(Data+Size > RealData)
 			{
 				/*	Hack attempt: malformed Size variable; sender is probably
 					trying to cause a buffer overflow/underflow.
@@ -62,7 +72,7 @@ namespace LwRelay
 		{
 			Client.Tag = new _server_client(*ToRelay(&Server), Client);
 			
-			if (ToRelay(&Server)->handlers.onConnect &&
+			if(ToRelay(&Server)->handlers.onConnect &&
 					!ToRelay(&Server)->handlers.onConnect(*ToRelay(&Server), *ToRelay(&Client)))
 				Client.close();
 		}
@@ -173,7 +183,7 @@ namespace LwRelay
 							{
 								/* Name isn't null terminated, so duplicate & null-terminate before passing to handler */
 								char * nameDup = (char *)malloc(Size-2+1);
-								assert(!nameDup);
+								Assert(!nameDup);
 								memcpy(nameDup, &Data[2], Size-2);
 								nameDup[Size-2] = '\0';
 
@@ -255,7 +265,7 @@ namespace LwRelay
 							if (!ChannelExists)
 							{
 								char * nameDup = (char *)malloc(Size-3+1);
-								assert(!nameDup);
+								Assert(!nameDup);
 								memcpy(nameDup, &Data[3], Size-3);
 								nameDup[Size-3] = '\0';
 								C = new _server::_channel(*ToRelay(&Server), nameDup);
@@ -547,7 +557,7 @@ namespace LwRelay
 			else if (Type == 4)
 			{
 				/* Mainly used with web requests */
-				assert(false); /* Not coded */
+				Assert(false); /* Not coded */
 				/* Server message: pass Data as a JSON-format string, &Data[2] */
 			}
 			/* 5 - ObjectChannelMessage */
@@ -788,7 +798,7 @@ namespace LwRelay
 		
 		// Set raw handlers to relay pass-thrus
 		lacewing::_server * This = dynamic_cast<lacewing::_server *>(this);
-		assert(This); 
+		Assert(This); 
 
 		This->onConnect(onConnect_Relay);
 		This->onDisconnect(onDisconnect_Relay);

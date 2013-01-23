@@ -1,5 +1,11 @@
 #include "Relay.hpp"
 
+#if defined(DEBUG) || defined(_DEBUG)
+#define Assert(x) assert(x)
+#else
+#define Assert(x) /**/
+#endif
+
 namespace lacewing {
 namespace relay {
 // Raw handlers for liblacewing pass-thru to Relay functions
@@ -116,7 +122,7 @@ void onReceive_RelayC(lacewing::_client & Client, const char * Msg, size_t MsgSi
 					{
 						/* Name isn't null terminated, so duplicate & null-terminate before passing to handler */
 						char * NameDup = (char *)malloc(Size-2+1);
-						assert(!NameDup);
+						Assert(!NameDup);
 						memcpy(NameDup, &Data[2], Size-2);
 						NameDup[Size-2] = '\0';
 
@@ -198,7 +204,7 @@ void onReceive_RelayC(lacewing::_client & Client, const char * Msg, size_t MsgSi
 					if (!ChannelExists)
 					{
 						char * nameDup = (char *)malloc(Size-3+1);
-						assert(!nameDup);
+						Assert(!nameDup);
 						memcpy(nameDup, &Data[3], Size-3);
 						nameDup[Size-3] = '\0';
 						C = new _server::_channel(*ToRelay(&server), nameDup);
@@ -497,7 +503,7 @@ void onReceive_RelayC(lacewing::_client & Client, const char * Msg, size_t MsgSi
 	else if (Type == 4)
 	{
 		/* Mainly used with web requests */
-		assert(false); /* Not coded */
+		Assert(false); /* Not coded */
 		/* Server message: pass Data as a JSON-format string, &Data[2] */
 	}
 	/* 5 - ObjectChannelMessage */
@@ -690,7 +696,7 @@ relay::client::client(lacewing::_pump & Pump) : lacewing::server(Pump), msgPump(
 	
 	// Set raw handlers to relay pass-thrus
 	_lw_client This = dynamic_cast<_lw_client>(this);
-	assert(This); 
+	Assert(This); 
 
 	This->onConnect(onConnect_RelayC);
 	This->onDisconnect(onDisconnect_RelayC);
