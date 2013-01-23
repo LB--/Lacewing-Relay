@@ -1,48 +1,96 @@
 #ifndef __DarkwireSoftware_Relay_HeaderPlusPlus__
 #define __DarkwireSoftware_Relay_HeaderPlusPlus__
 
-#include <map>
-#include <vector>
-#include <string>
-#include <bitset>
-
 #include "lacewing.h"
 
 namespace LwRelay
 {
 	struct Server
 	{
+		void *Tag;
+
 		/**
 		 * Construct a new server from a pump, such as an event pump.
 		 */
-		Server(lacewinng::pump pump);
+		Server(lacewing::pump pump);
 
 		struct Client
 		{
-			typedef unsigned short ID_t; //See spec 2.1.2
-			typedef std::string Name_t;
+			void *Tag;
+
+			typedef unsigned short ID_t;
 
 			struct ChannelIterator
 			{
 			};
 
-			void Send(unsigned char subchannel, unsigned char variant, char const*data, size_t size);
-			void Send(unsigned char subchannel, unsigned char variant, char const*null_terminated_string);
+			ID_t ID() const;
+			char const*Name() const;
+			void Name(char const*name);
+			lacewing::address Address() /*const*/;
+			void Disconnect();
+			void Send(bool blast, unsigned char subchannel, unsigned char variant, char const*data, size_t size);
+			void Send(bool blast, unsigned char subchannel, unsigned char variant, char const*null_terminated_string);
+			size_t ChannelCount() const;
+			ChannelIterator ChannelIterator();
+			Client *Next();
+
 		private:
+			struct Impl;
+			Impl *impl;
+			/*
 			Server &server;
 			lacewing::server_client const client;
 			ID_t const id;
-			Name_t name;
+			char const*name;
 			typedef std::vector<Channel *> Channels_t;
 			Channels_t channels;
+			*/
 
+		protected:
 			Client(Server &server, lacewing::server_client client);
+			#if __cplusplus >= 201103L // >= C++11
+			Client(Client const&) = delete;
+			Client operator=(Client const&) = delete;
+			#else
+			Client(Client const&);
+			Client operator=(Client const&);
+			#endif
+			~Client();
 
+			friend struct Channel;
 			friend struct Server;
 		};	friend struct Client;
 
 		struct Channel
 		{
+			void *Tag;
+
+			typedef unsigned short ID_t;
+
+			struct ClientIterator
+			{
+			};
+
+			ID_t ID() const;
+			char const*Name() const;
+			void Name(char const*name);
+			bool AutoClose() const;
+			void AutoClose(bool autoclose);
+			bool Visible() const;
+			void Visible(bool visible);
+			void Close();
+			void Send(bool blast, unsigned char subchannel, unsigned char variant, char const*data, size_t size);
+			void Send(bool blast, unsigned char subchannel, unsigned char variant, char const*null_terminated_string);
+			Client *ChannelMaster();
+			size_t ClientCount() const;
+			ClientIterator ClientIterator();
+			Channel *Next();
+
+		private:
+			struct Impl;
+			Impl *impl;
+			/*
 			std::vector<Client *> clients;
 			lacewing::client master;
 			lacewing::server server;
@@ -50,12 +98,24 @@ namespace LwRelay
 			char * name;
 			bool closeWhenMasterLeaves, listInPublicChannelList;
 
-			void Join(_server & Server, _server_client & Client);
-			void Leave(_server & Server, _server_client & Client);
-			
-			_channel(_server & Server, const char * const Name);
-			~_channel();
-		};
+			void Join(Client &client);
+			void Leave(Client &client);
+			*/
+
+		protected:
+			Channel(Server &server, char const*name);
+			#if __cplusplus >= 201103L // >= C++11
+			Channel(Channel const&) = delete;
+			Channel operator=(Channel const&) = delete;
+			#else
+			Channel(Channel const&);
+			Channel operator=(Channel const&);
+			#endif
+			~Channel();
+
+			friend struct Client;
+			friend struct Server;
+		};	friend struct Channel;
 
 		size_t ClientCount() const;
 		Client *FirstClient();
@@ -86,14 +146,16 @@ namespace LwRelay
 		private:
 			struct Impl;
 			Impl *impl;
-		};
+
+			friend struct Server;
+		};	friend struct Deny;
 
 		//fully-qualified names are used to be copy-paste friendly (except for "Deny")
 		typedef void (lw_import          ErrorHandler)(::LwRelay::Server &server, ::lacewing::error error);
 		typedef Deny (lw_import        ConnectHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client);
 		typedef void (lw_import     DisconnectHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client);
 		typedef Deny (lw_import        NameSetHandler)(::LwRelay::Server &Server, ::LwRelay::Server::Client &client, char const*name);
-		typedef Deny (lw_import    JoinChannelHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel, bool closeformaster, bool visible);
+		typedef Deny (lw_import    JoinChannelHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel, bool autoclose, bool visible);
 		typedef Deny (lw_import   LeaveChannelHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel);
 		typedef void (lw_import  ServerMessageHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client,                                                    unsigned char subchannel, unsigned char variant, char const*data, size_t size);
 		typedef Deny (lw_import ChannelMessageHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel, bool blasted, unsigned char subchannel, unsigned char variant, char const*data, size_t size);
@@ -110,6 +172,9 @@ namespace LwRelay
 		void onPeerMessage   (   PeerMessageHandler &handler);
 
 	private:
+		struct Impl;
+		Impl *impl;
+		/*
 		struct
 		{
 			         ErrorHandler *Error;
@@ -134,6 +199,7 @@ namespace LwRelay
 		void CloseChannel(Channel *channel);
 
 		std::list<_channel *> listOfChannels;
+		*/
 
 		friend struct Server;
 	};	friend struct Channel;
