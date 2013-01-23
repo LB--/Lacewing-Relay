@@ -13,6 +13,7 @@ namespace LwRelay
 		 * Construct a new server from a pump, such as an event pump.
 		 */
 		Server(lacewing::pump pump);
+		~Server();
 
 		struct Client
 		{
@@ -38,16 +39,7 @@ namespace LwRelay
 		private:
 			struct Impl;
 			Impl *impl;
-			/*
-			Server &server;
-			lacewing::server_client const client;
-			ID_t const id;
-			char const*name;
-			typedef std::vector<Channel *> Channels_t;
-			Channels_t channels;
-			*/
 
-		protected:
 			Client(Server &server, lacewing::server_client client);
 			#if __cplusplus >= 201103L // >= C++11
 			Client(Client const&) = delete;
@@ -90,19 +82,7 @@ namespace LwRelay
 		private:
 			struct Impl;
 			Impl *impl;
-			/*
-			std::vector<Client *> clients;
-			lacewing::client master;
-			lacewing::server server;
-			unsigned short id;
-			char * name;
-			bool closeWhenMasterLeaves, listInPublicChannelList;
 
-			void Join(Client &client);
-			void Leave(Client &client);
-			*/
-
-		protected:
 			Channel(Server &server, char const*name);
 			#if __cplusplus >= 201103L // >= C++11
 			Channel(Channel const&) = delete;
@@ -174,51 +154,41 @@ namespace LwRelay
 	private:
 		struct Impl;
 		Impl *impl;
-		/*
-		struct
-		{
-			         ErrorHandler *Error;
-			       ConnectHandler *Connect;
-			    DisconnectHandler *Disconnect;
-			       NameSetHandler *NameSet;
-			   JoinChannelHandler *JoinChannel;
-			  LeaveChannelHandler *LeaveChannel;
-			 ServerMessageHandler *ServerMessage;
-			ChannelMessageHandler *ChannelMessage;
-			   PeerMessageHandler *PeerMessage;
-		} handlers;
 
-		lw_pump const msgPump;
-		lw_server const lws;
-		std::map<size_t, Client> clients;
-		size_t lowestCleanID;
-		size_t GetFreeID();
-		char * welcomeMessage;
-		bool enableChannelListing;
-		
-		void CloseChannel(Channel *channel);
-
-		std::list<_channel *> listOfChannels;
-		*/
-
-		friend struct Server;
-	};	friend struct Channel;
-
-
-	relay::_server::_client *   ToRelay(lacewing::server_client);
-	relay::_server *            ToRelay(lacewing::server);
+		#if __cplusplus >= 201103L // >= C++11
+		Server(Server const&) = delete;
+		Server operator=(Server const&) = delete;
+		#else
+		Server(Server const&);
+		Server operator=(Server const&);
+		#endif
+	};
 
 	/////////////////////////////////////////////////////////////////////////////////
 
-	struct _client
+	struct Client
 	{
-		lacewing::_pump * const msgPump;
+		void *Tag;
 
-		struct _peer;
-		struct _channel {
+		struct Channel
+		{
+			struct Peer
+			{
+				unsigned short id; /* See spec 2.1.2 */
+				std::list<_channel *> listOfChannels;
+				const char * name;
+
+				relay::_client * client;
+				//lacewing::Client * container; // any original lacewing struct?
+				void Write(lacewing::stream Str, unsigned char Type, unsigned char Variant);
+
+				_peer(relay::_client & Client, lacewing::_client::_peer & Peer);
+				~_peer();
+			};
+
 			std::list<_peer *> listOfPeers;
-			_peer * master;
-			_client * client;
+			Peer * master;
+			Client * client;
 			unsigned short id;
 			char * name;
 			bool closeWhenMasterLeaves, listInPublicChannelList;
@@ -230,93 +200,80 @@ namespace LwRelay
 			~_channel();
 		};
 
-		struct _peer
-		{
-			unsigned short id; /* See spec 2.1.2 */
-			std::list<_channel *> listOfChannels;
-			const char * name;
+		//fully-qualified names are used to be copy-paste friendly
+		typedef void (lw_import                ErrorHandler)(::LwRelay::Client &client, lacewing::error error);
+		typedef void (lw_import              ConnectHandler)(::LwRelay::Client &client);
+		typedef void (lw_import     ConnectionDeniedHandler)(::LwRelay::Client &client,                                                                                                  char const*reason);
+		typedef void (lw_import           DisconnectHandler)(::LwRelay::Client &client);
+		typedef void (lw_import  ChannelListReceivedHandler)(::LwRelay::Client &client);
+		typedef void (lw_import              NameSetHandler)(::LwRelay::Client &client);
+		typedef void (lw_import          NameChangedHandler)(::LwRelay::Client &client,                                                                              char const*oldname);
+		typedef void (lw_import           NameDeniedHandler)(::LwRelay::Client &client,                                                                              char const*thename, char const*reason);
+		typedef void (lw_import          ChannelJoinHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel);
+		typedef void (lw_import    ChannelJoinDeniedHandler)(::LwRelay::Client &client,                                                                              char const*thename, char const*reason);
+		typedef void (lw_import         ChannelLeaveHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel);
+		typedef void (lw_import   ChannelLeaveDeniedHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel,                                                             char const*reason);
+		typedef void (lw_import        ServerMessageHandler)(::LwRelay::Client &client,                                                                              bool blasted, unsigned char subchannel, unsigned char variant, char const*data, size_t size);
+		typedef void (lw_import ServerChannelMessageHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel,                                         bool blasted, unsigned char subchannel, unsigned char variant, char const*data, size_t size);
+		typedef void (lw_import       ChannelMessageHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel, ::LwRelay::Client::Channel::Peer &peer, bool blasted, unsigned char subchannel, unsigned char variant, char const*data, size_t size);
+		typedef void (lw_import          PeerMessageHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel, ::LwRelay::Client::Channel::Peer &peer, bool blasted, unsigned char subchannel, unsigned char variant, char const*data, size_t size);
+		typedef void (lw_import             PeerJoinHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel, ::LwRelay::Client::Channel::Peer &peer);
+		typedef void (lw_import            PeerLeaveHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel, ::LwRelay::Client::Channel::Peer &peer);
+		typedef void (lw_import       PeerChangeNameHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel, ::LwRelay::Client::Channel::Peer &peer, char const*oldname);
 
-			relay::_client * client;
-			//lacewing::Client * container; // any original lacewing struct?
-			void Write(lacewing::stream Str, unsigned char Type, unsigned char Variant);
+		//
 
-			_peer(relay::_client & Client, lacewing::_client::_peer & Peer);
-			~_peer();
-		};
-		
-		void CloseChannel(relay::_client::_channel * Channel);
+		void onError               (               ErrorHandler &handler);
+		void onConnect             (             ConnectHandler &handler);
+		void onConnectionDenied    (    ConnectionDeniedHandler &handler);
+		void onDisconnect          (          DisconnectHandler &handler);
+		void onChannelListReceived ( ChannelListReceivedHandler &handler);
+		void onNameSet             (             NameSetHandler &handler);
+		void onNameChanged         (         NameChangedHandler &handler);
+		void onNameDenied          (          NameDeniedHandler &handler);
+		void onChannelJoin         (         ChannelJoinHandler &handler);
+		void onChannelJoinDenied   (   ChannelJoinDeniedHandler &handler);
+		void onChannelLeave        (        ChannelLeaveHandler &handler);
+		void onChannelLeaveDenied  (  ChannelLeaveDeniedHandler &handler);
+		void onServerMessage       (       ServerMessageHandler &handler);
+		void onServerChannelMessage(ServerChannelMessageHandler &handler);
+		void onChannelMessage      (      ChannelMessageHandler &handler);
+		void onPeerMessage         (         PeerMessageHandler &handler);
+		void onPeerJoin            (            PeerJoinHandler &handler);
+		void onPeerLeave           (           PeerLeaveHandler &handler);
+		void onPeerChangeName      (      PeerChangeNameHandler &handler);
 
-		typedef void (lw_import * handlerConnectRelay)
-			(relay::_client & Client);
-
-		typedef void (lw_import * handlerDisconnectRelay)
-			(relay::_client & Client);
-
-		typedef void (lw_import * handlerServerMessageRelay)
-			(relay::_client & Client, bool Blasted, unsigned char Variant,
-			 unsigned char Subchannel, const char * Data, size_t Size);
-
-		typedef void (lw_import * handlerErrorRelay)
-			(relay::_client & Client, error & Error);
-		
-		typedef bool (lw_import * handlerJoinChannelRelay)
-			(relay::_client & Client, bool Blasted, relay::_client::_channel & Channel,
-			 bool & CloseWhenMasterLeaves, bool & ShowInChannelList, char * & DenyReason, bool & FreeDenyReason);
-		
-		typedef void (lw_import * handlerChannelMessageRelay)
-			(relay::_client & Client, relay::_client::_peer & Peer, bool Blasted, relay::_client::_channel & Channel,
-			 unsigned char Variant, unsigned char Subchannel, const char * Data, size_t Size);
-
-		typedef void (lw_import * handlerPeerMessageRelay)
-			(relay::_client & Client, relay::_client::_peer & Peer, bool Blasted, relay::_client::_channel & Channel,
-			 unsigned char Variant, unsigned char Subchannel, const char * Data, size_t Size);
-
-		typedef void (lw_import * handlerLeaveChannelRelay)
-			(relay::_client & Client, relay::_client::_peer & Peer, relay::_client::_channel & Channel,
-			 char * & DenyReason, bool & FreeDenyReason);
-
-		/*	In this handler, you can call Client.Name() for the current name before approving the name change.
-			If you deny the change, "Custom server deny reason." will be given by default. If you wish to specify
-			the reason, modify DenyReason to point to a string literal or malloc()-style memory. In the case
-			of using malloc(), set FreeDenyReason to true, else it will default to false. */
-
-		typedef void (lw_import * handlerNameSetRelay)
-			(relay::_client & Client, const char * Name, char * & DenyReason, bool FreeDenyReason);
-
+	private:
 		struct
 		{
-			handlerConnectRelay onConnect;
-			handlerDisconnectRelay onDisconnect;
-			handlerNameSetRelay onNameSet;
-			handlerErrorRelay onError;
-			handlerJoinChannelRelay onJoinChannel;
-			handlerLeaveChannelRelay onLeaveChannel;
-			handlerServerMessageRelay onServerMessage;
-			handlerChannelMessageRelay onChannelMessage;
-			handlerPeerMessageRelay onPeerMessage;
+			ErrorHandler                *Error;
+			ConnectHandler              *Connect;
+			ConnectionDeniedHandler     *ConnectionDenied;
+			DisconnectHandler           *Disconnect;
+			ChannelListReceivedHandler  *ChannelListReceived;
+			NameSetHandler              *NameSet;
+			NameChangedHandler          *NameChanged;
+			NameDeniedHandler           *NameDenied;
+			ChannelJoinHandler          *ChannelJoin;
+			ChannelJoinDeniedHandler    *ChannelJoinDenied;
+			ChannelLeaveHandler         *ChannelLeave;
+			ChannelLeaveDeniedHandler   *ChannelLeaveDenied;
+			ServerMessageHandler        *ServerMessage;
+			ServerChannelMessageHandler *ServerChannelMessage;
+			ChannelMessageHandler       *ChannelMessage;
+			PeerMessageHandler          *PeerMessage;
+			PeerJoinHandler             *PeerJoin;
+			PeerLeaveHandler            *PeerLeave;
+			PeerChangeNameHandler       *PeerChangeName;
 		} handlers;
 
-
-		void onConnect(handlerConnectRelay);
-		void onDisconnect(handlerDisconnectRelay);
-		void onNameSet(handlerNameSetRelay);
-		void onError(handlerErrorRelay);
-		void onJoinChannel(handlerJoinChannelRelay);
-		void onLeaveChannel(handlerLeaveChannelRelay);
-		void onServerMessage(handlerServerMessageRelay);
-		void onChannelMessage(handlerChannelMessageRelay);
-		void onPeerMessage(handlerPeerMessageRelay);
-
+		lacewing::_pump * const msgPump;
 		std::list<_channel *> listOfChannels;
+		void CloseChannel(relay::_client::_channel * Channel);
 		
 		_client(_pump &);
 		~_client();
 	};
-
-
-	relay::_server::_client *    ToRelay(lacewing::_server_client *);
-	relay::_server *            ToRelay(lacewing::_server *);
-
 }
 
 #endif //#ifndef __DarkwireSoftware_Relay_HeaderPlusPlus__

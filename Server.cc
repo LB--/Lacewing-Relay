@@ -1,5 +1,9 @@
 #include "Relay.hpp"
 
+#include <map>
+#include <list>
+#include <string>
+
 #if defined(DEBUG) || defined(_DEBUG)
 #define Assert(x) assert(x)
 #else
@@ -8,6 +12,90 @@
 
 namespace LwRelay
 {
+	struct Server::Impl
+	{
+		lw_pump const pump;
+		lw_server const server;
+
+		struct
+		{
+			         ErrorHandler *Error;
+			       ConnectHandler *Connect;
+			    DisconnectHandler *Disconnect;
+			       NameSetHandler *NameSet;
+			   JoinChannelHandler *JoinChannel;
+			  LeaveChannelHandler *LeaveChannel;
+			 ServerMessageHandler *ServerMessage;
+			ChannelMessageHandler *ChannelMessage;
+			   PeerMessageHandler *PeerMessage;
+		} handlers;
+
+		std::map<size_t, Client> clients;
+		size_t lowestCleanID;
+		size_t GetFreeID();
+		std::string welcomeMessage;
+		bool enableChannelListing;
+		
+		void CloseChannel(Channel *channel);
+
+		std::list<_channel *> listOfChannels;
+
+		// Server protected functions: ID management
+		size_t GetFreeID()
+		{
+			// No abnormalies (gaps in the IDs of users) to fill up; simply return lowest available
+			if (usedIDs.Size == 0)
+				return lowestCleanID++;
+
+			size_t ret = **usedIDs.First;
+			usedIDs.pop_front();
+			
+			return ret;
+		}
+		void SetFreeID(size_t ID)
+		{
+			// If last ID of clients, we don't need to store the abnomaly
+			if (ID == lowestCleanID-1)
+			{
+				--lowestCleanID;
+				return;
+			}
+			
+			// Otherwise, note the ID in list of abnormalies (organise numerically)
+			for (List<size_t>::Element * E = usedIDs.First; ; E = E->Next)
+			{
+				if (**E > ID)
+				{
+					usedIDs.InsertBefore(E, id);
+					return;
+				}
+			}
+			
+			usedIDs.Push(ID);
+		}
+	};
+	struct Server::Client::Impl
+	{
+		Server &server;
+		lacewing::server_client const client;
+		ID_t const id;
+		char const*name;
+		typedef std::vector<Channel *> Channels_t;
+		Channels_t channels;
+	};
+	struct Server::Channel::Impl
+	{
+		std::vector<Client *> clients;
+		lacewing::client master;
+		lacewing::server server;
+		unsigned short id;
+		char * name;
+		bool closeWhenMasterLeaves, listInPublicChannelList;
+
+		void Join(Client &client);
+		void Leave(Client &client);
+	};
+
 	namespace
 	{
 		void WriteHeader(lacewing::stream Str, size_t Size, unsigned char Type, unsigned char Variant)
@@ -633,50 +721,9 @@ namespace LwRelay
 	 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	// Server protected functions: ID management
-	size_t _server::GetFreeID()
+	Server::Server(lacewing::pump pump) : Tag(0), impl(new Impl)
 	{
-		// No abnormalies (gaps in the IDs of users) to fill up; simply return lowest available
-		if (usedIDs.Size == 0)
-			return lowestCleanID++;
-
-		size_t ret = **usedIDs.First;
-		usedIDs.pop_front();
-		
-		return ret;
-	}
-	void _server::SetFreeID(size_t ID)
-	{
-		// If last ID of clients, we don't need to store the abnomaly
-		if (ID == lowestCleanID-1)
-		{
-			--lowestCleanID;
-			return;
-		}
-		
-		// Otherwise, note the ID in list of abnormalies (organise numerically)
-		for (List<size_t>::Element * E = usedIDs.First; E; E = E->Next)
-		{
-			if (**E > ID)
-			{
-				usedIDs.InsertBefore(E, id);
-				return;
-			}
-		}
-		
-		usedIDs.Push(ID);
-	}
-
-
-
-	// Raw liblacewing -> relay management
-	_server::_client * ToRelay(lacewing::_server_client * Client)
-	{
-		return (_server::_client *)Client->Tag;
-	}
-	_server * ToRelay(lacewing::_server * Server)
-	{
-		return (_server *)Server->Tag;
+		//
 	}
 
 
