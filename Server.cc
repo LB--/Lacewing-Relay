@@ -14,8 +14,8 @@ namespace LwRelay
 {
 	struct Server::Impl
 	{
-		lw_pump const pump;
-		lw_server const server;
+		lacewing::pump const pump;
+		lacewing::server const server;
 
 		struct
 		{
