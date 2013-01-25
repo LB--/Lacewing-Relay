@@ -181,56 +181,116 @@ namespace LwRelay
 		}
 		void onReceive_Relay(lacewing::_server & Server, lacewing::_server_client & Client, const char * Msg, size_t MsgSize)
 		{
+			// Read and post schematics (i.e. if channel message, call channel handler)
 			unsigned char Type, Variant;
 			const char * Data;
 			size_t Size;
 			lacewing::_fdstream Response;
 			ReadHeader(Msg, MsgSize, Type, Variant, Data, Size);
-			if (Type == 0) {
-				if (Size == 0) {
+			
+			/*	0 - Request
+				[byte type, ... data] */
+			if (Type == 0)
+			{
+				/*	The response should be a match with type of request:
+					[byte type, bool success, ...]
+					type is written to the stream here; success later. */
+
+				if (Size == 0)
+				{
+					/* Malformed message header; type is missing */
 					return;
-				} else {
+				}
+				else // Message header is good for request
+				{
 					Response.writef("%c%c", char(0), Data[1]);
-					if (Data[1] == 0) {
-						if (!strcmp("revision 3", &Data[2])) {
+
+					/*	0 - Connect request
+						[string version] */
+					if (Data[1] == 0)
+					{
+						/* Version is compatible */
+						if (!strcmp("revision 3", &Data[2]))
+						{
+							/* [... short peerID, string welcomeMessage] */
+							Response.writef("%c%hu", char(true), ToRelay(&Client)->id);
 							if (ToRelay(&Server)->welcomeMessage)
 								Response.write(ToRelay(&Server)->welcomeMessage);
+							
 							ToRelay(&Client)->Write(Response, Type, Variant);
-						} else {
+						}
+						else
+						{
+							/*	[...]
+								Client should be d/c'd after message */
 							Response.writef("%c", char(false));
+							
 							ToRelay(&Client)->Write(Response, Type, Variant);
 							Client.close();
 						}
-					} else if (Data[1] == 1) {
-						if (Data[2] == '\0') {
+					}
+					/*	1 - Set name request
+						[string name] */
+					else if (Data[1] == 1)
+					{
+						/*	Response: [... byte nameLength, string Name, string DenyReason]
+							DenyReason is blank, but nameLength and Name are always
+							the same as at the request*/
+						
+						/* Name is blank */
+						if (Data[2] == '\0')
+						{
+							/*	Client is attempting to set an empty name.
+								Probably not a hack attempt, just the user being dumb */
 							Response.writef("%c%c%c%s", char(false), char(0), char(0),
 										"Channel name is blank. Sort your life out.");
-						} else if (Size > 2+255) {
+						}
+						/* Name is too long(max 255 due to use in nameLength */
+						else if (Size > 2+255)
+						{
 							Response.writef("%c%c%s.255", char(false), char(255), &Data[2],
 								"Name is too long: maximum of 255 characters permitted.");
-						} else if (memchr(&Data[2], '\0', Size-2)) {
+						}
+						/* Name contains embedded nulls */
+						else if (memchr(&Data[2], '\0', Size-2))
+						{
+								/*	Client is attempting to set a name with embedded nulls.
+								Fail it. More secure servers should d/c the client. */
 							Response.writef("%c%c%s.*%s", char(false), char(Size-2), &Data[2], Size-2,
 								"Name contains invalid symbols (embedded nulls).");
-						} else {
+						}
+						/* Request is correctly formatted, so now we check if the server is okay with it */
+						else
+						{
+							/*	Is name already in use? */
 							lacewing::server_client C = Server.client_first();
-							while (C) {
+							while (C)
+							{
 								if (!memicmp(ToRelay(C)->name, &Data[2], strlen(ToRelay(C)->name)+1))
 									break;
 								C = C->Next();
 							}
+
+							/* Name free to use is indicated by !C, invoke user handler */
 							bool AllowedByUser = true, FreeDenyReason = false;
 							char * DenyReason = NULL;
-							if (!C && ToRelay(&Server)->handlers.onNameSet) {
+							
+							if (!C && ToRelay(&Server)->handlers.onNameSet)
+							{
+								/* Name isn't null terminated, so duplicate & null-terminate before passing to handler */
 								char * nameDup = (char *)malloc(Size-2+1);
 								Assert(!nameDup);
 								memcpy(nameDup, &Data[2], Size-2);
 								nameDup[Size-2] = '\0';
+
 								AllowedByUser = ToRelay(&Server)->handlers.onNameSet(*ToRelay(&Server),
 										*ToRelay(&Client),
 										(const char *)nameDup,
 										DenyReason, FreeDenyReason);
 							}
 							Response.writef("%c%c%s.*", char(!C && AllowedByUser), char(Size-2), &Data[2], Size-2);
+
+							/* Write deny reason, if appropriate, then optionally free() it */
 							if (C)
 								Response.write("Name is already in use.");
 							if (!AllowedByUser)
@@ -238,31 +298,68 @@ namespace LwRelay
 							if (FreeDenyReason)
 								free(DenyReason);
 						}
+
 						ToRelay(&Client)->Write(Response, Type, Variant);
-					} else if (Data[1] == 2) {
+					}
+					/*	2 - Join channel request
+						[byte flags, string name] */
+					else if (Data[1] == 2)
+					{
+						/*	Response: 
+							On success:
+							[byte flags, byte nameLength, string name,
+							short channel, ...]
+							Then for each peer in the channel:
+							[short id, byte flags, byte nameLength, string name]
+							
+							On failure:
+							[byte NameLength, string name, string DenyReason] */
 						bool ShowInChannelList = (Data[2] & 0x1) == 0,
 							 CloseWhenMasterLeaves = (Data[2] & 0x2) != 0;
-						if (Data[3] == '\0') {
+						
+						/* Name is blank */
+						if (Data[3] == '\0')
+						{
+							/*	Client is attempting to join a channel with an empty name.
+								Probably not a hack attempt, just the user being dumb */
 							Response.writef("%c%c%c%s", char(false), char(0), char(0),
 										"Channel name is blank. Sort your life out.");
-						} else if (Size > 3+255) {
+						}
+						/* Name is too long (max 255 due to use in nameLength */
+						else if (Size > 3+255)
+						{
 							Response.writef("%c%c%s.255%s", char(false), char(255), &Data[3],
 								"Channel name is too long: maximum of 255 characters permitted.");
-						} else if (memchr(&Data[3], '\0', Size-3)) {
+						}
+						/* Name contains embedded nulls */
+						else if (memchr(&Data[3], '\0', Size-3))
+						{
+							/*	Client is attempting to set a name with embedded nulls.
+								Fail it. More secure servers should d/c the client. */
 							Response.writef("%c%c%s.*%s", char(false), char(Size-3), &Data[3], Size-3,
 								"Name contains invalid symbols (embedded nulls).");
-						} else {
+						}
+						/* Request is correctly formatted, so now we check if the server is okay with it */
+						else
+						{
+							/* Is channel with this name already exists already in use? */
 							bool AllowedByUser = true, FreeDenyReason = false, ChannelExists = false;
 							char * DenyReason = NULL;
+
 							_server::_channel * C = NULL;
-							for (List<_server::_channel *>::Element * E = ToRelay(&server)->listOfChannels.First; E; E = E->Next) {
-								if (!memicmp((**E)->Name, &Data[3], strlen((**E)->name)+1)) {
+							for (List<_server::_channel *>::Element * E = ToRelay(&server)->listOfChannels.First; E; E = E->Next)
+							{
+								if (!memicmp((**E)->Name, &Data[3], strlen((**E)->name)+1))
+								{
 									C = **E;
 									ChannelExists = true;
 									break;
 								}
 							}
-							if (!ChannelExists) {
+
+							/* If channel isn't made, make it temporarily */
+							if (!ChannelExists)
+							{
 								char * nameDup = (char *)malloc(Size-3+1);
 								Assert(!nameDup);
 								memcpy(nameDup, &Data[3], Size-3);
@@ -270,54 +367,86 @@ namespace LwRelay
 								C = new _server::_channel(*ToRelay(&Server), nameDup);
 								free(nameDup);
 							}
+							
 							if (ToRelay(&Server)->handlers.onJoinChannel)
 								AllowedByUser = ToRelay(&Server)->handlers.onJoinChannel(*ToRelay(&Server),
 													*ToRelay(&Client), false, *C, CloseWhenMasterLeaves, ShowInChannelList,
 													DenyReason, FreeDenyReason);
-							if (AllowedByUser) {
+								
+							if (AllowedByUser)
+							{
 								C->listInPublicChannelList = ShowInChannelList;
 								C->closeWhenMasterLeaves = CloseWhenMasterLeaves;
 								C->Join(*ToRelay(&Server), *ToRelay(&Client));
+
 								Response.writef("%c%c%c%s%hu", char(true), char(int(ShowInChannelList) | (int(CloseWhenMasterLeaves) << 1)),
 										 char(Size-3), C->name, C->id);
+
 								if (!ChannelExists)
 									ToRelay(&Server)->listOfChannels.Push(C);
-								else {
-									for (List<_server::_client *>::Element * E = C->listOfPeers.First; E; E = E->Next) {
+								else
+								{
+									for (List<_server::_client *>::Element * E = C->listOfPeers.First; E; E = E->Next)
+									{
 										if (long(**E) == long(&Client))
 											continue;
 										Response << (**E)->ID << char(C->master == **E ? 1 : 0) << strlen((**E)->name) << (**E)->name;
 									}
 								}
-							} else {
+							}
+							/* Join channel denied by user */
+							else
+							{
+								/* Write deny reason, then optionally free() it */
 								Response.writef("%c%s%s", char(Size-3), C->name, (DenyReason ? DenyReason : "Custom server deny reason."));
 								if (FreeDenyReason)
 									free(DenyReason);
 								delete C;
 							}
 						}
+
 						ToRelay(&Client)->Write(Response, Type, Variant);
-					} else if (Data[1] == 3) {
-						if (Size != 4) {
+					}
+					/*	3 - Leave channel request
+						[short ID] */
+					else if (Data[1] == 3)
+					{
+						if (Size != 4)
+						{
+							/* Malformed message; hack attempt? */
 							Response.writef("%c%hu%s", char(false), (Size < 4 ? unsigned short(-1) : *(unsigned short *)(&Data[2])),
 									 "Invalid channel leave message.");
-						} else {
+						}
+						/* Message format okay; check server is okay with the request */
+						else
+						{
 							_server::_channel * C = NULL;
-							for (List<_server::_channel *>::Element * E = ToRelay(&Server)->listOfChannels.First; E; E = E->Next) {
-								if ((**E)->id == *(unsigned short *)(&Data[2])) {
+							for (List<_server::_channel *>::Element * E = ToRelay(&Server)->listOfChannels.First; E; E = E->Next)
+							{
+								if ((**E)->id == *(unsigned short *)(&Data[2]))
+								{
 									C = **E;
 									break;
 								}
 							}
-							if (!C) {
+
+							/* Not connected to the given channel ID */
+							if (!C)
+							{
 								Response.writef("%c%hu%s", char(false), *(unsigned short *)(&Data[2]),
 										 "You're not connected to that channel, foo!");
-							} else {
+							}
+							/* Connected to the given channel ID; ask user if it's okay */
+							else
+							{
 								bool AllowedByUser = true, FreeDenyReason = false;
 								char * DenyReason = NULL;
+
 								if (ToRelay(&Server)->handlers.onLeaveChannel)
 									AllowedByUser = ToRelay(&Server)->handlers.onLeaveChannel(*ToRelay(&Server),
 														*ToRelay(&Client), *C, DenyReason, FreeDenyReason);
+
+								/* Write deny reason, if appropriate, then optionally free() it */
 								Response.writef("%c%hu", char(AllowedByUser), C->id);
 								if (!AllowedByUser)
 									Response.write(DenyReason ? DenyReason : "Custom server deny reason.");
@@ -325,54 +454,121 @@ namespace LwRelay
 									free(DenyReason);
 							}
 						}
+
 						ToRelay(&Client)->Write(Response, Type, Variant);
-					} else if (Data[1] == 4) {
-						if (Size > 2) {
+					}
+					/*	4 - ChannelList
+						[no data] */
+					else if (Data[1] == 4)
+					{
+						/*	Response:
+							Success, for each channel:
+							[short NumOfClients, byte NameLength, string ChannelName]
+
+							Failure:
+							[string DenyReason] */
+
+						/* Size is invalid */
+						if (Size > 2)
+						{
+							/* Malformed message; hack attempt? */
 							Response.writef("%c%s", char(false), "Malformed channel listing request.");
-						} else if (!ToRelay(&server)->EnableChannelListing) {
+						}
+						/* Server denied channel listing */
+						else if (!ToRelay(&server)->EnableChannelListing)
+						{
 							Response.writef("%c%s", char(false), "Channel listing is not enabled on this server.");
-						} else {
+						}
+						/* Allow channel listing */
+						else
+						{
 							Response.writef("%c", char(true));
-							for (List<_server::_channel *>::Element * E = ToRelay(&Server)->listOfChannels.First; E; E = E->Next) {
+							for (List<_server::_channel *>::Element * E = ToRelay(&Server)->listOfChannels.First; E; E = E->Next)
+							{
 								if (!(**E)->listInPublicChannelList)
 									continue;
 								Response.writef("%hu%u%s", unsigned short((**E)->listOfPeers.Size), strlen((**E)->name), (**E)->name);
 							}
 						}
+
 						ToRelay(&Client)->Write(Response, Type, Variant);
-					} else {
+					}
+					/* Unrecognised request type */
+					else
+					{
+						/*	Unrecognised message; suggests invalid version string.
+							More secure servers should d/c the client. */
 						Response.writef("%c%s", char(false), "Unrecognised request type.");
 						ToRelay(&Client)->Write(Response, Type, Variant);
 					}
 				}
-			} else if (Type == 1) {
+			}
+			/*	1 - BinaryServerMessage
+				[byte subchannel, ... data] */
+			else if (Type == 1)
+			{
 				unsigned char Subchannel = *(unsigned char *)(&Data[1]);
 				if (ToRelay(&Server)->handlers.onServerMessage)
 					ToRelay(&Server)->handlers.onServerMessage(*ToRelay(&Server), *ToRelay(&Client), Variant,
 												*(unsigned char *)(&Data[1]), (const char *)&Data[2], Size-2);
-			} else if (Type == 2) {
-				if (Size < 3) {}
-				else {
+			}
+			/*	2 - BinaryChannelMessage
+				[byte Subchannel, short ChannelID, binary Message] */
+			else if (Type == 2)
+			{
+				/*	Response:
+					[byte Subchannel, short ChannelID, short Peer, binary Message]
+
+					No failure message accounted for in revision 6. */
+				/* Size is invalid */
+				if (Size < 3)
+				{
+					/* Malformed message; hack attempt? */
+					/* No way to report an error with sending channel messages */
+				}
+				else
+				{
 					unsigned char Subchannel = *(unsigned char *)(&Data[1]);
 					unsigned short ChannelID = *(unsigned short *)(&Data[2]);
+
 					_server::_channel * C = NULL;
-					for (List<_server::_channel *>::Element * E = ToRelay(&Server)->listOfChannels.First; E; E = E->Next) {
-						if ((**E)->id == ChannelID) {
+					for (List<_server::_channel *>::Element * E = ToRelay(&Server)->listOfChannels.First; E; E = E->Next)
+					{
+						if ((**E)->id == ChannelID)
+						{
 							C = **E;
 							break;
 						}
 					}
-					if (!C) {}
-					else if (!C->listOfPeers.find(ToRelay(&Client))) {}
-					else {
+
+					/* Channel ID non-existent */
+					if (!C)
+					{
+						/* No way to report an error with sending channel messages */
+					}
+					/* Channel ID exists; sender not on channel */
+					else if (!C->listOfPeers.find(ToRelay(&Client)))
+					{
+						/* No way to report an error with sending channel messages */
+					}
+					/* Sender is on channel */
+					else
+					{
 						bool AllowedByUser = true;
 						if (ToRelay(&Server)->handlers.onChannelMessage)
 							AllowedByUser = ToRelay(&Server)->handlers.onChannelMessage(*ToRelay(&Server), *ToRelay(&Client), false, *C, Variant,
 															*(unsigned char *)(&Data[1]), (const char *)(&Data[4]), Size-5);
-						if (!AllowedByUser) {}
-						else {
+						if (!AllowedByUser)
+						{
+							/* No way to report an error with sending channel messages */
+						}
+						else
+						{
+							/*	We need to insert [short peer] before [binary message] */
 							Response.writef("%s.3%hu%s.*", &Data[1], ToRelay(&Client)->id, &Data[4], Size-5);
-							for (List<_server::_client *>::Element * E = C->listOfPeers.First; E; E = E->Next) {
+
+							for (List<_server::_client *>::Element * E = C->listOfPeers.First; E; E = E->Next)
+							{
 								if ((**E)->container == &Client)
 									continue;
 								(**E)->Write(Response, Type, Variant);
@@ -380,61 +576,145 @@ namespace LwRelay
 						}
 					}
 				}
-			} else if (Type == 3) {
+			}
+			/*	3 - BinaryPeerMessage
+				[byte subchannel, short channel, short peer, binary message] */
+			else if (Type == 3)
+			{
+				/*	Response:
+					[byte subchannel, short channel, short peer, binary message]
+
+					No failure message accounted for in revision 6. */
+
 				unsigned char Subchannel = *(unsigned char *)(&Data[1]);
 				unsigned short ChannelID = *(unsigned short *)(&Data[2]),
 								  PeerID = *(unsigned short *)(&Data[4]);
+
 				_server::_channel * C = NULL;
-				for (List<_server::_channel *>::Element * E = ToRelay(&Server)->listOfChannels.First; E; E = E->Next) {
-					if ((**E)->id == ChannelID) {
+				for (List<_server::_channel *>::Element * E = ToRelay(&Server)->listOfChannels.First; E; E = E->Next)
+				{
+					if ((**E)->id == ChannelID)
+					{
 						C = **E;
 						break;
 					}
 				}
-				if (!C) {}
-				else if (!C->listOfPeers.Find(ToRelay(&Client))) {}
-				else {
+
+				/* Channel ID non-existent */
+				if (!C)
+				{
+					/* No way to report an error with sending peer messages */
+				}
+				/* Channel ID exists; sender not on channel */
+				else if (!C->listOfPeers.Find(ToRelay(&Client)))
+				{
+					/* No way to report an error with sending peer messages */
+				}
+				/* Sender is on channel; is the receiver? */
+				else
+				{
 					_server::_client * Recv = NULL;
-					for (List<_server::_client *>::Element * E = C->listOfPeers.First; E; E = E->Next) {
-						if ((**E)->id == PeerID) {
+					for (List<_server::_client *>::Element * E = C->listOfPeers.First; E; E = E->Next)
+					{
+						if ((**E)->id == PeerID)
+						{
 							Recv = **E;
 							break;
 						}
 					}
-					if (!Recv) {}
-					else {
+
+					/* Receiver not found on channel */
+					if (!Recv)
+					{
+						/* No way to report an error with sending peer messages */
+					}
+					else
+					{
 						bool AllowedByUser = true;
 						if (ToRelay(&Server)->handlers.onPeerMessage)
 							AllowedByUser = ToRelay(&Server)->handlers.onPeerMessage(*ToRelay(&Server), *ToRelay(&Client), false, *C,
 															*Recv, Variant, *(unsigned char *)(&Data[1]), (const char *)&Data[6], Size-7);
-						if (!AllowedByUser) {}
-						else {
+						
+						if (!AllowedByUser)
+						{
+							/* No way to report an error with sending peer messages */
+						}
+						else
+						{
+							/*	We need to insert [short peer] before [binary message] */
 							Response.writef("%s.5%hu%s.*", &Data[1], ToRelay(&Client)->id, &Data[6], Size-7);
+
 							Recv->Write(Response, Type, Variant);
 						}
 					}
 				}
-			} else if (Type == 4) {
-				Assert(false);
-			} else if (Type == 5) {
+			}
+			/* 4 - ObjectServerMessage */
+			else if (Type == 4)
+			{
+				/* Mainly used with web requests */
+				Assert(false); /* Not coded */
+				/* Server message: pass Data as a JSON-format string, &Data[2] */
+			}
+			/* 5 - ObjectChannelMessage */
+			else if (Type == 5)
+			{
 				unsigned char Subchannel = *(unsigned char *)(&Data[1]);
 				unsigned short ChannelID = *(unsigned short *)(&Data[2]);
-			} else if (Type == 6) {
+
+				/* Channel message: pass Data as a JSON-format string, &Data[4] */
+			}
+			/* 6 - ObjectPeerMessage */
+			else if (Type == 6)
+			{
 				unsigned char Subchannel = *(unsigned char *)(&Data[1]);
 				unsigned short ChannelID = *(unsigned short *)(&Data[2]),
 								  PeerID = *(unsigned short *)(&Data[4]);
-			} else if (Type == 7) {
+
+				/* Peer message: pass Data as a JSON-format string, &Data[6] */
+			}
+			/*	7 - UDPHello
+				[No format given in specs!] */
+			else if (Type == 7)
+			{
+				/*	Reply with UDPWelcome
+					[No format given in specs!] */
 				ToRelay(&Client)->Write(Response, Type, Variant);
-			} else if (Type == 8) {
-				if (Size < 5) {}
+			}
+			/* 8 - ChannelMaster */
+			else if (Type == 8)
+			{
+				if (Size < 5)
+				{
+					/* Bla */
+				}
 				unsigned short ChannelID = *(unsigned short *)(&Data[2]);
 				unsigned char Action = *(unsigned char *)(&Data[4]);
 				unsigned short PeerID = *(unsigned short *)(&Data[5]);
-				if (Action == 0) {} else {}
-			} else if (Type == 9) {
+
+				if (Action == 0)
+				{
+					/* Boot peer PeerID */
+				}
+				else
+				{
+					/* Unrecognised channel master command; suggests invalid version string */
+				}
+			}
+			/* 9 - Ping */
+			else if (Type == 9)
+			{
+				/* Reply with Pong */
 				Response.writef("%c", char(10));
 				ToRelay(&Client)->Write(Response, Type, Variant);
-			} else {}
+			}
+			/* Unrecognised message type */
+			else
+			{
+				/* Unrecognised message type; suggests invalid version string */
+			}
+
+			/* TODO: Test all messages. Implement UDP. */
 		}
 
 
