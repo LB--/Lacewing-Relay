@@ -6,8 +6,62 @@
 #define Assert(x) /**/
 #endif
 
-namespace lacewing {
-namespace relay {
+#include <string>
+
+namespace LwRelay
+{
+	struct Client::Impl
+	{
+		struct
+		{
+			ErrorHandler                *Error;
+			ConnectHandler              *Connect;
+			ConnectionDeniedHandler     *ConnectionDenied;
+			DisconnectHandler           *Disconnect;
+			ChannelListReceivedHandler  *ChannelListReceived;
+			NameSetHandler              *NameSet;
+			NameChangedHandler          *NameChanged;
+			NameDeniedHandler           *NameDenied;
+			ChannelJoinHandler          *ChannelJoin;
+			ChannelJoinDeniedHandler    *ChannelJoinDenied;
+			ChannelLeaveHandler         *ChannelLeave;
+			ChannelLeaveDeniedHandler   *ChannelLeaveDenied;
+			ServerMessageHandler        *ServerMessage;
+			ServerChannelMessageHandler *ServerChannelMessage;
+			ChannelMessageHandler       *ChannelMessage;
+			PeerMessageHandler          *PeerMessage;
+			PeerJoinHandler             *PeerJoin;
+			PeerLeaveHandler            *PeerLeave;
+			PeerChangeNameHandler       *PeerChangeName;
+		} handlers;
+
+		lacewing::_pump * const msgPump;
+		std::list<_channel *> listOfChannels;
+		void CloseChannel(relay::_client::_channel * Channel);
+	};
+	struct Client::Channel::Impl
+	{
+		std::list<_peer *> listOfPeers;
+		Client &client;
+		ID_t id;
+		std::string name;
+		bool closeWhenMasterLeaves, listInPublicChannelList;
+
+		void PeerJoin(_client & Client, _client::_peer & Peer);
+		void PeerLeave(_client & Client, _client::_peer & Peer);
+	};
+	struct Client::Channel::Peer::Impl
+	{
+		ID_t id;
+		std::string name;
+		Client &client;
+		Channel &channel;
+		void Write(lacewing::stream Str, unsigned char Type, unsigned char Variant);
+	};
+	struct Client::ChannelListing::Impl
+	{
+		//
+	};
 // Raw handlers for liblacewing pass-thru to Relay functions
 void onConnect_RelayC(lacewing::_client & Client)
 {

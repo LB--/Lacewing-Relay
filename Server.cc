@@ -83,6 +83,10 @@ namespace LwRelay
 		typedef std::vector<Channel *> Channels_t;
 		Channels_t channels;
 	};
+	struct Server::Client::ChannelIterator::Impl
+	{
+		//
+	};
 	struct Server::Channel::Impl
 	{
 		std::vector<Client *> clients;
@@ -94,6 +98,10 @@ namespace LwRelay
 
 		void Join(Client &client);
 		void Leave(Client &client);
+	};
+	struct Server::Channel::ClientIterator::Impl
+	{
+		//
 	};
 
 	namespace
