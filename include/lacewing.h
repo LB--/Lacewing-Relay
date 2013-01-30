@@ -808,7 +808,7 @@ struct _stream
    lw_class_wraps (stream);
 
    typedef void (lw_callback * hook_data)
-       (stream &, void * tag, const char * buffer, size_t size);
+       (stream, void * tag, const char * buffer, size_t size);
 
      lw_import void add_hook_data (hook_data, void * tag = 0);
      lw_import void remove_hook_data (hook_data, void * tag = 0);
@@ -854,6 +854,7 @@ struct _stream
    lw_import lacewing::pump pump ();
 };
 
+lw_import stream stream_new (const lw_streamdef *, pump);
 lw_import void stream_delete (stream);
 
 
@@ -1149,7 +1150,7 @@ struct _webserver
    typedef void (lw_callback * hook_post) (webserver, webserver_request);
    typedef void (lw_callback * hook_head) (webserver, webserver_request);  
    typedef void (lw_callback * hook_disconnect) (webserver, webserver_request);
-   typedef void (lw_callback * hook_error) (webserver, error &);
+   typedef void (lw_callback * hook_error) (webserver, error);
 
    typedef void (lw_callback * hook_upload_start)
       (webserver, webserver_request, webserver_upload);

@@ -29,6 +29,11 @@
 
 #include "../common.h"
 
+stream lacewing::stream_new (const lw_streamdef * def, lacewing::pump pump)
+{
+   return (stream) lw_stream_new (def, (lw_pump) pump);
+}
+
 void lacewing::stream_delete (lacewing::stream stream)
 {
    lw_stream_delete ((lw_stream) stream);
