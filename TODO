@@ -13,3 +13,6 @@
 - Check all functions are in the docs (at least a few are definitely missing)
 - Add C versions of all examples
 - UTF-16 support for Windows
+- More examples (not just for the webserver)
+- Automated testing
+
