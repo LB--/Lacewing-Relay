@@ -483,6 +483,10 @@ void lw_stream_add_filter_upstream (lw_stream ctx, lw_stream filter,
    spec->delete_with_stream = delete_with_stream;
    spec->close_together = close_together;
 
+   spec->link.bytes_left = -1;
+   spec->link.delete_stream = lw_false;
+   spec->link.to = 0;
+
    /* Upstream data passes through the most recently added filter first */
 
    list_push (ctx->filters_upstream, spec);
@@ -505,6 +509,10 @@ void lw_stream_add_filter_downstream (lw_stream ctx, lw_stream filter,
    spec->filter = filter;
    spec->delete_with_stream = delete_with_stream;
    spec->close_together = close_together;
+
+   spec->link.bytes_left = -1;
+   spec->link.delete_stream = lw_false;
+   spec->link.to = 0;
 
    /* Downstream data passes through the most recently added filter last */
 
