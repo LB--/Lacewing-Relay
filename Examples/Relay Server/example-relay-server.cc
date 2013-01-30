@@ -12,37 +12,61 @@ struct KR{~KR()
 }}kr;
 
 #include "Relay.hpp"
+using LwRelay::Server::Deny;
 
-bool OnConnect(LwRelay::Server &Server, LwRelay::Server::Client &Client);
-void OnError(LwRelay::Server &Server, lacewing::error Error);
+struct Main
+{
+	lacewing::eventpump Pump;
+	LwRelay::Server Server;
+	Main(unsigned nargs, char const *const *args) : Pump(lacewing::eventpump_new()), Server(Pump)
+	{
+		Server.Tag = static_cast<void *>(this);
+		Server.onError(OnError);
+		Server.onConnect(OnConnect);
+	}
+	~Main()
+	{
+		Server.Tag = 0;
+		lacewing::pump_delete(Pump), Pump = 0;
+	}
+
+	int Go()
+	{
+		Server.Host(/*6121*/);
+		if(Server.Hosting())
+		{
+			std::clog << "Server hosting on port: " << Server.Port() << std::endl;
+			lacewing::error e = Pump->start_eventloop();
+			if(e)
+			{
+				std::cerr << e->tostring() << std::endl;
+				lacewing::error_delete(e), e = 0;
+				return -1;
+			}
+		}
+		else
+		{
+			std::cerr << "Hosting failed" << std::endl;
+			return -1;
+		}
+		return 0;
+	}
+	
+	static void OnError(LwRelay::Server &Server, lacewing::error Error)
+	{
+		std::cerr << "Error: \"" << Error->tostring() << '"' << std::endl;
+		static_cast<Main *>(Server.Tag)->Pump->post_eventloop_exit();
+	}
+	
+	static Deny OnConnect(LwRelay::Server &Server, LwRelay::Server::Client &Client)
+	{
+		std::clog << "Client connected from " << Client.Address()->tostring() << std::endl;
+		return true; //allow connection
+		//return Deny("Your IP is banned from this server");
+	}
+};
 
 int main(unsigned nargs, char const *const *args)
 {
-	lacewing::eventpump Pump (lacewing::eventpump_new());
-	LwRelay::Server Server (Pump);
-	server.onConnect(OnConnect);
-	server.onError(OnError);
-
-	server.Host(6121);
-	std::clog << "Server hosting on port: " << Server.Port() << "..." << std::endl;
-
-	lacewing::error e = Pump->start_eventloop();
-	lacewing::pump_delete(Pump);
-	if(e)
-	{
-		std::cerr << e->tostring() << std::endl;
-		lacewing::error_delete(e);
-		return -1;
-	}
-}
-
-bool OnConnect(LwRelay::Server &Server, LwRelay::Server::Client &Client)
-{
-	std::clog << "Client connected" << std::endl;
-	return true;
-}
-
-void OnError(LwRelay::Server &Server, lacewing::error Error)
-{
-	std::cerr << "Error: \"" << Error->tostring() << '"' << std::endl;
+	return Main(nargs, args).Go();
 }
