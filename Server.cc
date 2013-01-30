@@ -30,7 +30,7 @@ namespace LwRelay
 			   PeerMessageHandler *PeerMessage;
 		} handlers;
 
-		std::map<size_t, Client> clients;
+		std::map<ID_t, Client> clients;
 		size_t lowestCleanID;
 		size_t GetFreeID();
 		std::string welcomeMessage;
