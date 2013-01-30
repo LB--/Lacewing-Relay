@@ -5,78 +5,40 @@
 #include <stdlib.h>
 #include <assert.h>
 
-Lacewing::EventPump EventPump;
-
-struct PlusOneFilter : public Lacewing::Stream
+size_t plus_one (lw_stream stream, const char * data, size_t size)
 {
-    size_t Put (const char * data, size_t size)
-    {
-        char * copy = (char *) malloc (size);
-        
-        for (size_t i = 0; i < size; ++ i)
-            copy [i] = data [i] + 1;
-        
-        Data (copy, size);
+    char * copy = (char *) malloc (size);
 
-        return size;
-    }
-};
+    for (size_t i = 0; i < size; ++ i)
+        copy [i] = data [i] + 1;
 
-void onData (Lacewing::Stream &, void * tag, char * buffer, size_t size)
+    lw_stream_data (stream, copy, size);
+
+    free (copy);
+
+    return size;
+}
+
+void on_data (lacewing::stream, void * tag, const char * buffer, size_t size)
 {
-    assert (tag == (void *) 0xC0FFEE);
-
     lw_dump (buffer, size);
 }
 
 int main (int argc, char * argv [])
 {
-    Lacewing::Pipe stream;
+    lacewing::stream stream = lacewing::pipe_new (0);
 
-    stream.AddHandlerData (onData, (void *) 0xC0FFEE);
+    stream->add_hook_data (on_data, 0);
 
     printf ("AAA: \n");
-    stream.Write ("AAA");
+    stream->writef ("AAA");
 
-    stream.AddFilterUpstream (*new PlusOneFilter, true, true);
+    lw_streamdef plus_one_streamdef = {};
+    plus_one_streamdef.sink_data = plus_one;
 
-    printf ("BBB: \n");
-    stream.Write ("AAA");
+    stream->add_filter_upstream (lacewing::stream_new (&plus_one_streamdef, 0), true, true);
 
-    stream.AddFilterDownstream (*new PlusOneFilter, true, true);
-
-    printf ("CCC: \n");
-    stream.Write ("AAA");
-
-    stream.AddFilterUpstream (*new PlusOneFilter, true, true);
-
-    printf ("DDD: \n");
-    stream.Write ("AAA");
-
-    stream.AddFilterDownstream (*new PlusOneFilter, true, true);
-
-    printf ("EEE: \n");
-    stream.Write ("AAA");
-
-    {   PlusOneFilter stream2;
-        stream.Write (stream2);
-
-        printf ("FFF: \n");
-        stream2.Write ("AAA");
-
-        stream2.AddFilterDownstream (*new PlusOneFilter, true, true);
-
-        printf ("GGG: \n");
-        stream2.Write ("AAA");
-
-        stream2.AddFilterUpstream (*new PlusOneFilter, true, true);
-
-        printf ("HHH: \n");
-        stream2.Write ("AAA");
-    }
-
-    printf ("EEE: \n");
-    stream.Write ("AAA");
+    lacewing::stream_delete (stream);
 
     return 0;
 }
