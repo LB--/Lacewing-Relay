@@ -148,6 +148,9 @@ list_element * _list_prev (list_element * elem)
 
 void _list_remove (list_element * elem)
 {
+   if (!elem)
+      return;
+
    elem = get_element (elem);
 
    list_head * list = elem->list;
