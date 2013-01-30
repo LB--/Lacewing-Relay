@@ -1,4 +1,3 @@
-
 - OpenSSL/SPDY support for Windows
 - HTTP post arrays
 - Support for /dev/poll in EventPump
@@ -13,5 +12,4 @@
 - writev style Put overload?
 - Check all functions are in the docs (at least a few are definitely missing)
 - Add C versions of all examples
-
-
+- UTF-16 support for Windows
