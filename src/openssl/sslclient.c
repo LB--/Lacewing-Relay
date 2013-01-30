@@ -93,7 +93,7 @@ lwp_sslclient lwp_sslclient_new (SSL_CTX * server_context, lw_stream socket,
    SSL_set_accept_state (ctx->ssl);
 
    lwp_stream_init (&ctx->upstream, &def_upstream, 0);
-   lwp_stream_init (&ctx->upstream, &def_downstream, 0);
+   lwp_stream_init (&ctx->downstream, &def_downstream, 0);
 
    lw_stream_add_filter_upstream
       (socket, &ctx->upstream, lw_false, lw_true);
