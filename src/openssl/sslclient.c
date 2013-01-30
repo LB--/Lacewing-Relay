@@ -95,11 +95,17 @@ lwp_sslclient lwp_sslclient_new (SSL_CTX * server_context, lw_stream socket,
    lwp_stream_init (&ctx->upstream, &def_upstream, 0);
    lwp_stream_init (&ctx->downstream, &def_downstream, 0);
 
+   /* Retain our streams indefinitely, since we'll be in charge of releasing
+    * their memory.  This doesn't stop stream_delete from working.
+    */
+   lwp_retain (&ctx->upstream);
+   lwp_retain (&ctx->downstream);
+
    lw_stream_add_filter_upstream
-      (socket, &ctx->upstream, lw_false, lw_true);
+      (socket, &ctx->upstream, lw_false, lw_false);
 
    lw_stream_add_filter_downstream
-      (socket, &ctx->downstream, lw_false, lw_true);
+      (socket, &ctx->downstream, lw_false, lw_false);
 
    pump (ctx);
 
@@ -114,12 +120,16 @@ void lwp_sslclient_delete (lwp_sslclient ctx)
       return;
 
    if (ctx->flags & lwp_sslclient_flag_pumping)
+   {
       ctx->flags |= lwp_sslclient_flag_dead;
-   else
-      lwp_sslclient_delete (ctx);
+      return;
+   }
 
    SSL_free (ctx->ssl);
    BIO_free (ctx->bio_external);
+ 
+   lw_stream_delete (&ctx->upstream);
+   lw_stream_delete (&ctx->downstream);
 
    free (ctx);
 }
@@ -267,7 +277,7 @@ void pump (lwp_sslclient ctx)
             lw_stream_data (&ctx->upstream, buffer, bytes);
 
             /* Pushing data may end up destroying the SSLClient user, which
-             * will then set Dead to true.
+             * will then set the _dead flag.
              */
 
             if (ctx->flags & lwp_sslclient_flag_dead)

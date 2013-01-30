@@ -561,6 +561,8 @@ void on_client_close (lw_stream stream, void * tag)
    #endif
 
    lw_stream_delete ((lw_stream) client);
+
+   lwp_release (client);
 }
 
 void lw_server_on_data (lw_server ctx, lw_server_hook_data on_data)

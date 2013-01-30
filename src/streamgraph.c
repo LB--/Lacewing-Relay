@@ -416,6 +416,8 @@ static void clear_expanded (lw_stream stream)
 {
    list_each (stream->next_expanded, link)
    {
+      assert (link->from_exp == stream);
+
       if (link->to_exp)
          clear_expanded (link->to_exp);
 
