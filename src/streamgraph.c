@@ -451,9 +451,12 @@ static void print (lwp_streamgraph graph, lw_stream stream, int depth)
 {
    assert (stream->graph == graph);
 
-   fprintf (stderr, "stream @ %p (" lwp_fmt_size " bytes, %d hooks)\n",
+   fprintf (stderr, "stream @ %p (" lwp_fmt_size " bytes, %d hooks, filtered %d up/%d down, filters %d)\n",
          stream, lw_stream_bytes_left (stream),
-         list_length (stream->data_hooks));
+         list_length (stream->data_hooks),
+         list_length (stream->filters_upstream),
+         list_length (stream->filters_downstream),
+         list_length (stream->filtering));
 
    list_each (stream->next, link)
    {
@@ -485,7 +488,7 @@ static void print_expanded (lwp_streamgraph graph, lw_stream stream, int depth)
 
       assert (link->from_exp == stream);
 
-      print (graph, link->to_exp, depth + 1);
+      print_expanded (graph, link->to_exp, depth + 1);
    }
 }
 
