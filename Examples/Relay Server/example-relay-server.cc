@@ -53,13 +53,13 @@ struct Main
 		return 0;
 	}
 	
-	static void OnError(LwRelay::Server &Server, lacewing::error Error)
+	static void (lw_callback OnError)(LwRelay::Server &Server, lacewing::error Error)
 	{
 		std::cerr << "Error: \"" << Error->tostring() << '"' << std::endl;
 		static_cast<Main *>(Server.Tag)->Pump->post_eventloop_exit();
 	}
 	
-	static Deny OnConnect(LwRelay::Server &Server, LwRelay::Server::Client &Client)
+	static Deny (lw_callback OnConnect)(LwRelay::Server &Server, LwRelay::Server::Client &Client)
 	{
 		std::clog << "Client connected from " << Client.Address()->tostring() << std::endl;
 		return true; //allow connection
