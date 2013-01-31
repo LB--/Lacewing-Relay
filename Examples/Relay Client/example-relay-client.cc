@@ -13,37 +13,51 @@ struct KR{~KR()
 
 #include "Relay.hpp"
 
-bool OnConnect(LwRelay::Client &Client);
-void OnError(LwRelay::Client &Client, lacewing::error Error);
+struct Main
+{
+	lacewing::eventpump Pump;
+	LwRelay::Client Client;
+
+	Main(unsigned nargs, char const *const *args) : Pump(lacewing::eventpump_new()), Client(Pump)
+	{
+		Client.Tag = static_cast<void *>(this);
+		Client.onError(OnError);
+		Client.onConnect(OnConnect);
+	}
+	~Main()
+	{
+		Client.Tag = 0;
+		lacewing::pump_delete(Pump), Pump = 0;
+	}
+
+	int Go()
+	{
+		Client.Connect("localhost"/*, 6121*/);
+		std::clog << "Connecting to " << Client.ServerAddress()->tostring() << std::endl;
+
+		lacewing::error e = Pump->start_eventloop();
+		if(e)
+		{
+			std::cerr << e->tostring() << std::endl;
+			lacewing::error_delete(e), e = 0;
+			return -1;
+		}
+
+		return 0;
+	}
+
+	static void OnError(LwRelay::Client &Client, lacewing::error Error)
+	{
+		std::cerr << "Error: \"" << Error->tostring() << '"' << std::endl;
+		static_cast<Main *>(Client.Tag)->Pump->post_eventloop_exit();
+	}
+	static void OnConnect(LwRelay::Client &Client)
+	{
+		std::clog << "Connected to " << Client.ServerAddress()->tostring() << std::endl;
+	}
+};
 
 int main(unsigned nargs, char const *const *args)
 {
-	lacewing::eventpump Pump (lacewing::eventpump_new());
-	LwRelay::Client Client (Pump);
-	Client.onConnect(OnConnect);
-	Client.onError(OnError);
-
-	Client.Connect("localhost", 6121);
-
-	lacewing::error e = Pump->start_eventloop();
-	lacewing::pump_delete(Pump);
-	if(e)
-	{
-		std::cerr << e->tostring() << std::endl;
-		lacewing::error_delete(e);
-		return -1;
-	}
-
-	return 0;
-}
-
-bool OnConnect(LwRelay::Client &Client)
-{
-	std::clog << "Connected to server" << std::endl;
-	return true;
-}
-
-void OnError(LwRelay::Client &Client, lacewing::error Error)
-{
-	std::cerr << "Error: \"" << Error->tostring() << '"' << std::endl;
+	return Main(nargs, args).Go();
 }

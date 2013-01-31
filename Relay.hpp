@@ -46,6 +46,9 @@ namespace LwRelay
 		 */
 		~Server();
 
+		struct Client;
+		struct Channel;
+
 		/**
 		 * Enable or disable the ability of clients to list visible channels.
 		 */
@@ -168,10 +171,6 @@ namespace LwRelay
 			 * Returns the number of channels this client has joined.
 			 */
 			Size_t ChannelCount() const;
-			/**
-			 * Returns a ChannelIterator to iterate the channels this client is in.
-			 */
-			ChannelIterator ChannelIterator();
 			/**
 			 * Returns a ChannelIterator to iterate the channels this client is in.
 			 */
@@ -299,10 +298,6 @@ namespace LwRelay
 			/**
 			 * Returns a ClientIterator to iterate the clients in this channel.
 			 */
-			ClientIterator ClientIterator();
-			/**
-			 * Returns a ClientIterator to iterate the clients in this channel.
-			 */
 			operator ClientIterator();
 			/**
 			 * Returns the next channel on this server, or null if this is the last.
@@ -355,15 +350,15 @@ namespace LwRelay
 		 * be able to just copy & paste the prototypes, but you will
 		 * need to properly scope some types.
 		 */
-		typedef void (lw_import          ErrorHandler)(::LwRelay::Server &server, ::lacewing::error error);
-		typedef Deny (lw_import        ConnectHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client);
-		typedef void (lw_import     DisconnectHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client);
-		typedef Deny (lw_import        NameSetHandler)(::LwRelay::Server &Server, ::LwRelay::Server::Client &client, char const*name);
-		typedef Deny (lw_import    JoinChannelHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel, bool autoclose, bool visible);
-		typedef Deny (lw_import   LeaveChannelHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel);
-		typedef void (lw_import  ServerMessageHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client,                                                    Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
-		typedef Deny (lw_import ChannelMessageHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel, bool blasted, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
-		typedef Deny (lw_import    PeerMessageHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &from  , ::LwRelay::Server::Channel &channel, bool blasted, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size, ::LwRelay::Server::Client &to);
+		typedef void (lw_callback          ErrorHandler)(::LwRelay::Server &server, ::lacewing::error error);
+		typedef Deny (lw_callback        ConnectHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client);
+		typedef void (lw_callback     DisconnectHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client);
+		typedef Deny (lw_callback        NameSetHandler)(::LwRelay::Server &Server, ::LwRelay::Server::Client &client, char const*name);
+		typedef Deny (lw_callback    JoinChannelHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel, bool autoclose, bool visible);
+		typedef Deny (lw_callback   LeaveChannelHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel);
+		typedef void (lw_callback  ServerMessageHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client,                                                    Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
+		typedef Deny (lw_callback ChannelMessageHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel, bool blasted, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
+		typedef Deny (lw_callback    PeerMessageHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &from  , ::LwRelay::Server::Channel &channel, bool blasted, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size, ::LwRelay::Server::Client &to);
 
 		/* Handler setters *
 		 * Register your handlers by passing them to
@@ -411,6 +406,9 @@ namespace LwRelay
 		 * Destructs this client.
 		 */
 		~Client();
+
+		struct Channel;
+		struct ChannelListing;
 
 		/**
 		 * Connects to a server at the given host address and port (default 6121).
@@ -492,6 +490,8 @@ namespace LwRelay
 		struct Channel
 		{
 			void *Tag;
+
+			struct Peer;
 
 			/**
 			 * Returns the name of this channel.
@@ -617,25 +617,25 @@ namespace LwRelay
 		 * be able to just copy & paste the prototypes, but you will
 		 * need to properly scope some types.
 		 */
-		typedef void (lw_import                ErrorHandler)(::LwRelay::Client &client, lacewing::error error);
-		typedef void (lw_import              ConnectHandler)(::LwRelay::Client &client);
-		typedef void (lw_import     ConnectionDeniedHandler)(::LwRelay::Client &client,                                                                                                  char const*reason);
-		typedef void (lw_import           DisconnectHandler)(::LwRelay::Client &client);
-		typedef void (lw_import  ChannelListReceivedHandler)(::LwRelay::Client &client);
-		typedef void (lw_import              NameSetHandler)(::LwRelay::Client &client);
-		typedef void (lw_import          NameChangedHandler)(::LwRelay::Client &client,                                                                              char const*oldname);
-		typedef void (lw_import           NameDeniedHandler)(::LwRelay::Client &client,                                                                              char const*thename, char const*reason);
-		typedef void (lw_import          ChannelJoinHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel);
-		typedef void (lw_import    ChannelJoinDeniedHandler)(::LwRelay::Client &client,                                                                              char const*thename, char const*reason);
-		typedef void (lw_import         ChannelLeaveHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel);
-		typedef void (lw_import   ChannelLeaveDeniedHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel,                                                             char const*reason);
-		typedef void (lw_import        ServerMessageHandler)(::LwRelay::Client &client,                                                                              bool blasted, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
-		typedef void (lw_import ServerChannelMessageHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel,                                         bool blasted, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
-		typedef void (lw_import       ChannelMessageHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel, ::LwRelay::Client::Channel::Peer &peer, bool blasted, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
-		typedef void (lw_import          PeerMessageHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel, ::LwRelay::Client::Channel::Peer &peer, bool blasted, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
-		typedef void (lw_import             PeerJoinHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel, ::LwRelay::Client::Channel::Peer &peer);
-		typedef void (lw_import            PeerLeaveHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel, ::LwRelay::Client::Channel::Peer &peer);
-		typedef void (lw_import       PeerChangeNameHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel, ::LwRelay::Client::Channel::Peer &peer, char const*oldname);
+		typedef void (lw_callback                ErrorHandler)(::LwRelay::Client &client, lacewing::error error);
+		typedef void (lw_callback              ConnectHandler)(::LwRelay::Client &client);
+		typedef void (lw_callback     ConnectionDeniedHandler)(::LwRelay::Client &client,                                                                                                  char const*reason);
+		typedef void (lw_callback           DisconnectHandler)(::LwRelay::Client &client);
+		typedef void (lw_callback  ChannelListReceivedHandler)(::LwRelay::Client &client);
+		typedef void (lw_callback              NameSetHandler)(::LwRelay::Client &client);
+		typedef void (lw_callback          NameChangedHandler)(::LwRelay::Client &client,                                                                              char const*oldname);
+		typedef void (lw_callback           NameDeniedHandler)(::LwRelay::Client &client,                                                                              char const*thename, char const*reason);
+		typedef void (lw_callback          ChannelJoinHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel);
+		typedef void (lw_callback    ChannelJoinDeniedHandler)(::LwRelay::Client &client,                                                                              char const*thename, char const*reason);
+		typedef void (lw_callback         ChannelLeaveHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel);
+		typedef void (lw_callback   ChannelLeaveDeniedHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel,                                                             char const*reason);
+		typedef void (lw_callback        ServerMessageHandler)(::LwRelay::Client &client,                                                                              bool blasted, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
+		typedef void (lw_callback ServerChannelMessageHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel,                                         bool blasted, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
+		typedef void (lw_callback       ChannelMessageHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel, ::LwRelay::Client::Channel::Peer &peer, bool blasted, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
+		typedef void (lw_callback          PeerMessageHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel, ::LwRelay::Client::Channel::Peer &peer, bool blasted, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
+		typedef void (lw_callback             PeerJoinHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel, ::LwRelay::Client::Channel::Peer &peer);
+		typedef void (lw_callback            PeerLeaveHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel, ::LwRelay::Client::Channel::Peer &peer);
+		typedef void (lw_callback       PeerChangeNameHandler)(::LwRelay::Client &client, ::LwRelay::Client::Channel &channel, ::LwRelay::Client::Channel::Peer &peer, char const*oldname);
 
 		/* Handler setters *
 		 * Register your handlers by passing them to

@@ -12,12 +12,13 @@ struct KR{~KR()
 }}kr;
 
 #include "Relay.hpp"
-using LwRelay::Server::Deny;
+typedef LwRelay::Server::Deny Deny;
 
 struct Main
 {
 	lacewing::eventpump Pump;
 	LwRelay::Server Server;
+
 	Main(unsigned nargs, char const *const *args) : Pump(lacewing::eventpump_new()), Server(Pump)
 	{
 		Server.Tag = static_cast<void *>(this);
