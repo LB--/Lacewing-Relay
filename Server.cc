@@ -1,24 +1,92 @@
 #include "Relay.hpp"
 
-#include <map>
-#include <list>
+#include <set>
 #include <string>
+#include <vector>
+#include <limits>
+#include <cassert>
 
-#if defined(DEBUG) || defined(_DEBUG)
-#define Assert(x) assert(x)
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+
+#if (defined(DEBUG) || defined(_DEBUG)) && !defined(NDEBUG)
+#define Assert(x) assert((x))
 #else
 #define Assert(x) /**/
 #endif
 
 namespace LwRelay
 {
+	class ID_Manager
+	{
+		std::set<ID_t> IDs;
+		ID_t lowest;
+	public:
+		ID_t GenerateID()
+		{
+			Assert(lowest < std::numeric_limits<ID_t>::min());
+			ID_t ret (lowest);
+			while(IDs.find(++lowest) != IDs.end())
+			{
+			}
+			return IDs.insert(ret), ret;
+		}
+		void ReleaseID(ID_t ID)
+		{
+			Assert(IDs.find(ID) != IDs.end());
+			lowest = (ID < lowest) ? ID : lowest;
+			IDs.erase(ID);
+		}
+	};
+
 	struct Server::Impl
 	{
+		Server &parent;
 		lacewing::pump const pump;
 		lacewing::server const server;
+		lacewing::udp const udp;
 
-		struct
+		Impl(Server &ps, lacewing::pump p, lacewing::server s, lacewing::udp u) : parent(ps), pump(p), server(s), udp(u)
 		{
+		}
+
+		bool channel_listing;
+		std::string welcome_message;
+
+		Client *first_client, *last_client;
+		Channel *first_channel, *last_channel;
+		ID_Manager client_IDs, channel_IDs;
+
+		struct Handlers
+		{
+			Handlers() : //Initialize to default handlers
+				Error         (&         ErrorDH),
+				Connect       (&       ConnectDH),
+				Disconnect    (&    DisconnectDH),
+				NameSet       (&       NameSetDH),
+				JoinChannel   (&   JoinChannelDH),
+				LeaveChannel  (&  LeaveChannelDH),
+				ServerMessage (& ServerMessageDH),
+				ChannelMessage(&ChannelMessageDH),
+				PeerMessage   (&   PeerMessageDH)
+			{
+			}
+
+				//Default handlers
+				static void (lw_callback          ErrorDH)(Server &, lacewing::error)                                                                  {              }
+				static Deny (lw_callback        ConnectDH)(Server &, Client &)                                                                         { return true; }
+				static void (lw_callback     DisconnectDH)(Server &, Client &)                                                                         {              }
+				static Deny (lw_callback        NameSetDH)(Server &, Client &, char const*)                                                            { return true; }
+				static Deny (lw_callback    JoinChannelDH)(Server &, Client &, Channel &, bool, bool)                                                  { return true; }
+				static Deny (lw_callback   LeaveChannelDH)(Server &, Client &, Channel &)                                                              { return true; }
+				static void (lw_callback  ServerMessageDH)(Server &, Client &,                  Subchannel_t, Variant_t, char const*, Size_t)          {              }
+				static Deny (lw_callback ChannelMessageDH)(Server &, Client &, Channel &, bool, Subchannel_t, Variant_t, char const*, Size_t)          { return true; }
+				static Deny (lw_callback    PeerMessageDH)(Server &, Client &, Channel &, bool, Subchannel_t, Variant_t, char const*, Size_t, Client &){ return true; }
+
 			         ErrorHandler *Error;
 			       ConnectHandler *Connect;
 			    DisconnectHandler *Disconnect;
@@ -29,57 +97,13 @@ namespace LwRelay
 			ChannelMessageHandler *ChannelMessage;
 			   PeerMessageHandler *PeerMessage;
 		} handlers;
-
-		std::map<ID_t, Client> clients;
-		size_t lowestCleanID;
-		size_t GetFreeID();
-		std::string welcomeMessage;
-		bool enableChannelListing;
-		
-		void CloseChannel(Channel *channel);
-
-		std::list<_channel *> listOfChannels;
-
-		// Server protected functions: ID management
-		size_t GetFreeID()
-		{
-			// No abnormalies (gaps in the IDs of users) to fill up; simply return lowest available
-			if (usedIDs.Size == 0)
-				return lowestCleanID++;
-
-			size_t ret = **usedIDs.First;
-			usedIDs.pop_front();
-			
-			return ret;
-		}
-		void SetFreeID(size_t ID)
-		{
-			// If last ID of clients, we don't need to store the abnomaly
-			if (ID == lowestCleanID-1)
-			{
-				--lowestCleanID;
-				return;
-			}
-			
-			// Otherwise, note the ID in list of abnormalies (organise numerically)
-			for (List<size_t>::Element * E = usedIDs.First; ; E = E->Next)
-			{
-				if (**E > ID)
-				{
-					usedIDs.InsertBefore(E, id);
-					return;
-				}
-			}
-			
-			usedIDs.Push(ID);
-		}
 	};
 	struct Server::Client::Impl
 	{
 		Server &server;
 		lacewing::server_client const client;
 		ID_t const id;
-		char const*name;
+		str::string name;
 		typedef std::vector<Channel *> Channels_t;
 		Channels_t channels;
 	};

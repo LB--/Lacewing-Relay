@@ -27,8 +27,8 @@ struct Main
 	}
 	~Main()
 	{
-		Client.Tag = 0;
-		lacewing::pump_delete(Pump), Pump = 0;
+		Client.Tag = nullptr;
+		lacewing::pump_delete(Pump), Pump = nullptr;
 	}
 
 	int Go()
@@ -40,7 +40,7 @@ struct Main
 		if(e)
 		{
 			std::cerr << e->tostring() << std::endl;
-			lacewing::error_delete(e), e = 0;
+			lacewing::error_delete(e), e = nullptr;
 			return -1;
 		}
 

@@ -1,12 +1,22 @@
 #include "Relay.hpp"
 
-#if defined(DEBUG) || defined(_DEBUG)
-#define Assert(x) assert(x)
+#include <set>
+#include <string>
+#include <limits>
+#include <cassert>
+
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+
+#if (defined(DEBUG) || defined(_DEBUG)) && !defined(NDEBUG)
+#define Assert(x) assert((x))
 #else
 #define Assert(x) /**/
 #endif
-
-#include <string>
 
 namespace LwRelay
 {

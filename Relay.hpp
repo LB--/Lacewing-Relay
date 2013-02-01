@@ -1,6 +1,8 @@
 #ifndef __DarkwireSoftware_Relay_HeaderPlusPlus__
 #define __DarkwireSoftware_Relay_HeaderPlusPlus__
 
+#include <cstdint>
+
 #include "lacewing.h"
 
 namespace LwRelay
@@ -9,23 +11,23 @@ namespace LwRelay
 	 * Represents the ID of a client/peer.
 	 * Due to protocol restrictions, the size is limited to 16 bits.
 	 */
-	typedef unsigned short ID_t;
+	typedef uint16_t ID_t;
 	/**
 	 * Represents the ID of a subchannel.
 	 * The protocol utilizes all 8 bits.
 	 */
-	typedef unsigned char Subchannel_t;
+	typedef uint8_t Subchannel_t;
 	/**
 	 * Represents which of 16 varieties of data is being transmitted.
 	 * Due to protocol restrictions, the size is limited to 4 bits.
 	 */
-	typedef unsigned char Variant_t;
+	typedef uint8_t Variant_t;
 	/**
 	 * Represents all other scalar data types.
 	 * Due to protocol limitations, and for consistency reasons, this
 	 * type is limited to 32 bits.
 	 */
-	typedef unsigned int Size_t;
+	typedef uint32_t Size_t;
 
 	/**
 	 * Implements a Lacewing Relay Server based on the latest protocol draft.
@@ -62,7 +64,7 @@ namespace LwRelay
 		 * This function fails if the server is already hosting or if
 		 * one of the internal lacewing server fails to begin hosting.
 		 */
-		void Host(unsigned short port = 6121);
+		void Host(uint16_t port = 6121);
 		/**
 		 * Begin hosting this server using the given lacewing filter.
 		 * This function fails if the server is already hosting or if
@@ -96,7 +98,7 @@ namespace LwRelay
 		/**
 		 * Returns the port the server is being hosted on, in case you forgot.
 		 */
-		unsigned short Port() const;
+		uint16_t Port() const;
 
 		/**
 		 * Represents a client connected to this server.
@@ -125,14 +127,9 @@ namespace LwRelay
 				struct Impl;
 				Impl *impl;
 
-				ChannelIterator();
-				#if __cplusplus >= 201103L // >= C++11
+				ChannelIterator(Impl *);
 				ChannelIterator(ChannelIterator const&) = delete;
-				ChannelIterator operator=(ChannelIterator const&) = delete;
-				#else
-				ChannelIterator(ChannelIterator const&);
-				ChannelIterator operator=(ChannelIterator const&);
-				#endif
+				ChannelIterator &operator=(ChannelIterator const&) = delete;
 				~ChannelIterator();
 			};
 
@@ -184,14 +181,9 @@ namespace LwRelay
 			struct Impl;
 			Impl *impl;
 
-			Client();
-			#if __cplusplus >= 201103L // >= C++11
+			Client(Impl *);
 			Client(Client const&) = delete;
-			Client operator=(Client const&) = delete;
-			#else
-			Client(Client const&);
-			Client operator=(Client const&);
-			#endif
+			Client &operator=(Client const&) = delete;
 			~Client();
 
 			friend struct ::LwRelay::Server::Channel;
@@ -224,14 +216,9 @@ namespace LwRelay
 				struct Impl;
 				Impl *impl;
 
-				ClientIterator();
-				#if __cplusplus >= 201103L // >= C++11
+				ClientIterator(Impl *);
 				ClientIterator(ClientIterator const&) = delete;
-				ClientIterator operator=(ClientIterator const&) = delete;
-				#else
-				ClientIterator(ClientIterator const&);
-				ClientIterator operator=(ClientIterator const&);
-				#endif
+				ClientIterator &operator=(ClientIterator const&) = delete;
 				~ClientIterator();
 
 				friend struct ::LwRelay::Server::Channel;
@@ -308,14 +295,9 @@ namespace LwRelay
 			struct Impl;
 			Impl *impl;
 
-			Channel();
-			#if __cplusplus >= 201103L // >= C++11
+			Channel(Impl *);
 			Channel(Channel const&) = delete;
-			Channel operator=(Channel const&) = delete;
-			#else
-			Channel(Channel const&);
-			Channel operator=(Channel const&);
-			#endif
+			Channel &operator=(Channel const&) = delete;
 			~Channel();
 
 			friend struct ::LwRelay::Server::Client;
@@ -335,7 +317,7 @@ namespace LwRelay
 			Deny(bool do_not_deny);
 			Deny(char const*reason);
 			Deny(Deny const&other);
-			Deny operator=(Deny const&other);
+			Deny &operator=(Deny const&other);
 			~Deny();
 		private:
 			struct Impl;
@@ -353,7 +335,7 @@ namespace LwRelay
 		typedef void (lw_callback          ErrorHandler)(::LwRelay::Server &server, ::lacewing::error error);
 		typedef Deny (lw_callback        ConnectHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client);
 		typedef void (lw_callback     DisconnectHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client);
-		typedef Deny (lw_callback        NameSetHandler)(::LwRelay::Server &Server, ::LwRelay::Server::Client &client, char const*name);
+		typedef Deny (lw_callback        NameSetHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, char const*name);
 		typedef Deny (lw_callback    JoinChannelHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel, bool autoclose, bool visible);
 		typedef Deny (lw_callback   LeaveChannelHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel);
 		typedef void (lw_callback  ServerMessageHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client,                                                    Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
@@ -379,13 +361,8 @@ namespace LwRelay
 		struct Impl;
 		Impl *impl;
 
-		#if __cplusplus >= 201103L // >= C++11
 		Server(Server const&) = delete;
-		Server operator=(Server const&) = delete;
-		#else
-		Server(Server const&);
-		Server operator=(Server const&);
-		#endif
+		Server &operator=(Server const&) = delete;
 	};
 
 	/**
@@ -413,7 +390,7 @@ namespace LwRelay
 		/**
 		 * Connects to a server at the given host address and port (default 6121).
 		 */
-		void Connect(char const*host, unsigned short port = 6121);
+		void Connect(char const*host, uint16_t port = 6121);
 		/**
 		 * Connects to a server using the given lacewing address.
 		 */
@@ -559,14 +536,9 @@ namespace LwRelay
 				struct Impl;
 				Impl *impl;
 
-				Peer();
-				#if __cplusplus >= 201103L // >= C++11
+				Peer(Impl *);
 				Peer(Peer const&) = delete;
-				Peer operator=(Peer const&) = delete;
-				#else
-				Peer(Peer const&);
-				Peer operator=(Peer const&);
-				#endif
+				Peer &operator=(Peer const&) = delete;
 				~Peer();
 
 				friend struct ::LwRelay::Client;
@@ -577,15 +549,11 @@ namespace LwRelay
 			struct Impl;
 			Impl *impl;
 			
-			Channel();
-			#if __cplusplus >= 201103L // >= C++11
+			Channel(Impl *);
 			Channel(Channel const&) = delete;
-			Channel operator=(Channel const&) = delete;
-			#else
-			Channel(Channel const&);
-			Channel operator=(Channel const&);
-			#endif
+			Channel &operator=(Channel const&) = delete;
 			~Channel();
+
 			friend struct ::LwRelay::Client;
 		};	friend struct ::LwRelay::Client::Channel;
 			friend struct ::LwRelay::Client::Channel::Peer;
@@ -607,6 +575,11 @@ namespace LwRelay
 		private:
 			struct Impl;
 			Impl *impl;
+
+			ChannelListing(Impl *);
+			ChannelListing(ChannelListing const&) = delete;
+			ChannelListing &operator=(ChannelListing const&) = delete;
+			~ChannelListing();
 
 			friend struct ::LwRelay::Client;
 		};	friend struct ::LwRelay::Client::ChannelListing;
@@ -665,14 +638,9 @@ namespace LwRelay
 	private:
 		struct Impl;
 		Impl *impl;
-		
-		#if __cplusplus >= 201103L // >= C++11
+
 		Client(Client const&) = delete;
 		Client operator=(Client const&) = delete;
-		#else
-		Client(Client const&);
-		Client operator=(Client const&);
-		#endif
 	};
 }
 
