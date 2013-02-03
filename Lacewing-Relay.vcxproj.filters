@@ -17,7 +17,7 @@
     </Library>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Client.cc" />
-    <ClCompile Include="Server.cc" />
+    <ClCompile Include="RelayServer.cc" />
+    <ClCompile Include="RelayClient.cc" />
   </ItemGroup>
 </Project>
