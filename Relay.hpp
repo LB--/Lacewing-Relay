@@ -134,6 +134,10 @@ namespace LwRelay
 			};
 
 			/**
+			 * Returns true if this client is an HTTP client.
+			 */
+			bool IsHTTP() const;
+			/**
 			 * Returns this client's unique ID.
 			 * IDs may be re-used.
 			 */
