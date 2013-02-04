@@ -531,6 +531,12 @@ namespace LwRelay
 				 * Requests to send the given string to this peer.
 				 */
 				void Send(bool blast, Subchannel_t subchannel, Variant_t variant, char const*null_terminated_string);
+				/**
+				 * Kicks this peer if you are the channel master.
+				 * If you are not the channel master, this has
+				 * no effect.
+				 */
+				void Kick();
 
 			private:
 				struct Impl;
