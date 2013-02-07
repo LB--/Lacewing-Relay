@@ -3,6 +3,8 @@
 *.lib
 lacewing.h
 
+*.sublime-workspace
+
 #################
 ## Visual Studio 2008 only - no 2010
 #################

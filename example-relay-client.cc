@@ -7,7 +7,7 @@
 struct KR{~KR()
 {
 	std::cin.sync();
-	std::cout << std::endl << "End of application, press Enter...";
+	std::cout << std::endl << "End of application, press Enter..." << std::flush;
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }}kr;
 
@@ -62,7 +62,7 @@ struct Main
 	}
 };
 
-int main(unsigned nargs, char const *const *args)
+int main(/*un*/signed nargs, char const *const *args)
 {
 	return Main(nargs, args).Go();
 }
