@@ -69,5 +69,5 @@ struct Main
 
 int main(/*un*/signed nargs, char const *const *args)
 {
-	return Main(nargs, args).Go();
+	return Main(static_cast<unsigned>(nargs), args).Go();
 }
