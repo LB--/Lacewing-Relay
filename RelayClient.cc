@@ -1,4 +1,4 @@
-#include "Relay.hpp"
+#include "Relay.hh"
 
 #include <set>
 #include <string>
