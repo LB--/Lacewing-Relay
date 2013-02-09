@@ -11,23 +11,23 @@ namespace LwRelay
 	 * Represents the ID of a client/peer.
 	 * Due to protocol restrictions, the size is limited to 16 bits.
 	 */
-	typedef uint16_t ID_t;
+	using ID_t = uint16_t;
 	/**
 	 * Represents the ID of a subchannel.
 	 * The protocol utilizes all 8 bits.
 	 */
-	typedef uint8_t Subchannel_t;
+	using Subchannel_t = uint8_t;
 	/**
 	 * Represents which of 16 varieties of data is being transmitted.
 	 * Due to protocol restrictions, the size is limited to 4 bits.
 	 */
-	typedef uint8_t Variant_t;
+	using Variant_t = uint8_t;
 	/**
 	 * Represents all other scalar data types.
 	 * Due to protocol limitations, and for consistency reasons, this
 	 * type is limited to 32 bits.
 	 */
-	typedef uint32_t Size_t;
+	using Size_t = uint32_t;
 
 	/**
 	 * Implements a Lacewing Relay Server based on the latest protocol draft.
