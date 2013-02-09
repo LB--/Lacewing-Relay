@@ -2,6 +2,7 @@
 #define __DarkwireSoftware_Relay_HeaderPlusPlus__
 
 #include <cstdint>
+#include <memory>
 
 #include "lacewing.h"
 
@@ -125,7 +126,7 @@ namespace LwRelay
 				Channel *Next();
 			private:
 				struct Impl;
-				Impl *impl;
+				std::unique_ptr<Impl> impl;
 
 				ChannelIterator(Impl *);
 				ChannelIterator(ChannelIterator const&) = delete;
@@ -183,7 +184,7 @@ namespace LwRelay
 
 		private:
 			struct Impl;
-			Impl *impl;
+			std::unique_ptr<Impl> impl;
 
 			Client(Impl *);
 			Client(Client const&) = delete;
@@ -218,7 +219,7 @@ namespace LwRelay
 				Client *Next();
 			private:
 				struct Impl;
-				Impl *impl;
+				std::unique_ptr<Impl> impl;
 
 				ClientIterator(Impl *);
 				ClientIterator(ClientIterator const&) = delete;
@@ -297,7 +298,7 @@ namespace LwRelay
 
 		private:
 			struct Impl;
-			Impl *impl;
+			std::unique_ptr<Impl> impl;
 
 			Channel(Impl *);
 			Channel(Channel const&) = delete;
@@ -325,7 +326,7 @@ namespace LwRelay
 			~Deny();
 		private:
 			struct Impl;
-			Impl *impl;
+			std::unique_ptr<Impl> impl;
 
 			friend struct ::LwRelay::Server;
 		};	friend struct ::LwRelay::Server::Deny;
@@ -363,7 +364,7 @@ namespace LwRelay
 
 	private:
 		struct Impl;
-		Impl *impl;
+		std::unique_ptr<Impl> impl;
 
 		Server(Server const&) = delete;
 		Server &operator=(Server const&) = delete;
@@ -544,7 +545,7 @@ namespace LwRelay
 
 			private:
 				struct Impl;
-				Impl *impl;
+				std::unique_ptr<Impl> impl;
 
 				Peer(Impl *);
 				Peer(Peer const&) = delete;
@@ -557,7 +558,7 @@ namespace LwRelay
 
 		private:
 			struct Impl;
-			Impl *impl;
+			std::unique_ptr<Impl> impl;
 			
 			Channel(Impl *);
 			Channel(Channel const&) = delete;
@@ -584,7 +585,7 @@ namespace LwRelay
 			ChannelListing *Next();
 		private:
 			struct Impl;
-			Impl *impl;
+			std::unique_ptr<Impl> impl;
 
 			ChannelListing(Impl *);
 			ChannelListing(ChannelListing const&) = delete;
@@ -647,7 +648,7 @@ namespace LwRelay
 
 	private:
 		struct Impl;
-		Impl *impl;
+		std::unique_ptr<Impl> impl;
 
 		Client(Client const&) = delete;
 		Client operator=(Client const&) = delete;
