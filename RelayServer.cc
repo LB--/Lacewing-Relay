@@ -1,3 +1,5 @@
+#define NOMINMAX
+
 #include "Relay.hh"
 
 #include <set>
@@ -5,13 +7,6 @@
 #include <vector>
 #include <limits>
 #include <cassert>
-
-#ifdef min
-#undef min
-#endif
-#ifdef max
-#undef max
-#endif
 
 #if (defined(DEBUG) || defined(_DEBUG)) && !defined(NDEBUG)
 #define Assert(x) assert((x))
@@ -21,61 +16,65 @@
 
 namespace LwRelay
 {
-	class ID_Manager
+	namespace
 	{
-		std::set<ID_t> IDs;
-		ID_t lowest;
-	public:
-		ID_t GenerateID()
+		template<typename T>
+		struct ID_Manager
 		{
-			Assert(lowest < std::numeric_limits<ID_t>::min());
-			ID_t ret (lowest);
-			while(IDs.find(++lowest) != IDs.end())
+			using ID_type = T;
+			ID_type GenerateID()
 			{
+				Assert(lowest < std::numeric_limits<ID_type>::max());
+				ID_type ret (lowest);
+				while(IDs.find(++lowest) != IDs.end())
+				{
+				}
+				return IDs.insert(ret), ret;
 			}
-			return IDs.insert(ret), ret;
-		}
-		void ReleaseID(ID_t ID)
-		{
-			Assert(IDs.find(ID) != IDs.end());
-			lowest = (ID < lowest) ? ID : lowest;
-			IDs.erase(ID);
-		}
-	};
+			void ReleaseID(ID_type ID)
+			{
+				Assert(IDs.find(ID) != IDs.end());
+				IDs.erase(ID);
+				lowest = (ID < lowest) ? ID : lowest;
+			}
+		private:
+			std::set<ID_type> IDs;
+			ID_type lowest = std::numeric_limits<ID_type>::min();
+		};
+	}
 
 	struct Server::Impl
 	{
-		Server &parent;
-		lacewing::pump const pump;
-		lacewing::server const server;
-		lacewing::udp const udp;
+		Server &interf;
+		lacewing::pump pump;
+		lacewing::server server {nullptr};
+		lacewing::udp udp {nullptr};
 
-		Impl(Server &ps, lacewing::pump p, lacewing::server s, lacewing::udp u) : parent(ps), pump(p), server(s), udp(u)
+		Impl(Server &ps, lacewing::pump p) : interf(ps), pump(p)
 		{
+			server = lacewing::server_new(pump);
+			udp = lacewing::udp_new(pump);
+		}
+		Impl() = delete;
+		Impl(Impl const &) = delete;
+		Impl(Impl &&) noexcept(true) = default;
+		Impl &operator=(Impl const &) = delete;
+		Impl &operator=(Impl &&) noexcept(true) = default;
+		~Impl() noexcept(true)
+		{
+			lacewing::udp_delete(udp), udp = nullptr;
+			lacewing::server_delete(server), server = nullptr;
 		}
 
-		bool channel_listing;
-		std::string welcome_message;
+		bool channel_listing {true};
+		std::string welcome_message {lw_version()};
 
-		Client *first_client, *last_client;
-		Channel *first_channel, *last_channel;
-		ID_Manager client_IDs, channel_IDs;
+		Client *first_client {nullptr}, *last_client {nullptr};
+		Channel *first_channel {nullptr}, *last_channel {nullptr};
+		ID_Manager<ID_t> client_IDs, channel_IDs;
 
 		struct Handlers
 		{
-			Handlers() : //Initialize to default handlers
-				Error         (&         ErrorDH),
-				Connect       (&       ConnectDH),
-				Disconnect    (&    DisconnectDH),
-				NameSet       (&       NameSetDH),
-				JoinChannel   (&   JoinChannelDH),
-				LeaveChannel  (&  LeaveChannelDH),
-				ServerMessage (& ServerMessageDH),
-				ChannelMessage(&ChannelMessageDH),
-				PeerMessage   (&   PeerMessageDH)
-			{
-			}
-
 				//Default handlers
 				static void (lw_callback          ErrorDH)(Server &, lacewing::error)                                                                  {              }
 				static Deny (lw_callback        ConnectDH)(Server &, Client &)                                                                         { return true; }
@@ -87,24 +86,30 @@ namespace LwRelay
 				static Deny (lw_callback ChannelMessageDH)(Server &, Client &, Channel &, bool, Subchannel_t, Variant_t, char const*, Size_t)          { return true; }
 				static Deny (lw_callback    PeerMessageDH)(Server &, Client &, Channel &, bool, Subchannel_t, Variant_t, char const*, Size_t, Client &){ return true; }
 
-			         ErrorHandler *Error;
-			       ConnectHandler *Connect;
-			    DisconnectHandler *Disconnect;
-			       NameSetHandler *NameSet;
-			   JoinChannelHandler *JoinChannel;
-			  LeaveChannelHandler *LeaveChannel;
-			 ServerMessageHandler *ServerMessage;
-			ChannelMessageHandler *ChannelMessage;
-			   PeerMessageHandler *PeerMessage;
+			         ErrorHandler *Error          {&         ErrorDH};
+			       ConnectHandler *Connect        {&       ConnectDH};
+			    DisconnectHandler *Disconnect     {&    DisconnectDH};
+			       NameSetHandler *NameSet        {&       NameSetDH};
+			   JoinChannelHandler *JoinChannel    {&   JoinChannelDH};
+			  LeaveChannelHandler *LeaveChannel   {&  LeaveChannelDH};
+			 ServerMessageHandler *ServerMessage  {& ServerMessageDH};
+			ChannelMessageHandler *ChannelMessage {&ChannelMessageDH};
+			   PeerMessageHandler *PeerMessage    {&   PeerMessageDH};
 		} handlers;
 	};
+	Server &Server::operator=(Server &&) noexcept(true) = default;
 	struct Server::Client::Impl
 	{
-		Server &server;
-		lacewing::server_client const client;
-		ID_t const id;
-		str::string name;
-		typedef std::vector<Channel *> Channels_t;
+		Server::Impl &server;
+		lacewing::server_client client;
+		ID_t id;
+
+		Impl(Server::Impl &si, lacewing::server_client sc) : server(si), client(sc), id(si.client_IDs.GenerateID())
+		{
+		}
+
+		std::string name;
+		using Channels_t = std::vector<Channel *>;
 		Channels_t channels;
 	};
 	struct Server::Client::ChannelIterator::Impl

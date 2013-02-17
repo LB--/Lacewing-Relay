@@ -1,16 +1,12 @@
+#define NOMINMAX
+
 #include "Relay.hh"
 
 #include <set>
 #include <string>
+#include <vector>
 #include <limits>
 #include <cassert>
-
-#ifdef min
-#undef min
-#endif
-#ifdef max
-#undef max
-#endif
 
 #if (defined(DEBUG) || defined(_DEBUG)) && !defined(NDEBUG)
 #define Assert(x) assert((x))
@@ -45,28 +41,21 @@ namespace LwRelay
 			PeerChangeNameHandler       *PeerChangeName;
 		} handlers;
 
-		lacewing::_pump * const msgPump;
-		std::list<_channel *> listOfChannels;
-		void CloseChannel(relay::_client::_channel * Channel);
+		lacewing::pump const pump;
+		std::set<Channel *> channels;
 	};
 	struct Client::Channel::Impl
 	{
-		std::list<_peer *> listOfPeers;
 		Client &client;
+		std::set<Peer *> peers;
 		ID_t id;
 		std::string name;
-		bool closeWhenMasterLeaves, listInPublicChannelList;
-
-		void PeerJoin(_client & Client, _client::_peer & Peer);
-		void PeerLeave(_client & Client, _client::_peer & Peer);
 	};
 	struct Client::Channel::Peer::Impl
 	{
+		Channel &channel;
 		ID_t id;
 		std::string name;
-		Client &client;
-		Channel &channel;
-		void Write(lacewing::stream Str, unsigned char Type, unsigned char Variant);
 	};
 	struct Client::ChannelListing::Impl
 	{

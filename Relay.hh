@@ -47,7 +47,10 @@ namespace LwRelay
 		/**
 		 * Destructs this server.
 		 */
-		~Server();
+		~Server() noexcept(true);
+
+		Server(Server &&) noexcept(true) = default;
+		Server &operator=(Server &&) noexcept(true);
 
 		struct Client;
 		struct Channel;
@@ -115,23 +118,34 @@ namespace LwRelay
 		{
 			void *Tag;
 
+			~Client() noexcept(true);
+
+			Client(Client &&) noexcept(true) = default;
+			Client &operator=(Client &&) noexcept(true);
+
 			/**
 			 * Allows iteration of channels this client is connected to.
 			 */
 			struct ChannelIterator
 			{
+				~ChannelIterator() noexcept(true);
+
+				ChannelIterator(ChannelIterator &&) noexcept(true) = default;
+				ChannelIterator &operator=(ChannelIterator &&) noexcept(true);
+
 				/**
 				 * Returns the next channel this client is connected to, or null if at the end.
 				 */
 				Channel *Next();
+
 			private:
 				struct Impl;
 				std::unique_ptr<Impl> impl;
 
 				ChannelIterator(Impl *);
+				ChannelIterator() = delete;
 				ChannelIterator(ChannelIterator const&) = delete;
 				ChannelIterator &operator=(ChannelIterator const&) = delete;
-				~ChannelIterator();
 			};
 
 			/**
@@ -162,6 +176,10 @@ namespace LwRelay
 			 */
 			void Disconnect();
 			/**
+			 * Returns true if this client has indicated that they can use UDP/blasting.
+			 */
+			bool UsingUDP() const;
+			/**
 			 * Sends a server message to this client with the given data.
 			 */
 			void Send(bool blast, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
@@ -187,9 +205,9 @@ namespace LwRelay
 			std::unique_ptr<Impl> impl;
 
 			Client(Impl *);
+			Client() = delete;
 			Client(Client const&) = delete;
 			Client &operator=(Client const&) = delete;
-			~Client();
 
 			friend struct ::LwRelay::Server::Channel;
 			friend struct ::LwRelay::Server;
@@ -208,23 +226,34 @@ namespace LwRelay
 		{
 			void *Tag;
 
+			~Channel() noexcept(true);
+
+			Channel(Channel &&) noexcept(true) = default;
+			Channel &operator=(Channel &&) noexcept(true);
+
 			/**
 			 * Allows iteration of clients in this channel.
 			 */
 			struct ClientIterator
 			{
+				~ClientIterator() noexcept(true);
+
+				ClientIterator(ClientIterator &&) noexcept(true) = default;
+				ClientIterator &operator=(ClientIterator &&) noexcept(true);
+
 				/**
 				 * Returns the next client in this channel, or null if at the end.
 				 */
 				Client *Next();
+
 			private:
 				struct Impl;
 				std::unique_ptr<Impl> impl;
 
 				ClientIterator(Impl *);
+				ClientIterator() = delete;
 				ClientIterator(ClientIterator const&) = delete;
 				ClientIterator &operator=(ClientIterator const&) = delete;
-				~ClientIterator();
 
 				friend struct ::LwRelay::Server::Channel;
 			};	friend struct ::LwRelay::Server::Channel::ClientIterator;
@@ -301,9 +330,9 @@ namespace LwRelay
 			std::unique_ptr<Impl> impl;
 
 			Channel(Impl *);
+			Channel() = delete;
 			Channel(Channel const&) = delete;
 			Channel &operator=(Channel const&) = delete;
-			~Channel();
 
 			friend struct ::LwRelay::Server::Client;
 			friend struct ::LwRelay::Server;
@@ -319,11 +348,15 @@ namespace LwRelay
 		 */
 		struct Deny
 		{
-			Deny(bool do_not_deny);
-			Deny(char const*reason);
-			Deny(Deny const&other);
-			Deny &operator=(Deny const&other);
-			~Deny();
+			Deny(bool do_not_deny) noexcept(true);
+			Deny(char const*reason) noexcept(true);
+			~Deny() noexcept(true);
+			Deny() = delete;
+			Deny(Deny const&other) noexcept(true);
+			Deny &operator=(Deny const&other) noexcept(true);
+			Deny(Deny &&) noexcept(true) = default;
+			Deny &operator=(Deny &&) noexcept(true);
+
 		private:
 			struct Impl;
 			std::unique_ptr<Impl> impl;
@@ -366,6 +399,7 @@ namespace LwRelay
 		struct Impl;
 		std::unique_ptr<Impl> impl;
 
+		Server() = delete;
 		Server(Server const&) = delete;
 		Server &operator=(Server const&) = delete;
 	};
@@ -387,7 +421,10 @@ namespace LwRelay
 		/**
 		 * Destructs this client.
 		 */
-		~Client();
+		~Client() noexcept(true);
+
+		Client(Client &&) noexcept(true) = default;
+		Client &operator=(Client &&) noexcept(true);
 
 		struct Channel;
 		struct ChannelListing;
@@ -473,6 +510,11 @@ namespace LwRelay
 		{
 			void *Tag;
 
+			~Channel() noexcept(true);
+
+			Channel(Channel &&) noexcept(true) = default;
+			Channel &operator=(Channel &&) noexcept(true);
+
 			struct Peer;
 
 			/**
@@ -516,6 +558,11 @@ namespace LwRelay
 			{
 				void *Tag;
 
+				~Peer() noexcept(true);
+
+				Peer(Peer &&) noexcept(true) = default;
+				Peer &operator=(Peer &&) noexcept(true);
+
 				/**
 				 * Returns the unique ID of this peer as assigned by the server.
 				 */
@@ -548,9 +595,9 @@ namespace LwRelay
 				std::unique_ptr<Impl> impl;
 
 				Peer(Impl *);
+				Peer() = delete;
 				Peer(Peer const&) = delete;
 				Peer &operator=(Peer const&) = delete;
-				~Peer();
 
 				friend struct ::LwRelay::Client;
 				friend struct ::LwRelay::Client::Channel;
@@ -561,9 +608,9 @@ namespace LwRelay
 			std::unique_ptr<Impl> impl;
 			
 			Channel(Impl *);
+			Channel() = delete;
 			Channel(Channel const&) = delete;
 			Channel &operator=(Channel const&) = delete;
-			~Channel();
 
 			friend struct ::LwRelay::Client;
 		};	friend struct ::LwRelay::Client::Channel;
@@ -571,6 +618,11 @@ namespace LwRelay
 
 		struct ChannelListing
 		{
+			~ChannelListing() noexcept(true);
+
+			ChannelListing(ChannelListing &&) noexcept(true) = default;
+			ChannelListing &operator=(ChannelListing &&) noexcept(true);
+
 			/**
 			 * Returns the name of the listed channel.
 			 */
@@ -583,14 +635,15 @@ namespace LwRelay
 			 * Returns the next listed channel, or null if this is the last.
 			 */
 			ChannelListing *Next();
+
 		private:
 			struct Impl;
 			std::unique_ptr<Impl> impl;
 
 			ChannelListing(Impl *);
+			ChannelListing() = delete;
 			ChannelListing(ChannelListing const&) = delete;
 			ChannelListing &operator=(ChannelListing const&) = delete;
-			~ChannelListing();
 
 			friend struct ::LwRelay::Client;
 		};	friend struct ::LwRelay::Client::ChannelListing;
@@ -650,6 +703,7 @@ namespace LwRelay
 		struct Impl;
 		std::unique_ptr<Impl> impl;
 
+		Client() = delete;
 		Client(Client const&) = delete;
 		Client operator=(Client const&) = delete;
 	};
