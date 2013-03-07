@@ -812,6 +812,11 @@ void lwp_stream_write_queued (lw_stream ctx)
    if (ctx->flags & lwp_stream_flag_queueing)
       return;
 
+   if (ctx->flags & lwp_stream_flag_draining_queues)
+      return;
+
+   ctx->flags |= lwp_stream_flag_draining_queues;
+
    lwp_trace ("%p : Writing front queue (size = %d)",
                ctx, list_length (ctx->front_queue));
 
@@ -832,6 +837,8 @@ void lwp_stream_write_queued (lw_stream ctx)
    {
       lw_stream_close (ctx, lw_true);
    }
+
+   ctx->flags &= ~ lwp_stream_flag_draining_queues;
 }
 
 void lw_stream_retry (lw_stream ctx, int when)

@@ -46,6 +46,12 @@
 /* Deleted when user count was > 0 - waiting to be freed */
  #define lwp_stream_flag_dead 8
 
+/* Currently attempting to drain the queues.  Because draining the queues
+ * might cause another retry, this flag prevents re-entrance to the
+ * write_queued proc.
+ */
+ #define lwp_stream_flag_draining_queues 16
+
 typedef struct _lwp_stream_data_hook
 {
    lw_stream_hook_data proc;
