@@ -230,7 +230,7 @@ size_t lwp_stream_write (lw_stream ctx, const char * buffer, size_t size, int fl
    if (size == -1)
       size = strlen (buffer);
 
-   lwp_trace ("Writing " lwp_fmt_size " bytes", size);
+   lwp_trace ("Writing " lwp_fmt_size " bytes to %p with flags %d", size, ctx, flags);
 
    if (size == 0)
       return size; /* nothing to do */
@@ -276,7 +276,7 @@ size_t lwp_stream_write (lw_stream ctx, const char * buffer, size_t size, int fl
 
       /* Something is behind us and gave us this data. */
 
-      if ((! (ctx->flags & lwp_stream_write_ignore_queue))
+      if ((! (flags & lwp_stream_write_ignore_queue))
                 && list_length (ctx->front_queue) > 0)
       {
          lwp_trace ("%p : Adding to front queue (queueing = %d, front queue length = %d)",
