@@ -284,8 +284,14 @@ static size_t def_sink_data (lw_stream stream, const char * buffer, size_t size)
    #endif
 
    if (written == -1)
+   {
+      lwp_trace ("fdstream sank nothing!  write failed: %d", errno);
       return 0;
+   }
 
+   lwp_trace ("fdstream sank " lwp_fmt_size " of " lwp_fmt_size " bytes",
+              written, size);
+   
    return written;
 }
 

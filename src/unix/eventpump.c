@@ -225,6 +225,12 @@ lw_error lw_eventpump_start_eventloop (lw_eventpump ctx)
 
          struct epoll_event epoll_events [max_events];
          int count = epoll_wait (ctx->queue, epoll_events, max_events, -1);
+      
+         if (count == -1)
+         {
+            lwp_trace ("epoll error: %d", errno);
+            break;
+         }
    
          for (int i = 0; i < count; ++ i)
          {
@@ -253,6 +259,12 @@ lw_error lw_eventpump_start_eventloop (lw_eventpump ctx)
       
          int count = kevent (ctx->queue, 0, 0, kevents, max_events, 0);
       
+         if (count == -1)
+         {
+            lwp_trace ("kevent error: %d", errno);
+            break;
+         }
+
          for (int i = 0; i < count; ++ i)
          {
             struct kevent kevent = kevents [i];
