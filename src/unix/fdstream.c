@@ -119,7 +119,7 @@ static void read_ready (void * tag)
 
       if (bytes == 0)
       {
-         close_stream = true;
+         close_stream = lw_true;
          break;
       }
 
@@ -128,7 +128,7 @@ static void read_ready (void * tag)
          if (errno == EAGAIN)
             break;
 
-         close_stream = true;
+         close_stream = lw_true;
          break;
       }
 

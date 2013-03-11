@@ -16,4 +16,5 @@
 - More examples (not just for the webserver)
 - Automated testing
 - SPDY multipart support
+- Replace lw_bool, lw_true, lw_false with stdbool
 
