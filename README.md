@@ -39,6 +39,32 @@ Issues with the documentation can be reported in the [gh-pages branch](https://g
 of the liblacewing GitHub repository.
 
 
+Changes in 0.5.0 (2012-Mar-11)
+==============================
+
+- Library ported to C99
+
+- Lots of API changes for consistency/correctness
+
+- C++ API converted to `snake_case` to be consistent with the C API
+
+- UNIX `EventPump` will now exit the event loop if epoll or kqueue throws an error
+
+- The various types of internal ref counting have been replaced with a more consistent `lwp_retain`/`lwp_release`
+
+- Preliminary support for [SWIG](http://swig.org/)
+
+- Updated SPDY and [http-parser](https://github.com/joyent/http-parser) snapshots
+
+- `write(3)` is now used for non-sockets when `SO_NOSIGPIPE` is not available
+
+- Various fixes with webserver sessions
+
+- New `ENABLE_SSL` option in Makefile
+
+[0.5.0 Release Notes](http://lacewing-project.org/release/0.5.0.html)
+
+
 Changes in 0.4.3 (2012-Oct-28)
 ==============================
 
