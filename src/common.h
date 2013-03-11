@@ -54,7 +54,7 @@
    #endif
 
    #ifdef ANDROID
-      #define LacewingAndroid
+      #define _lacewing_android
       #include "../jni/config.h"
    #else
       #ifdef HAVE_CONFIG_H

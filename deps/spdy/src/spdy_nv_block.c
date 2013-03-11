@@ -60,7 +60,7 @@ int spdy_read_nv_block (spdy_ctx * ctx, spdy_buffer * buffer,
                         spdy_nv_pair ** pairs, size_t * count)
 {
    int16_t pair_count_16, name_len_16, value_len_16;
-   int16_t pair_count_32, name_len_32, value_len_32;
+   int32_t pair_count_32, name_len_32, value_len_32;
    z_stream * stream;
    spdy_nv_pair * pair;
    int i = 0;
@@ -121,7 +121,7 @@ int spdy_read_nv_block (spdy_ctx * ctx, spdy_buffer * buffer,
             goto e_inflate;
          }
 
-         pair->name_len = ntohs (name_len_32);
+         pair->name_len = ntohl (name_len_32);
       }
 
       /* Name */
@@ -157,7 +157,7 @@ int spdy_read_nv_block (spdy_ctx * ctx, spdy_buffer * buffer,
             goto e_inflate;
          }
 
-         pair->value_len = ntohs (value_len_32);
+         pair->value_len = ntohl (value_len_32);
       }
 
       /* Value */
@@ -229,6 +229,12 @@ int spdy_pack_nv_block (spdy_ctx * ctx, char ** buffer, size_t * deflate_size,
    size_t deflate_max;
    char * p;
    int res = Z_OK;
+
+   if (!(ctx->flags & SPDY_GOT_VERSION))
+     {
+       if ((res = spdy_set_version (ctx, ctx->init_version)) != SPDY_E_OK)
+         return res;
+     }
  
    stream = &ctx->zlib_deflate;
 

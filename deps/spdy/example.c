@@ -1,7 +1,7 @@
 
 /* vim: set et ts=3 sw=3 ft=c:
  *
- * Copyright (C) 2012 James McLaughlin.  All rights reserved.
+ * Copyright (C) 2012 James McLaughlin et al.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,25 +27,20 @@
  * SUCH DAMAGE.
  */
 
-#include "../../../deps/spdy/include/spdy.h"
+#include <spdy.h>
 
-typedef struct lwp_ws_spdyclient
+int main (int argc, char * argv [])
 {
-    struct _lwp_ws_client client;
+    int sock = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-    spdy_ctx * spdy;
+    if (sock == -1)
+    {
+        printf ("Error creating socket: %s\n", strerror (errno));
+        return 1;
+    }
 
-    list (lw_ws_req, requests);
+    connect (socket, 
 
-} * lwp_ws_spdyclient;
 
-lwp_ws_client lwp_ws_spdyclient_new
-   (lw_ws, lw_server_client socket, lw_bool secure, int version);
-
-void lwp_ws_spdyclient_delete (lw_ws, lwp_ws_spdyclient);
-
-extern const spdy_config lwp_ws_spdy_config;
-
-extern const lw_streamdef def_spdyclient;
-extern const lw_streamdef def_spdyrequest;
+}
 

@@ -92,9 +92,6 @@ static void read_ready (void * tag)
 {
    lw_fdstream ctx = tag;
 
-   if (ctx->fd == -1)
-      return;
-
    if (ctx->flags & lwp_fdstream_flag_reading)
       return;
 
@@ -106,8 +103,13 @@ static void read_ready (void * tag)
 
    char buffer [lwp_default_buffer_size];
 
+   lw_bool close_stream = lw_false;
+
    while (ctx->reading_size == -1 || ctx->reading_size > 0)
    {
+      if (ctx->fd == -1)
+         break;
+
       size_t to_read = sizeof (buffer);
 
       if (ctx->reading_size != -1 && to_read > ctx->reading_size)
@@ -117,7 +119,7 @@ static void read_ready (void * tag)
 
       if (bytes == 0)
       {
-         lw_stream_close ((lw_stream) ctx, lw_true);
+         close_stream = true;
          break;
       }
 
@@ -126,7 +128,7 @@ static void read_ready (void * tag)
          if (errno == EAGAIN)
             break;
 
-         lw_stream_close ((lw_stream) ctx, lw_true);
+         close_stream = true;
          break;
       }
 
@@ -150,7 +152,11 @@ static void read_ready (void * tag)
 
    ctx->flags &= ~ lwp_fdstream_flag_reading;
 
-   lwp_release (ctx);
+   if (lwp_release (ctx) || ctx->flags & lwp_stream_flag_dead)
+      return;
+
+   if (close_stream)
+      lw_stream_close ((lw_stream) ctx, lw_true);
 }
 
 void lw_fdstream_set_fd (lw_fdstream ctx, lw_fd fd, lw_pump_watch watch,
@@ -236,7 +242,7 @@ lw_bool lw_fdstream_valid (lw_fdstream ctx)
 
 void lw_fdstream_cork (lw_fdstream ctx)
 {
-   #ifdef LacewingCork
+   #ifdef lw_cork
       int enabled = 1;
       setsockopt (((lw_fdstream) ctx)->fd, IPPROTO_TCP,
                         lw_cork, &enabled, sizeof (enabled));
@@ -245,7 +251,7 @@ void lw_fdstream_cork (lw_fdstream ctx)
 
 void lw_fdstream_uncork (lw_fdstream ctx)
 {
-   #ifdef LacewingCork
+   #ifdef lw_cork
       int enabled = 0;
       setsockopt (((lw_fdstream) ctx)->fd, IPPROTO_TCP,
                         lw_cork, &enabled, sizeof (enabled));

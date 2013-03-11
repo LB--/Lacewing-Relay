@@ -72,7 +72,10 @@ int spdy_proc_settings (spdy_ctx * ctx, int8_t flags, spdy_buffer * buffer)
        */
 
       if (entry_id <= last_entry_id)
+      {
+         ++ i;
          continue;
+      }
 
       last_entry_id = entry_id;
 
@@ -86,10 +89,14 @@ int spdy_proc_settings (spdy_ctx * ctx, int8_t flags, spdy_buffer * buffer)
          = entry_flags & FLAG_SETTINGS_PERSIST_VALUE;
 
       ++ num_changed;
+      ++ i;
    }
 
-   ctx->config->on_settings_changed
-      (ctx, flags & FLAG_SETTINGS_CLEAR_SETTINGS, num_changed, changed);
+   if (ctx->config->on_settings_changed)
+   {
+      ctx->config->on_settings_changed
+         (ctx, flags & FLAG_SETTINGS_CLEAR_SETTINGS, num_changed, changed);
+   }
 
    return SPDY_E_OK;
 }

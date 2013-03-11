@@ -180,7 +180,7 @@ void lw_dump (const char * buffer, size_t size)
  
        lw_sync_lock (sync);
  
-       #ifdef LacewingAndroid
+       #ifdef _lacewing_android
           __android_log_write (ANDROID_LOG_INFO, "liblacewing", data);
        #else
           #ifdef COXSDK

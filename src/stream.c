@@ -734,7 +734,8 @@ void lwp_stream_push (lw_stream ctx, const char * buffer, size_t size)
             links [x] = 0;
    }
 
-   lwp_release (ctx);
+   if (lwp_release (ctx) || ctx->flags & lwp_stream_flag_dead)
+      return;
 
    if (ctx->flags & lwp_stream_flag_closeASAP
          && lwp_stream_may_close (ctx))
@@ -820,7 +821,12 @@ void lwp_stream_write_queued (lw_stream ctx)
    lwp_trace ("%p : Writing front queue (size = %d)",
                ctx, list_length (ctx->front_queue));
 
+   lwp_retain (ctx);
+
    ctx->front_queue = lwp_stream_write_queue (ctx, ctx->front_queue); 
+
+   if (lwp_release (ctx) || ctx->flags & lwp_stream_flag_dead)
+      return;
 
    lwp_trace ("%p : Front queue size is now %d, %d prev, %d in back queue",
          ctx, list_length (ctx->front_queue), list_length (ctx->prev),
@@ -829,7 +835,12 @@ void lwp_stream_write_queued (lw_stream ctx)
    if (list_length (ctx->front_queue) == 0
          && list_length (ctx->prev) == 0)
    {
+      lwp_retain (ctx);
+
       ctx->back_queue = lwp_stream_write_queue (ctx, ctx->back_queue);
+
+      if (lwp_release (ctx) || ctx->flags & lwp_stream_flag_dead)
+         return;
    }
 
    if (ctx->flags & lwp_stream_flag_closeASAP

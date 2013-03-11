@@ -42,6 +42,7 @@ lwp_ws_client lwp_ws_spdyclient_new (lw_ws ws, lw_server_client socket,
       return 0;
 
    ctx->client.ws = ws;
+   ctx->client.socket = socket;
 
    ctx->client.respond = client_respond;
    ctx->client.tick = client_tick;
@@ -84,6 +85,8 @@ static size_t def_spdyclient_sink_data (lw_stream stream,
                                         const char * buffer, size_t size)
 {
    lwp_ws_spdyclient ctx = (lwp_ws_spdyclient) stream;
+
+   lw_dump (buffer, size);
 
    int res = spdy_data (ctx->spdy, buffer, &size);
 
@@ -193,8 +196,10 @@ void client_respond (lwp_ws_client client, lw_ws_req request)
    lwp_trace ("SPDY: %d headers -> stream @ %p, content length " lwp_fmt_size,
          n, stream, length);
 
-   lw_stream_write_stream ((lw_stream) socket, (lw_stream) request,
-                           length, lw_false);
+   lw_stream_write_stream ((lw_stream) ctx->client.socket,
+                           (lw_stream) request,
+                           length,
+                           lw_false);
 
    lw_stream_end_queue ((lw_stream) request);
    lw_stream_begin_queue ((lw_stream) request);
