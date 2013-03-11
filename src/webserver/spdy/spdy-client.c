@@ -86,7 +86,7 @@ static size_t def_spdyclient_sink_data (lw_stream stream,
 {
    lwp_ws_spdyclient ctx = (lwp_ws_spdyclient) stream;
 
-   lw_dump (buffer, size);
+   /* lw_dump (buffer, size); */
 
    int res = spdy_data (ctx->spdy, buffer, &size);
 
