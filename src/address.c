@@ -142,14 +142,19 @@ lw_addr lw_addr_clone (lw_addr ctx)
 {
    lw_addr addr = (lw_addr) calloc (sizeof (*addr), 1);
 
-   if (lw_addr_resolve (addr))
+   if (!addr)
       return 0;
 
-   if (!addr->info)
+   if (lw_addr_resolve (ctx))
+      return 0;
+
+   if (!ctx->info)
       return 0;
 
    addr->info = (struct addrinfo *) malloc (sizeof (*addr->info));
    memcpy (addr->info, ctx->info, sizeof (*addr->info));
+
+   addr->info->ai_addrlen = ctx->info->ai_addrlen;
 
    addr->info->ai_next = 0;
    addr->info->ai_addr = (struct sockaddr *) malloc (addr->info->ai_addrlen);
