@@ -268,15 +268,15 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
       void (* post) (lw_pump, void * fn, void * param);
       void (* cleanup) (lw_pump);
 
-      size_t outer_size;
+      size_t tail_size;
 
    } lw_pumpdef;
 
    lw_import lw_pump lw_pump_new (const lw_pumpdef *);
    lw_import const lw_pumpdef * lw_pump_get_def (lw_pump);
 
-   lw_import void * lw_pump_outer (lw_pump);
-   lw_import lw_pump lw_pump_inner (void *);
+   lw_import void * lw_pump_tail (lw_pump);
+   lw_import lw_pump lw_pump_from_tail (void *);
 
 /* EventPump */
 
@@ -341,14 +341,15 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
 
       void (* cleanup) (lw_stream);
 
-      size_t outer_size;
+      size_t tail_size;
 
    } lw_streamdef;
 
    lw_import lw_stream lw_stream_new (const lw_streamdef *, lw_pump);
    lw_import const lw_streamdef * lw_stream_get_def (lw_stream);
    
-   lw_import void * lw_stream_outer (lw_stream);
+   lw_import void * lw_stream_tail (lw_stream);
+   lw_import lw_stream lw_stream_from_tail (void *);
 
    lw_import void lw_stream_data (lw_stream, const char * buffer, size_t size);
 

@@ -32,7 +32,7 @@
 
 lw_pump lw_pump_new (const lw_pumpdef * def)
 {
-   lw_pump ctx = (lw_pump) malloc (sizeof (*ctx));
+   lw_pump ctx = (lw_pump) malloc (sizeof (*ctx) + def->tail_size);
    
    if (!ctx)
       return 0;
@@ -49,14 +49,14 @@ void lwp_pump_init (lw_pump ctx, const lw_pumpdef * def)
    ctx->def = def;
 }
 
-void * lw_pump_outer (lw_pump pump)
+void * lw_pump_tail (lw_pump pump)
 {
    return pump + 1;
 }
 
-lw_pump lw_pump_inner (void * outer)
+lw_pump lw_pump_from_tail (void * tail)
 {
-   return ((lw_pump) outer) - 1;
+   return ((lw_pump) tail) - 1;
 }
 
 void lw_pump_delete (lw_pump ctx)

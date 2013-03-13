@@ -54,7 +54,7 @@ void lwp_stream_init (lw_stream ctx, const lw_streamdef * def, lw_pump pump)
 
 lw_stream lw_stream_new (const lw_streamdef * def, lw_pump pump)
 {
-   lw_stream ctx = (lw_stream) calloc (sizeof (*ctx) + def->outer_size, 1);
+   lw_stream ctx = (lw_stream) calloc (sizeof (*ctx) + def->tail_size, 1);
    lwp_stream_init (ctx, def, pump);
 
    return ctx;
@@ -65,9 +65,14 @@ const lw_streamdef * lw_stream_get_def (lw_stream ctx)
    return ctx->def;
 }
 
-void * lw_stream_outer (lw_stream ctx)
+void * lw_stream_tail (lw_stream ctx)
 {
    return ctx + 1;
+}
+
+lw_stream lw_stream_from_tail (void * tail)
+{
+   return ((lw_stream) tail) - 1;
 }
 
 void lw_stream_delete (lw_stream ctx)
