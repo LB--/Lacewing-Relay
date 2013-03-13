@@ -41,11 +41,16 @@
 
    #include <inttypes.h>
     
-   #define lw_i64   int64_t
-   #define lw_iptr  intptr_t
-   #define lw_i32   int32_t
-   #define lw_i16   int16_t
-   #define lw_i8    int8_t
+   typedef int64_t    lw_i64; 
+   typedef uint64_t   lw_ui64; 
+   typedef intptr_t   lw_iptr; 
+   typedef uintptr_t  lw_uiptr; 
+   typedef int32_t    lw_i32; 
+   typedef uint32_t   lw_ui32; 
+   typedef int16_t    lw_i16; 
+   typedef uint16_t   lw_ui16; 
+   typedef int8_t     lw_i8; 
+   typedef uint8_t    lw_ui8; 
 
    #define lw_PRId64 PRId64
    #define lw_PRIu64 PRIu64
@@ -53,15 +58,21 @@
 #else
 
    #ifdef _WIN64
-      #define lw_iptr __int64
+      typedef __int64 lw_iptr;
+      typedef unsigned __int64 lw_uiptr;
    #else
-      #define lw_iptr __int32
+      typedef __int32 lw_iptr;
+      typedef unsigned __int32 lw_uiptr;
    #endif
-
-   #define lw_i64  __int64
-   #define lw_i32  __int32
-   #define lw_i16  __int16
-   #define lw_i8   __int8
+    
+   typedef __int64 lw_i64; 
+   typedef unsigned __int64 lw_ui64; 
+   typedef __int32 lw_i32; 
+   typedef unsigned __int32 lw_ui32; 
+   typedef __int16 lw_i16; 
+   typedef unsigned __int16 lw_ui16; 
+   typedef __int8 lw_i8; 
+   typedef unsigned __int8 lw_ui8; 
 
    #define lw_PRId64 "I64d"
    #define lw_PRIu64 "I64u"
