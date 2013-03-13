@@ -115,6 +115,8 @@ void lw_udp_host_filter (lw_udp ctx, lw_filter filter)
 
    lw_error_delete (error);
 
+   ctx->filter = lw_filter_clone (filter);
+
    lw_pump_add (ctx->pump, ctx->fd, ctx, read_ready, 0, lw_true);
 }
 
@@ -132,6 +134,9 @@ void lw_udp_unhost (lw_udp ctx)
 {
    lwp_close_socket (ctx->fd);
    ctx->fd = -1;
+
+   lw_filter_delete (ctx->filter);
+   ctx->filter = 0;
 }
 
 lw_udp lw_udp_new (lw_pump pump)
@@ -161,6 +166,9 @@ void lw_udp_delete (lw_udp ctx)
 
 void lw_udp_send (lw_udp ctx, lw_addr addr, const char * data, size_t size)
 {
+   lwp_trace ("UDP send");
+   lw_dump (data, size);
+
    if (!lw_addr_ready (addr))
    {
       lw_error error = lw_error_new ();

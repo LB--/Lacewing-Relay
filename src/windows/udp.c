@@ -201,8 +201,7 @@ void lw_udp_host_filter (lw_udp ctx, lw_filter filter)
       return;
    }
 
-   lw_filter_delete (ctx->filter);
-   ctx->filter = lw_filter_new ();
+   ctx->filter = lw_filter_clone (filter);
 
    lw_pump_add (ctx->pump, (HANDLE) ctx->socket, ctx, udp_socket_completion);
 
@@ -220,6 +219,9 @@ void lw_udp_unhost (lw_udp ctx)
 {
    lwp_close_socket (ctx->socket);
    ctx->socket = INVALID_SOCKET;
+
+   lw_filter_delete (ctx->filter);
+   ctx->filter = 0;
 }
 
 long lw_udp_port (lw_udp ctx)
