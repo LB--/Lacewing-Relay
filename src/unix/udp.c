@@ -40,6 +40,8 @@ struct _lw_udp
    lw_filter filter;
 
    int fd;
+
+   void * tag;
 };
 
 static void read_ready (void * ptr)
@@ -195,6 +197,16 @@ void lw_udp_send (lw_udp ctx, lw_addr addr, const char * data, size_t size)
 
       return;
    }
+}
+
+void lw_udp_set_tag (lw_udp ctx, void * tag)
+{
+   ctx->tag = tag;
+}
+
+void * lw_udp_tag (lw_udp ctx)
+{
+   return ctx->tag;
 }
 
 lwp_def_hook (udp, error)

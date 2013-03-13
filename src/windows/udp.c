@@ -311,6 +311,16 @@ void lw_udp_send (lw_udp ctx, lw_addr addr, const char * buffer, size_t size)
    }
 }
 
+void lw_udp_set_tag (lw_udp ctx, void * tag)
+{
+   ctx->tag = tag;
+}
+
+void * lw_udp_tag (lw_udp ctx)
+{
+   return ctx->tag;
+}
+
 lwp_def_hook (udp, error)
 lwp_def_hook (udp, data)
 

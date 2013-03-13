@@ -492,6 +492,8 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
   lw_import           void  lw_udp_unhost                (lw_udp);
   lw_import           long  lw_udp_port                  (lw_udp);
   lw_import           void  lw_udp_send                  (lw_udp, lw_addr, const char * buffer, size_t size);
+  lw_import           void* lw_udp_tag                   (lw_udp);
+  lw_import           void  lw_udp_set_tag               (lw_udp, void *);
 
   typedef void (lw_callback * lw_udp_hook_data)(lw_udp, lw_addr, const char * buffer, size_t size);
   lw_import void lw_udp_on_data (lw_udp, lw_udp_hook_data);
@@ -507,6 +509,8 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
   lw_import            void  lw_flashpolicy_host_filter   (lw_flashpolicy, const char * filename, lw_filter);
   lw_import            void  lw_flashpolicy_unhost        (lw_flashpolicy);
   lw_import         lw_bool  lw_flashpolicy_hosting       (lw_flashpolicy);
+  lw_import           void*  lw_flashpolicy_tag           (lw_flashpolicy);
+  lw_import           void   lw_flashpolicy_set_tag       (lw_flashpolicy, void *);
 
   typedef void (lw_callback * lw_flashpolicy_hook_error) (lw_flashpolicy, lw_error);
   lw_import void lw_flashpolicy_on_error (lw_flashpolicy, lw_flashpolicy_hook_error);

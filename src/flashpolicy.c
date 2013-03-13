@@ -37,6 +37,8 @@ struct _lw_flashpolicy
    size_t size;
 
    lw_flashpolicy_hook_error on_error;
+
+   void * tag;
 };
 
 static void on_data (lw_server server, lw_server_client client,
@@ -166,6 +168,16 @@ void lw_flashpolicy_unhost (lw_flashpolicy ctx)
 lw_bool lw_flashpolicy_hosting (lw_flashpolicy ctx)
 {
    return lw_server_hosting (ctx->server);
+}
+
+void lw_flashpolicy_set_tag (lw_flashpolicy ctx, void * tag)
+{
+   ctx->tag = tag;
+}
+
+void * lw_flashpolicy_tag (lw_flashpolicy ctx)
+{
+   return ctx->tag;
 }
 
 lwp_def_hook (flashpolicy, error);
