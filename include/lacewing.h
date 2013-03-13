@@ -204,7 +204,7 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
 
   lw_import      lw_filter  lw_filter_new                ();
   lw_import           void  lw_filter_delete             (lw_filter);
-  lw_import      lw_filter  lw_filter_copy               (lw_filter);
+  lw_import      lw_filter  lw_filter_clone              (lw_filter);
   lw_import        lw_addr  lw_filter_remote             (lw_filter);
   lw_import           void  lw_filter_set_remote         (lw_filter, lw_addr);
   lw_import        lw_addr  lw_filter_local              (lw_filter);
