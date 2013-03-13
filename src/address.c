@@ -145,6 +145,8 @@ lw_addr lw_addr_clone (lw_addr ctx)
    if (!addr)
       return 0;
 
+   addr->resolver_thread = lw_thread_new ("resolver", (void *) resolver);
+
    if (lw_addr_resolve (ctx))
       return 0;
 
