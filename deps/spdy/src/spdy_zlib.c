@@ -337,26 +337,18 @@ int spdy_set_inflate_dict (spdy_ctx * ctx, z_stream * stream)
       if (inflateSetDictionary
          (stream, dict_draft2, sizeof (dict_draft2)) != Z_OK)
       {
-         printf ("Can't set inflate dict (ver 2)\n");
-
          inflateEnd (stream);
          return SPDY_E_INFLATE;
       }
-
-      printf ("Set inflate dict (ver 2).  Woop!\n");
    }
    else
    {
       if (inflateSetDictionary
          (stream, dict_draft3, sizeof (dict_draft3)) != Z_OK)
       {
-         printf ("Can't set inflate dict (ver 3)\n");
-
          inflateEnd (stream);
          return SPDY_E_INFLATE;
       }
-
-      printf ("Set inflate dict (ver 3).  Woop!\n");
    }
 
    return SPDY_E_OK;
