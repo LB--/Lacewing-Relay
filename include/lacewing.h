@@ -76,7 +76,7 @@
 
    #define lw_PRId64 "I64d"
    #define lw_PRIu64 "I64u"
-    
+   
 #endif
 
 #ifndef _WIN32
@@ -190,15 +190,17 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
   lw_import           void  lw_addr_delete          (lw_addr);
   lw_import           long  lw_addr_port            (lw_addr);
   lw_import           void  lw_addr_set_port        (lw_addr, long port);
+  lw_import            int  lw_addr_type            (lw_addr);
+  lw_import           void  lw_addr_set_type        (lw_addr, int);
   lw_import        lw_bool  lw_addr_ready           (lw_addr);
   lw_import       lw_error  lw_addr_resolve         (lw_addr);
   lw_import        lw_bool  lw_addr_ipv6            (lw_addr);
   lw_import        lw_bool  lw_addr_equal           (lw_addr, lw_addr);
   lw_import     const char* lw_addr_tostring        (lw_addr);
 
-  #define lw_addr_hint_tcp    1
-  #define lw_addr_hint_udp    2
-  #define lw_addr_hint_ipv6   4
+  #define lw_addr_type_tcp        1
+  #define lw_addr_type_udp        2
+  #define lw_addr_hint_ipv6       4
 
 /* Filter */
 
@@ -938,6 +940,9 @@ struct _address
 
    lw_import long port ();
    lw_import void port (long);
+
+   lw_import int type ();
+   lw_import void type (int);
 
    lw_import bool ipv6 ();
 

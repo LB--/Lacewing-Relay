@@ -267,15 +267,14 @@ void resolver (lw_addr ctx)
 
    memset (&hints, 0, sizeof (hints));
 
-   if (ctx->hints & lw_addr_hint_tcp)
+   if (ctx->hints & lw_addr_type_tcp)
    {
-      if (!(ctx->hints & lw_addr_hint_udp))
-         hints.ai_socktype = SOCK_STREAM;
+      assert (! (ctx->hints & lw_addr_type_udp));
+      hints.ai_socktype = SOCK_STREAM;
    }
-   else
+   else if (ctx->hints & lw_addr_type_udp)
    {
-      if (ctx->hints & lw_addr_hint_udp)
-         hints.ai_socktype = SOCK_DGRAM;
+      hints.ai_socktype = SOCK_DGRAM;
    }
 
    hints.ai_protocol  =  0;
@@ -314,6 +313,8 @@ void resolver (lw_addr ctx)
          break;
       }
    }
+
+   lw_addr_set_type (ctx, ctx->hints & (lw_addr_type_tcp | lw_addr_type_udp));
 }
 
 lw_bool lw_addr_ready (lw_addr ctx)
@@ -397,5 +398,43 @@ lw_bool lw_addr_ipv6 (lw_addr ctx)
 {
    return ctx->info && ctx->info->ai_addr &&
       ((struct sockaddr_storage *) ctx->info->ai_addr)->ss_family == AF_INET6;
+}
+
+int lw_addr_type (lw_addr ctx)
+{
+   if (!ctx->info)
+      return 0;
+
+   switch (ctx->info->ai_socktype)
+   {
+      case SOCK_STREAM:
+         return lw_addr_type_tcp;
+
+      case SOCK_DGRAM:
+         return lw_addr_type_udp;
+
+      default:
+         return 0;
+   };
+}
+
+void lw_addr_set_type (lw_addr ctx, int type)
+{
+   if (!ctx->info)
+      return;
+
+   switch (type)
+   {
+      case lw_addr_type_tcp:
+         ctx->info->ai_socktype = SOCK_STREAM;
+         break;
+
+      case lw_addr_type_udp:
+         ctx->info->ai_socktype = SOCK_DGRAM;
+         break;
+
+      default:
+         break;
+   };
 }
 

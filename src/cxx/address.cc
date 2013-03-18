@@ -69,6 +69,16 @@ void _address::port (long port)
    lw_addr_set_port ((lw_addr) this, port);
 }
 
+int _address::type ()
+{
+   return lw_addr_type ((lw_addr) this);
+}
+
+void _address::type (int type)
+{
+   lw_addr_set_type ((lw_addr) this, type);
+}
+
 bool _address::ipv6 ()
 {
    return lw_addr_ipv6 ((lw_addr) this);
