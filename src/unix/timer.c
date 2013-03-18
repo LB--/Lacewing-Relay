@@ -85,6 +85,7 @@ lw_timer lw_timer_new (lw_pump pump)
 
    ctx->pump = pump;
    ctx->timer_thread = lw_thread_new ("timer_thread", timer_thread);
+   ctx->stop_event = lw_event_new ();
 
    #ifdef _lacewing_use_timerfd
       ctx->fd = timerfd_create (CLOCK_MONOTONIC, TFD_NONBLOCK);
@@ -97,6 +98,7 @@ lw_timer lw_timer_new (lw_pump pump)
 void lw_timer_delete (lw_timer ctx)
 {
    lw_timer_stop (ctx);
+   lw_event_delete (ctx->stop_event);
 
    #ifdef _lacewing_use_timerfd
       close (ctx->fd);
