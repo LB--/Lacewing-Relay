@@ -181,6 +181,8 @@ void lw_udp_host_addr (lw_udp ctx, lw_addr addr)
    lw_filter filter = lw_filter_new ();
    lw_filter_set_remote (filter, addr);
 
+   lw_filter_set_ipv6 (filter, lw_addr_ipv6 (addr));
+
    lw_udp_host_filter (ctx, filter);
 
    lw_filter_delete (filter);
