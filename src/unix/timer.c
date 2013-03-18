@@ -120,7 +120,7 @@ void lw_timer_start (lw_timer ctx, long interval)
       {
          struct kevent event;
 
-         EV_SET (&event, 0, EVFILT_TIMER,
+         EV_SET (&event, (uintptr_t) ctx, EVFILT_TIMER,
                     EV_ADD | EV_ENABLE | EV_CLEAR, 0, interval, ctx);
 
          if (kevent (((lw_eventpump) ctx->pump)->queue,
@@ -175,7 +175,25 @@ void lw_timer_stop (lw_timer ctx)
 
     #ifdef _lacewing_use_kqueue
 
-        /* TODO */
+      if (ctx->pump->def == &def_eventpump)
+      {
+         struct kevent event;
+
+         EV_SET (&event, (uintptr_t) ctx, EVFILT_TIMER, EV_DELETE, 0, 0, ctx);
+
+         if (kevent (((lw_eventpump) ctx->pump)->queue,
+                        &event, 1, 0, 0, 0) == -1)
+         {
+            lwp_trace ("Timer: Failed to remove timer from kqueue: %s",
+                            strerror (errno));
+
+            return;
+         }
+      }
+      else
+      {
+         /* TODO */
+      }
 
     #else
         #ifdef _lacewing_use_timerfd
