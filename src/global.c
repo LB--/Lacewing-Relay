@@ -160,45 +160,40 @@ void lw_dump (const char * buffer, size_t size)
 
 #endif
 
-#ifndef lwp_trace
+void lw_trace (const char * format, ...)
+{
+   va_list args;
+   char * data;
+   size_t size;
+   static lw_sync sync = 0;
 
- void lwp_trace (const char * format, ...)
- {
-    va_list args;
-    char * data;
-    size_t size;
-    static lw_sync sync = 0;
- 
-    va_start (args, format);
-    
-    size = lwp_format (&data, format, args);
-    
-    if(size > 0)
-    {
-       if (!sync)
-          sync = lw_sync_new ();
- 
-       lw_sync_lock (sync);
- 
-       #ifdef _lacewing_android
-          __android_log_write (ANDROID_LOG_INFO, "liblacewing", data);
-       #else
-          #ifdef COXSDK
-             OutputDebugStringA (data);
-             OutputDebugStringA ("\n");
-          #else
-             fprintf (stderr, "[liblacewing] %s\n", data);
-          #endif
-       #endif
- 
-       free (data);
- 
-       lw_sync_release (sync);
-    }
+   va_start (args, format);
+   
+   size = lwp_format (&data, format, args);
+   
+   if(size > 0)
+   {
+      if (!sync)
+         sync = lw_sync_new ();
 
-    va_end (args);
- }
+      lw_sync_lock (sync);
 
-#endif
+      #ifdef _lacewing_android
+         __android_log_write (ANDROID_LOG_INFO, "liblacewing", data);
+      #else
+         #ifdef COXSDK
+            OutputDebugStringA (data);
+            OutputDebugStringA ("\n");
+         #else
+            fprintf (stderr, "[liblacewing] %s\n", data);
+         #endif
+      #endif
 
+      free (data);
+
+      lw_sync_release (sync);
+   }
+
+   va_end (args);
+}
 

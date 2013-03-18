@@ -163,7 +163,7 @@ void lwp_init ();
 #endif
 
 #if defined(_lacewing_debug) || defined(_lacewing_debug_output)
-   void lwp_trace (const char * format, ...);
+   #define lwp_trace lw_trace
 #else
    #define lwp_trace(x, ...)
 #endif

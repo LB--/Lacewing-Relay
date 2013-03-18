@@ -169,6 +169,7 @@ lw_import          void  lw_md5                      (char * output, const char 
 lw_import          void  lw_md5_hex                  (char * output, const char * input, size_t length);
 lw_import          void  lw_sha1                     (char * output, const char * input, size_t length);
 lw_import          void  lw_sha1_hex                 (char * output, const char * input, size_t length);
+lw_import          void  lw_trace                    (const char * format, ...);
 lw_import          void  lw_dump                     (const char * buffer, size_t size);
 lw_import       lw_bool  lw_random                   (char * buffer, size_t size);
 
