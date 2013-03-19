@@ -4,6 +4,7 @@
 lacewing.h
 
 *.sublime-workspace
+*.bat
 
 #################
 ## Visual Studio 2008 only - no 2010
