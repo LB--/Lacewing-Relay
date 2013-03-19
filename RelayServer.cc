@@ -5,6 +5,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <map>
 #include <limits>
 #include <cassert>
 
@@ -69,9 +70,9 @@ namespace LwRelay
 		bool channel_listing {true};
 		std::string welcome_message {lw_version()};
 
-		Client *first_client {nullptr}, *last_client {nullptr};
-		Channel *first_channel {nullptr}, *last_channel {nullptr};
 		ID_Manager<ID_t> client_IDs, channel_IDs;
+		std::map<ID_t, Client *> clients;
+		std::map<ID_t, Channel *> channels;
 
 		struct Handlers
 		{
@@ -80,7 +81,7 @@ namespace LwRelay
 				static Deny (lw_callback        ConnectDH)(Server &, Client &)                                                                         { return true; }
 				static void (lw_callback     DisconnectDH)(Server &, Client &)                                                                         {              }
 				static Deny (lw_callback        NameSetDH)(Server &, Client &, char const*)                                                            { return true; }
-				static Deny (lw_callback    JoinChannelDH)(Server &, Client &, Channel &, bool, bool)                                                  { return true; }
+				static Deny (lw_callback    JoinChannelDH)(Server &, Client &, Channel &,       bool, bool)                                            { return true; }
 				static Deny (lw_callback   LeaveChannelDH)(Server &, Client &, Channel &)                                                              { return true; }
 				static void (lw_callback  ServerMessageDH)(Server &, Client &,                  Subchannel_t, Variant_t, char const*, Size_t)          {              }
 				static Deny (lw_callback ChannelMessageDH)(Server &, Client &, Channel &, bool, Subchannel_t, Variant_t, char const*, Size_t)          { return true; }
@@ -114,7 +115,7 @@ namespace LwRelay
 	};
 	struct Server::Client::ChannelIterator::Impl
 	{
-		//
+		std::vector<Channel *> channels;
 	};
 	struct Server::Channel::Impl
 	{
@@ -130,7 +131,7 @@ namespace LwRelay
 	};
 	struct Server::Channel::ClientIterator::Impl
 	{
-		//
+		std::vector<Client *> clients;
 	};
 
 	namespace

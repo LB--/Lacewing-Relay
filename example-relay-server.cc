@@ -12,7 +12,7 @@ struct KR{~KR()
 }}kr;
 
 #include "Relay.hh"
-typedef LwRelay::Server::Deny Deny;
+using Deny = LwRelay::Server::Deny;
 
 struct Main
 {
@@ -63,7 +63,7 @@ struct Main
 	{
 		std::clog << "Client connected from " << Client.Address()->tostring() << std::endl;
 		return true; //allow connection
-		//return Deny("Your IP is banned from this server");
+		//return "Your IP is banned from this server"; //disallow connection
 	}
 };
 

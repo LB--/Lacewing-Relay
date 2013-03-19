@@ -52,57 +52,7 @@ namespace LwRelay
 		Server(Server &&) noexcept(true) = default;
 		Server &operator=(Server &&) noexcept(true);
 
-		struct Client;
 		struct Channel;
-
-		/**
-		 * Enable or disable the ability of clients to list visible channels.
-		 */
-		void SetChannelListing(bool enabled);
-		/**
-		 * Set the 'welcome message' sent to clients on connect.
-		 */
-		void SetWelcomeMessage(char const*message);
-		/**
-		 * Begin hosting this server on the given port, default 6121.
-		 * This function fails if the server is already hosting or if
-		 * one of the internal lacewing server fails to begin hosting.
-		 */
-		void Host(uint16_t port = 6121);
-		/**
-		 * Begin hosting this server using the given lacewing filter.
-		 * This function fails if the server is already hosting or if
-		 * one of the internal lacewing server fails to begin hosting.
-		 */
-		void Host(lacewing::filter filter);
-		/**
-		 * Returns true if the server is hosting, false otherwise.
-		 */
-		bool Hosting() const;
-		/**
-		 * Stops the server from hosting and disconnects all clients.
-		 */
-		void Unhost();
-		/**
-		 * Returns the number of connected clients.
-		 */
-		ID_t ClientCount() const;
-		/**
-		 * Returns the first connected client, or null for 0 clients.
-		 */
-		Client *FirstClient();
-		/**
-		 * Returns the number of open channels on the server.
-		 */
-		Size_t ChannelCount() const;
-		/**
-		 * Returns the first channel, or null for 0 channels.
-		 */
-		Channel *FirstChannel();
-		/**
-		 * Returns the port the server is being hosted on, in case you forgot.
-		 */
-		uint16_t Port() const;
 
 		/**
 		 * Represents a client connected to this server.
@@ -124,19 +74,48 @@ namespace LwRelay
 			Client &operator=(Client &&) noexcept(true);
 
 			/**
+			 * Allows iteration of clients on this server.
+			 * Intended for use with range-based for-loop.
+			 */
+			struct Iterator
+			{
+				~Iterator() noexcept(true);
+				Iterator(Iterator &&) noexcept(true) = default;
+				Iterator &operator=(Iterator &&) noexcept(true);
+
+				Iterator begin() const;
+				Iterator end() const;
+				Iterator &operator++();
+				bool operator!=(Iterator const&) const;
+				Client &operator*() const;
+
+			private:
+				struct Impl;
+				std::unique_ptr<Impl> impl;
+
+				Iterator(Impl *);
+				Iterator() = delete;
+				Iterator(Iterator const&) = delete;
+				Iterator &operator=(Iterator const &) = delete;
+
+				friend struct ::LwRelay::Server;
+			};
+
+			/**
 			 * Allows iteration of channels this client is connected to.
+			 * Intended for use with range-based for-loop.
 			 */
 			struct ChannelIterator
 			{
 				~ChannelIterator() noexcept(true);
-
 				ChannelIterator(ChannelIterator &&) noexcept(true) = default;
 				ChannelIterator &operator=(ChannelIterator &&) noexcept(true);
 
-				/**
-				 * Returns the next channel this client is connected to, or null if at the end.
-				 */
-				Channel *Next();
+				ChannelIterator begin() const;
+				ChannelIterator end() const;
+				ChannelIterator &operator++();
+				bool operator!=(ChannelIterator const&) const;
+				Channel &operator*() const;
 
 			private:
 				struct Impl;
@@ -146,6 +125,8 @@ namespace LwRelay
 				ChannelIterator() = delete;
 				ChannelIterator(ChannelIterator const&) = delete;
 				ChannelIterator &operator=(ChannelIterator const&) = delete;
+
+				friend struct ::LwRelay::Server::Client;
 			};
 
 			/**
@@ -193,12 +174,9 @@ namespace LwRelay
 			Size_t ChannelCount() const;
 			/**
 			 * Returns a ChannelIterator to iterate the channels this client is in.
+			 * Intended for use with range-based for-loop.
 			 */
-			operator ChannelIterator();
-			/**
-			 * Returns the next client connected to this server, or null if this is the last.
-			 */
-			Client *Next();
+			ChannelIterator Channels();
 
 		private:
 			struct Impl;
@@ -232,19 +210,48 @@ namespace LwRelay
 			Channel &operator=(Channel &&) noexcept(true);
 
 			/**
+			 * Allows iteration of channels on this server.
+			 * Intended for use with range-based for-loop.
+			 */
+			struct Iterator
+			{
+				~Iterator() noexcept(true);
+				Iterator(Iterator &&) noexcept(true) = default;
+				Iterator &operator=(Iterator &&) noexcept(true);
+
+				Iterator begin() const;
+				Iterator end() const;
+				Iterator &operator++();
+				bool operator!=(Iterator const&) const;
+				Channel &operator*() const;
+
+			private:
+				struct Impl;
+				std::unique_ptr<Impl> impl;
+
+				Iterator(Impl *);
+				Iterator() = delete;
+				Iterator(Iterator const&) = delete;
+				Iterator &operator=(Iterator const &) = delete;
+
+				friend struct ::LwRelay::Server;
+			};
+
+			/**
 			 * Allows iteration of clients in this channel.
+			 * Intended for use with range-based for-loop.
 			 */
 			struct ClientIterator
 			{
 				~ClientIterator() noexcept(true);
-
 				ClientIterator(ClientIterator &&) noexcept(true) = default;
 				ClientIterator &operator=(ClientIterator &&) noexcept(true);
 
-				/**
-				 * Returns the next client in this channel, or null if at the end.
-				 */
-				Client *Next();
+				ClientIterator begin() const;
+				ClientIterator end() const;
+				ClientIterator &operator++();
+				bool operator!=(ClientIterator const&) const;
+				Client &operator*() const;
 
 			private:
 				struct Impl;
@@ -256,7 +263,7 @@ namespace LwRelay
 				ClientIterator &operator=(ClientIterator const&) = delete;
 
 				friend struct ::LwRelay::Server::Channel;
-			};	friend struct ::LwRelay::Server::Channel::ClientIterator;
+			};
 
 			/**
 			 * Returns this channel's unique ID.
@@ -318,12 +325,9 @@ namespace LwRelay
 			ID_t ClientCount() const;
 			/**
 			 * Returns a ClientIterator to iterate the clients in this channel.
+			 * Intended for use with range-based for-loop.
 			 */
-			operator ClientIterator();
-			/**
-			 * Returns the next channel on this server, or null if this is the last.
-			 */
-			Channel *Next();
+			ClientIterator Clients() const;
 
 		private:
 			struct Impl;
@@ -337,6 +341,57 @@ namespace LwRelay
 			friend struct ::LwRelay::Server::Client;
 			friend struct ::LwRelay::Server;
 		};	friend struct ::LwRelay::Server::Channel;
+
+		/**
+		 * Enable or disable the ability of clients to list visible channels.
+		 */
+		void SetChannelListing(bool enabled);
+		/**
+		 * Set the 'welcome message' sent to clients on connect.
+		 */
+		void SetWelcomeMessage(char const*message);
+		/**
+		 * Begin hosting this server on the given port, default 6121.
+		 * This function fails if the server is already hosting or if
+		 * one of the internal lacewing server fails to begin hosting.
+		 */
+		void Host(uint16_t port = 6121);
+		/**
+		 * Begin hosting this server using the given lacewing filter.
+		 * This function fails if the server is already hosting or if
+		 * one of the internal lacewing server fails to begin hosting.
+		 */
+		void Host(lacewing::filter filter);
+		/**
+		 * Returns true if the server is hosting, false otherwise.
+		 */
+		bool Hosting() const;
+		/**
+		 * Stops the server from hosting and disconnects all clients.
+		 */
+		void Unhost();
+		/**
+		 * Returns the number of connected clients.
+		 */
+		ID_t ClientCount() const;
+		/**
+		 * Returns an iterator over all the clients on the server.
+		 * Intended for use with range-based for-loop.
+		 */
+		Client::Iterator Cients();
+		/**
+		 * Returns the number of open channels on the server.
+		 */
+		Size_t ChannelCount() const;
+		/**
+		 * Returns an iterator over all the channels on the server.
+		 * Intended for use with range-based for-loop.
+		 */
+		Channel::Iterator Channels();
+		/**
+		 * Returns the port the server is being hosted on, in case you forgot.
+		 */
+		uint16_t Port() const;
 
 		/**
 		 * Represents an indication of or reason for denying a request.
@@ -374,7 +429,7 @@ namespace LwRelay
 		typedef Deny (lw_callback        ConnectHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client);
 		typedef void (lw_callback     DisconnectHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client);
 		typedef Deny (lw_callback        NameSetHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, char const*name);
-		typedef Deny (lw_callback    JoinChannelHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel, bool autoclose, bool visible);
+		typedef Deny (lw_callback    JoinChannelHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel,               bool autoclose, bool visible);
 		typedef Deny (lw_callback   LeaveChannelHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel);
 		typedef void (lw_callback  ServerMessageHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client,                                                    Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
 		typedef Deny (lw_callback ChannelMessageHandler)(::LwRelay::Server &server, ::LwRelay::Server::Client &client, ::LwRelay::Server::Channel &channel, bool blasted, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
@@ -426,8 +481,198 @@ namespace LwRelay
 		Client(Client &&) noexcept(true) = default;
 		Client &operator=(Client &&) noexcept(true);
 
-		struct Channel;
-		struct ChannelListing;
+		/**
+		 * Represents a channel that this client is in.
+		 * Do not store long-term pointers to this.
+		 */
+		struct Channel
+		{
+			void *Tag;
+
+			~Channel() noexcept(true);
+
+			Channel(Channel &&) noexcept(true) = default;
+			Channel &operator=(Channel &&) noexcept(true);
+
+			/**
+			 * Allows iteration of channels the client is in.
+			 * Intended for use with range-based for-loop.
+			 */
+			struct Iterator
+			{
+				~Iterator() noexcept(true);
+				Iterator(Iterator &&) noexcept(true) = default;
+				Iterator &operator=(Iterator &&) noexcept(true);
+
+				Iterator begin() const;
+				Iterator end() const;
+				Iterator &operator++();
+				bool operator!=(Iterator const&) const;
+				Channel &operator*() const;
+
+			private:
+				struct Impl;
+				std::unique_ptr<Impl> impl;
+
+				Iterator(Impl *);
+				Iterator() = delete;
+				Iterator(Iterator const&) = delete;
+				Iterator &operator=(Iterator const &) = delete;
+
+				friend struct ::LwRelay::Client;
+			};
+
+			/**
+			 * Represents a peer in this channel.
+			 * Do not store long-term pointers to this.
+			 */
+			struct Peer
+			{
+				void *Tag;
+
+				~Peer() noexcept(true);
+
+				Peer(Peer &&) noexcept(true) = default;
+				Peer &operator=(Peer &&) noexcept(true);
+
+				/**
+				 * Allows iteration of peers in this channel.
+				 * Intended for use with range-based for-loop.
+				 */
+				struct Iterator
+				{
+					~Iterator() noexcept(true);
+					Iterator(Iterator &&) noexcept(true) = default;
+					Iterator &operator=(Iterator &&) noexcept(true);
+
+					Iterator begin() const;
+					Iterator end() const;
+					Iterator &operator++();
+					bool operator!=(Iterator const&) const;
+					Peer &operator*() const;
+
+				private:
+					struct Impl;
+					std::unique_ptr<Impl> impl;
+
+					Iterator(Impl *);
+					Iterator() = delete;
+					Iterator(Iterator const&) = delete;
+					Iterator &operator=(Iterator const &) = delete;
+
+					friend struct ::LwRelay::Client::Channel;
+				};
+
+				/**
+				 * Returns the unique ID of this peer as assigned by the server.
+				 */
+				ID_t ID() const;
+				/**
+				 * Returns true if this peer is the channel master of this channel.
+				 */
+				bool IsChannelMaster() const;
+				/**
+				 * Requests to send the given data to this peer.
+				 */
+				void Send(bool blast, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
+				/**
+				 * Requests to send the given string to this peer.
+				 */
+				void Send(bool blast, Subchannel_t subchannel, Variant_t variant, char const*null_terminated_string);
+				/**
+				 * Kicks this peer if you are the channel master.
+				 * If you are not the channel master, this has
+				 * no effect.
+				 */
+				void Kick();
+
+			private:
+				struct Impl;
+				std::unique_ptr<Impl> impl;
+
+				Peer(Impl *);
+				Peer() = delete;
+				Peer(Peer const&) = delete;
+				Peer &operator=(Peer const&) = delete;
+
+				friend struct ::LwRelay::Client;
+				friend struct ::LwRelay::Client::Channel;
+			};	friend struct ::LwRelay::Client::Channel::Peer;
+
+			/**
+			 * Returns the name of this channel.
+			 */
+			char const*Name() const;
+			/**
+			 * Returns the number of peers in this channel.
+			 */
+			ID_t PeerCount() const;
+			/**
+			 * Returns an iterator over the peers in this channel.
+			 * Intended for use with range-based for-loop.
+			 */
+			Peer::Iterator Peers();
+			/**
+			 * Returns true if this client is the channel master of this channel.
+			 */
+			bool IsChannelMaster() const;
+			/**
+			 * Requests to send the given data to this channel.
+			 */
+			void Send(bool blast, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
+			/**
+			 * Requests to send the given string to this channel.
+			 */
+			void Send(bool blast, Subchannel_t subchannel, Variant_t variant, char const*null_terminated_string);
+			/**
+			 * Requests to leave this channel.
+			 */
+			void Leave();
+
+		private:
+			struct Impl;
+			std::unique_ptr<Impl> impl;
+			
+			Channel(Impl *);
+			Channel() = delete;
+			Channel(Channel const&) = delete;
+			Channel &operator=(Channel const&) = delete;
+
+			friend struct ::LwRelay::Client;
+		};	friend struct ::LwRelay::Client::Channel;
+			friend struct ::LwRelay::Client::Channel::Peer;
+
+		struct ChannelListing
+		{
+			~ChannelListing() noexcept(true);
+
+			ChannelListing(ChannelListing &&) noexcept(true) = default;
+			ChannelListing &operator=(ChannelListing &&) noexcept(true);
+
+			/**
+			 * Returns the name of the listed channel.
+			 */
+			char const*Name() const;
+			/**
+			 * Returns the number of peers in the listed channel
+			 */
+			ID_t PeerCount() const;
+			/**
+			 * Returns the next listed channel, or null if this is the last.
+			 */
+			ChannelListing *Next();
+
+		private:
+			struct Impl;
+			std::unique_ptr<Impl> impl;
+
+			ChannelListing(Impl *);
+			ChannelListing() = delete;
+			ChannelListing(ChannelListing const&) = delete;
+			ChannelListing &operator=(ChannelListing const&) = delete;
+
+			friend struct ::LwRelay::Client;
+		};	friend struct ::LwRelay::Client::ChannelListing;
 
 		/**
 		 * Connects to a server at the given host address and port (default 6121).
@@ -498,155 +743,10 @@ namespace LwRelay
 		 */
 		Size_t ChannelCount() const;
 		/**
-		 * Returns the first channel this client is in, or null if in 0 channels.
+		 * Returns an iterator over the channels this client is in.
+		 * Intended for use with range-based for-loop.
 		 */
-		Channel *FirstChannel();
-
-		/**
-		 * Represents a channel that this client is in.
-		 * Do not store long-term pointers to this.
-		 */
-		struct Channel
-		{
-			void *Tag;
-
-			~Channel() noexcept(true);
-
-			Channel(Channel &&) noexcept(true) = default;
-			Channel &operator=(Channel &&) noexcept(true);
-
-			struct Peer;
-
-			/**
-			 * Returns the name of this channel.
-			 */
-			char const*Name() const;
-			/**
-			 * Returns the next channel this client is in, or null if this is the last.
-			 */
-			Channel *Next();
-			/**
-			 * Returns the number of peers in this channel.
-			 */
-			ID_t PeerCount() const;
-			/**
-			 * Returns the first peer in the channel, or null if there are 0.
-			 */
-			Peer *FirstPeer();
-			/**
-			 * Returns true if this client is the channel master of this channel.
-			 */
-			bool IsChannelMaster() const;
-			/**
-			 * Requests to send the given data to this channel.
-			 */
-			void Send(bool blast, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
-			/**
-			 * Requests to send the given string to this channel.
-			 */
-			void Send(bool blast, Subchannel_t subchannel, Variant_t variant, char const*null_terminated_string);
-			/**
-			 * Requests to leave this channel.
-			 */
-			void Leave();
-
-			/**
-			 * Represents a peer in this channel.
-			 * Do not store long-term pointers to this.
-			 */
-			struct Peer
-			{
-				void *Tag;
-
-				~Peer() noexcept(true);
-
-				Peer(Peer &&) noexcept(true) = default;
-				Peer &operator=(Peer &&) noexcept(true);
-
-				/**
-				 * Returns the unique ID of this peer as assigned by the server.
-				 */
-				ID_t ID() const;
-				/**
-				 * Returns the next peer in this channel, or null if this is the last.
-				 */
-				Peer *Next();
-				/**
-				 * Returns true if this peer is the channel master of this channel.
-				 */
-				bool IsChannelMaster() const;
-				/**
-				 * Requests to send the given data to this peer.
-				 */
-				void Send(bool blast, Subchannel_t subchannel, Variant_t variant, char const*data, Size_t size);
-				/**
-				 * Requests to send the given string to this peer.
-				 */
-				void Send(bool blast, Subchannel_t subchannel, Variant_t variant, char const*null_terminated_string);
-				/**
-				 * Kicks this peer if you are the channel master.
-				 * If you are not the channel master, this has
-				 * no effect.
-				 */
-				void Kick();
-
-			private:
-				struct Impl;
-				std::unique_ptr<Impl> impl;
-
-				Peer(Impl *);
-				Peer() = delete;
-				Peer(Peer const&) = delete;
-				Peer &operator=(Peer const&) = delete;
-
-				friend struct ::LwRelay::Client;
-				friend struct ::LwRelay::Client::Channel;
-			};	friend struct ::LwRelay::Client::Channel::Peer;
-
-		private:
-			struct Impl;
-			std::unique_ptr<Impl> impl;
-			
-			Channel(Impl *);
-			Channel() = delete;
-			Channel(Channel const&) = delete;
-			Channel &operator=(Channel const&) = delete;
-
-			friend struct ::LwRelay::Client;
-		};	friend struct ::LwRelay::Client::Channel;
-			friend struct ::LwRelay::Client::Channel::Peer;
-
-		struct ChannelListing
-		{
-			~ChannelListing() noexcept(true);
-
-			ChannelListing(ChannelListing &&) noexcept(true) = default;
-			ChannelListing &operator=(ChannelListing &&) noexcept(true);
-
-			/**
-			 * Returns the name of the listed channel.
-			 */
-			char const*Name() const;
-			/**
-			 * Returns the number of peers in the listed channel
-			 */
-			ID_t PeerCount() const;
-			/**
-			 * Returns the next listed channel, or null if this is the last.
-			 */
-			ChannelListing *Next();
-
-		private:
-			struct Impl;
-			std::unique_ptr<Impl> impl;
-
-			ChannelListing(Impl *);
-			ChannelListing() = delete;
-			ChannelListing(ChannelListing const&) = delete;
-			ChannelListing &operator=(ChannelListing const&) = delete;
-
-			friend struct ::LwRelay::Client;
-		};	friend struct ::LwRelay::Client::ChannelListing;
+		Channel::Iterator Channels();
 
 		/* Handler prototypes *
 		 * These are the handlers you can implement to customize
