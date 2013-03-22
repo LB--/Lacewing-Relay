@@ -39,7 +39,33 @@ Issues with the documentation can be reported in the [gh-pages branch](https://g
 of the liblacewing GitHub repository.
 
 
-Changes in 0.5.0 (2012-Mar-11)
+Changes in 0.5.1 (2013-Mar-22)
+==============================
+
+- Fix `lw_addr_clone` segfault
+
+- `outer_size` renamed to `tail_size`, new `lw_stream_from_tail` function added
+
+- Tag added to `lw_udp` and `lw_flashpolicy`
+
+- Prototype for `lw_filter_clone` was erroneously called `lw_filter_copy` 
+
+- Various fixes for `lw_udp`
+
+- New `lw_addr_type` and `lw_addr_set_type` functions added
+
+- `lw_udp_host_addr` now respects address IPv6 setting
+
+- Fix problems with the Unix implementation of `lw_timer_stop`
+
+- Fix segfault with Windows FDStream when the completion routine fires after deletion
+
+- Fix some problems building on 64-bit Windows
+
+[0.5.1 Release Notes](http://lacewing-project.org/release/0.5.1.html)
+
+
+Changes in 0.5.0 (2013-Mar-11)
 ==============================
 
 - Library ported to C99
