@@ -199,7 +199,7 @@ extern const char * const lwp_months [];
 
 time_t lwp_parse_time (const char *);
 
-int lwp_create_server_socket (lw_filter, int type, int protocol, lw_error);
+lwp_socket lwp_create_server_socket (lw_filter, int type, int protocol, lw_error);
 
 #ifdef __cplusplus
 

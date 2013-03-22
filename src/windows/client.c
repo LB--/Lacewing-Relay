@@ -240,7 +240,7 @@ void lw_client_connect_addr (lw_client ctx, lw_addr address)
    OVERLAPPED * overlapped = (OVERLAPPED *) calloc (sizeof (*overlapped), 1);
 
    if (!lw_ConnectEx ((SOCKET) ctx->socket, address->info->ai_addr,
-            address->info->ai_addrlen, 0, 0, 0, overlapped))
+            (int) address->info->ai_addrlen, 0, 0, 0, overlapped))
    {
       int code = WSAGetLastError ();
 

@@ -183,8 +183,8 @@ void lw_filter_set_remote_port (lw_filter ctx, long port)
       ctx->remote_port = port;
 }
 
-int lwp_create_server_socket (lw_filter filter, int type,
-                              int protocol, lw_error error)
+lwp_socket lwp_create_server_socket (lw_filter filter, int type,
+                                     int protocol, lw_error error)
 {
    lwp_socket s;
    int addr_len;
@@ -318,7 +318,7 @@ int lwp_create_server_socket (lw_filter filter, int type,
       }
    }
 
-   if (bind (s, (struct sockaddr *) &addr, addr_len) == -1)
+   if (bind (s, (struct sockaddr *) &addr, (int) addr_len) == -1)
    {
       lw_error_add (error, lwp_last_socket_error);
       lw_error_addf (error, "Error binding socket");
