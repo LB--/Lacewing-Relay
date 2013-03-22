@@ -152,7 +152,7 @@ static void read_ready (void * tag)
 
    ctx->flags &= ~ lwp_fdstream_flag_reading;
 
-   if (lwp_release (ctx) || ctx->flags & lwp_stream_flag_dead)
+   if (lwp_release (ctx) || ctx->stream.flags & lwp_stream_flag_dead)
       return;
 
    if (close_stream)
