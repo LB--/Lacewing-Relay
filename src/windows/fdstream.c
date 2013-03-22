@@ -32,8 +32,9 @@
 
 extern const lw_streamdef def_fdstream;
 
-static void issue_read (lw_fdstream ctx);
-static void write_completed (lw_fdstream ctx);
+static void issue_read (lw_fdstream);
+static void read_completed (lw_fdstream);
+static void write_completed (lw_fdstream);
 
 static void add_pending_write (lw_fdstream ctx)
 {
@@ -61,15 +62,6 @@ static void remove_pending_write (lw_fdstream ctx)
 #define overlapped_type_write         2
 #define overlapped_type_transmitfile  3
 
-struct _fdstream_overlapped
-{
-    OVERLAPPED overlapped;
-
-    char type;
-
-    char data [];
-};
-
 static void completion (void * tag, OVERLAPPED * _overlapped,
                         unsigned long bytes_transferred, int error)
 {
@@ -77,25 +69,21 @@ static void completion (void * tag, OVERLAPPED * _overlapped,
 
    fdstream_overlapped overlapped = (fdstream_overlapped) _overlapped;
 
-   if (error == ERROR_OPERATION_ABORTED)
-   {
-      /* This operation was aborted - we have no guarantee that
-       * ctx is valid, so just free overlapped and get out.
-       */
-
-      free (overlapped);
-      return;
-   }
-
    lwp_retain (ctx);
 
    switch (overlapped->type)
    {
       case overlapped_type_read:
 
-         assert (overlapped == ctx->read_overlapped);
+         assert (overlapped == &ctx->read_overlapped);
 
-         ctx->flags &= ~ lwp_fdstream_flag_read_pending;
+         read_completed (ctx);
+
+         if (error == ERROR_OPERATION_ABORTED)
+            break;
+
+         if (ctx->stream.flags & lwp_stream_flag_dead)
+            break;
 
          if (error || !bytes_transferred)
          {
@@ -118,7 +106,7 @@ static void completion (void * tag, OVERLAPPED * _overlapped,
 
       case overlapped_type_transmitfile:
       {
-         assert (overlapped == ctx->transmitfile_overlapped);
+         assert (overlapped == &ctx->transmitfile_overlapped);
 
          ctx->transmit_file_from->transmit_file_to = 0;                            
          write_completed (ctx->transmit_file_from);
@@ -202,12 +190,12 @@ void issue_read (lw_fdstream ctx)
    if (ctx->flags & lwp_fdstream_flag_read_pending)
       return;
 
-   memset (ctx->read_overlapped, 0, sizeof (*ctx->read_overlapped));
+   memset (&ctx->read_overlapped, 0, sizeof (ctx->read_overlapped));
 
-   ctx->read_overlapped->type = overlapped_type_read;
+   ctx->read_overlapped.type = overlapped_type_read;
 
-   ctx->read_overlapped->overlapped.Offset = ctx->offset.LowPart;
-   ctx->read_overlapped->overlapped.OffsetHigh = ctx->offset.HighPart;
+   ctx->read_overlapped.overlapped.Offset = ctx->offset.LowPart;
+   ctx->read_overlapped.overlapped.OffsetHigh = ctx->offset.HighPart;
 
    size_t to_read = sizeof (ctx->buffer);
 
@@ -215,7 +203,7 @@ void issue_read (lw_fdstream ctx)
       to_read = ctx->reading_size;
 
    if (ReadFile (ctx->fd, ctx->buffer, to_read,
-                 0, &ctx->read_overlapped->overlapped) == -1)
+                 0, &ctx->read_overlapped.overlapped) == -1)
    {
       int error = GetLastError();
 
@@ -230,6 +218,13 @@ void issue_read (lw_fdstream ctx)
       ctx->offset.QuadPart += to_read;
 
    ctx->flags |= lwp_fdstream_flag_read_pending;
+   lwp_retain (ctx);  /* retain the stream for the duration of the read op */
+}
+
+void read_completed (lw_fdstream ctx)
+{
+   ctx->flags &= ~ lwp_fdstream_flag_read_pending;
+   lwp_release (ctx);  /* matches retain in issue_read */
 }
 
 static void def_cleanup (lw_stream _ctx)
@@ -399,7 +394,7 @@ static size_t def_sink_stream (lw_stream _dest, lw_stream _src, size_t size)
    if (dest->transmitfile_from || source->transmitfile_to)
       return -1;  /* source or dest stream already performing a TransmitFile */
 
-   fdstream_overlapped overlapped = dest->transmitfile_overlapped;
+   fdstream_overlapped overlapped = &dest->transmitfile_overlapped;
 
    memset (overlapped, 0, sizeof (*overlapped));
    overlapped->type = overlapped_type_transmitfile;
@@ -542,12 +537,6 @@ void lwp_fdstream_init (lw_fdstream ctx, lw_pump pump)
    ctx->fd     = INVALID_HANDLE_VALUE;
    ctx->flags  = lwp_fdstream_flag_nagle;
    ctx->size   = -1;
-
-   ctx->read_overlapped = (fdstream_overlapped)
-      calloc (sizeof (*ctx->read_overlapped), 1);
-
-   ctx->transmitfile_overlapped = (fdstream_overlapped)
-      calloc (sizeof (*ctx->transmitfile_overlapped), 1);
 
    lwp_stream_init ((lw_stream) ctx, &def_fdstream, pump);
 }

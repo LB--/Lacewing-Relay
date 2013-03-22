@@ -32,14 +32,22 @@
 
 #include "../stream.h"
 
-typedef struct _fdstream_overlapped * fdstream_overlapped;
+typedef struct _fdstream_overlapped
+{
+    OVERLAPPED overlapped;
+
+    char type;
+
+    char data [1];
+
+} * fdstream_overlapped;
 
 struct _lw_fdstream
 {
    struct _lw_stream stream;
 
-   fdstream_overlapped read_overlapped;
-   fdstream_overlapped transmitfile_overlapped;
+   struct _fdstream_overlapped read_overlapped;
+   struct _fdstream_overlapped transmitfile_overlapped;
 
    lw_fdstream transmit_file_from,
                transmit_file_to;
