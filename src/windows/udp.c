@@ -81,6 +81,8 @@ struct _lw_udp
    SOCKET socket;
 
    long receives_posted;
+
+   void * tag;
 };
 
 static void post_receives (lw_udp ctx)
