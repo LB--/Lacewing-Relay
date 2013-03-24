@@ -68,8 +68,6 @@
    #else
       #ifdef TCP_NOPUSH
          #define lw_cork TCP_NOPUSH 
-      #else
-         #error "No TCP_CORK or TCP_NOPUSH available on this platform"
       #endif
    #endif
 #endif
