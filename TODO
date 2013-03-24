@@ -5,7 +5,7 @@
 - Use OS X security APIs instead of disabling the warnings for OpenSSL
 - Xcode project/framework
 - Check iOS compatibility
-- Check compatibility with OpenBSD, NetBSD, DragonFlyBSD, Solaris
+- Check compatibility with OpenBSD, DragonFlyBSD, Solaris
 - HTTP client
 - WebSockets
 - Try to get SWIG working
