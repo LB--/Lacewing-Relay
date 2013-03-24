@@ -278,7 +278,15 @@ void resolver (lw_addr ctx)
    }
 
    hints.ai_protocol  =  0;
-   hints.ai_flags     =  AI_V4MAPPED | AI_ADDRCONFIG;
+   hints.ai_flags     =  0;
+
+   #ifdef AI_V4MAPPED
+      hints.ai_flags |= AI_V4MAPPED;
+   #endif
+     
+   #ifdef AI_ADDRCONFIG
+      hints.ai_flags |= AI_ADDRCONFIG;
+   #endif
 
    if (ctx->hints & lw_addr_hint_ipv6)
       hints.ai_family = AF_INET6;
