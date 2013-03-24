@@ -34,7 +34,7 @@
 #include "spdy_zlib.h"
 
 #ifndef _WIN32
-   #include <alloca.h>
+   #include <stdlib.h>
 #else
    #include <malloc.h>
 #endif
@@ -306,12 +306,7 @@ int spdy_set_version (spdy_ctx * ctx, int version)
    /* Now we know which dictionary to use for deflate, init the zlib streams */
 
    if (inflateInit (&ctx->zlib_inflate) != Z_OK)
-   {
-      printf ("Error init inflate\n");
       return SPDY_E_INFLATE;
-   }
-
-   printf ("Success init inflate\n");
 
    if (deflateInit (&ctx->zlib_deflate, Z_BEST_SPEED) != Z_OK)
       return SPDY_E_DEFLATE;
