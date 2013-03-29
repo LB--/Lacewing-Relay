@@ -131,3 +131,15 @@ void lw_pump_remove (lw_pump ctx, lw_pump_watch watch)
    ctx->def->remove (ctx, watch);
 }
 
+void * lw_pump_tag (lw_pump ctx)
+{
+   return ctx->tag;
+}
+
+void lw_pump_set_tag (lw_pump ctx, void * tag)
+{
+   ctx->tag = tag;
+}
+
+
+

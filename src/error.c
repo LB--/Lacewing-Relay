@@ -35,6 +35,8 @@ struct _lw_error
    char * begin;
 
    int size;
+
+   void * tag;
 };
 
 static void lwp_error_add (lw_error ctx, const char * buffer)
@@ -143,5 +145,15 @@ void lw_error_add (lw_error ctx, long error)
 size_t lw_error_size (lw_error ctx)
 {
    return ctx->size;
+}
+
+void lw_error_set_tag (lw_error ctx, void * tag)
+{
+   ctx->tag = tag;
+}
+
+void * lw_error_tag (lw_error ctx)
+{
+   return ctx->tag;
 }
 

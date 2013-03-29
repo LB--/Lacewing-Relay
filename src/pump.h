@@ -35,6 +35,8 @@ struct _lw_pump
    const lw_pumpdef * def;
 
    long use_count;
+   
+   void * tag;
 };
 
 void lwp_pump_init (lw_pump ctx, const lw_pumpdef * def);

@@ -41,6 +41,8 @@ struct _lw_addr
    lw_error error;
 
    char buffer [64]; /* for to_string */
+
+   void * tag;
 };
 
 void lwp_addr_init (lw_addr ctx, const char * hostname,

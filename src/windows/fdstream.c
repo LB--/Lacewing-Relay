@@ -155,7 +155,12 @@ static void close_fd (lw_fdstream ctx)
    if (ctx->flags & lwp_fdstream_flag_auto_close)
    {
       if (ctx->flags & lwp_fdstream_flag_is_socket)
-         closesocket ((SOCKET) ctx->fd);
+      {
+         if (closesocket ((SOCKET) ctx->fd) == SOCKET_ERROR)
+         {
+             assert (false);
+         }
+      }
       else
          CloseHandle (ctx->fd);
    }

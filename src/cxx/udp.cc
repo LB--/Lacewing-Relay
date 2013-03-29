@@ -83,3 +83,14 @@ void _udp::on_error (_udp::hook_error hook)
 {
    lw_udp_on_error ((lw_udp) this, (lw_udp_hook_error) hook);
 }
+
+void * _udp::tag ()
+{
+   return lw_udp_tag ((lw_udp) this);
+}
+
+void _udp::tag (void * tag)
+{
+   lw_udp_set_tag ((lw_udp) this, tag);
+}
+

@@ -36,6 +36,8 @@ struct _lw_filter
 
    lw_addr local, remote;
    long local_port, remote_port;
+
+   void * tag;
 };
 
 lw_filter lw_filter_new ()
@@ -329,5 +331,15 @@ lwp_socket lwp_create_server_socket (lw_filter filter, int type,
    }
 
    return s;
+}
+
+void * lw_filter_tag (lw_filter ctx)
+{
+   return ctx->tag;
+}
+
+void lw_filter_set_tag (lw_filter ctx, void * tag)
+{
+   ctx->tag = tag;
 }
 

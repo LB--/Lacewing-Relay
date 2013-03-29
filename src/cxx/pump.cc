@@ -95,3 +95,13 @@ void _pump::post (void * func, void * param)
    lw_pump_post ((lw_pump) this, func, param);
 }
 
+void * _pump::tag ()
+{
+   return lw_pump_tag ((lw_pump) this);
+}
+
+void _pump::tag (void * tag)
+{
+   lw_pump_set_tag ((lw_pump) this, tag);
+}
+

@@ -32,6 +32,8 @@
 struct _lw_event
 {
    int pipe_r, pipe_w;
+
+   void * tag;
 };
 
 lw_event lw_event_new ()
@@ -97,5 +99,15 @@ lw_bool lw_event_wait (lw_event ctx, long timeout)
     tv.tv_usec = (timeout % 1000) * 1000;
 
     return select (ctx->pipe_r + 1, &set, 0, 0, &tv) > 0;
+}
+
+void lw_event_set_tag (lw_event ctx, void * tag)
+{
+   ctx->tag = tag;
+}
+
+void * lw_event_tag (lw_event ctx)
+{
+   return ctx->tag;
 }
 

@@ -54,4 +54,13 @@ void * _thread::join ()
    return lw_thread_join ((lw_thread) this);
 }
 
+void * _thread::tag ()
+{
+   return lw_thread_tag ((lw_thread) this);
+}
+
+void _thread::tag (void * tag)
+{
+   lw_thread_set_tag ((lw_thread) this, tag);
+}
 

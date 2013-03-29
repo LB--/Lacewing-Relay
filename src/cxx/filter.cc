@@ -99,3 +99,13 @@ void _filter::ipv6 (bool ipv6)
    lw_filter_set_ipv6 ((lw_filter) this, ipv6);
 }
 
+void * _filter::tag ()
+{
+   return lw_filter_tag ((lw_filter) this);
+}
+
+void _filter::tag (void * tag)
+{
+   lw_filter_set_tag ((lw_filter) this, tag);
+}
+

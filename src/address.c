@@ -446,3 +446,13 @@ void lw_addr_set_type (lw_addr ctx, int type)
    };
 }
 
+void * lw_addr_tag (lw_addr ctx)
+{
+   return ctx->tag;
+}
+
+void lw_addr_set_tag (lw_addr ctx, void * tag)
+{
+   ctx->tag = tag;
+}
+

@@ -61,3 +61,13 @@ bool _flashpolicy::hosting ()
    return lw_flashpolicy_hosting ((lw_flashpolicy) this);
 }
 
+void * _flashpolicy::tag ()
+{
+   return lw_flashpolicy_tag ((lw_flashpolicy) this);
+}
+
+void _flashpolicy::tag (void * tag)
+{
+   lw_flashpolicy_set_tag ((lw_flashpolicy) this, tag);
+}
+

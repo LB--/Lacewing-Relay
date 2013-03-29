@@ -298,6 +298,16 @@ long lw_ws_idle_timeout (lw_ws ctx)
    return ctx->timeout;
 }
 
+void * lw_ws_tag (lw_ws ctx)
+{
+   return ctx->tag;
+}
+
+void lw_ws_set_tag (lw_ws ctx, void * tag)
+{
+   ctx->tag = tag;
+}
+
 lwp_def_hook (ws, get)
 lwp_def_hook (ws, post)
 lwp_def_hook (ws, head)

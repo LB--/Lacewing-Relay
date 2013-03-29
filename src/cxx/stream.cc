@@ -140,4 +140,13 @@ lacewing::pump _stream::pump ()
    return (lacewing::pump) lw_stream_pump ((lw_stream) this);
 }
 
+void * _stream::tag ()
+{
+   return lw_stream_tag ((lw_stream) this);
+}
+
+void _stream::tag (void * tag)
+{
+   lw_stream_set_tag ((lw_stream) this, tag);
+}
 

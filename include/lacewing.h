@@ -180,6 +180,8 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
   lw_import           void  lw_thread_start    (lw_thread, void * parameter);
   lw_import        lw_bool  lw_thread_started  (lw_thread);
   lw_import           void* lw_thread_join     (lw_thread);
+  lw_import           void* lw_thread_tag      (lw_thread);
+  lw_import           void  lw_thread_set_tag  (lw_thread, void *);
 
 /* Address */
 
@@ -198,6 +200,8 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
   lw_import        lw_bool  lw_addr_ipv6            (lw_addr);
   lw_import        lw_bool  lw_addr_equal           (lw_addr, lw_addr);
   lw_import     const char* lw_addr_tostring        (lw_addr);
+  lw_import           void* lw_addr_tag             (lw_addr);
+  lw_import           void  lw_addr_set_tag         (lw_addr, void *);
 
   #define lw_addr_type_tcp        1
   #define lw_addr_type_udp        2
@@ -220,6 +224,8 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
   lw_import           void  lw_filter_set_reuse          (lw_filter, lw_bool);
   lw_import        lw_bool  lw_filter_ipv6               (lw_filter);
   lw_import           void  lw_filter_set_ipv6           (lw_filter, lw_bool);
+  lw_import           void* lw_filter_tag                (lw_filter);
+  lw_import           void  lw_filter_set_tag            (lw_filter, void *);
 
 /* Pump */
 
@@ -229,6 +235,8 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
   lw_import        lw_bool  lw_pump_in_use               (lw_pump);
   lw_import           void  lw_pump_remove               (lw_pump, lw_pump_watch);
   lw_import           void  lw_pump_post                 (lw_pump, void * fn, void * param);
+  lw_import           void* lw_pump_tag                  (lw_pump);
+  lw_import           void  lw_pump_set_tag              (lw_pump, void *);
 
   #ifdef _WIN32
 
@@ -448,6 +456,8 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
   lw_import        lw_bool  lw_client_connected          (lw_client);
   lw_import        lw_bool  lw_client_connecting         (lw_client);
   lw_import        lw_addr  lw_client_server_addr        (lw_client);
+  lw_import           void* lw_client_tag                (lw_client);
+  lw_import           void  lw_client_set_tag            (lw_client, void *);
   
   typedef void (lw_callback * lw_client_hook_connect) (lw_client);
   lw_import void lw_client_on_connect (lw_client, lw_client_hook_connect);
@@ -550,6 +560,8 @@ lw_import       lw_bool  lw_random                   (char * buffer, size_t size
   lw_import               void  lw_ws_enable_manual_finish   (lw_ws);
   lw_import               long  lw_ws_idle_timeout           (lw_ws);
   lw_import               void  lw_ws_set_idle_timeout       (lw_ws, long seconds);  
+  lw_import               void* lw_ws_tag                    (lw_ws);
+  lw_import               void  lw_ws_set_tag                (lw_ws, void * tag);
   lw_import            lw_addr  lw_ws_req_addr               (lw_ws_req);
   lw_import            lw_bool  lw_ws_req_secure             (lw_ws_req);
   lw_import         const char* lw_ws_req_url                (lw_ws_req);
@@ -669,6 +681,9 @@ struct _error
    lw_import operator const char * ();
 
    lw_import error clone ();
+
+   lw_import void tag (void *);
+   lw_import void * tag ();
 };
 
 lw_import error error_new ();
@@ -688,6 +703,9 @@ struct _event
    lw_import bool signalled ();
 
    lw_import bool wait (long timeout = -1);
+   
+   lw_import void tag (void *);
+   lw_import void * tag ();
 };
 
 lw_import event event_new ();
@@ -728,6 +746,9 @@ struct _pump
  
    void remove (lw_pump_watch);
    void post (void * proc, void * parameter = 0);
+
+   lw_import void tag (void *);
+   lw_import void * tag ();
 };
 
 lw_import pump pump_new ();
@@ -766,6 +787,9 @@ struct _thread
    lw_import bool started ();
 
    lw_import void * join ();
+
+   lw_import void tag (void *);
+   lw_import void * tag ();
 };
 
 lw_import thread thread_new (const char * name, void * proc);
@@ -788,6 +812,9 @@ struct _timer
 
    typedef void (lw_callback * hook_tick) (timer);
    lw_import void on_tick (hook_tick);
+
+   lw_import void tag (void *);
+   lw_import void * tag ();
 };
 
 lw_import timer timer_new (pump);
@@ -871,6 +898,9 @@ struct _stream
    lw_import bool close (bool immediate = false);
 
    lw_import lacewing::pump pump ();
+
+   lw_import void tag (void *);
+   lw_import void * tag ();
 };
 
 lw_import stream stream_new (const lw_streamdef *, pump);
@@ -955,6 +985,9 @@ struct _address
 
    lw_import bool operator == (address);
    lw_import bool operator != (address);
+
+   lw_import void tag (void *);
+   lw_import void * tag ();
 };
 
 lw_import address address_new (address);
@@ -991,6 +1024,9 @@ struct _filter
 
    lw_import void ipv6 (bool enabled);
    lw_import bool ipv6 ();
+
+   lw_import void tag (void *);
+   lw_import void * tag ();
 };
 
 lw_import filter filter_new ();
@@ -1073,6 +1109,9 @@ struct _server
    lw_import void on_disconnect  (hook_disconnect);
    lw_import void on_data        (hook_data);
    lw_import void on_error       (hook_error);
+
+   lw_import void tag (void *);
+   lw_import void * tag ();
 };
 
 lw_import server server_new (pump);
@@ -1116,6 +1155,9 @@ struct _udp
 
    lw_import void on_data   (hook_data);
    lw_import void on_error  (hook_error);
+
+   lw_import void tag (void *);
+   lw_import void * tag ();
 };
 
 lw_import udp udp_new (pump);
@@ -1195,6 +1237,9 @@ struct _webserver
    lw_import void on_head             (hook_head);
    lw_import void on_disconnect       (hook_disconnect);
    lw_import void on_error            (hook_error);
+
+   lw_import void tag (void *);
+   lw_import void * tag ();
 };
     
 lw_import webserver webserver_new (pump);
@@ -1364,6 +1409,9 @@ struct _flashpolicy
 
    typedef void (lw_callback * hook_error) (flashpolicy, error);
    lw_import void on_error (hook_error);
+
+   lw_import void tag (void *);
+   lw_import void * tag ();
 };
 
 lw_import flashpolicy flashpolicy_new (pump);

@@ -28,11 +28,25 @@
 
 #include "../common.h"
 
+struct _lw_event
+{
+   WSAEVENT event;
+
+   void * tag;
+};
+
 lw_event lw_event_new ()
 {
    lwp_init ();
 
-   return (lw_event) WSACreateEvent ();
+   lw_event ctx = (lw_event) calloc (sizeof (*ctx), 1);
+
+   if (!ctx)
+      return 0;
+
+   ctx->event = WSACreateEvent ();
+
+   return ctx;
 }
 
 void lw_event_delete (lw_event ctx)
@@ -40,7 +54,9 @@ void lw_event_delete (lw_event ctx)
    if (!ctx)
       return;
 
-   WSACloseEvent ((WSAEVENT) ctx);
+   WSACloseEvent (ctx->event);
+
+   free (ctx);
 }
 
 lw_bool lw_event_signalled (lw_event ctx)
@@ -48,7 +64,7 @@ lw_bool lw_event_signalled (lw_event ctx)
    return WSAWaitForMultipleEvents
    (
       1,
-      (WSAEVENT *) &ctx,
+      &ctx->event,
       lw_true,
       0,
       lw_false
@@ -58,12 +74,12 @@ lw_bool lw_event_signalled (lw_event ctx)
 
 void lw_event_signal (lw_event ctx)
 {
-   WSASetEvent ((WSAEVENT) ctx);
+   WSASetEvent (ctx->event);
 }
 
 void lw_event_unsignal (lw_event ctx)
 {
-   WSAResetEvent ((WSAEVENT) ctx);
+   WSAResetEvent (ctx->event);
 }
 
 lw_bool lw_event_wait (lw_event ctx, long timeout)
@@ -71,10 +87,21 @@ lw_bool lw_event_wait (lw_event ctx, long timeout)
    return WSAWaitForMultipleEvents
    (
       1,
-      (WSAEVENT *) &ctx, lw_true,
+      &ctx->event,
+      lw_true,
       timeout == -1 ? INFINITE : timeout,
       lw_false
 
    ) == WAIT_OBJECT_0;
+}
+
+void lw_event_set_tag (lw_event ctx, void * tag)
+{
+   ctx->tag = tag;
+}
+
+void * lw_event_tag (lw_event ctx)
+{
+   return ctx->tag;
 }
 

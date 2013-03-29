@@ -79,4 +79,13 @@ error _error::clone ()
    return (error) lw_error_clone ((lw_error) this);
 }
 
+void * _error::tag ()
+{
+   return lw_error_tag ((lw_error) this);
+}
+
+void _error::tag (void * tag)
+{
+   lw_error_set_tag ((lw_error) this, tag);
+}
 

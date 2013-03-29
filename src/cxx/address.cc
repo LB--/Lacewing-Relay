@@ -114,3 +114,13 @@ bool _address::operator != (lacewing::address address)
    return !lw_addr_equal ((lw_addr) this, (lw_addr) address);
 }
 
+void * _address::tag ()
+{
+   return lw_addr_tag ((lw_addr) this);
+}
+
+void _address::tag (void * tag)
+{
+   lw_addr_set_tag ((lw_addr) this, tag);
+}
+

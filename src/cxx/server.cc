@@ -136,3 +136,13 @@ const char * _server_client::npn ()
    return lw_server_client_npn ((lw_server_client) this);
 }
 
+void * _server::tag ()
+{
+   return lw_server_tag ((lw_server) this);
+}
+
+void _server::tag (void * tag)
+{
+   lw_server_set_tag ((lw_server) this, tag);
+}
+

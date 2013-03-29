@@ -59,3 +59,13 @@ bool _event::wait (long timeout)
    return lw_event_wait ((lw_event) this, timeout);
 }
 
+void * _event::tag ()
+{
+   return lw_event_tag ((lw_event) this);
+}
+
+void _event::tag (void * tag)
+{
+   lw_event_set_tag ((lw_event) this, tag);
+}
+

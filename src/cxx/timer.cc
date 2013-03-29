@@ -63,3 +63,14 @@ void _timer::on_tick (_timer::hook_tick on_tick)
 {
    lw_timer_on_tick ((lw_timer) this, (lw_timer_hook_tick) on_tick);
 }
+
+void * _timer::tag ()
+{
+   return lw_timer_tag ((lw_timer) this);
+}
+
+void _timer::tag (void * tag)
+{
+   lw_timer_set_tag ((lw_timer) this, tag);
+}
+

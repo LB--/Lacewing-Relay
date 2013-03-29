@@ -35,6 +35,8 @@ struct _lw_thread
    char * name;
 
    HANDLE thread;
+
+   void * tag;
 };
 
 lw_thread lw_thread_new (const char * name, void * proc)
@@ -119,4 +121,13 @@ void * lw_thread_join (lw_thread ctx)
    return (void *) exit_code;
 }
 
+void lw_thread_set_tag (lw_thread ctx, void * tag)
+{
+   ctx->tag = tag;
+}
+
+void * lw_thread_tag (lw_thread ctx)
+{
+   return ctx->tag;
+}
 

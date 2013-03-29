@@ -441,4 +441,13 @@ const char * _webserver_upload_header::value ()
    return lw_ws_upload_hdr_value ((lw_ws_upload_hdr) this);
 }
 
+void * _webserver::tag ()
+{
+   return lw_ws_tag ((lw_ws) this);
+}
+
+void _webserver::tag (void * tag)
+{
+   lw_ws_set_tag ((lw_ws) this, tag);
+}
 
