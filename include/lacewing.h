@@ -101,7 +101,11 @@
 #endif
 
 #ifndef lw_import
-   #define lw_import __declspec (dllimport)
+   #ifdef _lacewing_static
+      #define lw_import
+   #else
+      #define lw_import __declspec (dllimport)
+   #endif
 #endif
 
 typedef lw_i8 lw_bool;

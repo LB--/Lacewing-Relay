@@ -67,10 +67,14 @@
 #endif
 
 #ifdef _WIN32
-   #define lw_import __declspec(dllexport)
+   #ifndef _lacewing_static
+      #define lw_import __declspec(dllexport)
+   #endif
 #else
    #ifdef __GNUC__
-      #define lw_import __attribute__((visibility("default")))
+      #ifndef _lacewing_static
+         #define lw_import __attribute__((visibility("default")))
+      #endif
    #else
       #define lw_import
    #endif
