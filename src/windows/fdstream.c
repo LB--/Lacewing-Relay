@@ -123,6 +123,8 @@ static void completion (void * tag, OVERLAPPED * _overlapped,
 
 static void close_fd (lw_fdstream ctx)
 {
+   lwp_trace ("FDStream %p with FD %d: close_fd", ctx, ctx->fd);
+
    if (ctx->fd == INVALID_HANDLE_VALUE)
       return;
 
@@ -156,6 +158,8 @@ static void close_fd (lw_fdstream ctx)
    {
       if (ctx->flags & lwp_fdstream_flag_is_socket)
       {
+         shutdown ((SOCKET) ctx->fd, SD_BOTH);
+
          if (closesocket ((SOCKET) ctx->fd) == SOCKET_ERROR)
          {
              assert (false);
@@ -242,6 +246,8 @@ static void def_cleanup (lw_stream _ctx)
 void lw_fdstream_set_fd (lw_fdstream ctx, HANDLE fd,
                          lw_pump_watch watch, lw_bool auto_close)
 {
+   lwp_trace ("FDStream %p : set FD to %d, auto_close %d", ctx, fd, (int) auto_close);
+
    if (ctx->watch)
       lw_pump_remove (lw_stream_pump ((lw_stream) ctx), ctx->watch);
 
