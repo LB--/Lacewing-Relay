@@ -97,6 +97,17 @@ namespace LwRelay
 			ChannelMessageHandler *ChannelMessage {&ChannelMessageDH};
 			   PeerMessageHandler *PeerMessage    {&   PeerMessageDH};
 		} handlers;
+
+		struct BinaryMessageHeader
+		{
+			struct Type
+			{
+				using Type_t = uint8_t;
+				Variant_t variant : 4;
+				Type_t type : 4;
+			} type;
+			Size_t size;
+		};
 	};
 	Server &Server::operator=(Server &&) noexcept(true) = default;
 	struct Server::Client::Impl

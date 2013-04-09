@@ -448,7 +448,7 @@ namespace LwRelay
 		void onLeaveChannel  (  LeaveChannelHandler &handler); //Client requests to leave a channel
 		void onServerMessage ( ServerMessageHandler &handler); //Client sends message to server
 		void onChannelMessage(ChannelMessageHandler &handler); //Client requests to send message to channel
-		void onPeerMessage   (   PeerMessageHandler &handler); //Client requests to send mssage to channel peer
+		void onPeerMessage   (   PeerMessageHandler &handler); //Client requests to send message to channel peer
 
 	private:
 		struct Impl;
