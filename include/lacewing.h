@@ -1101,8 +1101,8 @@ struct _server
    lw_import size_t num_clients ();
    lw_import server_client client_first ();
 
-   typedef void (lw_callback * hook_connect) (server, client);
-   typedef void (lw_callback * hook_disconnect) (server, client);
+   typedef void (lw_callback * hook_connect) (server, server_client);
+   typedef void (lw_callback * hook_disconnect) (server, server_client);
 
    typedef void (lw_callback * hook_data)
       (server, server_client, const char * buffer, size_t size);
