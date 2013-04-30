@@ -246,6 +246,8 @@ static void listen_socket_completion (void * tag, OVERLAPPED * _overlapped,
 
    lwp_retain (client);
 
+   client->on_connect_called = lw_true;
+
    if (ctx->on_connect)
       ctx->on_connect (ctx, client);
 
