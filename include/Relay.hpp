@@ -1,10 +1,10 @@
 #ifndef LacewingRelayClasses_HeaderPlusPlus
 #define LacewingRelayClasses_HeaderPlusPlus
 
+#include <lacewing.h>
+
 #include <cstdint>
 #include <memory>
-
-#include <lacewing.h>
 
 namespace LwRelay
 {
@@ -12,23 +12,23 @@ namespace LwRelay
 	 * Represents the ID of a client/peer.
 	 * Due to protocol restrictions, the size is limited to 16 bits.
 	 */
-	using ID_t = uint16_t;
+	using ID_t = std::uint16_t;
 	/**
 	 * Represents the ID of a subchannel.
 	 * The protocol utilizes all 8 bits.
 	 */
-	using Subchannel_t = uint8_t;
+	using Subchannel_t = std::uint8_t;
 	/**
 	 * Represents which of 16 varieties of data is being transmitted.
 	 * Due to protocol restrictions, the size is limited to 4 bits.
 	 */
-	using Variant_t = uint8_t;
+	using Variant_t = std::uint8_t;
 	/**
 	 * Represents all other scalar data types.
 	 * Due to protocol limitations, and for consistency reasons, this
 	 * type is limited to 32 bits.
 	 */
-	using Size_t = uint32_t;
+	using Size_t = std::uint32_t;
 
 	/**
 	 * Implements a Lacewing Relay Server based on the latest protocol draft.
@@ -355,7 +355,7 @@ namespace LwRelay
 		 * This function fails if the server is already hosting or if
 		 * one of the internal lacewing server fails to begin hosting.
 		 */
-		void Host(uint16_t port = 6121);
+		void Host(std::uint16_t port = 6121);
 		/**
 		 * Begin hosting this server using the given lacewing filter.
 		 * This function fails if the server is already hosting or if
@@ -391,7 +391,7 @@ namespace LwRelay
 		/**
 		 * Returns the port the server is being hosted on, in case you forgot.
 		 */
-		uint16_t Port() const;
+		std::uint16_t Port() const;
 
 		/**
 		 * Represents an indication of or reason for denying a request.
@@ -677,7 +677,7 @@ namespace LwRelay
 		/**
 		 * Connects to a server at the given host address and port (default 6121).
 		 */
-		void Connect(char const*host, uint16_t port = 6121);
+		void Connect(char const*host, std::uint16_t port = 6121);
 		/**
 		 * Connects to a server using the given lacewing address.
 		 */

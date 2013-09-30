@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <limits>
 
 namespace LwRelay
 {
@@ -15,7 +16,6 @@ namespace LwRelay
 			using ID_type = T;
 			ID_type GenerateID()
 			{
-				Assert(lowest < std::numeric_limits<ID_type>::max());
 				ID_type ret (lowest);
 				while(IDs.find(++lowest) != IDs.end())
 				{
@@ -24,7 +24,6 @@ namespace LwRelay
 			}
 			void ReleaseID(ID_type ID)
 			{
-				Assert(IDs.find(ID) != IDs.end());
 				IDs.erase(ID);
 				lowest = (ID < lowest) ? ID : lowest;
 			}
