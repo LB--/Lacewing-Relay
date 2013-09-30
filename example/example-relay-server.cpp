@@ -1,5 +1,3 @@
-#define NOMINMAX /*for Windows.h*/
-
 #include <iostream>
 #include <limits>
 
@@ -11,7 +9,7 @@ struct KR{~KR()
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }}kr;
 
-#include "Relay.hh"
+#include "Relay.hpp"
 using Deny = LwRelay::Server::Deny;
 
 struct Main

@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <memory>
 
-#include "lacewing.h"
+#include <lacewing.h>
 
 namespace LwRelay
 {

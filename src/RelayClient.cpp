@@ -1,18 +1,8 @@
-#define NOMINMAX
-
-#include "Relay.hh"
+#include "Relay.hpp"
 
 #include <set>
 #include <string>
 #include <vector>
-#include <limits>
-#include <cassert>
-
-#if (defined(DEBUG) || defined(_DEBUG)) && !defined(NDEBUG)
-#define Assert(x) assert((x))
-#else
-#define Assert(x) /**/
-#endif
 
 namespace LwRelay
 {
