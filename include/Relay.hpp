@@ -1,5 +1,5 @@
-#ifndef __DarkwireSoftware_Relay_HeaderPlusPlus__
-#define __DarkwireSoftware_Relay_HeaderPlusPlus__
+#ifndef LacewingRelayClasses_HeaderPlusPlus
+#define LacewingRelayClasses_HeaderPlusPlus
 
 #include <cstdint>
 #include <memory>
