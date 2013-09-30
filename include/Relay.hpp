@@ -809,4 +809,4 @@ namespace LwRelay
 	};
 }
 
-#endif //#ifndef __DarkwireSoftware_Relay_HeaderPlusPlus__
+#endif
