@@ -9,7 +9,7 @@ struct KR{~KR()
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }}kr;
 
-#include "Relay.hpp"
+#include <Relay.hpp>
 
 struct Main
 {
