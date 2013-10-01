@@ -47,9 +47,9 @@ namespace LwRelay
 		}
 		Impl() = delete;
 		Impl(Impl const &) = delete;
-		Impl(Impl &&) noexcept(true) = default;
+		Impl(Impl &&) = default;
 		Impl &operator=(Impl const &) = delete;
-		Impl &operator=(Impl &&) noexcept(true) = default;
+		Impl &operator=(Impl &&) = default;
 		~Impl() noexcept(true)
 		{
 			lacewing::udp_delete(udp), udp = nullptr;
@@ -133,4 +133,9 @@ namespace LwRelay
 	{
 		std::vector<Client *> clients;
 	};
+	struct Server::Deny::Impl
+	{
+		//
+	};
+	Server::Deny::Deny(Deny &&) = default;
 }

@@ -49,7 +49,7 @@ namespace LwRelay
 		 */
 		~Server() noexcept(true);
 
-		Server(Server &&) noexcept(true) = default;
+		Server(Server &&) = default;
 		Server &operator=(Server &&) noexcept(true);
 
 		struct Channel;
@@ -70,7 +70,7 @@ namespace LwRelay
 
 			~Client() noexcept(true);
 
-			Client(Client &&) noexcept(true) = default;
+			Client(Client &&) = default;
 			Client &operator=(Client &&) noexcept(true);
 
 			/**
@@ -80,7 +80,7 @@ namespace LwRelay
 			struct Iterator
 			{
 				~Iterator() noexcept(true);
-				Iterator(Iterator &&) noexcept(true) = default;
+				Iterator(Iterator &&) = default;
 				Iterator &operator=(Iterator &&) noexcept(true);
 
 				Iterator begin() const;
@@ -108,7 +108,7 @@ namespace LwRelay
 			struct ChannelIterator
 			{
 				~ChannelIterator() noexcept(true);
-				ChannelIterator(ChannelIterator &&) noexcept(true) = default;
+				ChannelIterator(ChannelIterator &&) = default;
 				ChannelIterator &operator=(ChannelIterator &&) noexcept(true);
 
 				ChannelIterator begin() const;
@@ -206,7 +206,7 @@ namespace LwRelay
 
 			~Channel() noexcept(true);
 
-			Channel(Channel &&) noexcept(true) = default;
+			Channel(Channel &&) = default;
 			Channel &operator=(Channel &&) noexcept(true);
 
 			/**
@@ -216,7 +216,7 @@ namespace LwRelay
 			struct Iterator
 			{
 				~Iterator() noexcept(true);
-				Iterator(Iterator &&) noexcept(true) = default;
+				Iterator(Iterator &&) = default;
 				Iterator &operator=(Iterator &&) noexcept(true);
 
 				Iterator begin() const;
@@ -244,7 +244,7 @@ namespace LwRelay
 			struct ClientIterator
 			{
 				~ClientIterator() noexcept(true);
-				ClientIterator(ClientIterator &&) noexcept(true) = default;
+				ClientIterator(ClientIterator &&) = default;
 				ClientIterator &operator=(ClientIterator &&) noexcept(true);
 
 				ClientIterator begin() const;
@@ -409,7 +409,7 @@ namespace LwRelay
 			Deny() = delete;
 			Deny(Deny const&other) noexcept(true);
 			Deny &operator=(Deny const&other) noexcept(true);
-			Deny(Deny &&) noexcept(true) = default;
+			Deny(Deny &&);
 			Deny &operator=(Deny &&) noexcept(true);
 
 		private:
@@ -478,7 +478,7 @@ namespace LwRelay
 		 */
 		~Client() noexcept(true);
 
-		Client(Client &&) noexcept(true) = default;
+		Client(Client &&) = default;
 		Client &operator=(Client &&) noexcept(true);
 
 		/**
@@ -491,7 +491,7 @@ namespace LwRelay
 
 			~Channel() noexcept(true);
 
-			Channel(Channel &&) noexcept(true) = default;
+			Channel(Channel &&) = default;
 			Channel &operator=(Channel &&) noexcept(true);
 
 			/**
@@ -501,7 +501,7 @@ namespace LwRelay
 			struct Iterator
 			{
 				~Iterator() noexcept(true);
-				Iterator(Iterator &&) noexcept(true) = default;
+				Iterator(Iterator &&) = default;
 				Iterator &operator=(Iterator &&) noexcept(true);
 
 				Iterator begin() const;
@@ -532,7 +532,7 @@ namespace LwRelay
 
 				~Peer() noexcept(true);
 
-				Peer(Peer &&) noexcept(true) = default;
+				Peer(Peer &&) = default;
 				Peer &operator=(Peer &&) noexcept(true);
 
 				/**
@@ -542,7 +542,7 @@ namespace LwRelay
 				struct Iterator
 				{
 					~Iterator() noexcept(true);
-					Iterator(Iterator &&) noexcept(true) = default;
+					Iterator(Iterator &&) = default;
 					Iterator &operator=(Iterator &&) noexcept(true);
 
 					Iterator begin() const;
@@ -646,7 +646,7 @@ namespace LwRelay
 		{
 			~ChannelListing() noexcept(true);
 
-			ChannelListing(ChannelListing &&) noexcept(true) = default;
+			ChannelListing(ChannelListing &&) = default;
 			ChannelListing &operator=(ChannelListing &&) noexcept(true);
 
 			/**
