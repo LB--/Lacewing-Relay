@@ -56,18 +56,18 @@ namespace lwrelay
 	struct Server::Client::Impl final
 	{
 		Server::Impl &server;
-		Client &interf;
 		lacewing::server_client client;
 		IdHolder<ID_t> id;
 		std::string name;
+		bool http;
 		using Channels_t = Server::Impl::Channels_t;
 		Channels_t channels;
 
-		Impl(Server::Impl &si, Client &pc, lacewing::server_client sc)
+		Impl(Server::Impl &si, lacewing::server_client sc, bool HTTP)
 		: server(si)
-		, interf(pc)
 		, client(sc)
 		, id(si.client_IDs)
+		, http(HTTP)
 		{
 		}
 		~Impl()
@@ -77,10 +77,10 @@ namespace lwrelay
 
 		//
 	};
+	Server::Client &Server::Client::operator=(Server::Client &&) noexcept = default;
 	struct Server::Channel::Impl final
 	
 		Server::Impl &server;
-		Channel &interf;
 		IdHolder<ID_t> id;
 		std::string name;
 		bool autoclose, visible;
@@ -88,9 +88,8 @@ namespace lwrelay
 		using Clients_t = Server::Impl::Clients_t;
 		Clients_t clients;
 
-		Impl(Server::Impl &si, Channel &pc, std::string const &n, Clients_t::iterator creator, bool ac, bool v)
+		Impl(Server::Impl &si, std::string const &n, Clients_t::iterator creator, bool ac, bool v)
 		: server(si)
-		, interf(pc)
 		, id(si.channel_IDs)
 		, name(n)
 		, autoclose(ac)
@@ -105,6 +104,140 @@ namespace lwrelay
 
 		//
 	};
+	Server::Channel &Server::Channel::operator=(Server::Channel &&) noexcept = default;
 
-	//
+	Server::Server(lacewing::pump pump)
+	: impl(new Impl(*this, pump))
+	{
+	}
+	Server::~Server() = default;
+
+	void Server::setChannelListing(bool enabled)
+	{
+		impl->channel_listing = enabled;
+	}
+	void Server::setWelcomeMessage(std::string const &message)
+	{
+		impl->welcome_message = message;
+	}
+	void Server::host(std::uint16_t port = 6121)
+	{
+		//
+	}
+	void Server::host(lacewing::filter filter)
+	{
+		//
+	}
+	bool Server::hosting() const noexcept
+	{
+		//
+	}
+	void Server::unhost()
+	{
+		//
+	}
+	std::uint16_t Server::port() const noexcept
+	{
+		//
+	}
+	void Server::onError         (std::function<         ErrorHandler> handler){ impl->onError          = handler; }
+	void Server::onConnect       (std::function<       ConnectHandler> handler){ impl->onConnect        = handler; }
+	void Server::onDisconnect    (std::function<    DisconnectHandler> handler){ impl->onDisconnect     = handler;}
+	void Server::onNameSet       (std::function<       NameSetHandler> handler){ impl->onNameSet        = handler; }
+	void Server::onJoinChannel   (std::function<   JoinChannelHandler> handler){ impl->onJoinChannel    = handler; }
+	void Server::onLeaveChannel  (std::function<  LeaveChannelHandler> handler){ impl->onLeaveChannel   = handler; }
+	void Server::onServerMessage (std::function< ServerMessageHandler> handler){ impl->onServerMessage  = handler; }
+	void Server::onChannelMessage(std::function<ChannelMessageHandler> handler){ impl->onChannelMessage = handler; }
+	void Server::onPeerMessage   (std::function<   PeerMessageHandler> handler){ impl->onPeerMessage    = handler; }
+
+	Server::Client::Client(Impl *i)
+	: impl(i)
+	{
+	}
+	Server::Client::~Client() = default;
+
+	bool Server::Client::isHTTP() const noexcept
+	{
+		return impl->http;
+	}
+	ID_t Server::Client::ID() const noexcept
+	{
+		return impl->id;
+	}
+	std::string const &Server::Client::name() const noexcept
+	{
+		return impl->name;
+	}
+	void Server::Client::name(std::string const &name)
+	{
+		//
+	}
+	lacewing::address Server::Client::address()
+	{
+		//
+	}
+	void Server::Client::disconnect()
+	{
+		//
+	}
+	bool Server::Client::usingUDP() const noexcept
+	{
+		//
+	}
+	void Server::Client::send(Protocol protocol, Subchannel_t subchannel, Variant_t variant, std::string const &data)
+	{
+		//
+	}
+
+	Server::Channel::Channel(Impl *i)
+	: impl(i)
+	{
+	}
+	Server::Channel::~Channel() = default;
+
+	ID_t Server::Channel::ID() const noexcept
+	{
+		return impl->id;
+	}
+	std::string const &Server::Channel::name() const noexcept
+	{
+		return impl->name;
+	}
+	void Server::Channel::name(std::string const &name)
+	{
+		//
+	}
+	bool Server::Channel::autoClose() const noexcept
+	{
+		return impl->autclose;
+	}
+	void Server::Channel::autoClose(bool autoclose)
+	{
+		//
+	}
+	bool Server::Channel::visible() const noexcept
+	{
+		return impl->visible;
+	}
+	void Server::Client::visible(bool visible)
+	{
+		impl->visible = visible;
+	}
+	void Server::Channel::close()
+	{
+		//
+	}
+	void Server::Channel::send(Protocol protocol, Subchannel_t subchannel, Variant_t variant, std::string const &data)
+	{
+		//
+	}
+	auto Server::Channel::channelMaster()
+	-> Clients_t::iterator
+	{
+		//
+	}
+	void Server::Channel::channelMaster(Clients_t::iterator member)
+	{
+		//
+	}
 }

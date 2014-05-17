@@ -48,7 +48,7 @@ namespace lwrelay
 	 */
 	struct Server final
 	{
-		void *tag;
+		void *tag = nullptr;
 
 		/**
 		 * Construct a new server from a pump, such as an event pump.
@@ -76,11 +76,11 @@ namespace lwrelay
 		 */
 		struct Client final
 		{
-			void *tag;
+			void *tag = nullptr;
 
 			~Client();
 
-			Client(Client &&) = default;
+			Client(Client &&) noexcept = default;
 			Client &operator=(Client &&) noexcept;
 
 			/**
@@ -144,11 +144,11 @@ namespace lwrelay
 		 */
 		struct Channel final
 		{
-			void *tag;
+			void *tag = nullptr;
 
 			~Channel();
 
-			Channel(Channel &&) = default;
+			Channel(Channel &&) noexcept = default;
 			Channel &operator=(Channel &&) noexcept;
 
 			/**
@@ -172,7 +172,7 @@ namespace lwrelay
 			bool autoClose() const noexcept;
 			/**
 			 * Sets whether this channel will close when the channel master leaves (true).
-			 * This cannot be set to true if the channel does not have a channel master.
+			 * If the channel does not have a channel master, closes the channel when set to true.
 			 */
 			void autoClose(bool autoclose);
 			/**
@@ -318,7 +318,7 @@ namespace lwrelay
 	 */
 	struct Client final
 	{
-		void *tag;
+		void *tag = nullptr;
 
 		/**
 		 * Construct a new client from a pump, such as an event pump.
@@ -340,7 +340,7 @@ namespace lwrelay
 		 */
 		struct Channel final
 		{
-			void *tag;
+			void *tag = nullptr;
 
 			~Channel();
 
@@ -353,7 +353,7 @@ namespace lwrelay
 			 */
 			struct Peer final
 			{
-				void *tag;
+				void *tag = nullptr;
 
 				~Peer();
 
