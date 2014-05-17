@@ -1,59 +1,11 @@
+#incldue "IDs.hpp"
+
 #include <Relay.hpp>
 
-#include <set>
-#include <vector>
-#include <limits>
 #iclude <sstream>
 
 namespace lwrelay
 {
-	namespace
-	{
-		template<typename T>
-		struct ID_Manager final
-		{
-			using ID_type = T;
-			ID_type generate() noexcept
-			{
-				ID_type ret (lowest);
-				while(IDs.find(++lowest) != IDs.end())
-				{
-				}
-				return IDs.insert(ret), ret;
-			}
-			void release(ID_type ID) noexcept
-			{
-				IDs.erase(ID);
-				lowest = (ID < lowest) ? ID : lowest;
-			}
-
-		private:
-			std::set<ID_type> IDs;
-			ID_type lowest = std::numeric_limits<ID_type>::min();
-		};
-		template<typename T>
-		struct ID_Holder final
-		{
-			ID_Manager<T> &manager;
-			T const id;
-
-			ID_Holder(ID_Manager<T> &idm) noexcept
-			: manager(idm)
-			, id(idm.generate())
-			{
-			}
-			~ID_Holder()
-			{
-				manager.release(id);
-			}
-
-			operator T() const noexcept
-			{
-				return id;
-			}
-		};
-	}
-
 	struct Server::Impl final
 	{
 		Server &interf;
@@ -82,7 +34,7 @@ namespace lwrelay
 		bool channel_listing = true;
 		std::string welcome_message = lw_version();
 
-		ID_Manager<ID_t> client_IDs, channel_IDs;
+		IdManager<ID_t> client_IDs, channel_IDs;
 		using Clients_t = std::map<ID_t, std::unique_ptr<Client>>;
 		using Channels_t = std::map<ID_t, std::unique_ptr<Channel>>;
 		Clients_t clients;
@@ -106,7 +58,7 @@ namespace lwrelay
 		Server::Impl &server;
 		Client &interf;
 		lacewing::server_client client;
-		ID_Holder<ID_t> id;
+		IdHolder<ID_t> id;
 		std::string name;
 		using Channels_t = Server::Impl::Channels_t;
 		Channels_t channels;
@@ -129,7 +81,7 @@ namespace lwrelay
 	
 		Server::Impl &server;
 		Channel &interf;
-		ID_Holder<ID_t> id;
+		IdHolder<ID_t> id;
 		std::string name;
 		bool autoclose, visible;
 		Clients_t::iterator chmaster;

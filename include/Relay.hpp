@@ -48,7 +48,7 @@ namespace lwrelay
 	 */
 	struct Server final
 	{
-		void *Tag;
+		void *tag;
 
 		/**
 		 * Construct a new server from a pump, such as an event pump.
@@ -76,7 +76,7 @@ namespace lwrelay
 		 */
 		struct Client final
 		{
-			void *Tag;
+			void *tag;
 
 			~Client();
 
@@ -86,7 +86,7 @@ namespace lwrelay
 			/**
 			 * Returns true if this client is an HTTP client.
 			 */
-			bool IsHTTP() const noexcept;
+			bool isHTTP() const noexcept;
 			/**
 			 * Returns this client's unique ID.
 			 * IDs may be re-used.
@@ -95,29 +95,29 @@ namespace lwrelay
 			/**
 			 * Returns this client's name, or an empty string if not set.
 			 */
-			std::string const &Name() const noexcept;
+			std::string const &name() const noexcept;
 			/**
 			 * Sets this client's name to the given string.
 			 * If set to an empty string, the client is kicked
 			 * from all channels and must set their name again.
 			 */
-			void Name(std::string const &name);
+			void name(std::string const &name);
 			/**
 			 * Returns the lacewing address of this client.
 			 */
-			lacewing::address Address();
+			lacewing::address address();
 			/**
 			 * Forcefully disconnects this client.
 			 */
-			void Disconnect();
+			void disconnect();
 			/**
 			 * Returns true if this client has indicated that they can use UDP/blasting.
 			 */
-			bool UsingUDP() const noexcept;
+			bool usingUDP() const noexcept;
 			/**
 			 * Sends a server message to this client with the given data.
 			 */
-			void Send(Protocol protocol, Subchannel_t subchannel, Variant_t variant, std::string const &data);
+			void send(Protocol protocol, Subchannel_t subchannel, Variant_t variant, std::string const &data);
 
 		private:
 			struct Impl;
@@ -144,7 +144,7 @@ namespace lwrelay
 		 */
 		struct Channel final
 		{
-			void *Tag;
+			void *tag;
 
 			~Channel();
 
@@ -159,48 +159,48 @@ namespace lwrelay
 			/**
 			 * Returns the name of this channel.
 			 */
-			std::string const &Name() const noexcept;
+			std::string const &name() const noexcept;
 			/**
 			 * Sets the name of this channel without notifying existing members.
 			 * Due to protocol limitations, changing a channel's name is not
 			 * recognized by clients already in the channel.
 			 */
-			void Name(std::string const &name);
+			void name(std::string const &name);
 			/**
 			 * Returns true if this channel is set to close when the channel master leaves.
 			 */
-			bool AutoClose() const noexcept;
+			bool autoClose() const noexcept;
 			/**
 			 * Sets whether this channel will close when the channel master leaves (true).
 			 * This cannot be set to true if the channel does not have a channel master.
 			 */
-			void AutoClose(bool autoclose);
+			void autoClose(bool autoclose);
 			/**
 			 * Returns true if this channel is visible in the public channel list.
 			 */
-			bool Visible() const noexcept;
+			bool visible() const noexcept;
 			/**
 			 * Sets whether this channel is visible in the public channel list (true).
 			 */
-			void Visible(bool visible);
+			void visible(bool visible);
 			/**
 			 * Closes the channel, kicking out all clients from the channel.
 			 */
-			void Close();
+			void close();
 			/**
 			 * Sends a server channel message to this channel with the given data.
 			 */
-			void Send(Protocol protocol, Subchannel_t subchannel, Variant_t variant, std::string const &data);
+			void send(Protocol protocol, Subchannel_t subchannel, Variant_t variant, std::string const &data);
 			/**
 			 * Returns the channel master, or null if there is no channel master.
 			 */
-			Clients_t::iterator ChannelMaster();
+			Clients_t::iterator channelMaster();
 			/**
 			 * Sets/changes/removes the channel master unless the given client is not in the channel.
 			 * Removing the channel master by passing null has no effect if
 			 * the channel is set to auto close when the channel master leaves.
 			 */
-			void ChannelMaster(Clients_t::iterator member);
+			void channelMaster(Clients_t::iterator member);
 
 		private:
 			struct Impl;
@@ -219,35 +219,35 @@ namespace lwrelay
 		/**
 		 * Enable or disable the ability of clients to list visible channels.
 		 */
-		void SetChannelListing(bool enabled);
+		void setChannelListing(bool enabled);
 		/**
 		 * Set the 'welcome message' sent to clients on connect.
 		 */
-		void SetWelcomeMessage(std::string const &message);
+		void setWelcomeMessage(std::string const &message);
 		/**
 		 * Begin hosting this server on the given port, default 6121.
 		 * This function fails if the server is already hosting or if
 		 * one of the internal lacewing server fails to begin hosting.
 		 */
-		void Host(std::uint16_t port = 6121);
+		void host(std::uint16_t port = 6121);
 		/**
 		 * Begin hosting this server using the given lacewing filter.
 		 * This function fails if the server is already hosting or if
 		 * one of the internal lacewing server fails to begin hosting.
 		 */
-		void Host(lacewing::filter filter);
+		void host(lacewing::filter filter);
 		/**
 		 * Returns true if the server is hosting, false otherwise.
 		 */
-		bool Hosting() const noexcept;
+		bool hosting() const noexcept;
 		/**
 		 * Stops the server from hosting and disconnects all clients.
 		 */
-		void Unhost();
+		void unhost();
 		/**
 		 * Returns the port the server is being hosted on, in case you forgot.
 		 */
-		std::uint16_t Port() const noexcept;
+		std::uint16_t port() const noexcept;
 
 		/**
 		 * Represents an indication of or reason for denying a request.
@@ -318,7 +318,7 @@ namespace lwrelay
 	 */
 	struct Client final
 	{
-		void *Tag;
+		void *tag;
 
 		/**
 		 * Construct a new client from a pump, such as an event pump.
@@ -340,7 +340,7 @@ namespace lwrelay
 		 */
 		struct Channel final
 		{
-			void *Tag;
+			void *tag;
 
 			~Channel();
 
@@ -353,7 +353,7 @@ namespace lwrelay
 			 */
 			struct Peer final
 			{
-				void *Tag;
+				void *tag;
 
 				~Peer();
 
@@ -367,17 +367,17 @@ namespace lwrelay
 				/**
 				 * Returns true if this peer is the channel master of this channel.
 				 */
-				bool IsChannelMaster() const noexcept;
+				bool isChannelMaster() const noexcept;
 				/**
 				 * Requests to send the given data to this peer.
 				 */
-				void Send(Protocol protocol, Subchannel_t subchannel, Variant_t variant, std::string const &data);
+				void send(Protocol protocol, Subchannel_t subchannel, Variant_t variant, std::string const &data);
 				/**
 				 * Kicks this peer if you are the channel master.
 				 * If you are not the channel master, this has
 				 * no effect.
 				 */
-				void Kick();
+				void kick();
 
 			private:
 				struct Impl;
@@ -396,7 +396,7 @@ namespace lwrelay
 			/**
 			 * Returns the name of this channel.
 			 */
-			std::string const &Name() const noexcept;
+			std::string const &name() const noexcept;
 			/**
 			 * Returns this channel's unique ID.
 			 */
@@ -404,15 +404,15 @@ namespace lwrelay
 			/**
 			 * Returns true if this client is the channel master of this channel.
 			 */
-			bool IsChannelMaster() const noexcept;
+			bool isChannelMaster() const noexcept;
 			/**
 			 * Requests to send the given data to this channel.
 			 */
-			void Send(Protocol protocol, Subchannel_t subchannel, Variant_t variant, std::string const &data);
+			void send(Protocol protocol, Subchannel_t subchannel, Variant_t variant, std::string const &data);
 			/**
 			 * Requests to leave this channel.
 			 */
-			void Leave();
+			void leave();
 
 		private:
 			struct Impl;
@@ -436,31 +436,31 @@ namespace lwrelay
 		/**
 		 * Connects to a server at the given host address and port (default 6121).
 		 */
-		void Connect(std::string const &host, std::uint16_t port = 6121);
+		void connect(std::string const &host, std::uint16_t port = 6121);
 		/**
 		 * Connects to a server using the given lacewing address.
 		 */
-		void Connect(lacewing::address address);
+		void connect(lacewing::address address);
 		/**
 		 * Returns true if this client is still waiting to connect.
 		 */
-		bool Connecting() const noexcept;
+		bool connecting() const noexcept;
 		/**
 		 * Returns true if this client is currently connected to a server.
 		 */
-		bool Connected() const noexcept;
+		bool connected() const noexcept;
 		/**
 		 * Disconnects this client from the server.
 		 */
-		void Disconnect();
+		void disconnect();
 		/**
 		 * Returns the address of the server in case you forgot it.
 		 */
-		lacewing::address ServerAddress();
+		lacewing::address serverAddress();
 		/**
 		 * Returns the welcome message sent by the server.
 		 */
-		std::string const &WelcomeMessage();
+		std::string const &welcomeMessage();
 		/**
 		 * Returns the unique ID of this client assigned by the server.
 		 */
@@ -468,27 +468,27 @@ namespace lwrelay
 		/**
 		 * Requests the list of public channels.
 		 */
-		void ListChannels();
+		void listChannels();
 		/**
 		 * Returns the most recent channel listing.
 		 */
-		ChannelListing const &ListedChannels() const noexcept;
+		ChannelListing const &listedChannels() const noexcept;
 		/**
 		 * Asks the server to assign the given name to this client.
 		 */
-		void Name(std::string const &name);
+		void name(std::string const &name);
 		/**
 		 * Returns the name of this client, or an empty string if not set.
 		 */
-		std::string const &Name() const noexcept;
+		std::string const &name() const noexcept;
 		/**
 		 * Sends the given data to the server.
 		 */
-		void Send(Protocol protocol, Subchannel_t subchannel, Variant_t variant, std::string const &data);
+		void send(Protocol protocol, Subchannel_t subchannel, Variant_t variant, std::string const &data);
 		/**
 		 * Requests to join/create a channel with the given name.
 		 */
-		void Join(std::string const &channel, bool autoclose = false, bool visible = true);
+		void join(std::string const &channel, bool autoclose = false, bool visible = true);
 
 		/* Handler prototypes *
 		 * These are the handlers you can implement to customize
