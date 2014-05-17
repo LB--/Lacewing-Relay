@@ -130,7 +130,7 @@ namespace lwrelay
 
 			friend struct ::lwrelay::Server::Channel;
 			friend struct ::lwrelay::Server;
-		};	friend struct ::lwrelay::Server::Client;
+		};
 		using Clients_t = std::map<ID_t, std::reference_wrapper<Client>>;
 
 		/**
@@ -213,7 +213,7 @@ namespace lwrelay
 
 			friend struct ::lwrelay::Server::Client;
 			friend struct ::lwrelay::Server;
-		};	friend struct ::lwrelay::Server::Channel;
+		};
 		using Channels_t = std::map<ID_t, std::reference_wrapper<Channel>>;
 
 		/**
@@ -259,21 +259,19 @@ namespace lwrelay
 		 */
 		struct Deny final
 		{
-			Deny(bool do_not_deny) noexcept;
-			Deny(std::string const &deny_reason) noexcept;
-			~Deny();
-			Deny() = delete;
-			Deny(Deny const&other) noexcept;
-			Deny &operator=(Deny const&other) noexcept;
-			Deny(Deny &&);
-			Deny &operator=(Deny &&) noexcept;
+			bool const dnd;
+			std::string reason;
 
-		private:
-			struct Impl;
-			std::unique_ptr<Impl> impl;
-
-			friend struct ::lwrelay::Server;
-		};	friend struct ::lwrelay::Server::Deny;
+			Deny(bool do_not_deny) noexcept
+			: dnd(do_not_deny)
+			{
+			}
+			Deny(std::string const &deny_reason) noexcept
+			: dnd(false)
+			, reason(deny_reason)
+			{
+			}
+		};
 
 		/* Handler prototypes *
 		 * These are the handlers you can implement to customize
@@ -392,7 +390,7 @@ namespace lwrelay
 
 				friend struct ::lwrelay::Client;
 				friend struct ::lwrelay::Client::Channel;
-			};	friend struct ::lwrelay::Client::Channel::Peer;
+			};
 			using Peers_t = std::map<ID_t, std::reference_wrapper<Peer>>;
 
 			/**
@@ -426,8 +424,7 @@ namespace lwrelay
 			Channel &operator=(Channel const&) = delete;
 
 			friend struct ::lwrelay::Client;
-		};	friend struct ::lwrelay::Client::Channel;
-			friend struct ::lwrelay::Client::Channel::Peer;
+		};
 		using Channels_t = std::map<ID_t, std::reference_wrapper<Channel>>;
 
 		struct ListedChannelInfo final

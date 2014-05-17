@@ -1,20 +1,19 @@
 #include <Relay.hpp>
 
 #include <set>
-#include <string>
 #include <vector>
-#include <map>
 #include <limits>
+#iclude <sstream>
 
 namespace lwrelay
 {
 	namespace
 	{
 		template<typename T>
-		struct ID_Manager
+		struct ID_Manager final
 		{
 			using ID_type = T;
-			ID_type GenerateID()
+			ID_type generate() noexcept
 			{
 				ID_type ret (lowest);
 				while(IDs.find(++lowest) != IDs.end())
@@ -22,120 +21,138 @@ namespace lwrelay
 				}
 				return IDs.insert(ret), ret;
 			}
-			void ReleaseID(ID_type ID)
+			void release(ID_type ID) noexcept
 			{
 				IDs.erase(ID);
 				lowest = (ID < lowest) ? ID : lowest;
 			}
+
 		private:
 			std::set<ID_type> IDs;
 			ID_type lowest = std::numeric_limits<ID_type>::min();
 		};
+		template<typename T>
+		struct ID_Holder final
+		{
+			ID_Manager<T> &manager;
+			T const id;
+
+			ID_Holder(ID_Manager<T> &idm) noexcept
+			: manager(idm)
+			, id(idm.generate())
+			{
+			}
+			~ID_Holder()
+			{
+				manager.release(id);
+			}
+
+			operator T() const noexcept
+			{
+				return id;
+			}
+		};
 	}
 
-	struct Server::Impl
+	struct Server::Impl final
 	{
 		Server &interf;
 		lacewing::pump pump;
-		lacewing::server server {nullptr};
-		lacewing::udp udp {nullptr};
+		lacewing::server server;
+		lacewing::udp udp;
 
-		Impl(Server &ps, lacewing::pump p) : interf(ps), pump(p)
+		Impl(Server &ps, lacewing::pump p)
+		: interf(ps)
+		, pump(p)
+		, server(lacewing::server_new(p))
+		, udp(lacewing::udp_new(p))
 		{
-			server = lacewing::server_new(pump);
-			udp = lacewing::udp_new(pump);
 		}
 		Impl() = delete;
 		Impl(Impl const &) = delete;
 		Impl(Impl &&) = default;
 		Impl &operator=(Impl const &) = delete;
 		Impl &operator=(Impl &&) = default;
-		~Impl() noexcept
+		~Impl()
 		{
 			lacewing::udp_delete(udp), udp = nullptr;
 			lacewing::server_delete(server), server = nullptr;
 		}
 
-		bool channel_listing {true};
-		std::string welcome_message {lw_version()};
+		bool channel_listing = true;
+		std::string welcome_message = lw_version();
 
 		ID_Manager<ID_t> client_IDs, channel_IDs;
-		std::map<ID_t, Client *> clients;
-		std::map<ID_t, Channel *> channels;
-
-		struct Handlers
-		{
-				//Default handlers
-				static void (lw_callback          ErrorDH)(Server &, lacewing::error)                                                                  {              }
-				static Deny (lw_callback        ConnectDH)(Server &, Client &)                                                                         { return true; }
-				static void (lw_callback     DisconnectDH)(Server &, Client &)                                                                         {              }
-				static Deny (lw_callback        NameSetDH)(Server &, Client &, char const*)                                                            { return true; }
-				static Deny (lw_callback    JoinChannelDH)(Server &, Client &, Channel &,       bool, bool)                                            { return true; }
-				static Deny (lw_callback   LeaveChannelDH)(Server &, Client &, Channel &)                                                              { return true; }
-				static void (lw_callback  ServerMessageDH)(Server &, Client &,                  Subchannel_t, Variant_t, char const*, Size_t)          {              }
-				static Deny (lw_callback ChannelMessageDH)(Server &, Client &, Channel &, bool, Subchannel_t, Variant_t, char const*, Size_t)          { return true; }
-				static Deny (lw_callback    PeerMessageDH)(Server &, Client &, Channel &, bool, Subchannel_t, Variant_t, char const*, Size_t, Client &){ return true; }
-
-			         ErrorHandler *Error          {&         ErrorDH};
-			       ConnectHandler *Connect        {&       ConnectDH};
-			    DisconnectHandler *Disconnect     {&    DisconnectDH};
-			       NameSetHandler *NameSet        {&       NameSetDH};
-			   JoinChannelHandler *JoinChannel    {&   JoinChannelDH};
-			  LeaveChannelHandler *LeaveChannel   {&  LeaveChannelDH};
-			 ServerMessageHandler *ServerMessage  {& ServerMessageDH};
-			ChannelMessageHandler *ChannelMessage {&ChannelMessageDH};
-			   PeerMessageHandler *PeerMessage    {&   PeerMessageDH};
-		} handlers;
-
-		struct BinaryMessageHeader
-		{
-			struct Type
-			{
-				using Type_t = uint8_t;
-				Variant_t variant : 4;
-				Type_t type : 4;
-			} type;
-			Size_t size;
-		};
-	};
-	Server &Server::operator=(Server &&) noexcept = default;
-	struct Server::Client::Impl
-	{
-		Server::Impl &server;
-		lacewing::server_client client;
-		ID_t id;
-
-		Impl(Server::Impl &si, lacewing::server_client sc) : server(si), client(sc), id(si.client_IDs.GenerateID())
-		{
-		}
-
-		std::string name;
-		using Channels_t = std::vector<Channel *>;
+		using Clients_t = std::map<ID_t, std::unique_ptr<Client>>;
+		using Channels_t = std::map<ID_t, std::unique_ptr<Channel>>;
+		Clients_t clients;
 		Channels_t channels;
-	};
-	struct Server::Client::ChannelIterator::Impl
-	{
-		std::vector<Channel *> channels;
-	};
-	struct Server::Channel::Impl
-	{
-		std::vector<Client *> clients;
-		lacewing::client master;
-		lacewing::server server;
-		unsigned short id;
-		char * name;
-		bool closeWhenMasterLeaves, listInPublicChannelList;
 
-		void Join(Client &client);
-		void Leave(Client &client);
-	};
-	struct Server::Channel::ClientIterator::Impl
-	{
-		std::vector<Client *> clients;
-	};
-	struct Server::Deny::Impl
-	{
+		std::function<         ErrorHandler> onError;
+		std::function<       ConnectHandler> onConnect;
+		std::function<    DisconnectHandler> onDisconnect;
+		std::function<       NameSetHandler> onNameSet;
+		std::function<   JoinChannelHandler> onJoinChannel;
+		std::function<  LeaveChannelHandler> onLeaveChannel;
+		std::function< ServerMessageHandler> onServerMessage;
+		std::function<ChannelMessageHandler> onChannelMessage;
+		std::function<   PeerMessageHandler> onPeerMessage;
+
 		//
 	};
-	Server::Deny::Deny(Deny &&) = default;
+	Server &Server::operator=(Server &&) noexcept = default;
+	struct Server::Client::Impl final
+	{
+		Server::Impl &server;
+		Client &interf;
+		lacewing::server_client client;
+		ID_Holder<ID_t> id;
+		std::string name;
+		using Channels_t = Server::Impl::Channels_t;
+		Channels_t channels;
+
+		Impl(Server::Impl &si, Client &pc, lacewing::server_client sc)
+		: server(si)
+		, interf(pc)
+		, client(sc)
+		, id(si.client_IDs)
+		{
+		}
+		~Impl()
+		{
+			//
+		}
+
+		//
+	};
+	struct Server::Channel::Impl final
+	
+		Server::Impl &server;
+		Channel &interf;
+		ID_Holder<ID_t> id;
+		std::string name;
+		bool autoclose, visible;
+		Clients_t::iterator chmaster;
+		using Clients_t = Server::Impl::Clients_t;
+		Clients_t clients;
+
+		Impl(Server::Impl &si, Channel &pc, std::string const &n, Clients_t::iterator creator, bool ac, bool v)
+		: server(si)
+		, interf(pc)
+		, id(si.channel_IDs)
+		, name(n)
+		, autoclose(ac)
+		, visible(v)
+		, chmaster(creator)
+		{
+		}
+		~Impl()
+		{
+			//
+		}
+
+		//
+	};
+
+	//
 }
