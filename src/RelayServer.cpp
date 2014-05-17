@@ -20,13 +20,9 @@ namespace lwrelay
 		, udp(lacewing::udp_new(p))
 		{
 		}
-		Impl() = delete;
-		Impl(Impl const &) = delete;
-		Impl(Impl &&) = default;
-		Impl &operator=(Impl const &) = delete;
-		Impl &operator=(Impl &&) = default;
 		~Impl()
 		{
+			//
 			lacewing::udp_delete(udp), udp = nullptr;
 			lacewing::server_delete(server), server = nullptr;
 		}
