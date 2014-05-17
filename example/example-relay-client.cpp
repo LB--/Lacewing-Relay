@@ -14,7 +14,7 @@ struct KR{~KR()
 struct Main
 {
 	lacewing::eventpump Pump;
-	LwRelay::Client Client;
+	lwrelay::Client Client;
 
 	Main(unsigned nargs, char const *const *args) : Pump(lacewing::eventpump_new()), Client(Pump)
 	{
@@ -45,16 +45,16 @@ struct Main
 		return 0;
 	}
 
-	static void (lw_callback OnError)(LwRelay::Client &Client, lacewing::error Error)
+	static void (lw_callback OnError)(lwrelay::Client &Client, lacewing::error Error)
 	{
 		std::cerr << "Error: \"" << Error->tostring() << '"' << std::endl;
 		static_cast<Main *>(Client.Tag)->Pump->post_eventloop_exit();
 	}
-	static void (lw_callback OnConnect)(LwRelay::Client &Client)
+	static void (lw_callback OnConnect)(lwrelay::Client &Client)
 	{
 		std::clog << "Connected to " << Client.ServerAddress()->tostring() << std::endl;
 	}
-	static void (lw_callback OnConnectionDenied)(LwRelay::Client &Client, char const*reason)
+	static void (lw_callback OnConnectionDenied)(lwrelay::Client &Client, char const*reason)
 	{
 		std::clog << "Connection refused: \"" << reason << '"' << std::endl;
 	}

@@ -6,7 +6,7 @@
 #include <map>
 #include <limits>
 
-namespace LwRelay
+namespace lwrelay
 {
 	namespace
 	{
@@ -50,7 +50,7 @@ namespace LwRelay
 		Impl(Impl &&) = default;
 		Impl &operator=(Impl const &) = delete;
 		Impl &operator=(Impl &&) = default;
-		~Impl() noexcept(true)
+		~Impl() noexcept
 		{
 			lacewing::udp_delete(udp), udp = nullptr;
 			lacewing::server_delete(server), server = nullptr;
@@ -98,7 +98,7 @@ namespace LwRelay
 			Size_t size;
 		};
 	};
-	Server &Server::operator=(Server &&) noexcept(true) = default;
+	Server &Server::operator=(Server &&) noexcept = default;
 	struct Server::Client::Impl
 	{
 		Server::Impl &server;

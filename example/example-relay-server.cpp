@@ -10,12 +10,12 @@ struct KR{~KR()
 }}kr;
 
 #include <Relay.hpp>
-using Deny = LwRelay::Server::Deny;
+using Deny = lwrelay::Server::Deny;
 
 struct Main
 {
 	lacewing::eventpump Pump;
-	LwRelay::Server Server;
+	lwrelay::Server Server;
 
 	Main(unsigned nargs, char const *const *args) : Pump(lacewing::eventpump_new()), Server(Pump)
 	{
@@ -51,13 +51,13 @@ struct Main
 		return 0;
 	}
 	
-	static void (lw_callback OnError)(LwRelay::Server &Server, lacewing::error Error)
+	static void (lw_callback OnError)(lwrelay::Server &Server, lacewing::error Error)
 	{
 		std::cerr << "Error: \"" << Error->tostring() << '"' << std::endl;
 		static_cast<Main *>(Server.Tag)->Pump->post_eventloop_exit();
 	}
 	
-	static Deny (lw_callback OnConnect)(LwRelay::Server &Server, LwRelay::Server::Client &Client)
+	static Deny (lw_callback OnConnect)(lwrelay::Server &Server, lwrelay::Server::Client &Client)
 	{
 		std::clog << "Client connected from " << Client.Address()->tostring() << std::endl;
 		return true; //allow connection

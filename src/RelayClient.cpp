@@ -5,7 +5,7 @@
 #include <vector>
 #include <limits>
 
-namespace LwRelay
+namespace lwrelay
 {
 	struct Client::Impl
 	{
